@@ -1,0 +1,192 @@
+.bg-image {
+  position: fixed;        /* Stays put even when scrolling */
+  top: 0;
+  left: 0;
+  width: 100vw;           /* Full width */
+  height: 100vh;          /* Full height */
+  background-image: url("https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/Board.jpg");
+  background-size: cover; /* Scale and crop to fill */
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.9;           /* 90% opacity */
+  z-index: -1;            /* Push behind content */
+}
+
+.menu-text {
+  font-family: 'Poppins', sans-serif; /* sleek, modern, italic */
+  font-weight: 700;
+  font-style: italic;
+  font-size: 2rem;
+  color: #dbdbdb; /* bright red for visibility */
+    text-shadow: 
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000;
+}
+
+.small-menu-text {
+  font-family: 'Poppins', sans-serif; /* sleek, modern, italic */
+  font-weight: 700;
+  font-style: italic;
+  font-size: 1.5rem;
+  color: #e4e4e4; /* bright red for visibility */
+    text-shadow: 
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000;
+}
+
+.glow-red {
+  margin-top: -7.5px;
+  font-family: 'Poppins', sans-serif; /* sleek, modern, italic */
+  font-weight: 700;
+  font-style: italic;
+  font-size: 4rem;
+  color: #e22103; /* bright red for visibility */
+  
+  /* Position top-left */
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  text-align: left;
+
+  /* Black outline */
+  text-shadow: 
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      0 0 5px #FF2400, 
+      0 0 10px #FF2400, 
+      0 0 20px #FF2400;
+
+  /* Breathing glow animation */
+  animation: breathing-red 5s ease-in-out infinite;
+}
+
+@keyframes breathing-red {
+  0%, 100% {
+    text-shadow: 
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      0 0 10px #FF2400, 
+      0 0 20px #FF2400, 
+      0 0 30px #FF2400, 
+      0 0 50px #FF2400;
+  }
+  50% {
+    text-shadow: 
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      0 0 20px #FF2400, 
+      0 0 40px #FF2400, 
+      0 0 60px #FF2400, 
+      0 0 100px #FF2400;
+  }
+}
+
+.title-box {
+  position: absolute;
+  top: 50px;      /* adjust vertical position */
+  left: -50px;     /* adjust horizontal position */
+  width: 425px;   /* adjust width */
+  height: 40px;  /* adjust height */
+  background-color: #333;   /* dark grey */
+  border: 5px solid #000;   /* thick black border */
+
+  /* Diagonal right edge */
+  clip-path: polygon(
+    0 0,          /* top-left */
+    90% 0,       /* top-right */
+    100% 100%,     /* bottom-right (shifted left 10% to create diagonal) */
+    0 100%        /* bottom-left */
+  );
+
+  z-index: -1;    /* place behind text */
+}
+
+.deck-box {
+  position: absolute;
+  top: 150px;      /* adjust vertical position */
+  left: -50px;     /* adjust horizontal position */
+  width: 385px;   /* adjust width */
+  height: 40px;  /* adjust height */
+  background-color: #777777;   /* dark grey */
+  border: 5px solid #000;   /* thick black border */
+
+  /* Diagonal right edge */
+  clip-path: polygon(
+    0 0,          /* top-left */
+    90% 0,       /* top-right */
+    100% 100%,     /* bottom-right (shifted left 10% to create diagonal) */
+    0 100%        /* bottom-left */
+  );
+
+  z-index: -1;    /* place behind text */
+}
+
+.rules-box {
+  position: absolute;
+  top: 210px;      /* adjust vertical position */
+  left: -50px;     /* adjust horizontal position */
+  width: 385px;   /* adjust width */
+  height: 40px;  /* adjust height */
+  background-color: #777777;   /* dark grey */
+  border: 5px solid #000;   /* thick black border */
+
+  /* Diagonal right edge */
+  clip-path: polygon(
+    0 0,          /* top-left */
+    90% 0,       /* top-right */
+    100% 100%,     /* bottom-right (shifted left 10% to create diagonal) */
+    0 100%        /* bottom-left */
+  );
+
+  z-index: -1;    /* place behind text */
+}
+
+.play-box {
+  position: absolute;
+  top: 270px;      /* adjust vertical position */
+  left: -50px;     /* adjust horizontal position */
+  width: 385px;   /* adjust width */
+  height: 40px;  /* adjust height */
+  background-color: #777777;   /* dark grey */
+  border: 5px solid #000;   /* thick black border */
+
+  /* Diagonal right edge */
+  clip-path: polygon(
+    0 0,          /* top-left */
+    90% 0,       /* top-right */
+    100% 100%,     /* bottom-right (shifted left 10% to create diagonal) */
+    0 100%        /* bottom-left */
+  );
+
+  z-index: -1;    /* place behind text */
+}
+
+.logout-box {
+  position: absolute;
+  top: 330px;      /* adjust vertical position */
+  left: -50px;     /* adjust horizontal position */
+  width: 275px;   /* adjust width */
+  height: 30px;  /* adjust height */
+  background-color: #5d5d5d;   /* dark grey */
+  border: 5px solid #000;   /* thick black border */
+
+  /* Diagonal right edge */
+  clip-path: polygon(
+    0 0,          /* top-left */
+    90% 0,       /* top-right */
+    100% 100%,     /* bottom-right (shifted left 10% to create diagonal) */
+    0 100%        /* bottom-left */
+  );
+
+  z-index: -1;    /* place behind text */
+}
