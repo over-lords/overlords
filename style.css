@@ -4,7 +4,7 @@
   left: 0;
   width: 100vw;           /* Full width */
   height: 100vh;          /* Full height */
-  background-image: url("https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/BoardReduced.jpg");
+  background-image: url("https://raw.githubusercontent.com/over-lords/overlords/332d3e1b05c84f8b31022c7907034b6bd0e2db77/Public/Images/Site%20Assets/BoardReduced.jpg");
   background-size: cover; /* Scale and crop to fill */
   background-position: center;
   background-repeat: no-repeat;
@@ -18,6 +18,7 @@
   font-style: italic;
   font-size: 2rem;
   color: #dbdbdb; /* bright red for visibility */
+  z-index: 10;
     text-shadow: 
       -2px -2px 0 #000,
       2px -2px 0 #000,
@@ -31,6 +32,7 @@
   font-style: italic;
   font-size: 1.5rem;
   color: #e4e4e4; /* bright red for visibility */
+  z-index: 10;
     text-shadow: 
       -2px -2px 0 #000,
       2px -2px 0 #000,
@@ -45,6 +47,7 @@
   font-style: italic;
   font-size: 4rem;
   color: #e22103; /* bright red for visibility */
+  z-index: 10;
   
   /* Position top-left */
   position: absolute;
@@ -108,10 +111,10 @@
     0 100%        /* bottom-left */
   );
 
-  z-index: -1;    /* place behind text */
+  z-index: 1;    /* place behind text */
 }
 
-.deck-box {
+.rules-box {
   position: absolute;
   top: 150px;      /* adjust vertical position */
   left: -50px;     /* adjust horizontal position */
@@ -128,10 +131,10 @@
     0 100%        /* bottom-left */
   );
 
-  z-index: -1;    /* place behind text */
+  z-index: 1;    /* place behind text */
 }
 
-.rules-box {
+.deck-box {
   position: absolute;
   top: 210px;      /* adjust vertical position */
   left: -50px;     /* adjust horizontal position */
@@ -148,7 +151,7 @@
     0 100%        /* bottom-left */
   );
 
-  z-index: -1;    /* place behind text */
+  z-index: 1;    /* place behind text */
 }
 
 .play-box {
@@ -168,7 +171,7 @@
     0 100%        /* bottom-left */
   );
 
-  z-index: -1;    /* place behind text */
+  z-index: 1;    /* place behind text */
 }
 
 .logout-box {
@@ -188,5 +191,15 @@
     0 100%        /* bottom-left */
   );
 
-  z-index: -1;    /* place behind text */
+  z-index: 1;    /* place behind text */
+}
+
+.rules-box h1,
+.deck-box h1,
+.play-box h1,
+.logout-box h1 {
+  margin: 0;             /* remove default margin */
+  padding-left: 50px;    /* shift text 50px to the right */
+  text-align: left;      /* align text left inside the box */
+  flex: 1;               /* let it take space within the box */
 }

@@ -11,16 +11,24 @@
 </head>
 <body style="background-color:white;">
     <div class="bg-image" alt="" style="opacity: 55%;"></div>
-    <div class="title-box"></div>
-    <h1 class="glow-red">Overlords</h1>
-    <div class="rules-box"></div>
-    <h1 class="menu-text" style="margin-top: 157px;">How to Play</h1>
-    <div class="deck-box"></div>
-    <h1 class="menu-text">Character Selection</h1>
-    <div class="play-box"></div>
-    <h1 class="menu-text">Let's Play</h1>
-    <div class="logout-box"></div>
-    <h1 class="small-menu-text" style="margin-top: 25px;"">Logout</h1>
+    <div class="title-box" id="title-box"></div>
+    <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+
+    <div class="rules-box" id="rules-box" onclick="location.href='rules.html'" style="cursor: pointer;">
+        <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">How to Play</h1>
+    </div>
+
+    <div class="deck-box" id="deck-box" onclick="location.href='deckList.html'" style="cursor: pointer;">
+        <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Character Roster</h1>
+    </div>
+
+    <div class="play-box" id="play-box" onclick="location.href='play.html'" style="cursor: pointer;">
+        <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Let's Play</h1>
+    </div>
+
+    <div class="logout-box" id="logout-box" onclick="location.href='logout.html'" style="cursor: pointer;">
+        <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Logout</h1>
+    </div>
 </body>
 </html>
 

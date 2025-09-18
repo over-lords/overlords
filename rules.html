@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
+    <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <title>Overlords</title>
+        <style>
+            .tab {
+                display: none;
+                padding: 20px;
+                border-radius: 8px;
+                margin-top: 20px;
+            }
+            .tab-buttons {
+                margin-top: 30px;
+                display: flex;
+                gap: 10px;
+            }
+            .tab-button {
+                border: 5px solid rgb(0, 0, 0);
+                background-color: rgb(205, 199, 243);
+                color: black;
+                padding: 10px 10px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-family: 'Arial';
+                font-size: 14px;
+                margin: 4px 2px;
+                cursor: pointer;
+                table-layout: fixed;
+                border-collapse: collapse;
+                width: 20%;
+                border-radius: 10px;
+            }
+            .tab-button.active {
+                background-color: rgb(159, 145, 253);
+            }
+            .subtab {
+                display: none;
+                padding: 20px;
+                border-radius: 8px;
+                margin-top: 20px;
+            }
+            .subtab-buttons {
+                margin-top: 30px;
+                display: flex;
+                gap: 10px;
+            }
+            .subtab-button {
+                border: 5px solid rgb(0, 0, 0);
+                background-color: rgb(205, 199, 243);
+                color: black;
+                padding: 10px 10px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-family: 'Arial';
+                font-size: 14px;
+                margin: 4px 2px;
+                cursor: pointer;
+                table-layout: fixed;
+                border-collapse: collapse;
+                width: 20%;
+                border-radius: 10px;
+            }
+            .subtab-button.active {
+                background-color: rgb(159, 145, 253);
+            }
+            .text-body {
+                font-family: 'Times New Roman';
+            }
+        </style>
+</head>
+<body style="background-color:white;">
+    <div class="bg-image" alt="" style="opacity: 35%;"></div>
+    <div class="container">
+        <div class="title-box" id="title-box"></div>
+        <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+
+        <div class="rules-box" id="rules-box" onclick="location.href='index.html'" style="cursor: pointer; margin-top: -30px;">
+            <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Back</h1>
+        </div>
+
+        <br><br><br><br><br><br><br><br><br><br><br><br>
+
+        <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px; margin-top: -28px;">
+            <h2 style="color: black;">
+                Overlords is a cooperative card game that can be played with 1 to 6 Players. <br><br> The goal is to work alongside other heroes and defeat the villains, saving as many civilians as you can. <br><br> It is a fully automated game, so aside from you, and your friends', actions, the mechanics will handle themselves. All you have to do is pick which Hero(es) to play, and which cards to use.
+                <br><br>
+                &emsp;When creating Overlords, we had two key goals:
+                <br>
+                <br>&emsp;&emsp;1) To make a card game where every time you queue up, <span style="text-decoration: underline;">you never know what’s going to happen.</span> The goal is to work with what you have, and still come out on top. To provide interesting scenarios that would make you think and wonder about the possibilities of your next game, and the one after that. To keep coming back because you had fun.
+                <br>&emsp;&emsp;2) To make something you can sit down with yourself on the train or a plane and just play, or queue up with your friends for a fun board game night or a challenging quest to see who could come out on top of an impossible scenario.
+
+                <br><br>
+                &emsp;We wanted to make a game where it wasn't about beating each other, but about working together and doing so with characters you already enjoyed.
+            </h2>
+        </div>
+        <br>
+        <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+            <h2 style="color: black;">
+                Single and Multiplayer games are offered. We support 1 through 6 players. Depending on the number of players, that determines how many heroes you personally can select to play with.
+                <br><br>
+                How You Win:
+                <br>
+                • Reduce the Overlord to 0 HP. There are no other win conditions, you beat the bad guy, or you lose.
+                <br><br>
+                How You Lose:
+                <br>
+                • All Heroes are reduced to 0 HP.
+                <br>
+                OR
+                <br>
+                • All six Cities are destroyed.
+            </h2>
+        </div>
+
+        <div class="tab-buttons">
+            <button class="tab-button" onclick="openTab(event, 'setup')">Setup</button>
+            <button class="tab-button active" onclick="openTab(event, 'howToPlay')">How To Play</button>
+            <button class="tab-button" onclick="openTab(event, 'keywordDictionary')">Card Keywords</button>
+        </div>
+
+        <div id="howToPlay" class="tab" style="display: block;">
+            <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+                <text-body style="font-size: 1.5em; font-weight: bold;">
+                    <span style="text-decoration: underline;">After setting up your game, let's talk about how it's run - starting with the Villain's actions.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;Once you load in, with the order of your heroes being randomly decided, the first thing to happen will be <span style="text-decoration: underline;">a card is drawn from the Villain Deck</span>.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;Cards drawn from the Villain Deck are placed in the upper slots along the board, traveling right to left along the six Cities <span style="text-decoration: underline;">until they reach the end of the board and escape</span>.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;You will draw another card at the start of each Hero's turn, so if not dealt with, the threats it unleashes could rapidly overwhelm you and your team.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;Henchmen and Villains (explained later) from the Villain Deck push those ahead of them, even those freshly emerging from the Villain Deck. This means that if not dealt with, they will start pushing themselves off the end of the board and escaping, which is very, very bad for you.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;If a Hero enters a City with a Henchman or Villain, they stop moving in order to fight. This is a great way to prevent their escape. However, this leaves you vulnerable to losing that Hero.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;If a Henchman or Villain escapes, then most commonly they will KO any Bystanders they had captured, and then they increase the Overlord's HP by whatever they had remaining. In rare circumstances, they can initiate a Takeover, but that is explained later.</span>
+                    <br><br>
+                    <span style="text-decoration: underline;">Now, for the Heroes' turn.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;The Player controlling the turn Hero will declare which threat they wish to take on, either by sending them to a city, or having them initiate an assault against the Overlord. <br> &emsp;&emsp; Then, after doing so, they are given a choice of the top 3 cards from their deck, and they pick 1 to add to their hand. After choosing, their deck is shuffled.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;playing cards</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;successful defeat of villain</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;deck run out</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;villain damage</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;end of turn discard</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;shuffle if too many draws</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;travel</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;shoving</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;retreat</span>
+                    <br><br>
+                    <span style="text-decoration: underline;">battle</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;koing villains</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;fighting overlord</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;being KO'd</span>
+                    <br><br>
+                    <span style="text-decoration: underline;">the countdown</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;explain</span>
+                </text-body>
+            </div>
+                <br><br><br><br><br><br>
+                &nbsp;
+        </div>
+
+        <div id="setup" class="tab">
+            <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+                <div class="subtab-buttons">
+                    <button class="subtab-button active" onclick="openSubTab(event, 'decks')">Decks</button>
+                    <button class="subtab-button" onclick="openSubTab(event, 'cardTypes')">Card Types</button>
+                    <button class="subtab-button" onclick="openSubTab(event, 'notCards')">The Overlord</button>
+                    <button class="subtab-button" onclick="openSubTab(event, 'board')">The Board</button>
+                </div>
+
+                <div id="decks" class="subtab" style="display: block;">
+                    <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+                        <text-body style="font-size: 1.5em; font-weight: bold;">
+                            <span style="text-decoration: underline;">T:</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">U.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                        </text-body>
+                    </div>
+                </div>
+
+                <div id="cardTypes" class="subtab">
+                    <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+                        <text-body style="font-size: 1.5em; font-weight: bold;">
+                            <span style="text-decoration: underline;">T:</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">U.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                        </text-body>
+                    </div>
+                </div>
+
+                <div id="notCards" class="subtab">
+                    <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+                        <text-body style="font-size: 1.5em; font-weight: bold;">
+                            <span style="text-decoration: underline;">T:</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">U.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                        </text-body>
+                    </div>
+                </div>
+
+                <div id="board" class="subtab">
+                    <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+                        <text-body style="font-size: 1.5em; font-weight: bold;">
+                            <span style="text-decoration: underline;">T:</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">U.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                        </text-body>
+                    </div>
+                </div>
+            </div>
+                <br><br><br><br><br><br>
+                &nbsp;
+        </div>
+
+        <div id="boardAndCards" class="tab">
+            <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+                <text-body style="font-size: 1.5em; font-weight: bold;">
+                    <span style="text-decoration: underline;">T:</span>
+                    <br><br>
+                    <span style="text-decoration: underline;">U.</span>
+                    <br><br>
+                    <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                </text-body>
+            </div>
+                <br><br><br><br><br><br>
+                &nbsp;
+        </div>
+    </div>
+
+    <div id="keywordDictionary" class="tab">
+        <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+            <text-body style="font-size: 1.5em; font-weight: bold;">
+                • <span style="text-decoration: underline;">Add:</span> Select a card(s) from your Deck and place it into your Hand.
+                    <br><br>
+                • 
+            </text-body>
+        </div>
+            <br><br><br><br><br><br>
+            &nbsp;
+    </div>
+
+    <script type="module">
+        function openTab(evt, tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            const buttons = document.querySelectorAll('.tab-button');
+
+            tabs.forEach(tab => tab.style.display = 'none');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabId).style.display = 'block';
+            evt.currentTarget.classList.add('active');
+        }
+        window.openTab = openTab;
+
+        function openSubTab(evt, tabId) {
+            const tabs = document.querySelectorAll('.subtab');
+            const buttons = document.querySelectorAll('.subtab-button');
+
+            tabs.forEach(tab => tab.style.display = 'none');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabId).style.display = 'block';
+            evt.currentTarget.classList.add('active');
+        }
+        window.openSubTab = openSubTab;
+    </script>
+</body>
+</html>
