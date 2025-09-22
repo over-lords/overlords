@@ -26,6 +26,7 @@
                 color: black;
                 padding: 10px 10px;
                 text-align: center;
+                font-weight: bold;
                 text-decoration: none;
                 display: inline-block;
                 font-family: 'Arial';
@@ -123,7 +124,7 @@
         <div class="tab-buttons">
             <button class="tab-button" onclick="openTab(event, 'setup')">Setup</button>
             <button class="tab-button active" onclick="openTab(event, 'howToPlay')">How To Play</button>
-            <button class="tab-button" onclick="openTab(event, 'keywordDictionary')">Card Keywords</button>
+            <button class="tab-button" onclick="openTab(event, 'keywordDictionary')">Abilities and Keywords</button>
         </div>
 
         <div id="howToPlay" class="tab" style="display: block;">
@@ -194,11 +195,45 @@
                 <div id="decks" class="subtab" style="display: block;">
                     <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
                         <text-body style="font-size: 1.5em; font-weight: bold;">
-                            <span style="text-decoration: underline;">T:</span>
+                            <span style="text-decoration: underline;">The Hero Deck:</span>
                             <br><br>
-                            <span style="text-decoration: underline;">U.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;Every Hero consists of a primary Icon Card and 20 pre-determined Action Cards. All you have to do is pick your Hero or Heroes for a game and the rest is handled automatically.</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;In singleplayer games, you can pick 1 to 6 Heroes to play with. Where as in multiplayer, the rules are a bit different. <br><br>&emsp;&emsp; If you have 2 players, you have the choice to select between 1 and 3 Heroes each. With 3 players, you can each pick 1 or 2 Heroes a piece. And with 4+ players, you can only select a single Hero each. The creator of the room can select enough to fill up the space, so that is 3 at 4 players, 2 at 5, and 1, like everyone else, at 6.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">The Overlord and his Plan:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;When playing multiplayer, the following entries are decided automatically, but when playing singleplayer, you can set them up however you like.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Overlord:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;Every evil plot needs a big bad, and for this game, that's the Overlord. There are 3 difficulties of Overlord, as denoted in the selector by a 1 (easy), 2 (medium), or 3 (hard). Each Overlord has HP, as well as their basic abilities and their Might of the Overlord ability, which is activated each time a Might of the Overlord is pulled from the Villain Deck.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Tactics:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;The Tactic is the plan the Overlord has come up with. Most Tactics are split into two parts - 1. The passive change to the game's rules. 2. A Might of the Overlord effect.</span>
+                            <br><br>
+                            &emsp;<span style="text-decoration: underline;">The Villain Deck:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;Consisting of every part of an Overlord's plan, from the Bystanders they will kidnap, or their dramatic shows of might, the Villain Deck is meant to throw an endless tide of problems to stamp out preventing you from tackling the greater threat in the Overlord.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;&emsp;The Villain Deck (60-140, Recommended 100)</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;&emsp;Might of the Overlords (3-10, Recommended 8): This card activates an effect on both the Overlord, and within the Tactic. The Overlord effect is declared and resolves first, before the Tactic. Both effects can only be performed once per turn, and cannot cascade into each other. So if a Might effect draws from the Villain Deck, it cannot play another Might of the Overlord.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;&emsp;Bystanders (7-15, Recommended 10): Bystanders can be one of a few kinds, from Undercover Agents to Captured Sidekicks. They are taken by the rightmost Villain or Henchman and are kept, traveling with them across the board, until the baddie escapes or they are rescued. If their captor escapes, they are KO'd and their effect is lost. If they are rescued, which is done when you defeat their captor before they make it to the end of the board, you get them into your hand like any other card. But they stay there until used, as long as you want to hold them. Basic Bystanders have no effect, and do not enter your hand as there is no need. Some Tactics or Overlords may cause you to lose the game if too many Bystanders are lost, so try to save them when possible.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;&emsp;Scenarios (0-5, Recommended 2): Scenarios are incredibly varied Overlord overlays found within the Villain Deck. They overlap the Overlord until they are defeated. They have their own HP, and their own rule to play over top of their effects. They do not have Might of the Overlord effects. They are what happens when a bad guy has this dramatic plan to destroy the city, but then aliens invade, and then zombies rise up, and the whole thing gets thrown out to deal with that until they can resume the struggle.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;&emsp;Henchmen (20-40, Recommended 30): Little problems sprinkled in by an Overlord; Henchmen have low HP, moderate to low Damage, and always have a positive effect when you take them out, like a little prize package. They can clog the board, but also incentivize dealing with them as you may wind up ahead for doing so.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;&emsp;Villains (30-70, Recommended 40): Those who are above Henchmen, but below Overlords, are the Villains. They're strong, tough, and varied. They require a multitude of strategies to beat, and often come with their own unique challenges. Some can even beat up a weakened Overlord and take over themselves.</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;The Countdown of Doom: The bottom 6 'cards' of the Villain Deck are the Countdown of Doom, a series of cards that flattens cities, KO's Villains, and slams Heroes aside. It is the final coming, the doomsday clock, the end of the game. If the Countdown finishes, and reaches the end of the board, the game ends and you lose.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Enemies and Allies:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;A completely separate deck that is only drawn from when cards or other effects call for it. The Ally effects are beneficial, and the Enemy effects are detrimental. It is completely random what you will pull unless an Enemy or Ally is guaranteed by the effect drawing from the deck. It is built automatically of equal parts Enemies and Allies unless specified otherwise by: An effect in the Tactic or on the Overlord, within the singleplayer game builder, or by selecting Nightmare difficulty in the multiplayer game creator.</span>
                         </text-body>
                     </div>
                 </div>
@@ -206,11 +241,44 @@
                 <div id="cardTypes" class="subtab">
                     <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
                         <text-body style="font-size: 1.5em; font-weight: bold;">
-                            <span style="text-decoration: underline;">T:</span>
+                            <span style="text-decoration: underline;">Hero Cards:</span>
                             <br><br>
-                            <span style="text-decoration: underline;">U.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;Icon Cards are </span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;Action cards are </span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Might of the Overlord:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Bystander:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Scenario:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Henchmen:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Villains:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Bystander:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Ally:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
+                            <span style="text-decoration: underline;">Enemy:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <br><br>
                         </text-body>
                     </div>
                 </div>
@@ -218,11 +286,13 @@
                 <div id="notCards" class="subtab">
                     <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
                         <text-body style="font-size: 1.5em; font-weight: bold;">
-                            <span style="text-decoration: underline;">T:</span>
+                            <span style="text-decoration: underline;">Overlords:</span>
                             <br><br>
-                            <span style="text-decoration: underline;">U.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;Every evil plot needs a big bad, and for this game, that's the Overlord. There are 3 difficulties of Overlord, as denoted in the selector by a 1 (easy), 2 (medium), or 3 (hard). Each Overlord has HP, as well as their basic abilities and their Might of the Overlord ability, which is activated each time a Might of the Overlord is pulled from the Villain Deck.</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="text-decoration: underline;">Tactics:</span>
+                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;Tactics are not cards, just plans that the Overlord uses. Tactics have difficulty levels 1 (easy), 2 (medium), or 3 (hard), just like Overlords. Most Tactics are split into two parts - 1. The passive change to the game's rules. 2. A Might of the Overlord effect. Some may not have one or the other, but most have both.</span>
                         </text-body>
                     </div>
                 </div>
@@ -230,11 +300,11 @@
                 <div id="board" class="subtab">
                     <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
                         <text-body style="font-size: 1.5em; font-weight: bold;">
-                            <span style="text-decoration: underline;">T:</span>
+                            <span style="text-decoration: underline;">Cities:</span>
                             <br><br>
-                            <span style="text-decoration: underline;">U.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;Each city has two spaces, those above, and those below (on the screen). Villains travel right to left along the cities on the upper track. When a Hero goes after a Villain, they are placed in the corresponding city space along the lower track.</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;INSERT A LABELED PICTURE OF THE BOARD WHEN FINISHED</span>
                         </text-body>
                     </div>
                 </div>
@@ -261,9 +331,24 @@
     <div id="keywordDictionary" class="tab">
         <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
             <text-body style="font-size: 1.5em; font-weight: bold;">
-                • <span style="text-decoration: underline;">Add:</span> Select a card(s) from your Deck and place it into your Hand.
-                    <br><br>
-                • 
+                <span style="text-decoration: underline;">Random Terms</span>
+                <br><br>
+                • Coastal City: The leftmost and rightmost cities. The coastal cities change to remain the leftmost and rightmost cities if the leftmost or rightmost cities are destroyed.
+                • Sidekick: A card to be added to your Hero Deck when an effect says so. When drawn, the Sidekick vanishes and you draw 2 more cards from the top of your deck.
+                • KO'ing: 
+                <span style="text-decoration: underline;">Hero Abilities and Features</span>
+                <br><br>
+                • Damage Threshold: 
+                • Gain vs Regain: 
+                • Hit Points (HP): 
+                <span style="text-decoration: underline;">Villain Abilities and Features</span>
+                <br><br>
+                • Bringing Back Heroes and Villains: 
+                • Charge: 
+                • Glide: 
+                • Half-Damage: 
+                • Takeover: 
+                • Teleport: 
             </text-body>
         </div>
             <br><br><br><br><br><br>
