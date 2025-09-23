@@ -22,6 +22,7 @@
 
     <script type="module">
         import { heroes } from './data/faceCards.js';
+        const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/bbb15a0a42b04bbc0028b975ae8270a7923c47b1/Public/Images/Card%20Assets/Misc";
 
         function groupByCategory(data) {
         return data.reduce((acc, hero) => {
@@ -139,7 +140,7 @@
 
             // Left: hero image
             const heroImg = document.createElement('img');
-            heroImg.src = hero.image.toLowerCase(); // lowercase path
+            heroImg.src = hero.image; // already full URL from faceCards.js
             heroImg.style.width = "100px";
             heroImg.style.height = "auto";
             heroImg.style.borderRadius = "6px";
@@ -154,7 +155,7 @@
             teamDiv.textContent = "Teams: ";
             hero.teams.forEach(t => {
             const img = document.createElement('img');
-            img.src = `${t.toLowerCase().replace(/\s/g,'')}.jpg`; // lowercase, spaces removed
+            img.src = `${teamFolder}/${t}.png`; // t = team name from hero.teams array
             img.style.width = "30px";
             img.style.height = "30px";
             img.style.marginRight = "0.25rem";
