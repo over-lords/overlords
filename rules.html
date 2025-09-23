@@ -78,7 +78,7 @@
         </style>
 </head>
 <body style="background-color:white;">
-    <div class="bg-image" alt="" style="opacity: 35%;"></div>
+    <div class="bg-image" alt="" style="opaCity: 35%;"></div>
     <div class="container">
         <div class="title-box" id="title-box"></div>
         <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
@@ -89,7 +89,7 @@
 
         <br><br><br><br><br><br><br><br><br><br><br><br>
 
-        <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px; margin-top: -28px;">
+        <div class="container" style="background-color: rgb(255, 255, 255, 0.6); border: 4px solid white; border-radius: 10px; padding: 10px 10px; margin-top: -28px;">
             <h2 style="color: black;">
                 Overlords is a cooperative card game that can be played with 1 to 6 Players. <br><br> The goal is to work alongside other heroes and defeat the villains, saving as many civilians as you can. <br><br> It is a fully automated game, so aside from you, and your friends', actions, the mechanics will handle themselves. All you have to do is pick which Hero(es) to play, and which cards to use.
                 <br><br>
@@ -103,7 +103,7 @@
             </h2>
         </div>
         <br>
-        <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+        <div class="container" style="background-color: rgb(255, 255, 255, 0.6); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
             <h2 style="color: black;">
                 Single and Multiplayer games are offered. We support 1 through 6 players. Depending on the number of players, that determines how many heroes you personally can select to play with.
                 <br><br>
@@ -128,7 +128,7 @@
         </div>
 
         <div id="howToPlay" class="tab" style="display: block;">
-            <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
+            <div class="container" style="background-color: rgb(255, 255, 255, 0.6); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
                 <text-body style="font-size: 1.5em; font-weight: bold;">
                     <span style="text-decoration: underline;">After setting up your game, let's talk about how it's run - starting with the Villain's actions.</span>
                     <br><br>
@@ -136,7 +136,7 @@
                     <br><br>
                     <span style="font-style: italic;">&emsp;&emsp;Cards drawn from the Villain Deck are placed in the upper slots along the board, traveling right to left along the six Cities <span style="text-decoration: underline;">until they reach the end of the board and escape</span>.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;You will draw another card at the start of each Hero's turn, so if not dealt with, the threats it unleashes could rapidly overwhelm you and your team.</span>
+                    <span style="font-style: italic;">&emsp;&emsp;You will draw another card at the start of each Heroes' turn, so if not dealt with, the threats it unleashes could rapidly overwhelm you and your team.</span>
                     <br><br>
                     <span style="font-style: italic;">&emsp;&emsp;Henchmen and Villains (explained later) from the Villain Deck push those ahead of them, even those freshly emerging from the Villain Deck. This means that if not dealt with, they will start pushing themselves off the end of the board and escaping, which is very, very bad for you.</span>
                     <br><br>
@@ -146,37 +146,35 @@
                     <br><br>
                     <span style="text-decoration: underline;">Now, for the Heroes' turn.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;The Player controlling the turn Hero will declare which threat they wish to take on, either by sending them to a city, or having them initiate an assault against the Overlord. <br> &emsp;&emsp; Then, after doing so, they are given a choice of the top 3 cards from their deck, and they pick 1 to add to their hand. After choosing, their deck is shuffled.</span>
+                    <span style="font-style: italic;">&emsp;&emsp;The Player controlling the turn Hero will declare which threat they wish to take on, either by sending them to a City, or having them initiate an assault against the Overlord. <br><br> &emsp;&emsp; Then, after doing so, they are given a choice of the top 3 cards from their deck, and they pick 1 to add to their hand. After choosing, their deck is shuffled.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;playing cards</span>
+                    <span style="font-style: italic;">&emsp;&emsp;Clicking on a card populates a viewing window on the left side of the screen, it also reveals a unique symbol over top of the card, this is the play button. Click that, and you will activate the card below it. This will do all that card says, giving you the chance to choose either or for what you want the card to do in the event of a card with 2+ effects.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;successful defeat of villain</span>
+                    <span style="font-style: italic;">&emsp;&emsp;Your cards with Damage attack a Villain's HP, you hit before them, so try to take them out before they get a shot at you!</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;deck run out</span>
+                    <span style="font-style: italic;">&emsp;&emsp;If a Hero's Deck runs out on their turn and they would still have to draw more cards, the number of cards drawn this turn will be referenced. If you have drawn a total of 4 or less cards this turn, including your initial draw, the deck will be shuffled and you can draw again per your number of draws remaining. If you have drawn 5 or more, you cannot shuffle and draw, instead you must end your turn and the deck will be shuffled at the very end and returned for your next turn.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;villain damage</span>
+                    <span style="font-style: italic;">&emsp;&emsp;If, at the very end of a Hero's turn, you did not KO your foe and you chose, or were unable to leave, the City they were in, they will take Damage equal to their Damage. If their Damage is less than your Damage Threshold, you ignore it, otherwise it is subtracted from your HP.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;end of turn discard</span>
+                    <span style="font-style: italic;">&emsp;&emsp;After you take the Villain's Damage, you discard all the cards left in your hand (if any, not counting Bystanders), then it becomes the next turn.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;shuffle if too many draws</span>
+                    <span style="font-style: italic;">&emsp;&emsp;At any point during your turn, your Hero can travel. They can move from any spot, to any other spot. Your initial placement at the start of your turn counts as Travel. So if you have 2 or higher, you can move them from their current position to any other on the board, including back to Headquarters to face the Overlord. If you just send them back to Headquarters with no fight against the Overlord, that's called Retreat, which is different, and does not count as Travel. If you leave a City with an active Villain, you will take their Damage automatically if you do not succeed on a roll against your Retreat Requirement. This is a standard d6 roll, where meeting or beating your number is all you have to do. Therefore a 2 is the best Retreat you can have, and a 6 is the worst. No Hero has a 1, but cards or effects may be able to reduce it to 1 temporarily. When you enter a new City, it acts as if you were just starting your turn, minus the excavate and draw. If you had 3 cards left in hand when beating a Henchman, and you have a Travel of 2, why not go 3 spaces down the board to take out another?</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;travel</span>
+                    <span style="font-style: italic;">&emsp;&emsp;If you want to Travel to a currently occupied City, this is called Shoving. You move the Hero there out of the City and back to Headquarters, and when you do, you take the Villain's Damage instantly upon entering, the Shoved Hero takes no Damage, and if you don't beat the Villain, you will take it again at the end of your turn. Everything else functions identically. You can decide to shove as your initial travel at the start of your turn, or later on.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;shoving</span>
+                    <span style="font-style: italic;">&emsp;&emsp;Retreating is when you leave a City to head back to Headquarters without defeating the Villain, and this can be done at any time. You must succeed a d6 roll against your Retreat Requirement, and if you fail you take that Villain's Damage, but you do still Retreat. You can, after you Retreat, and if you have the availability to, Travel again. Otherwise, this is likely the end of your turn.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;retreat</span>
+                    <span style="text-decoration: underline;">Combat - Rewards and Consequences:</span>
                     <br><br>
-                    <span style="text-decoration: underline;">battle</span>
+                    <span style="font-style: italic;">&emsp;&emsp;If the cards you play reduce a Henchman or Villain to 0 HP, you will KO them. Doing so earns you their Upon Victory effect. This could be anything, but it is clearly displayed on their card upon their entering of the map. So, read ahead if you want to earn better rewards! When you KO your enemy, you automatically return to the Headquarters. You can be sent out again only if you have the available Travel to do so.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;koing villains</span>
+                    <span style="font-style: italic;">&emsp;&emsp;From the Headquarters, you can instead "Travel" to face the Overlord. Since the Overlord has no dedicated space (which was done so you all could fight him at once) you fight him directly from the Headquarters, but doing so still requires the use of Travel, but does not require the use of Retreat to leave him, that happens automatically and you always succeed. You cannot defeat the Overlord if there are any active Henchmen or Villains still on the map. You must have a clear board before beating the Overlord. Cities are allowed to be destroyed, but so long as 1 remains, and it's unoccupied, you can still win by knocking the Overlord to 0 HP. If you would win while there is still a Henchman or Villain on the board, the Overlord is instead reduced to 1 HP, and cannot be Damaged any further.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;fighting overlord</span>
+                    <span style="font-style: italic;">&emsp;&emsp;If a Hero gets KO'd, that's probably the end of them. Very few effects bring a Hero back. They are greyed out, and their turn is perpetually skipped unless they are brought back.</span>
                     <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;being KO'd</span>
+                    <span style="text-decoration: underline;">If you reach the Countdown of Doom, it may already be too late.</span>
                     <br><br>
-                    <span style="text-decoration: underline;">the countdown</span>
-                    <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;explain</span>
+                    <span style="font-style: italic;">&emsp;&emsp;If the Villain Deck runs out of cards, the Countdown begins. You have 6 turns to win, or the Countdown of Doom eats the board and you lose. A Countdown card does not push Villains aside, it destroys the City, KO'ing anyone inside of it. If your Hero is in a City when the Countdown card lands on it, they take 10 Damage, and if they are still active, they are sent back to Headquarters. Countdown cards can only be affected by other Countdown cards, and only to push them across the board. They will move until nothing remains.</span>
                 </text-body>
             </div>
                 <br><br><br><br><br><br>
@@ -217,13 +215,13 @@
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;Consisting of every part of an Overlord's plan, from the Bystanders they will kidnap, or their dramatic shows of might, the Villain Deck is meant to throw an endless tide of problems to stamp out preventing you from tackling the greater threat in the Overlord.</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;&emsp;The Villain Deck (60-140, Recommended 100)</span>
+                            <span style="font-style: italic;">&emsp;&emsp;<span style="text-decoration: underline;">The Villain Deck (60-140, Recommended 90)</span></span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;&emsp;Might of the Overlords (3-10, Recommended 8): This card activates an effect on both the Overlord, and within the Tactic. The Overlord effect is declared and resolves first, before the Tactic. Both effects can only be performed once per turn, and cannot cascade into each other. So if a Might effect draws from the Villain Deck, it cannot play another Might of the Overlord.</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;&emsp;Bystanders (7-15, Recommended 10): Bystanders can be one of a few kinds, from Undercover Agents to Captured Sidekicks. They are taken by the rightmost Villain or Henchman and are kept, traveling with them across the board, until the baddie escapes or they are rescued. If their captor escapes, they are KO'd and their effect is lost. If they are rescued, which is done when you defeat their captor before they make it to the end of the board, you get them into your hand like any other card. But they stay there until used, as long as you want to hold them. Basic Bystanders have no effect, and do not enter your hand as there is no need. Some Tactics or Overlords may cause you to lose the game if too many Bystanders are lost, so try to save them when possible.</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;&emsp;Scenarios (0-5, Recommended 2): Scenarios are incredibly varied Overlord overlays found within the Villain Deck. They overlap the Overlord until they are defeated. They have their own HP, and their own rule to play over top of their effects. They do not have Might of the Overlord effects. They are what happens when a bad guy has this dramatic plan to destroy the city, but then aliens invade, and then zombies rise up, and the whole thing gets thrown out to deal with that until they can resume the struggle.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;&emsp;Scenarios (0-5, Recommended 2): Scenarios are incredibly varied Overlord overlays found within the Villain Deck. They overlap the Overlord until they are defeated. They have their own HP, and their own rule to play over top of their effects. They do not have Might of the Overlord effects. They are what happens when a bad guy has this dramatic plan to destroy the City, but then aliens invade, and then zombies rise up, and the whole thing gets thrown out to deal with that until they can resume the struggle.</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;&emsp;Henchmen (20-40, Recommended 30): Little problems sprinkled in by an Overlord; Henchmen have low HP, moderate to low Damage, and always have a positive effect when you take them out, like a little prize package. They can clog the board, but also incentivize dealing with them as you may wind up ahead for doing so.</span>
                             <br><br>
@@ -243,42 +241,33 @@
                         <text-body style="font-size: 1.5em; font-weight: bold;">
                             <span style="text-decoration: underline;">Hero Cards:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;Icon Cards are </span>
+                            <span style="font-style: italic;">&emsp;&emsp;Icon Cards are the "Face Card" for your Hero. This card moves between the Headquarters (the bench), and it contains the Hero's name, teams, HP, Damage Threshold, Retreat Requirement, Travel Count, and their Icon Ability (or abilities). Every Hero has a limited ability, one that can be used 1-3 times per game, it's useful and reliable, it will come up. Some Heroes have an ability that is passive, and simply applies in certain situations, these Heroes likely have a weaker limited ability to handicap them for also having a passive.</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;Action cards are </span>
+                            <span style="font-style: italic;">&emsp;&emsp;Action cards are the cards that you will play. These are bound to a Hero, there are a total of 20 in their decks with some repeats, though not many. Each Action Card has a unique name, effect, and possibly a damage value. You can play as many cards as you can draw, and you can waste them rather than wait until the end of your turn to discard them.</span>
                             <br><br>
                             <span style="text-decoration: underline;">Might of the Overlord:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;A Might of the Overlord triggers all effects on the field labeled "Might of the Overlord". If that card is pulled, those effects will activate.</span>
                             <br><br>
                             <span style="text-decoration: underline;">Bystander:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;There are five kinds of Bystander. These are placed into the Villain Deck at random, and can also be captured directly, or rescued without being captured. They have unique effects, and go into your hand and remain there until used like any other card. They are counted as rescued at that time, and do not need to be used to be counted as rescued. No discard effect can un-rescue a Bystander.</span>
                             <br><br>
                             <span style="text-decoration: underline;">Scenario:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;Unique cards that temporarily overlay upon the Overlord and blanket them for a few turns. Scenarios have HP and you can smack them until they're destroyed. You can't win if there's one there, so you have to go through it.</span>
                             <br><br>
                             <span style="text-decoration: underline;">Henchmen:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;The weakest enemies you will face directly, Henchmen have 1-3 HP and Damage, they always match, and they always come with a positive "Upon Victory" effect. When you beat a Henchman, you get a prize. So knock 'em down fast to get an edge on beating the harder enemies.</span>
                             <br><br>
                             <span style="text-decoration: underline;">Villains:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;The harder enemy variety you fight directly, these enter cities, have varying amounts of HP and Damage, as well as passives, active effects, and various Upon Victory effects.</span>
                             <br><br>
-                            <span style="text-decoration: underline;">Bystander:</span>
+                            <span style="text-decoration: underline;">Enemies & Allies:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
-                            <br><br>
-                            <span style="text-decoration: underline;">Ally:</span>
-                            <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
-                            <br><br>
-                            <span style="text-decoration: underline;">Enemy:</span>
-                            <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;E.</span>
-                            <br><br>
+                            <span style="font-style: italic;">&emsp;&emsp;Drawn from their own unique pile upon a card or ability's activation, these two types of cards are almost identical, having a slight buff or debuff unique to each card when drawn. Heroes are never required to draw from the pile when given the chance, but sometimes you don't have a choice as the Villains always draw from it when they can. In singleplayer, you can decide your ratio of Enemies to Allies within the deck, unless the Tactic or Overlord prevents you from doing so.</span>
                         </text-body>
                     </div>
                 </div>
@@ -302,26 +291,12 @@
                         <text-body style="font-size: 1.5em; font-weight: bold;">
                             <span style="text-decoration: underline;">Cities:</span>
                             <br><br>
-                            <span style="font-style: italic;">&emsp;&emsp;Each city has two spaces, those above, and those below (on the screen). Villains travel right to left along the cities on the upper track. When a Hero goes after a Villain, they are placed in the corresponding city space along the lower track.</span>
+                            <span style="font-style: italic;">&emsp;&emsp;Each City has two spaces, those above, and those below (on the screen). Villains travel right to left along the cities on the upper track. When a Hero goes after a Villain, they are placed in the corresponding City space along the lower track.</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;INSERT A LABELED PICTURE OF THE BOARD WHEN FINISHED</span>
                         </text-body>
                     </div>
                 </div>
-            </div>
-                <br><br><br><br><br><br>
-                &nbsp;
-        </div>
-
-        <div id="boardAndCards" class="tab">
-            <div class="container" style="background-color: rgb(255, 255, 255, 0.5); border: 4px solid white; border-radius: 10px; padding: 10px 10px;">
-                <text-body style="font-size: 1.5em; font-weight: bold;">
-                    <span style="text-decoration: underline;">T:</span>
-                    <br><br>
-                    <span style="text-decoration: underline;">U.</span>
-                    <br><br>
-                    <span style="font-style: italic;">&emsp;&emsp;E.</span>
-                </text-body>
             </div>
                 <br><br><br><br><br><br>
                 &nbsp;
@@ -334,21 +309,32 @@
                 <span style="text-decoration: underline;">Random Terms</span>
                 <br><br>
                 • Coastal City: The leftmost and rightmost cities. The coastal cities change to remain the leftmost and rightmost cities if the leftmost or rightmost cities are destroyed.
+                <br><br>
                 • Sidekick: A card to be added to your Hero Deck when an effect says so. When drawn, the Sidekick vanishes and you draw 2 more cards from the top of your deck.
-                • KO'ing: 
+                <br><br>
+                • KO'ing: Anything can be KO'd. This is when its HP is reduced to 0. When KO'd, Henchmen and Villains go to a "Graveyard" of sorts to be viewed and potentially brought back by some effects. Permanently KO'd, an effect some cards have, stops this, and those cards are still visible, but are marked differently within the Graveyard. Bystanders, when KO'd are gone for good, and most of the time Heroes are too.
+                <br><br>
                 <span style="text-decoration: underline;">Hero Abilities and Features</span>
                 <br><br>
-                • Damage Threshold: 
-                • Gain vs Regain: 
-                • Hit Points (HP): 
+                • Damage Threshold: The number that Henchmen, Villains, and other effects must meet or beat to hurt your Heroes. If you're bulletproof, a crowbar won't do much. So higher DT means tougher Hero. But this may also come with tradeoffs later.
+                <br><br>
+                • Hit Points (HP): The amount of life your Hero has, how many hits they can take before they drop. Reduce any card to 0, and it's KO'd.
+                <br><br>
+                • Gain vs Regain: Every card with HP has a starting HP, if a card says to regain, then you cannot exceed that starting HP, if it says gain, then it can. Most of the time HP is all they're referencing, but this applies to all Gain vs Regain distinctions.
+                <br><br>
                 <span style="text-decoration: underline;">Villain Abilities and Features</span>
                 <br><br>
-                • Bringing Back Heroes and Villains: 
-                • Charge: 
-                • Glide: 
-                • Half-Damage: 
-                • Takeover: 
-                • Teleport: 
+                • Charge: When drawn from the Villain Deck, after being placed in the rightmost City, this Villain then "Charges" an additional number of spaces as indicated on their card, pushing all those ahead of them.
+                <br><br>
+                • Glide: A Villain with this ability does not push others, instead they “Glide” along over them. They are able to occupy the same City as other Villains, dealing Damage to Heroes that go for that city like normal, in addition to the other Villain that might be there. A Glide Villain can push other Glide Villains, meaning only two Villains can occupy one City at a time. Glide Villains move one space per turn, meaning that they reach the end in 6 turns or less, depending on the number of remaining Cities.
+                <br><br>
+                • Half-Damage: A Hero, when forced to only deal half damage, rounds down their damage to the nearest whole number, on a per-card basis. With a minimum damage of 1. So 3 damage rounds to 1, 5 to 2, and so on.
+                <br><br>
+                • Takeover: If a Villain has this ability, and they reach the end of the board, supposing their Takeover ability number meets or exceeds the difficulty number on the Overlord, and they have the same (or more) HP than the current Overlord, they take over. They add the old Overlord’s remaining HP to whatever they still possess as well as replacing the Overlord’s Might of the Overlord ability with their own, and everything else operates the same, keeping any old additional loss conditions or dampening effects that the old Overlord may have set out at the start of the game.
+                <br><br>
+                • Teleport: A Villain with the Teleport ability is randomly placed according to the roll of a d6 when they are drawn. With the rightmost City being 1, and leftmost City being 6. They then move as normal. If they land on a non-gliding Villain’s space, or the space of a city that has been destroyed, they must reroll the die until they roll a City on which they can land.
+                <br><br>
+                • Bringing Back Heroes as Villains: A unique effect
             </text-body>
         </div>
             <br><br><br><br><br><br>

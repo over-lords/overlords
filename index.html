@@ -8,6 +8,56 @@
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <title>Overlords</title>
+    <style>
+        #infoBox {
+            position: fixed;
+            right: 10px;
+            bottom: 10px;
+            top: 250px;
+            width: 300px;
+            background-color: rgba(0,0,0,0.8);
+            border: 2px solid #ffffff55;
+            border-radius: 10px;
+            box-shadow: 0 0 12px black;
+            color: white;
+            font-family: sans-serif;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+        }
+        .tabs {
+            display: flex;
+            background-color: #444;
+            border-bottom: 1px solid #444;
+            border-radius: 10px;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            border-radius: 10px;
+        }
+        .tab-button:hover {
+            background-color: #333;
+        }
+        .tab-button.active {
+            background-color: #222;
+        }
+        .tab-content {
+            flex: 1;
+            display: none;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
 </head>
 <body style="background-color:white;">
     <div class="bg-image" alt="" style="opacity: 55%;"></div>
@@ -29,6 +79,47 @@
     <div class="logout-box" id="logout-box" onclick="location.href='logout.html'" style="cursor: pointer;">
         <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Logout</h1>
     </div>
+
+        <div id="infoBox">
+            <div class="tabs">
+                <button class="tab-button active" onclick="showTab('news')">News and Updates</button>
+                <button class="tab-button" onclick="showTab('issues')">Known Bugs / Feature Requests</button>
+            </div>
+            <div id="news" class="tab-content active"></div>
+            <div id="issues" class="tab-content"></div>
+        </div>
+
+    <script src="./data/news.js"></script>
+    <script src="./data/issues.js"></script>
+    <script>
+        function populateInfo() {
+            const newsDiv = document.getElementById('news');
+            const issuesDiv = document.getElementById('issues');
+
+            if (Array.isArray(newsData)) {
+                newsDiv.innerHTML = newsData.map(entry => `
+                    <p><strong>${entry.date}:</strong> ${entry.text}</p>
+                `).join('<br><br>');
+            }
+
+            if (Array.isArray(issueData)) {
+                issuesDiv.innerHTML = issueData.map(entry => `
+                    <p><strong>${entry.title}</strong><br>${entry.text}</p>
+                `).join('<br><br>');
+            }
+        }
+
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            const buttons = document.querySelectorAll('.tab-button');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            buttons.forEach(button => button.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
 </body>
 </html>
 
