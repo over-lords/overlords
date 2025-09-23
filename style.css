@@ -204,8 +204,11 @@
   flex: 1;               /* let it take space within the box */
 }
 
-.line-gap{
-  display:block;      /* force a real break            */
-  height:4px;         /* ≈ half a blank line at 16 px  */
-  line-height:0;      /* keep the baseline tight       */
+.line-gap {
+  display: block;       /* forces a real break */
+  width: 100%;          /* ensures it spans full width if needed */
+  height: 4px;          /* vertical gap height */
+  line-height: 0;       /* no extra line spacing */
+  margin: 0;            /* remove default margin */
+  padding: 0;           /* remove default padding */
 }

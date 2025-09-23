@@ -77,7 +77,7 @@
         });
 
         // Add heroes
-        heroList.forEach(hero => {
+        heroList.forEach((hero, heroIndex) => {
             const heroBox = document.createElement('div');
 
             // Function to apply opacity to any CSS color (named or hex)
@@ -112,13 +112,15 @@
 
             const heroText = document.createElement('span');
             heroText.innerHTML = hero.name;
+            heroText.style.fontWeight = "bold";
+            heroText.style.fontSize = "1.7rem";
 
             // team1 image
             const team1 = hero.teams[0]; 
             const team1Img = document.createElement('img');
             team1Img.src = `${teamFolder}/${team1}.png`; // full URL
             team1Img.style.width = "auto";
-            team1Img.style.height = "30px";
+            team1Img.style.height = "25px";
             team1Img.style.marginLeft = "0.5rem";
             heroText.appendChild(team1Img);
 
@@ -132,11 +134,18 @@
 
             // Hero details container
             const heroDetails = document.createElement('div');
-            heroDetails.style.display = "none";
             heroDetails.style.padding = "0.5rem";
             heroDetails.style.display = "flex";
             heroDetails.style.alignItems = "flex-start";
             heroDetails.style.gap = "1rem";
+
+            if(catIndex === 0 && heroIndex === 0){
+                heroDetails.style.display = "flex"; // open
+                heroArrow.style.transform = "rotate(180deg)";
+            } else {
+                heroDetails.style.display = "none"; // closed
+                heroArrow.style.transform = "rotate(0deg)";
+            }
 
             // Left: hero image
             const heroImg = document.createElement('img');
@@ -157,7 +166,7 @@
             const img = document.createElement('img');
             img.src = `${teamFolder}/${t}.png`; // t = team name from hero.teams array
             img.style.width = "auto";
-            img.style.height = "30px";
+            img.style.height = "25px";
             img.style.marginRight = "0.25rem";
             teamDiv.appendChild(img);
             });
@@ -174,7 +183,18 @@
 
             // Abilities
             const abilities = document.createElement('div');
-            abilities.textContent = `Abilities: ${hero.abilitiesText.map(a => a.text).join(', ')}`;
+            abilities.style.marginTop = "12px"; // space above
+
+            const abilitiesLabel = document.createElement('span');
+            abilitiesLabel.textContent = "Abilities: ";
+            abilitiesLabel.style.fontWeight = "bold";
+            abilities.appendChild(abilitiesLabel);
+
+            const abilitiesContent = document.createElement('span');
+            abilitiesContent.innerHTML = hero.abilitiesText.map(a => a.text).join('<br>');
+            abilitiesContent.style.display = "inline-block";
+            abilitiesContent.style.marginLeft = "0.25em"; // space after the colon
+            abilities.appendChild(abilitiesContent);
 
             infoDiv.appendChild(teamDiv);
             infoDiv.appendChild(hp);
