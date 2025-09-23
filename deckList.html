@@ -22,7 +22,7 @@
 
     <script type="module">
         import { heroes } from './data/faceCards.js';
-        const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/bbb15a0a42b04bbc0028b975ae8270a7923c47b1/Public/Images/Card%20Assets/Misc";
+        const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/9dc6ba73022537401ed0157f06f5ca22dc566050/Public/Images/Card%20Assets/Misc";
 
         function groupByCategory(data) {
         return data.reduce((acc, hero) => {
@@ -114,13 +114,13 @@
             heroText.innerHTML = hero.name;
 
             // team1 image
-            const team1 = hero.teams[0].toLowerCase().replace(/\s/g,''); // lowercase, remove spaces
-            const teamImg = document.createElement('img');
-            teamImg.src = `${team1}.jpg`; // assumes lowercase .jpg, will work regardless of original capitalization
-            teamImg.style.width = "30px";
-            teamImg.style.height = "30px";
-            teamImg.style.marginLeft = "0.5rem";
-            heroText.appendChild(teamImg);
+            const team1 = hero.teams[0]; 
+            const team1Img = document.createElement('img');
+            team1Img.src = `${teamFolder}/${team1}.png`; // full URL
+            team1Img.style.width = "auto";
+            team1Img.style.height = "30px";
+            team1Img.style.marginLeft = "0.5rem";
+            heroText.appendChild(team1Img);
 
             // arrow
             const heroArrow = document.createElement('span');
@@ -156,7 +156,7 @@
             hero.teams.forEach(t => {
             const img = document.createElement('img');
             img.src = `${teamFolder}/${t}.png`; // t = team name from hero.teams array
-            img.style.width = "30px";
+            img.style.width = "auto";
             img.style.height = "30px";
             img.style.marginRight = "0.25rem";
             teamDiv.appendChild(img);
