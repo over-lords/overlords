@@ -108,7 +108,6 @@
                 `).join('<br><br>');
             }
         }
-
         function showTab(tabName) {
             const tabs = document.querySelectorAll('.tab-content');
             const buttons = document.querySelectorAll('.tab-button');
@@ -119,6 +118,7 @@
             document.getElementById(tabName).classList.add('active');
             event.currentTarget.classList.add('active');
         }
+        document.addEventListener("DOMContentLoaded", populateInfo);
     </script>
 </body>
 </html>

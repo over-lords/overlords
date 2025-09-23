@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
+    <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <title>Overlords</title>
+</head>
+<body style="background-color:white;">
+    <div class="bg-image" alt="" style="opacity: 55%;"></div>
+    <div class="title-box" id="title-box"></div>
+    <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+
+    <div class="rules-box" id="rules-box" onclick="location.href='index.html'" style="cursor: pointer; margin-top: -30px;">
+        <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Back</h1>
+    </div>
+
+    <div id="categories" style="position: relative; z-index: 1; text-align: left; margin: 12rem 0 0 0rem;"></div>
+
+    <script type="module">
+        import { heroes } from './data/faceCards.js';
+
+        function groupByCategory(data) {
+        return data.reduce((acc, hero) => {
+            if (!acc[hero.category]) acc[hero.category] = [];
+            acc[hero.category].push(hero);
+            return acc;
+        }, {});
+        }
+
+        const categories = groupByCategory(heroes);
+        const container = document.getElementById('categories');
+
+        Object.entries(categories).forEach(([category, heroList], catIndex) => {
+        // Sort heroes by id
+        heroList.sort((a, b) => Number(a.id) - Number(b.id));
+
+        // Category container
+        const categoryBox = document.createElement('div');
+        categoryBox.style.borderRadius = "8px";
+        categoryBox.style.marginBottom = "1rem";
+        categoryBox.style.overflow = "hidden";
+        
+        // Category header
+        const categoryHeader = document.createElement('div');
+        categoryHeader.style.background = "#cccccc"; // slightly darker
+        categoryHeader.style.padding = "0.5rem 1rem";
+        categoryHeader.style.cursor = "pointer";
+        categoryHeader.style.display = "flex";
+        categoryHeader.style.justifyContent = "space-between";
+        categoryHeader.style.fontSize = "2rem";
+        categoryHeader.style.fontWeight = "bold";
+
+        const catText = document.createElement('span');
+        catText.textContent = category;
+        const catArrow = document.createElement('span');
+        catArrow.textContent = "▼";
+        catArrow.style.transition = "transform 0.2s ease";
+
+        categoryHeader.appendChild(catText);
+        categoryHeader.appendChild(catArrow);
+
+        // Container for heroes
+        const heroContainer = document.createElement('div');
+        heroContainer.style.background = "#eeeeee"; // lighter than header
+        heroContainer.style.display = catIndex === 0 ? "block" : "none";
+        if(catIndex === 0) catArrow.style.transform = "rotate(180deg)";
+
+        categoryHeader.addEventListener('click', () => {
+            const isVisible = heroContainer.style.display === "block";
+            heroContainer.style.display = isVisible ? "none" : "block";
+            catArrow.style.transform = isVisible ? "rotate(0deg)" : "rotate(180deg)";
+        });
+
+        // Add heroes
+        heroList.forEach(hero => {
+            const heroBox = document.createElement('div');
+
+            // Function to apply opacity to any CSS color (named or hex)
+            function applyOpacity(color, alpha=0.4){
+                const temp = document.createElement('div');
+                temp.style.color = color;
+                document.body.appendChild(temp);
+                const computed = getComputedStyle(temp).color; // rgb(r,g,b)
+                document.body.removeChild(temp);
+
+                const rgbMatch = computed.match(/(\d+), (\d+), (\d+)/);
+                if(rgbMatch){
+                    const [r,g,b] = rgbMatch.slice(1,4);
+                    return `rgba(${r},${g},${b},${alpha})`;
+                }
+                // fallback if parsing fails
+                return `rgba(200,200,200,${alpha})`;
+            }
+
+            const bgColor = hero.color || "gray";
+            heroBox.style.background = applyOpacity(bgColor, 0.4); // 40% opacity
+            heroBox.style.margin = "0.25rem 0";
+            heroBox.style.borderRadius = "6px";
+
+            // Hero header
+            const heroHeader = document.createElement('div');
+            heroHeader.style.display = "flex";
+            heroHeader.style.alignItems = "center";
+            heroHeader.style.justifyContent = "space-between";
+            heroHeader.style.padding = "0.5rem";
+            heroHeader.style.cursor = "pointer";
+
+            const heroText = document.createElement('span');
+            heroText.innerHTML = hero.name;
+
+            // team1 image
+            const team1 = hero.teams[0].toLowerCase().replace(/\s/g,''); // lowercase, remove spaces
+            const teamImg = document.createElement('img');
+            teamImg.src = `${team1}.jpg`; // assumes lowercase .jpg, will work regardless of original capitalization
+            teamImg.style.width = "30px";
+            teamImg.style.height = "30px";
+            teamImg.style.marginLeft = "0.5rem";
+            heroText.appendChild(teamImg);
+
+            // arrow
+            const heroArrow = document.createElement('span');
+            heroArrow.textContent = "▼";
+            heroArrow.style.transition = "transform 0.2s ease";
+
+            heroHeader.appendChild(heroText);
+            heroHeader.appendChild(heroArrow);
+
+            // Hero details container
+            const heroDetails = document.createElement('div');
+            heroDetails.style.display = "none";
+            heroDetails.style.padding = "0.5rem";
+            heroDetails.style.display = "flex";
+            heroDetails.style.alignItems = "flex-start";
+            heroDetails.style.gap = "1rem";
+
+            // Left: hero image
+            const heroImg = document.createElement('img');
+            heroImg.src = hero.image.toLowerCase(); // lowercase path
+            heroImg.style.width = "100px";
+            heroImg.style.height = "auto";
+            heroImg.style.borderRadius = "6px";
+
+            // Right: info
+            const infoDiv = document.createElement('div');
+            infoDiv.style.display = "flex";
+            infoDiv.style.flexDirection = "column";
+
+            // Teams images
+            const teamDiv = document.createElement('div');
+            teamDiv.textContent = "Teams: ";
+            hero.teams.forEach(t => {
+            const img = document.createElement('img');
+            img.src = `${t.toLowerCase().replace(/\s/g,'')}.jpg`; // lowercase, spaces removed
+            img.style.width = "30px";
+            img.style.height = "30px";
+            img.style.marginRight = "0.25rem";
+            teamDiv.appendChild(img);
+            });
+
+            // Stats
+            const hp = document.createElement('div');
+            hp.textContent = `HP: ${hero.hp}`;
+            const dt = document.createElement('div');
+            dt.textContent = `Damage Threshold: ${hero.damageThreshold}`;
+            const travel = document.createElement('div');
+            travel.textContent = `Travel Budget: ${hero.travel}`;
+            const retreat = document.createElement('div');
+            retreat.textContent = `Retreat Requirement: ${hero.retreat}`;
+
+            // Abilities
+            const abilities = document.createElement('div');
+            abilities.textContent = `Abilities: ${hero.abilitiesText.map(a => a.text).join(', ')}`;
+
+            infoDiv.appendChild(teamDiv);
+            infoDiv.appendChild(hp);
+            infoDiv.appendChild(dt);
+            infoDiv.appendChild(travel);
+            infoDiv.appendChild(retreat);
+            infoDiv.appendChild(abilities);
+
+            heroDetails.appendChild(heroImg);
+            heroDetails.appendChild(infoDiv);
+
+            // toggle hero details
+            heroHeader.addEventListener('click', () => {
+            const visible = heroDetails.style.display === "flex";
+            heroDetails.style.display = visible ? "none" : "flex";
+            heroArrow.style.transform = visible ? "rotate(0deg)" : "rotate(180deg)";
+            });
+
+            heroBox.appendChild(heroHeader);
+            heroBox.appendChild(heroDetails);
+            heroContainer.appendChild(heroBox);
+        });
+
+        categoryBox.appendChild(categoryHeader);
+        categoryBox.appendChild(heroContainer);
+        container.appendChild(categoryBox);
+        });
+        /*
+        (read ./data/faceCards.js)
+        make drop down menus for each unique category found
+            within each is wide bar with name, team(1), dropdown arrow, colored by color
+            default expanded first
+                expanded has image, teams, hp, damageThreshold, travel, retreat, abilitiesText
+        */
+    </script>
+</body>
+</html>

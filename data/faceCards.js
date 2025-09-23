@@ -1,4 +1,4 @@
-const cardArtFolder = "https://github.com/over-lords/overlords/blob/4e213a0cf96a96c6b365623c3065a9f3af7caece/Public/Images/Card%20Assets/HeroCards"
+const cardArtFolder = "https://github.com/over-lords/overlords/tree/5d4513e8485475f44765dd1e9af5596efca6bd92/Public/Images/Card%20Assets/HeroCards"
 
 export const heroes = [
   {
@@ -20,18 +20,52 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Ignore Damage`
+        text: `Ignore the Damage`
       },
       {
-        text: `Protect Hero`
+        text: `Protect another Hero`
       }
     ],
     abilitiesEffects: [
       {
-        effect: ignoreDamage
+        effect: `ignoreDamage`
       },
       {
-        effect: protectHero
+        effect: `protectHero`
+      }
+    ]
+  },
+  {
+    id: "43",
+    name: "Batman",
+    image: `${cardArtFolder}/Batman.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "yellow",
+    teams: ["Bat","Justice League"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Retreat without rolling`
+      },
+      {
+        text: `Double Damage In Gotham`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `retreatFree`
+      },
+      {
+        effect: `passiveDoubleAllDamage(Gotham)`
       }
     ]
   }
