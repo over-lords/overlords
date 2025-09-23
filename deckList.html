@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
     <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <title>Overlords</title>
 </head>
-<body style="background-color:white;">
+<body style="background-color:white;" onload="window.scrollTo(0, 1)">
+    <main-content>
     <div class="bg-image" alt="" style="opacity: 55%;"></div>
     <div class="title-box" id="title-box"></div>
     <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
@@ -22,7 +23,7 @@
 
     <script type="module">
         import { heroes } from './data/faceCards.js';
-        const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/ef40d6d3bababb0283cbc4eb516c761c629812bf/Public/Images/Card%20Assets/Misc";
+        const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/eeebfae612a2eff5a8fa8505fd1377cf3fca869d/Public/Images/Card%20Assets/Misc";
 
         function groupByCategory(data) {
         return data.reduce((acc, hero) => {
@@ -230,5 +231,6 @@
                 expanded has image, teams, hp, damageThreshold, travel, retreat, abilitiesText
         */
     </script>
+    </main-content>
 </body>
 </html>

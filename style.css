@@ -212,3 +212,14 @@
   margin: 0;            /* remove default margin */
   padding: 0;           /* remove default padding */
 }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+.main-content {
+  height: 100dvh; /* dynamic viewport height */
+  display: flex;
+  flex-direction: column;
+}
