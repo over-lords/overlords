@@ -303,7 +303,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `3/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Supergirl can Rescue a Captured Bystander and deal 2 Damage to the capturing Henchman or Villain.`
+        text: `2/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Supergirl can Rescue a Captured Bystander and deal 2 Damage to the capturing Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -326,6 +326,34 @@ export const heroes = [
       },
       {
         effect: `rescueBystanderDamageCapturer(2)`
+      }
+    ]
+  },
+  {
+    id: "27",
+    name: "Firestorm",
+    image: `${cardArtFolder}/Firestorm.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "orange",
+    teams: ["Justice League"],
+    hp: "14",
+    damageThreshold: "1",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: Once per turn, you can shuffle any number of cards from your hand back into your deck, then draw the same number.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Shuffle Cards and Redraw`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `shuffleChoiceCardsRedraw`
       }
     ]
   },
