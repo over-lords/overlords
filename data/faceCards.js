@@ -64,6 +64,40 @@ export const heroes = [
     ]
   },
   {
+    id: "3",
+    name: "Martian Manhunter",
+    image: `${cardArtFolder}/Martian Manhunter.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "red",
+    teams: ["Martian","Justice League"],
+    hp: "15",
+    damageThreshold: "3",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: Martian Manhunter can ignore taking Damage, and if he does he cannot deal Damage until the end of his next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Ignore the Damage`
+      },
+      {
+        text: ``
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `ignoreDamageDisableDamage`
+      },
+      {
+        effect: ``
+      }
+    ]
+  },
+  {
     id: "22",
     name: "Wonder Woman",
     image: `${cardArtFolder}/Wonder Woman.jpg`,
@@ -128,6 +162,40 @@ export const heroes = [
       },
       {
         effect: `increaseDamageCardPerTravel(1)`
+      }
+    ]
+  },
+  {
+    id: "24",
+    name: "Aquaman",
+    image: `${cardArtFolder}/Aquaman.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "orange",
+    teams: ["Aqua","Justice League"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Aquaman's damaging Action Cards deal 1 additional Damage whilst he is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, on his turn, Aquaman can deal 2 Damage to a Henchman or Villain in either Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Damage Coastal Villain by 2`
+      },
+      {
+        text: `Increase 1+ Damage Cards while on Coast`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `increaseDamageInCoastal(1)`
+      },
+      {
+        effect: `chooseAndDamageCoastalVillain(2)`
       }
     ]
   },
