@@ -154,6 +154,68 @@ export const heroes = [
     ]
   },
   {
+    id: "6",
+    name: "Black Canary",
+    image: `${cardArtFolder}/Black Canary.png`,
+    type: "Hero",
+    category: "Guardian",
+    color: "green",
+    teams: ["Arrow","Justice League"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `3/Game: At the start of your turn, after your initial Travel (if performed) but before your draw selection, deal 10 Damage to the Henchman, Villain, or Overlord that you are facing, afterwards Black Canary cannot deal Damage until the start of her next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Damage Opposing Henchman or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageOppSleepHero(10)`
+      }
+    ]
+  },
+  {
+    id: "7",
+    name: "Mera",
+    image: `${cardArtFolder}/Mera.png`,
+    type: "Hero",
+    category: "Guardian",
+    color: "green",
+    teams: ["Aqua","Justice League"],
+    hp: "14",
+    damageThreshold: "1",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Mera's Damage Threshold is increased by 1 whilst she is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, Mera can double the Damage of a card used by another Hero within a Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Double card's Damage`
+      },
+      {
+        text: `Increase Damage Threshold by 1 in Coastal City`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `doubleAllysDamage`
+      },
+      {
+        effect: `dtPlus1InCoastalCity`
+      }
+    ]
+  },
+  {
     id: "22",
     name: "Wonder Woman",
     image: `${cardArtFolder}/Wonder Woman.jpg`,
@@ -358,6 +420,34 @@ export const heroes = [
     ]
   },
   {
+    id: "28",
+    name: "White Lantern",
+    image: `${cardArtFolder}/White Lantern.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "white",
+    teams: ["Green Lantern","Justice League"],
+    hp: "15",
+    damageThreshold: "3",
+    retreat: "3",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `1/Game: Return a KO'd Hero to full HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Restore a KO'd Hero`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `resurrectHero`
+      }
+    ]
+  },
+  {
     id: "43",
     name: "Batman",
     image: `${cardArtFolder}/Batman.jpg`,
@@ -427,6 +517,40 @@ export const heroes = [
   },
   {
     id: "45",
+    name: "Green Arrow",
+    image: `${cardArtFolder}/Green Arrow.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "yellow",
+    teams: ["Arrow","Justice League"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Green Arrow can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Green Arrow can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Use cards against Adjacent Henchmen and Villains`
+      },
+      {
+        text: `Attack the Overlord`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `useCardsVsAdjacentNegateEffects`
+      },
+      {
+        effect: `attackOverlordNoTravel`
+      }
+    ]
+  },
+  {
+    id: "46",
     name: "Green Lantern (John Stewart)",
     image: `${cardArtFolder}/John Stewart.jpg`,
     type: "Hero",
@@ -439,7 +563,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, on his turn, Green Lantern can increase his, or another Hero's, Damage Threshold by 2 until the start of his next turn.`
+        text: `3/Game: Once per turn, Green Lantern can increase his, or another Hero's, Damage Threshold by 2 until the start of his next turn.`
       }
     ],
     abilitiesNamePrint: [
