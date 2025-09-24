@@ -116,7 +116,7 @@
 
 .rules-box {
   position: absolute;
-  top: 150px;      /* adjust vertical position */
+  top: 125px;      /* adjust vertical position */
   left: -50px;     /* adjust horizontal position */
   width: 385px;   /* adjust width */
   height: 40px;  /* adjust height */
@@ -136,7 +136,7 @@
 
 .deck-box {
   position: absolute;
-  top: 210px;      /* adjust vertical position */
+  top: 185px;      /* adjust vertical position */
   left: -50px;     /* adjust horizontal position */
   width: 385px;   /* adjust width */
   height: 40px;  /* adjust height */
@@ -156,7 +156,7 @@
 
 .play-box {
   position: absolute;
-  top: 270px;      /* adjust vertical position */
+  top: 245px;      /* adjust vertical position */
   left: -50px;     /* adjust horizontal position */
   width: 385px;   /* adjust width */
   height: 40px;  /* adjust height */
@@ -176,7 +176,7 @@
 
 .logout-box {
   position: absolute;
-  top: 330px;      /* adjust vertical position */
+  top: 305px;      /* adjust vertical position */
   left: -50px;     /* adjust horizontal position */
   width: 275px;   /* adjust width */
   height: 30px;  /* adjust height */
@@ -222,4 +222,102 @@ html, body {
   height: 100dvh; /* dynamic viewport height */
   display: flex;
   flex-direction: column;
+}
+
+.profilePicBox {
+  position: absolute;
+  top: 10px;      /* adjust vertical position */
+  right: 10px;     /* adjust horizontal position */
+  width: 300px;   /* adjust width */
+  height: 175px;  /* adjust height */
+  background-color: rgba(0,0,0,0.8);
+  border: 2px solid #ffffff55;
+  border-radius: 10px;
+  box-shadow: 0 0 12px black;
+
+  z-index: 1;    /* place behind text */
+}
+
+.profilePicTitle {
+  position: absolute;
+  top: 2.5px;      /* adjust vertical position */
+  right: 2.5px;     /* adjust horizontal position */
+  width: 292.5px;   /* adjust width */
+  height: 25px;  /* adjust height */
+  background-color: rgba(141, 141, 141, 0.8);
+  border: 2px solid #ffffff55;
+  border-radius: 10px;
+  box-shadow: 0 0 12px black;
+  display: flex;
+  align-items: center;   /* vertical centering */
+  justify-content: center; /* horizontal centering */
+
+  z-index: 10;    /* place behind text */
+
+}
+
+.profilePicConfirm {
+  position: absolute;
+  bottom: 5px;      /* adjust vertical position */
+  left: 5px;     /* adjust horizontal position */
+  width: 102.5px;   /* adjust width */
+  height: 23.5px;  /* adjust height */
+  background-color: rgba(141, 141, 141, 0.8);
+  border: 2px solid #ffffff55;
+  border-radius: 10px;
+  box-shadow: 0 0 12px black;
+  display: flex;
+  align-items: center;   /* vertical centering */
+  justify-content: center; /* horizontal centering */
+
+  z-index: 10;    /* place behind text */
+
+}
+
+.profilePicCurrent {
+  position: absolute;
+  top: 35px;      /* adjust vertical position */
+  left: 5px;     /* adjust horizontal position */
+  width: 102.5px;   /* adjust width */
+  height: 102.5px;  /* adjust height */
+  background-color: rgba(141, 141, 141, 0.8);
+  border: 2px solid #ffffff55;
+  border-radius: 10px;
+  box-shadow: 0 0 12px black;
+
+  z-index: 10;    /* place behind text */
+
+}
+
+.profilePicList {
+  position: absolute;
+  top: 35px;
+  right: 5px;
+  width: 168px;
+  height: 122.5px;
+  background-color: rgba(141, 141, 141, 0.8);
+  border: 2px solid #ffffff55;
+  border-radius: 10px;
+  box-shadow: 0 0 12px black;
+  overflow-y: auto;    /* scrolls vertically */
+  overflow-x: hidden;  /* no sideways scrolling */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 5px;
+}
+
+.profilePicList img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;      /* crops to center square */
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.profilePicList img.selected {
+  border: 2px solid gold;
+  box-shadow: 0 0 10px gold;
 }
