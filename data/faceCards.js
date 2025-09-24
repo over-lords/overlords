@@ -36,6 +36,40 @@ export const heroes = [
     ]
   },
   {
+    id: "2",
+    name: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "green",
+    teams: ["Green Lantern","Justice League"],
+    hp: "16",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: Once per turn, on his turn, Green Lantern can increase his, or another Hero's, Damage Threshold by 2 until the start of his next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Ignore the Damage`
+      },
+      {
+        text: `Protect another Hero`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `ignoreDamage`
+      },
+      {
+        effect: `protectHero`
+      }
+    ]
+  },
+  {
     id: "22",
     name: "Wonder Woman",
     image: `${cardArtFolder}/Wonder Woman.jpg`,
@@ -49,7 +83,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Wonder Woman can Lock a Henchman or Villain in a City. <span class="line-gap"></span> 1/Game: Wonder Woman can ignore the text effects of a card to double its Damage.`
+        text: `2/Game: Once per turn, on her turn, Wonder Woman can Lock a Henchman or Villain in a City. <span class="line-gap"></span> 1/Game: Wonder Woman can ignore the text effects of a card to double its Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -66,6 +100,40 @@ export const heroes = [
       },
       {
         effect: `ignoreTextDoubleDamage`
+      }
+    ]
+  },
+  {
+    id: "23",
+    name: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Flash","Justice League"],
+    hp: "9",
+    damageThreshold: "3",
+    retreat: "3",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `2/Game: At the start of his turn, Flash can draw 2 instead of selecting a card. <span class="line-gap"></span> 2/Game: Once per turn, on his turn, Flash can play a card from his discard pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Skip Selection, Draw 2`
+      },
+      {
+        text: `Play a card from discard`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `skipSelectionDraw2`
+      },
+      {
+        effect: `playFromDiscard(1,all)`
       }
     ]
   },
