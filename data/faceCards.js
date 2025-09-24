@@ -54,12 +54,18 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `R`
+        text: `Lock a Henchman or Villain`
+      },
+      {
+        text: `Ignore the Text, Double the Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `r`
+        effect: `lockVillain`
+      },
+      {
+        effect: `ignoreTextDoubleDamage`
       }
     ]
   },

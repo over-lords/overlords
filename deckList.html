@@ -23,7 +23,7 @@
 
     <script type="module">
         import { heroes } from './data/faceCards.js';
-        const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/eeebfae612a2eff5a8fa8505fd1377cf3fca869d/Public/Images/Card%20Assets/Misc";
+        const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/a06c106dbd879876f98d56b259f1afe554b96dcc/Public/Images/Card%20Assets/Misc";
 
         function groupByCategory(data) {
         return data.reduce((acc, hero) => {
@@ -120,8 +120,8 @@
             const team1 = hero.teams[0]; 
             const team1Img = document.createElement('img');
             team1Img.src = `${teamFolder}/${team1}.png`; // full URL
-            team1Img.style.width = "auto";
-            team1Img.style.height = "25px";
+            team1Img.style.width = "25px";
+            team1Img.style.height = "auto";
             team1Img.style.marginLeft = "0.5rem";
             heroText.appendChild(team1Img);
 
@@ -166,8 +166,8 @@
             hero.teams.forEach(t => {
             const img = document.createElement('img');
             img.src = `${teamFolder}/${t}.png`; // t = team name from hero.teams array
-            img.style.width = "auto";
-            img.style.height = "25px";
+            img.style.width = "25px";
+            img.style.height = "auto";
             img.style.marginRight = "0.25rem";
             teamDiv.appendChild(img);
             });
