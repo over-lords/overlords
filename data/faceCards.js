@@ -49,7 +49,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Green Lantern can deal 2 Damage to all Henchmen and Villains in Cities.`
+        text: `2/Game: Deal 2 Damage to all Henchmen and Villains in Cities.`
       }
     ],
     abilitiesNamePrint: [
@@ -77,7 +77,35 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Martian Manhunter can ignore taking Damage, and if he does he cannot deal Damage until the end of his next turn.`
+        text: `3/Game: Martian Manhunter can ignore taking Damage, after he cannot deal Damage until the end of his next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Ignore the Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `ignoreDamageDisableDamage`
+      }
+    ]
+  },
+  {
+    id: "4",
+    name: "Shazam",
+    image: `${cardArtFolder}/Shazam.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "red",
+    teams: ["Shazam","Justice League"],
+    hp: "14",
+    damageThreshold: "3",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: Once per turn, deal 10 Damage to a Henchman or Villain, after this Hero cannot deal Damage until the end of his next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -85,15 +113,15 @@ export const heroes = [
         text: `Ignore the Damage`
       },
       {
-        text: ``
+        text: `Protect another Hero`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `ignoreDamageDisableDamage`
+        effect: `ignoreDamage`
       },
       {
-        effect: ``
+        effect: `protectHero`
       }
     ]
   },
@@ -111,7 +139,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Once per turn, on her turn, Wonder Woman can Lock a Henchman or Villain in a City. <span class="line-gap"></span> 1/Game: Wonder Woman can ignore the text effects of a card to double its Damage.`
+        text: `2/Game: Once per turn, Lock any Henchman or Villain in their City. <span class="line-gap"></span> 1/Game: Double the Damage of a card, and if you do, ignore any additional effects it has.`
       }
     ],
     abilitiesNamePrint: [
@@ -145,7 +173,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 2/Game: At the start of his turn, Flash can draw 2 instead of selecting a card.`
+        text: `Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 2/Game: At the start of this Hero's turn, you can draw 2 instead of selecting a card.`
       }
     ],
     abilitiesNamePrint: [
@@ -179,7 +207,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Aquaman's damaging Action Cards deal 1 additional Damage whilst he is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, on his turn, Aquaman can deal 2 Damage to a Henchman or Villain in either Coastal City.`
+        text: `Aquaman's damaging Action Cards deal 1 additional Damage whilst he is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, you can deal 2 Damage to a Henchman or Villain in either Coastal City.`
       }
     ],
     abilitiesNamePrint: [
@@ -247,7 +275,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `2/Game: Cyborg can, at the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Without rolling, Cyborg can retreat and take no Damage.`
+        text: `2/Game: At the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Without rolling, Cyborg can retreat and take no Damage.`
       }
     ],
     abilitiesNamePrint: [
