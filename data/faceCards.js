@@ -9,7 +9,7 @@ export const heroes = [
     category: "Guardian",
     color: "blue",
     teams: ["Super","Justice League"],
-    hp: "15",
+    hp: "18",
     damageThreshold: "3",
     retreat: "3",
     travel: "2",
@@ -28,9 +28,17 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `damageSelf`,
+        uses: `3`,
+        shared: `yes`,
         effect: `ignoreDamage`
       },
       {
+        type: `quick`,
+        condition: `damageOther`,
+        uses: `3`,
+        shared: `yes`,
         effect: `protectHero`
       }
     ]
@@ -54,12 +62,16 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Deal 3 Damage to all Henchmen and Villains`
+        text: `Deal 2 Damage to all Henchmen and Villains`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `damageVillains(3)`
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `damageVillain(all,2)`
       }
     ]
   },
@@ -77,17 +89,31 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Martian Manhunter can ignore taking Damage, after he cannot deal Damage until the end of his next turn.`
+        text: `3/Game: Martian Manhunter can ignore taking Damage, after he cannot deal Damage until the end of his next turn. <span class="line-gap"></span> If Martian Manhunter is at Headquarters, all other Heroes within the Headquarters cannot take Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
         text: `Ignore the Damage`
+      },
+      {
+        text: `Protect others at Base`
       }
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `damageSelf`,
+        uses: `3`,
+        shared: `no`,
         effect: `ignoreDamageSleepHero`
+      },
+      {
+        type: `passive`,
+        condition: `in(Headquarters)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `nearbyProtected(Headquarters)`
       }
     ]
   },
@@ -115,6 +141,10 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
         effect: `damageOneVillainSleepHero(10)`
       }
     ]
@@ -133,7 +163,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, if Hawkwoman reduces a Henchman or Villain to 2 or less HP, she can instantly KO it. <span class="line-gap"></span> If Hawkman is active, increase this card's Damage Threshold by 1.`
+        text: `3/Game: Once per turn, if Hawkwoman reduces a Henchman or Villain to 2 or less HP, she can KO it. <span class="line-gap"></span> If Hawkman is active, increase this card's Damage Threshold by 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -146,9 +176,17 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `damagedVillain(2)`,
+        uses: `3`,
+        shared: `no`,
         effect: `koDamagedVillain`
       },
       {
+        type: `passive`,
+        condition: `isActive(Hawkman)`,
+        uses: `0`,
+        shared: `no`,
         effect: `increaseDTby1ifHawkmanActive`
       }
     ]
@@ -177,6 +215,10 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `startAfterTravel`,
+        uses: `3`,
+        shared: `no`,
         effect: `damageOppSleepHero(10)`
       }
     ]
@@ -195,7 +237,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Mera's Damage Threshold is increased by 1 whilst she is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, Mera can double the Damage of a card used by another Hero within a Coastal City.`
+        text: `Mera's Damage Threshold is increased by 1 whilst she is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card used while their Target is within a Coastal City.`
       }
     ],
     abilitiesNamePrint: [
@@ -208,10 +250,60 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `allyAttacks(Coastal)`,
+        uses: `3`,
+        shared: `no`,
         effect: `doubleAllysDamage`
       },
       {
-        effect: `dtPlus1InCoastalCity`
+        type: `passive`,
+        condition: `in(Coastal)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamageThreshold(1)`
+      }
+    ]
+  },
+  {
+    id: "8",
+    name: "Red Lantern (Guy Gardner)",
+    image: `${cardArtFolder}/Guy Gardner.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "red",
+    teams: ["Green Lantern","Justice League"],
+    hp: "13",
+    damageThreshold: "1",
+    retreat: "5",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `2/Game: Once per turn, Deal 6 Damage to any one Henchmen or Villain in a City. <span class="line-gap"></span> 3/Game: Once per turn, KO the top 4 cards of your deck to regain 4 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Deal 6 Damage to one Henchmen or Villain`
+      },
+      {
+        text: `KO the top 4 cards of your Deck to Regain 4 HP`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `no`,
+        effect: `damageVillain(Choice(Any),6)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `koFromTopRegainHP(4,4)`
       }
     ]
   },
@@ -242,9 +334,17 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `no`,
         effect: `lockVillain`
       },
       {
+        type: `quick`,
+        condition: `useDamageCard`,
+        uses: `1`,
+        shared: `no`,
         effect: `ignoreTextDoubleDamage`
       }
     ]
@@ -276,10 +376,18 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `wouldDrawAtStart`,
+        uses: `2`,
+        shared: `no`,
         effect: `skipSelectionDraw2`
       },
       {
-        effect: `increaseDamageCardPerTravel(1)`
+        type: `passive`,
+        condition: `Travel`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
       }
     ]
   },
@@ -310,10 +418,18 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
-        effect: `increaseDamageInCoastal(1)`
+        type: `passive`,
+        condition: `in(Coastal)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
       },
       {
-        effect: `chooseAndDamageCoastalVillain(2)`
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `damageVillain(Choice(Coastal),2)`
       }
     ]
   },
@@ -344,10 +460,18 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `damageSelf`,
+        uses: `2`,
+        shared: `no`,
         effect: `ignoreDamageDraw1`
       },
       {
-        effect: `increaseDamageifHawkwomanActive(1)`
+        type: `passive`,
+        condition: `isActive(Hawkwoman)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
       }
     ]
   },
@@ -381,12 +505,24 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `quick`,
+        condition: `damageSelf`,
+        uses: `2`,
+        shared: `yes`,
         effect: `ignoreDamage`
       },
       {
+        type: `quick`,
+        condition: `damageOther`,
+        uses: `2`,
+        shared: `yes`,
         effect: `protectHero`
       },
       {
+        type: `standard`,
+        condition: `villainHasBystander`,
+        uses: `1`,
+        shared: `no`,
         effect: `rescueBystanderDamageCapturer(2)`
       }
     ]
@@ -415,6 +551,10 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
         effect: `shuffleChoiceCardsRedraw`
       }
     ]
@@ -443,7 +583,53 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
         effect: `resurrectHero`
+      }
+    ]
+  },
+  {
+    id: "29",
+    name: "Red Hood",
+    image: `${cardArtFolder}/Red Hood.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Bat","Titans"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO <span class="line-gap"></span> 3/Game: Once per turn, KO any one Henchman in a City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `KO a Henchman`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `koHenchman`
       }
     ]
   },
@@ -474,10 +660,18 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
         effect: `retreatFree`
       },
       {
-        effect: `passiveDoubleAllDamage(Gotham)`
+        type: `passive`,
+        condition: `in(Gotham)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `doubleDamage`
       }
     ]
   },
@@ -508,9 +702,17 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
         effect: `retreatFree`
       },
       {
+        type: `quick`,
+        condition: `villainDeckWouldDraw`,
+        uses: `2`,
+        shared: `no`,
         effect: `skipVillainDeckDraw`
       }
     ]
@@ -542,10 +744,18 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
         effect: `useCardsVsAdjacentNegateEffects`
       },
       {
-        effect: `attackOverlordNoTravel`
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `attackOverlordNoTravelNegateEffects`
       }
     ]
   },
@@ -576,10 +786,218 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `yes`,
         effect: `dtPlus(2)`
       },
       {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `yes`,
         effect: `allydtPlus(2)`
+      }
+    ]
+  },
+  {
+    id: "47",
+    name: "Robin",
+    image: `${cardArtFolder}/Robin.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "yellow",
+    teams: ["Bat","Titans"],
+    hp: "10",
+    damageThreshold: "1",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Robin deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Once per turn, deal 3 Damage to any one Henchman or Villain in a City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Double Damage In Gotham`
+      },
+      {
+        text: `Deal 3 Damage to one Henchmen or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `in(Gotham)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `doubleDamage`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `damageVillain(Choice(Any),3)`
+      }
+    ]
+  },
+  {
+    id: "48",
+    name: "Nightwing",
+    image: `${cardArtFolder}/Nightwing.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "blue",
+    teams: ["Bat","Titans"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Nightwing's damaging Action Cards deal 1 additional Damage for each of his active Teammates. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Increase Damage by 1 per Teammate`
+      },
+      {
+        text: `Double another Hero's Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `getTeammatesActive`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      },
+      {
+        type: `quick`,
+        condition: `allyAttacks(Any)`,
+        uses: `3`,
+        shared: `no`,
+        effect: `doubleAllysDamage`
+      }
+    ]
+  },
+  {
+    id: "49",
+    name: "Batgirl",
+    image: `${cardArtFolder}/Batgirl.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "purple",
+    teams: ["Bat","Titans"],
+    hp: "9",
+    damageThreshold: "3",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `3/Game: Reveal the top 3 cards of the Villain Deck, you can KO one of them.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reveal 3 from the Villain Deck`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `revealVillainTopKO(3,1)`
+      }
+    ]
+  },
+  {
+    id: "50",
+    name: "Red Robin",
+    image: `${cardArtFolder}/Red Robin.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "red",
+    teams: ["Bat","Titans"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `3/Game: Red Robin can Travel an additional time. <span class="line-gap"></span> 3/Game: Once per turn, draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Travel Once More`
+      },
+      {
+        text: `Draw 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `travel(any)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `draw(1)`
+      }
+    ]
+  },
+  {
+    id: "51",
+    name: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "white",
+    teams: ["Flash","Titans"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `3/Game: Red Robin can Travel an additional time. <span class="line-gap"></span> 3/Game: Once per turn, draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Travel Once More`
+      },
+      {
+        text: `Draw 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `travel(any)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `draw(1)`
       }
     ]
   }
