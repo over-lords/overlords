@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/5cf739906a7a5509c1e86b87b0a37f20017c983b/Public/Images/Card%20Assets/HeroCards"
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/9541ade0ce9f9cb1ebe7fcff89dfe88c11f0f9fa/Public/Images/Card%20Assets/HeroCards"
 
 export const heroes = [
   {
