@@ -49,23 +49,17 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, on his turn, Green Lantern can increase his, or another Hero's, Damage Threshold by 2 until the start of his next turn.`
+        text: `2/Game: Green Lantern can deal 2 Damage to all Henchmen and Villains in Cities.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Ignore the Damage`
-      },
-      {
-        text: `Protect another Hero`
+        text: `Deal 2 Damage to all Henchmen and Villains`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `ignoreDamage`
-      },
-      {
-        effect: `protectHero`
+        effect: `damageVillains(2)`
       }
     ]
   },
@@ -117,7 +111,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `2/Game: At the start of his turn, Flash can draw 2 instead of selecting a card. <span class="line-gap"></span> 2/Game: Once per turn, on his turn, Flash can play a card from his discard pile.`
+        text: `Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 2/Game: At the start of his turn, Flash can draw 2 instead of selecting a card.`
       }
     ],
     abilitiesNamePrint: [
@@ -125,7 +119,7 @@ export const heroes = [
         text: `Skip Selection, Draw 2`
       },
       {
-        text: `Play a card from discard`
+        text: `Increase 1+ Damage Cards By 1 Per Travel`
       }
     ],
     abilitiesEffects: [
@@ -133,7 +127,7 @@ export const heroes = [
         effect: `skipSelectionDraw2`
       },
       {
-        effect: `playFromDiscard(1,all)`
+        effect: `increaseDamageCardPerTravel(1)`
       }
     ]
   },
@@ -170,5 +164,41 @@ export const heroes = [
         effect: `passiveDoubleAllDamage(Gotham)`
       }
     ]
+  },
+  {
+    id: "44",
+    name: "Cyborg",
+    image: `${cardArtFolder}/Cyborg.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "yellow",
+    teams: ["Titans","Justice League"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `2/Game: Cyborg can, at the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Without rolling, Cyborg can retreat and take no Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Retreat without rolling`
+      },
+      {
+        text: `Prevent Villain Deck draw`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `retreatFree`
+      },
+      {
+        effect: `skipVillainDeckDraw`
+      }
+    ]
   }
 ]
+
+//3/Game: Once per turn, on his turn, Green Lantern can increase his, or another Hero's, Damage Threshold by 2 until the start of his next turn.
