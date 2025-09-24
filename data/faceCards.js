@@ -36,6 +36,34 @@ export const heroes = [
     ]
   },
   {
+    id: "22",
+    name: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Wonder","Justice League"],
+    hp: "12",
+    damageThreshold: "3",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `2/Game: Wonder Woman can Lock a Henchman or Villain in a City. <span class="line-gap"></span> 1/Game: Wonder Woman can ignore the text effects of a card to double its Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `R`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `r`
+      }
+    ]
+  },
+  {
     id: "43",
     name: "Batman",
     image: `${cardArtFolder}/Batman.jpg`,
@@ -49,7 +77,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman deals double Damage against Henchmen and Villains in Gotham <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
       }
     ],
     abilitiesNamePrint: [

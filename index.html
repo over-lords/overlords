@@ -133,50 +133,50 @@
         document.addEventListener("DOMContentLoaded", populateInfo);
 
         const listContainer = document.getElementById("profilePicList");
-const currentDisplay = document.getElementById("profilePicCurrent");
+        const currentDisplay = document.getElementById("profilePicCurrent");
 
-const githubContentsUrl =
-  "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Profile%20Pictures";
+        const githubContentsUrl =
+        "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Profile%20Pictures";
 
-fetch(githubContentsUrl)
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("GitHub API request failed: " + response.status);
-    }
-    return response.json();
-  })
-  .then(items => {
-    // items is an array of objects, e.g. { name, path, download_url, type, ... }
-    items.forEach(item => {
-      if (item.type === "file" && item.download_url) {
-        // Only image file types
-        if (item.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-          const img = document.createElement("img");
-          img.src = item.download_url;
-          img.alt = item.name;
+        fetch(githubContentsUrl)
+        .then(response => {
+            if (!response.ok) {
+            throw new Error("GitHub API request failed: " + response.status);
+            }
+            return response.json();
+        })
+        .then(items => {
+            // items is an array of objects, e.g. { name, path, download_url, type, ... }
+            items.forEach(item => {
+            if (item.type === "file" && item.download_url) {
+                // Only image file types
+                if (item.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                const img = document.createElement("img");
+                img.src = item.download_url;
+                img.alt = item.name;
 
-          img.addEventListener("click", () => {
-            // remove selection from others
-            document.querySelectorAll(".profilePicList img").forEach(el => {
-              el.classList.remove("selected");
+                img.addEventListener("click", () => {
+                    // remove selection from others
+                    document.querySelectorAll(".profilePicList img").forEach(el => {
+                    el.classList.remove("selected");
+                    });
+                    // highlight this one
+                    img.classList.add("selected");
+
+                    // show in the Current box
+                    currentDisplay.style.backgroundImage = `url('${item.download_url}')`;
+                    currentDisplay.style.backgroundSize = "cover";
+                    currentDisplay.style.backgroundPosition = "center";
+                });
+
+                listContainer.appendChild(img);
+                }
+            }
             });
-            // highlight this one
-            img.classList.add("selected");
-
-            // show in the Current box
-            currentDisplay.style.backgroundImage = `url('${item.download_url}')`;
-            currentDisplay.style.backgroundSize = "cover";
-            currentDisplay.style.backgroundPosition = "center";
-          });
-
-          listContainer.appendChild(img);
-        }
-      }
-    });
-  })
-  .catch(error => {
-    console.error("Error fetching GitHub contents:", error);
-  });
+        })
+        .catch(error => {
+            console.error("Error fetching GitHub contents:", error);
+        });
     </script>
     </main-content>
 </body>

@@ -321,3 +321,23 @@ html, body {
   border: 2px solid gold;
   box-shadow: 0 0 10px gold;
 }
+
+.back-box {
+  position: absolute;
+  top: 150px;      /* adjust vertical position */
+  left: -50px;     /* adjust horizontal position */
+  width: 385px;   /* adjust width */
+  height: 40px;  /* adjust height */
+  background-color: #777777;   /* dark grey */
+  border: 5px solid #000;   /* thick black border */
+
+  /* Diagonal right edge */
+  clip-path: polygon(
+    0 0,          /* top-left */
+    90% 0,       /* top-right */
+    100% 100%,     /* bottom-right (shifted left 10% to create diagonal) */
+    0 100%        /* bottom-left */
+  );
+
+  z-index: 1;    /* place behind text */
+}
