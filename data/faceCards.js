@@ -120,6 +120,40 @@ export const heroes = [
     ]
   },
   {
+    id: "5",
+    name: "Hawkwoman",
+    image: `${cardArtFolder}/Hawkwoman.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "orange",
+    teams: ["Hawk","Justice League"],
+    hp: "13",
+    damageThreshold: "1",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: Once per turn, if Hawkwoman reduces a Henchman or Villain to 2 or less HP, she can instantly KO it. <span class="line-gap"></span> If Hawkman is active, increase this card's Damage Threshold by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `KO Henchman or Villain`
+      },
+      {
+        text: `Hawkman DT Bonus`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `koDamagedVillain`
+      },
+      {
+        effect: `increaseDTby1ifHawkmanActive`
+      }
+    ]
+  },
+  {
     id: "22",
     name: "Wonder Woman",
     image: `${cardArtFolder}/Wonder Woman.jpg`,
@@ -218,6 +252,80 @@ export const heroes = [
       },
       {
         effect: `chooseAndDamageCoastalVillain(2)`
+      }
+    ]
+  },
+  {
+    id: "25",
+    name: "Hawkman",
+    image: `${cardArtFolder}/Hawkman.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "orange",
+    teams: ["Hawk","Justice League"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `2/Game: Hawkman can ignore taking Damage, after he draws 1 card. <span class="line-gap"></span> If Hawkwoman is active, Hawkman's damaging Action Cards deal 1 additional Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Ignore Damage, then Draw 1`
+      },
+      {
+        text: `Increase Damage by 1 If Hawkwoman Active`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `ignoreDamageDraw1`
+      },
+      {
+        effect: `increaseDamageifHawkwomanActive(1)`
+      }
+    ]
+  },
+  {
+    id: "26",
+    name: "Supergirl",
+    image: `${cardArtFolder}/Supergirl.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "blue",
+    teams: ["Super","Justice League"],
+    hp: "14",
+    damageThreshold: "3",
+    retreat: "3",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `3/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Supergirl can Rescue a Captured Bystander and deal 2 Damage to the capturing Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Ignore the Damage`
+      },
+      {
+        text: `Protect another Hero`
+      },
+      {
+        text: `Rescue Bystander and Damage Capturer`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `ignoreDamage`
+      },
+      {
+        effect: `protectHero`
+      },
+      {
+        effect: `rescueBystanderDamageCapturer(2)`
       }
     ]
   },
