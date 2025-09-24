@@ -171,7 +171,7 @@ export const heroes = [
     image: `${cardArtFolder}/Cyborg.jpg`,
     type: "Hero",
     category: "Tactician",
-    color: "yellow",
+    color: "red",
     teams: ["Titans","Justice League"],
     hp: "12",
     damageThreshold: "2",
