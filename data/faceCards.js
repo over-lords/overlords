@@ -49,17 +49,17 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Deal 2 Damage to all Henchmen and Villains in Cities.`
+        text: `3/Game: Once per turn, Deal 2 Damage to all Henchmen and Villains in Cities.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Deal 2 Damage to all Henchmen and Villains`
+        text: `Deal 3 Damage to all Henchmen and Villains`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `damageVillains(2)`
+        effect: `damageVillains(3)`
       }
     ]
   },
@@ -87,7 +87,7 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
-        effect: `ignoreDamageDisableDamage`
+        effect: `ignoreDamageSleepHero`
       }
     ]
   },
@@ -110,18 +110,12 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Ignore the Damage`
-      },
-      {
-        text: `Protect another Hero`
+        text: `Damage Henchman or Villain`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `ignoreDamage`
-      },
-      {
-        effect: `protectHero`
+        effect: `damageOneVillainSleepHero(10)`
       }
     ]
   },
@@ -294,7 +288,39 @@ export const heroes = [
         effect: `skipVillainDeckDraw`
       }
     ]
+  },
+  {
+    id: "45",
+    name: "Green Lantern (John Stewart)",
+    image: `${cardArtFolder}/John Stewart.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "green",
+    teams: ["Green Lantern","Justice League"],
+    hp: "14",
+    damageThreshold: "3",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: Once per turn, on his turn, Green Lantern can increase his, or another Hero's, Damage Threshold by 2 until the start of his next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Raise Your Damage Threshold`
+      },
+      {
+        text: `Raise an Ally's Damage Threshold`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `dtPlus(2)`
+      },
+      {
+        effect: `allydtPlus(2)`
+      }
+    ]
   }
 ]
-
-//3/Game: Once per turn, on his turn, Green Lantern can increase his, or another Hero's, Damage Threshold by 2 until the start of his next turn.
