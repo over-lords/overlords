@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/d8cacaa4782a635d92183e7f878e8f52943e085f/Public/Images/Card%20Assets/HeroCards"
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4bb2b39a79b5b0b717ddd5fc62821adb7d7c9cd6/Public/Images/Card%20Assets/HeroCards"
 
 export const heroes = [
   {
@@ -651,6 +651,58 @@ export const heroes = [
     ]
   },
   {
+    id: "17",
+    name: "Deathstroke",
+    image: `${cardArtFolder}/Deathstroke.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "orange",
+    teams: ["Squad","Legion"],
+    hp: "13",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> Deathstroke cannot be damaged more than once by each Henchman or Villain. <span class="line-gap"></span> 3/Game: Once per turn, discard 1 then KO any one Henchman or Villain in a City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Can't get me twice`
+      },
+      {
+        text: `Discard 1 to KO a Henchman or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `hasBeenDamaged`,
+        uses: `0`,
+        shared: `no`,
+        effect: `ignoreDamage`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `discardXKOX(1,1)`
+      }
+    ]
+  },
+  {
     id: "18",
     name: "King Shark",
     image: `${cardArtFolder}/King Shark.jpg`,
@@ -865,6 +917,48 @@ export const heroes = [
         uses: `2`,
         shared: `yes`,
         effect: `followOrRetreat`
+      }
+    ]
+  },
+  {
+    id: "22",
+    name: "Black Adam",
+    image: `${cardArtFolder}/Black Adam.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "yellow",
+    teams: ["Shazam","Legion"],
+    hp: "15",
+    damageThreshold: "3",
+    retreat: "5",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, deal 10 Damage to a Henchman or Villain, after this Hero cannot deal Damage until the end of his next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Damage Henchman or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `damageOneVillainSleepHero(10)`
       }
     ]
   },
@@ -2695,4 +2789,98 @@ export const heroes = [
       }
     ]
   },
+  {
+    id: "63",
+    name: "Parasite",
+    image: `${cardArtFolder}/Parasite.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "pink",
+    teams: ["Squad","Legion"],
+    hp: "8",
+    damageThreshold: "1",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> Increase Parasite's HP by 1 every time he KO's a Henchman or Villain. <span class="line-gap"></span> 3/Game: If Parasite would take Damage, except by his own effect, he can instead gain HP equal to the Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Increase HP Upon Defeat`
+      },
+      {
+        text: `Gain HP Upon Hit`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `defeatedVillain`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseLife(1)`
+      },
+      {
+        type: `quick`,
+        condition: `wouldBeDamaged`,
+        uses: `3`,
+        shared: `no`,
+        effect: `gainLife(Damage)`
+      }
+    ]
+  },
+  {
+    id: "64",
+    name: "Cheetah",
+    image: `${cardArtFolder}/Cheetah.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "orange",
+    teams: ["Squad","Legion"],
+    hp: "9",
+    damageThreshold: "3",
+    retreat: "2",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: If Cheetah remains in a City at the end of her turn, after being damaged by the Henchman or Villain there, she can reduce their remaining HP to 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Reduce Henchman or Villain to 1 HP`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `quick`,
+        condition: `wasDamaged`,
+        uses: `3`,
+        shared: `no`,
+        effect: `reduceVillainHPTo(1)`
+      }
+    ]
+  }
 ]
