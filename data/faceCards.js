@@ -237,7 +237,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Mera's Damage Threshold is increased by 1 whilst she is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card used while their Target is within a Coastal City.`
+        text: `Mera's Damage Threshold is increased by 1 whilst she is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card used while their Target is within a Coastal City. <span class="line-gap"></span> If this Hero is KO'd, KO the Henchman or Villain she was facing.`
       }
     ],
     abilitiesNamePrint: [
@@ -246,6 +246,9 @@ export const heroes = [
       },
       {
         text: `Increase Damage Threshold by 1 in Coastal City`
+      },
+      {
+        text: `Was defeated`
       }
     ],
     abilitiesEffects: [
@@ -262,13 +265,20 @@ export const heroes = [
         uses: `0`,
         shared: `no`,
         effect: `increaseDamageThreshold(1)`
+      },
+      {
+        type: `quick`,
+        condition: `wasKOd`,
+        uses: `0`,
+        shared: `no`,
+        effect: `koOPP`
       }
     ]
   },
   {
     id: "8",
     name: "Red Lantern (Guy Gardner)",
-    image: `${cardArtFolder}/Guy Gardner.jpg`,
+    image: `${cardArtFolder}/Guy Gardner.png`,
     type: "Hero",
     category: "Guardian",
     color: "red",
@@ -308,14 +318,347 @@ export const heroes = [
     ]
   },
   {
-    id: "22",
+    id: "9",
+    name: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "ivory",
+    teams: ["Wonder","Titans"],
+    hp: "14",
+    damageThreshold: "3",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: After damaging them, Lock a Henchman or Villain in their City, after she can Retreat without rolling.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Lock them in the City`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `hasDamagedVillain`,
+        uses: `3`,
+        shared: `no`,
+        effect: `lockVillain(999)`
+      },
+      {
+        type: `quick`,
+        condition: `usedOtherFaceAbility`,
+        uses: `999`,
+        shared: `no`,
+        effect: `retreatFree`
+      }
+    ]
+  },
+  {
+    id: "10",
+    name: "Starfire",
+    image: `${cardArtFolder}/Starfire.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "orange",
+    teams: ["Titans"],
+    hp: "14",
+    damageThreshold: "3",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `All Henchmen and Villains damaged by Starfire during her turn take 1 additional Damage at the end of her turns. <span class="line-gap"></span> 3/Game: Once per turn, move all unengaged Henchmen and Villains as far right as possible.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Burn them`
+      },
+      {
+        text: `Move all unengaged to the right`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `endTurn`,
+        uses: `0`,
+        shared: `no`,
+        effect: `burnDamaged(1)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `moveUnengagedRight(Max)`
+      }
+    ]
+  },
+  {
+    id: "11",
+    name: "Beast Boy",
+    image: `${cardArtFolder}/Beast Boy.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "green",
+    teams: ["Titans"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `5/Game: Discard 1, Draw 1. <span class="line-gap"></span> 1/Game: Discard 1, Retrieve 1 from Beast Boy's discard pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Discard 1, Draw 1`
+      },
+      {
+        text: `Discard 1, Retrieve 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `5`,
+        shared: `no`,
+        effect: `discardXdrawX(1,1)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `discardXretrieveX(1,1)`
+      }
+    ]
+  },
+  {
+    id: "12",
+    name: "Superboy",
+    image: `${cardArtFolder}/Superboy.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "red",
+    teams: ["Super","Titans"],
+    hp: "15",
+    damageThreshold: "3",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Superboy can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Superman can ignore taking Damage, or he can Protect another Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Use cards against Adjacent Henchmen and Villains`
+      },
+      {
+        text: `Ignore the Damage`
+      },
+      {
+        text: `Protect another Hero`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `useCardsVsAdjacentNegateEffects`
+      },
+      {
+        type: `quick`,
+        condition: `damageSelf`,
+        uses: `3`,
+        shared: `yes`,
+        effect: `ignoreDamage`
+      },
+      {
+        type: `quick`,
+        condition: `damageOther`,
+        uses: `3`,
+        shared: `yes`,
+        effect: `protectHero`
+      }
+    ]
+  },
+  {
+    id: "13",
+    name: "Swamp Thing",
+    image: `${cardArtFolder}/Swamp Thing.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "green",
+    teams: ["Dark"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `As Swamp Thing leaves a City, he can leave behind an unused card. Unused cards trigger and act as if played against the next Henchman or Villain that enters that City. <span class="line-gap"></span> 1/Game: Restore a Destroyed City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Leave a card`
+      },
+      {
+        text: `Restore Destroyed City`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `leaveCity`,
+        uses: `999`,
+        shared: `no`,
+        effect: `leaveCard`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `restoreDestroyedCity`
+      }
+    ]
+  },
+  {
+    id: "14",
+    name: "Jason Blood",
+    image: `${cardArtFolder}/Jason Blood.jpeg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "DarkRed",
+    teams: ["Dark"],
+    hp: "9",
+    damageThreshold: "1",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `1/Game: Return a Henchman or Villain in a City to the top of the Villain Deck. <span class="line-gap"></span> If Jason Blood is reduced to 4 or fewer HP, he transforms into Etrigan.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Return Henchman or Villain`
+      },
+      {
+        text: `Become Etrigan`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `returnVillain`
+      },
+      {
+        type: `passive`,
+        condition: `reducedHP(4)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `transformHero(Etrigan)`
+      }
+    ]
+  },
+  {
+    id: "15",
+    name: "Etrigan",
+    image: `${cardArtFolder}/Etrigan.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "yellow",
+    teams: ["Dark"],
+    hp: "9",
+    damageThreshold: "2",
+    retreat: "5",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `This is not a selectable Hero. Jason Blood transforms into Etrigan at low HP. <span class="line-gap"></span> 3/Game: Once per turn, Deal 5 Damage to any one Henchmen or Villain in a City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Deal 5 Damage to one Henchmen or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `damageVillain(Choice(Any),5)`
+      }
+    ]
+  },
+  {
+    id: "16",
+    name: "Lobo",
+    image: `${cardArtFolder}/Lobo.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "ivory",
+    teams: ["Lobo"],
+    hp: "15",
+    damageThreshold: "3",
+    retreat: "5",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: If Lobo Damages a Villain, he can regain the Damage amount as HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Regain HP equal to Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `quick`,
+        condition: `hasDamagedVillain`,
+        uses: `3`,
+        shared: `no`,
+        effect: `regainHPEqualToDamage`
+      }
+    ]
+  },
+  {
+    id: "23",
     name: "Wonder Woman",
     image: `${cardArtFolder}/Wonder Woman.jpg`,
     type: "Hero",
     category: "Striker",
     color: "red",
     teams: ["Wonder","Justice League"],
-    hp: "12",
+    hp: "13",
     damageThreshold: "3",
     retreat: "4",
     travel: "2",
@@ -338,7 +681,7 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `lockVillain`
+        effect: `lockVillain(999)`
       },
       {
         type: `quick`,
@@ -350,7 +693,7 @@ export const heroes = [
     ]
   },
   {
-    id: "23",
+    id: "24",
     name: "Flash (Barry Allen)",
     image: `${cardArtFolder}/Barry Allen.jpg`,
     type: "Hero",
@@ -392,7 +735,7 @@ export const heroes = [
     ]
   },
   {
-    id: "24",
+    id: "25",
     name: "Aquaman",
     image: `${cardArtFolder}/Aquaman.jpg`,
     type: "Hero",
@@ -434,7 +777,7 @@ export const heroes = [
     ]
   },
   {
-    id: "25",
+    id: "26",
     name: "Hawkman",
     image: `${cardArtFolder}/Hawkman.jpg`,
     type: "Hero",
@@ -476,7 +819,7 @@ export const heroes = [
     ]
   },
   {
-    id: "26",
+    id: "27",
     name: "Supergirl",
     image: `${cardArtFolder}/Supergirl.jpg`,
     type: "Hero",
@@ -489,7 +832,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `2/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Supergirl can Rescue a Captured Bystander and deal 2 Damage to the capturing Henchman or Villain.`
+        text: `2/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Rescue the Captured Bystanders from any one Henchman or Villain in a City and deal 2 Damage to the capturing card.`
       }
     ],
     abilitiesNamePrint: [
@@ -528,7 +871,7 @@ export const heroes = [
     ]
   },
   {
-    id: "27",
+    id: "28",
     name: "Firestorm",
     image: `${cardArtFolder}/Firestorm.jpg`,
     type: "Hero",
@@ -560,12 +903,12 @@ export const heroes = [
     ]
   },
   {
-    id: "28",
+    id: "29",
     name: "White Lantern",
     image: `${cardArtFolder}/White Lantern.jpg`,
     type: "Hero",
     category: "Striker",
-    color: "white",
+    color: "ivory",
     teams: ["Green Lantern","Justice League"],
     hp: "15",
     damageThreshold: "3",
@@ -592,7 +935,7 @@ export const heroes = [
     ]
   },
   {
-    id: "29",
+    id: "30",
     name: "Red Hood",
     image: `${cardArtFolder}/Red Hood.jpg`,
     type: "Hero",
@@ -605,7 +948,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO <span class="line-gap"></span> 3/Game: Once per turn, KO any one Henchman in a City.`
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, KO any one Henchman in a City.`
       }
     ],
     abilitiesNamePrint: [
@@ -634,7 +977,407 @@ export const heroes = [
     ]
   },
   {
-    id: "43",
+    id: "31",
+    name: "Arsenal",
+    image: `${cardArtFolder}/Arsenal.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Arrow","Titans"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Arsenal can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Arsenal can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Use cards against Adjacent Henchmen and Villains`
+      },
+      {
+        text: `Attack the Overlord`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `useCardsVsAdjacentNegateEffects`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `attackOverlordNoTravelNegateEffects`
+      }
+    ]
+  },
+  {
+    id: "32",
+    name: "Tempest",
+    image: `${cardArtFolder}/Tempest.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "blue",
+    teams: ["Aqua","Titans"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Tempest's Damage Threshold increases by 1, and his damaging Action Cards deal 1 additional Damage, whilst he is in a Coastal City. <span class="line-gap"></span> 1/Game: KO a Henchman, or Villain with 4 or less HP, in either Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `KO Coastal Henchmen or Villain`
+      },
+      {
+        text: `Increase 1+ Damage Cards while on Coast`
+      },
+      {
+        text: `Increase Damage Threshold +1 while on Coast`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `in(Coastal)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      },
+      {
+        type: `passive`,
+        condition: `in(Coastal)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamageThreshold(1)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `koVillain(Choice(Coastal))`
+      }
+    ]
+  },
+  {
+    id: "33",
+    name: "Miss Martian",
+    image: `${cardArtFolder}/Miss Martian.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "green",
+    teams: ["Martian","Titans"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Once per turn, you can look at the top card of the Villain Deck. <span class="line-gap"></span> 1/Game: At the start of her turn, before her travel or draw, Miss Martian can deal 3 Damage to all Henchmen, Villains, and the Overlord, and also prevent the Villain Deck from being drawn from next turn. After, Miss Martian cannot deal damage until after the end of her next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Check the Villain Deck`
+      },
+      {
+        text: `Clear the field`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `999`,
+        shared: `yes`,
+        effect: `revealTop(Villain)`
+      },
+      {
+        type: `quick`,
+        condition: `beforeTravel`,
+        uses: `1`,
+        shared: `no`,
+        effect: `damageVillain(all,3),damageOverlord(3),preventVillainDeckDraw,sleepHero(2)`
+      }
+    ]
+  },
+  {
+    id: "34",
+    name: "Wonder Girl",
+    image: `${cardArtFolder}/Wonder Girl.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Wonder","Titans"],
+    hp: "12",
+    damageThreshold: "3",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Villains deal 1 additional Damage to this Hero. Henchmen cannot Damage this Hero. <span class="line-gap"></span> 3/Game: Wonder Girl can ignore taking Damage, or she can Protect another Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Takes 1 Extra from Villains`
+      },
+      {
+        text: `Henchmen do nothing`
+      },
+      {
+        text: `Ignore the Damage`
+      },
+      {
+        text: `Protect another Hero`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `villainAttacks`,
+        uses: `0`,
+        shared: `no`,
+        effect: `tempIncreaseVillainDamage(1)`
+      },
+      {
+        type: `passive`,
+        condition: `henchmanAttacks`,
+        uses: `0`,
+        shared: `no`,
+        effect: `tempDecreaseVillainDamage(3)`
+      },
+      {
+        type: `quick`,
+        condition: `damageSelf`,
+        uses: `3`,
+        shared: `yes`,
+        effect: `ignoreDamage`
+      },
+      {
+        type: `quick`,
+        condition: `damageOther`,
+        uses: `3`,
+        shared: `yes`,
+        effect: `protectHero`
+      }
+    ]
+  },
+  {
+    id: "35",
+    name: "Blue Beetle",
+    image: `${cardArtFolder}/Blue Beetle.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "blue",
+    teams: ["Titans"],
+    hp: "11",
+    damageThreshold: "3",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `1/Game: Deal 10 Damage to any one Henchmen or Villain in a City. <span class="line-gap"></span> 1/Game: At the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Lock any Henchman or Villain in their City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Deal 10 Damage to one Henchmen or Villain`
+      },
+      {
+        text: `Prevent Villain Deck draw`
+      },
+      {
+        text: `Lock a Henchman or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `10`,
+        shared: `no`,
+        effect: `damageVillain(Choice(Any),10)`
+      },
+      {
+        type: `quick`,
+        condition: `villainDeckWouldDraw`,
+        uses: `1`,
+        shared: `no`,
+        effect: `skipVillainDeckDraw`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `lockVillain(999)`
+      }
+    ]
+  },
+  {
+    id: "36",
+    name: "Batwoman",
+    image: `${cardArtFolder}/Batwoman.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Bat"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Without another active Bat on her Team, increase Batwoman's damaging cards' Damage by 1 and she Permanent KO's. <span class="line-gap"></span> With another active Bat on her team 3/Game: After playing from the Villain Deck, but before deciding where Batwoman will act, you can increase this Hero's draw selection pool to 4 options, and choose before moving.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Draw early, and with more choice`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `isNotActive(Bat)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `isNotActive(Bat)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      },
+      {
+        type: `quick`,
+        condition: `isActive(Bat),afterVillainBeforeTravel`,
+        uses: `3`,
+        shared: `no`,
+        effect: `extendView(self,4)`
+      }
+    ]
+  },
+  {
+    id: "37",
+    name: "Batman Beyond",
+    image: `${cardArtFolder}/Batman Beyond.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Bat"],
+    hp: "14",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Batman Beyond deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: Negate the activation of a Might of the Overlord. <span class="line-gap"></span> Without another active Bat on his team, Batman Beyond takes half a Villain's Damage when entering a City, and also takes only half Damage if a retreat roll fails.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Double Damage In Gotham`
+      },
+      {
+        text: `Negate the Might of the Overlord from activating`
+      },
+      {
+        text: `Bat-Less Enter Damage`
+      },
+      {
+        text: `Bat-Less Exit Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `in(Gotham)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `doubleDamage`
+      },
+      {
+        type: `quick`,
+        condition: `activated(Might)`,
+        uses: `2`,
+        shared: `no`,
+        effect: `negate(Might)`
+      },
+      {
+        type: `passive`,
+        condition: `entersCityWith(Villain)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `takesDamage(halfVillainDamage)`
+      },
+      {
+        type: `passive`,
+        condition: `failsRetreatFromCityWith(Villain)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `preventRetreatDamage,takesDamage(halfVillainDamage)`
+      }
+    ]
+  },
+  {
+    id: "38",
+    name: "John Constantine",
+    image: `${cardArtFolder}/Constantine.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "purple",
+    teams: ["Dark"],
+    hp: "9",
+    damageThreshold: "2",
+    retreat: "2",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `1/Game: If he is KO'd, you can KO the top 5 cards of Constantine's deck and restore him to 9 HP, then deal 5 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Check the Villain Deck`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `isKOd`,
+        uses: `1`,
+        shared: `no`,
+        effect: `restoreSelf(9)`
+      },
+      {
+        type: `quick`,
+        condition: `usedOtherFaceAbility`,
+        uses: `1`,
+        shared: `no`,
+        effect: `damageOverlord(5)`
+      }
+    ]
+  },
+  {
+    id: "44",
     name: "Batman",
     image: `${cardArtFolder}/Batman.jpg`,
     type: "Hero",
@@ -647,7 +1390,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: After playing from the Villain Deck, but before deciding where Batman will act, you can increase this Hero's draw selection pool to 4 options, and choose before moving. <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -656,6 +1399,9 @@ export const heroes = [
       },
       {
         text: `Double Damage In Gotham`
+      },
+      {
+        text: `Draw early, and with more choice`
       }
     ],
     abilitiesEffects: [
@@ -672,11 +1418,18 @@ export const heroes = [
         uses: `0`,
         shared: `no`,
         effect: `doubleDamage`
+      },
+      {
+        type: `quick`,
+        condition: `afterVillainBeforeTravel`,
+        uses: `2`,
+        shared: `no`,
+        effect: `extendView(self,4)`
       }
     ]
   },
   {
-    id: "44",
+    id: "45",
     name: "Cyborg",
     image: `${cardArtFolder}/Cyborg.jpg`,
     type: "Hero",
@@ -718,7 +1471,7 @@ export const heroes = [
     ]
   },
   {
-    id: "45",
+    id: "46",
     name: "Green Arrow",
     image: `${cardArtFolder}/Green Arrow.jpg`,
     type: "Hero",
@@ -760,7 +1513,7 @@ export const heroes = [
     ]
   },
   {
-    id: "46",
+    id: "47",
     name: "Green Lantern (John Stewart)",
     image: `${cardArtFolder}/John Stewart.jpg`,
     type: "Hero",
@@ -802,7 +1555,7 @@ export const heroes = [
     ]
   },
   {
-    id: "47",
+    id: "48",
     name: "Robin",
     image: `${cardArtFolder}/Robin.jpg`,
     type: "Hero",
@@ -815,7 +1568,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Robin deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Once per turn, deal 3 Damage to any one Henchman or Villain in a City.`
+        text: `Robin deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Once per turn, deal 2 Damage to any one Henchman or Villain in a City.`
       }
     ],
     abilitiesNamePrint: [
@@ -823,7 +1576,7 @@ export const heroes = [
         text: `Double Damage In Gotham`
       },
       {
-        text: `Deal 3 Damage to one Henchmen or Villain`
+        text: `Deal 2 Damage to one Henchmen or Villain`
       }
     ],
     abilitiesEffects: [
@@ -839,12 +1592,12 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `damageVillain(Choice(Any),3)`
+        effect: `damageVillain(Choice(Any),2)`
       }
     ]
   },
   {
-    id: "48",
+    id: "49",
     name: "Nightwing",
     image: `${cardArtFolder}/Nightwing.jpg`,
     type: "Hero",
@@ -886,7 +1639,7 @@ export const heroes = [
     ]
   },
   {
-    id: "49",
+    id: "50",
     name: "Batgirl",
     image: `${cardArtFolder}/Batgirl.jpg`,
     type: "Hero",
@@ -899,12 +1652,15 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: Reveal the top 3 cards of the Villain Deck, you can KO one of them.`
+        text: `3/Game: Reveal the top 3 cards of the Villain Deck, you can KO one of them. <span class="line-gap"></span> 3/Game: Before they draw, increase a Hero's draw selection pool to 4 options.`
       }
     ],
     abilitiesNamePrint: [
       {
         text: `Reveal 3 from the Villain Deck`
+      },
+      {
+        text: `Allow to Preview 4`
       }
     ],
     abilitiesEffects: [
@@ -914,11 +1670,18 @@ export const heroes = [
         uses: `3`,
         shared: `no`,
         effect: `revealVillainTopKO(3,1)`
+      },
+      {
+        type: `quick`,
+        condition: `anotherHeroWouldDraw`,
+        uses: `3`,
+        shared: `no`,
+        effect: `extendView(choice(any),4)`
       }
     ]
   },
   {
-    id: "50",
+    id: "51",
     name: "Red Robin",
     image: `${cardArtFolder}/Red Robin.jpg`,
     type: "Hero",
@@ -931,7 +1694,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: Red Robin can Travel an additional time. <span class="line-gap"></span> 3/Game: Once per turn, draw 1.`
+        text: `3/Game: Red Robin can Travel an additional time, after he draws 1. <span class="line-gap"></span> 2/Game: KO an active Scenario.`
       }
     ],
     abilitiesNamePrint: [
@@ -939,7 +1702,7 @@ export const heroes = [
         text: `Travel Once More`
       },
       {
-        text: `Draw 1`
+        text: `KO a Scenario`
       }
     ],
     abilitiesEffects: [
@@ -948,57 +1711,436 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `travel(any)`
+        effect: `travelThenDraw(any,1)`
       },
       {
         type: `standard`,
         condition: `none`,
-        uses: `3`,
+        uses: `2`,
         shared: `no`,
-        effect: `draw(1)`
+        effect: `KO(Choice(Scenario))`
       }
     ]
   },
   {
-    id: "51",
+    id: "52",
     name: "Flash (Wally West)",
     image: `${cardArtFolder}/Wally West.jpg`,
     type: "Hero",
     category: "Tactician",
-    color: "white",
+    color: "red",
     teams: ["Flash","Titans"],
+    hp: "11",
+    damageThreshold: "3",
+    retreat: "2",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `2/Game: Rescue the Captured Bystanders from any one Henchman or Villain in a City and deal 1 Damage to the capturing card. <span class="line-gap"></span> 2/Game: Reduce any one Henchman or Villain's Damage by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reduce Henchman or Villain's Damage`
+      },
+      {
+        text: `Rescue Bystander`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `no`,
+        effect: `reduceVillainDamage(Choice(Any),1)`
+      },
+      {
+        type: `standard`,
+        condition: `villainHasBystander`,
+        uses: `2`,
+        shared: `no`,
+        effect: `rescueBystanderDamageCapturer(1)`
+      }
+    ]
+  },
+  {
+    id: "53",
+    name: "Raven",
+    image: `${cardArtFolder}/Raven.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "purple",
+    teams: ["Titans"],
     hp: "10",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `5/Game: Once per turn, move Raven, or another Hero, to any other location without rolling to retreat. <span class="line-gap"></span> If Raven is at 5 or less HP, her damaging cards deal 1 additional Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Move Raven`
+      },
+      {
+        text: `Move another Hero`
+      },
+      {
+        text: `Increase Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `5`,
+        shared: `yes`,
+        effect: `move(self)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `5`,
+        shared: `yes`,
+        effect: `move(Hero)`
+      },
+      {
+        type: `passive`,
+        condition: `isAtOrBelow(5)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      }
+    ]
+  },
+  {
+    id: "54",
+    name: "Aqualad",
+    image: `${cardArtFolder}/Aqualad.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "orange",
+    teams: ["Aqua","Titans"],
+    hp: "11",
     damageThreshold: "2",
     retreat: "4",
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: Red Robin can Travel an additional time. <span class="line-gap"></span> 3/Game: Once per turn, draw 1.`
+        text: `If Aqualad is in a Coastal City, or would leave a Coastal City, he can choose to Travel to the other Coastal City (if occupied) instead. <span class="line-gap"></span> 2/Game: Deal 1 Damage to any one Henchman or Villain in a City, and if you do, Lock them there.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Travel Once More`
+        text: `Travel to other Coastal City`
       },
       {
-        text: `Draw 1`
+        text: `Travel to other Coastal City`
+      },
+      {
+        text: `Damage and Lock a Henchman or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `in(Coastal)`,
+        uses: `999`,
+        shared: `yes`,
+        effect: `travel(Any(Coastal))`
+      },
+      {
+        type: `quick`,
+        condition: `wouldRetreat,in(Coastal)`,
+        uses: `999`,
+        shared: `yes`,
+        effect: `travel(Any(Coastal))`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `no`,
+        effect: `damageVillainLock(Choice,1)`
+      }
+    ]
+  },
+  {
+    id: "55",
+    name: "Artemis",
+    image: `${cardArtFolder}/Artemis.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "lightgreen",
+    teams: ["Arrow","Titans"],
+    hp: "9",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Artemis can use her cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Discard 2, add 1 card from your deck to your hand.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Use cards against Adjacent Henchmen and Villains`
+      },
+      {
+        text: `Discard 2, Add any 1 card`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `useCardsVsAdjacentNegateEffects`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `no`,
+        effect: `discardXaddX(2,1)`
+      }
+    ]
+  },
+  {
+    id: "56",
+    name: "Omen",
+    image: `${cardArtFolder}/Omen.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "green",
+    teams: ["Titans"],
+    hp: "9",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Once per turn, you can look at the top card of either Omen's Deck, or the Villain Deck. <span class="line-gap"></span> 2/Game: Once per turn, KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Check Omen's Deck`
+      },
+      {
+        text: `Check the Villain Deck`
+      },
+      {
+        text: `KO the top card of the Villain Deck`
       }
     ],
     abilitiesEffects: [
       {
         type: `standard`,
         condition: `none`,
-        uses: `3`,
-        shared: `no`,
-        effect: `travel(any)`
+        uses: `999`,
+        shared: `yes`,
+        effect: `revealTop(Self)`
       },
       {
         type: `standard`,
         condition: `none`,
-        uses: `3`,
+        uses: `999`,
+        shared: `yes`,
+        effect: `revealTop(Villain)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
         shared: `no`,
-        effect: `draw(1)`
+        effect: `koTop(Villain)`
       }
     ]
-  }
+  },
+  {
+    id: "57",
+    name: "Kid Flash",
+    image: `${cardArtFolder}/Kid Flash.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "yellow",
+    teams: ["Flash","Titans"],
+    hp: "9",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `Kid Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 2/Game: At the start of this Hero's turn, before Traveling, you can reduce your Travel Budget by 1 and KO any one Henchman.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Lose a Travel, KO a Henchman`
+      },
+      {
+        text: `Increase 1+ Damage Cards By 1 Per Travel`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `beforeDraw`,
+        uses: `2`,
+        shared: `no`,
+        effect: `reduceTravelKOHenchman`
+      },
+      {
+        type: `passive`,
+        condition: `Travel`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      }
+    ]
+  },
+  {
+    id: "58",
+    name: "Dr Fate",
+    image: `${cardArtFolder}/Dr Fate.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "yellow",
+    teams: ["Dark","Justice League"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "1",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `1/Game: Reveal the top card of the Villain Deck, you may KO it.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reveal and possibly KO the top card of the Villain Deck`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `revealTop(Villain)`
+      },
+      {
+        type: `quick`,
+        condition: `usedOtherFaceAbility`,
+        uses: `1`,
+        shared: `no`,
+        effect: `koTop(Villain)`
+      }
+    ]
+  },
+  {
+    id: "59",
+    name: "Zatanna",
+    image: `${cardArtFolder}/Zatanna.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "ivory",
+    teams: ["Dark","Justice League"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `1/Game: Zatanna can use each of the following effects. <span class="line-gap"></span> Tropelet: Zatanna can Travel or Retreat once without rolling. <span class="line-gap"></span> Dleihs: Zatanna can ignore taking Damage. <span class="line-gap"></span> Nrub: Deal 3 Damage to all Henchmen, Villains, and the Overlord. `
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Travel or Retreat without Rolling`
+      },
+      {
+        text: `Ignoring an attack`
+      },
+      {
+        text: `Deal 3 Damage to all Henchmen, Villains, and the Overlord`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `travel(Choice)`
+      },
+      {
+        type: `quick`,
+        condition: `damageSelf`,
+        uses: `1`,
+        shared: `no`,
+        effect: `ignoreDamage`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `damageVillain(all,3)`
+      }
+    ]
+  },
+  {
+    id: "60",
+    name: "Deadman",
+    image: `${cardArtFolder}/Deadman.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "ivory",
+    teams: ["Dark"],
+    hp: "0",
+    damageThreshold: "0",
+    retreat: "0",
+    travel: "0",
+    abilitiesText: [
+      {
+        text: `Deadman can take over Henchmen, Villains, and other Heroes 
+              in order to deal damage. He can use the Heroes to take regular 
+              turns, and the Henchmen and Villains to move up to one city 
+              over (on top of his chosen foe) and into the Hero space to deal 
+              his host’s damage twice to the Henchman or Villain in that city. 
+              If he possesses a Henchman or Villain with Bystanders, he can 
+              omit one of his two attacks to release them all.
+              <span class="line-gap"></span>
+              At the end of his turn, he must leave his host. If they were left 
+              in a city, they take damage as normal, and if it was a Henchman 
+              or Villain that he possessed, and they were not KO'd from the 
+              damage, they then slide to the closest city to the left and 
+              resume their evil acts. If his villanous host was KO’d, 
+              then he gains their Upon Defeat effect.
+              <span class="line-gap"></span>
+              Deadman cannot win games, if he is the last Hero, 
+              then Evil Wins.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `fukt`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `beforeTravel`,
+        uses: `999`,
+        shared: `no`,
+        effect: `deadman`
+      }
+    ]
+  },
 ]
