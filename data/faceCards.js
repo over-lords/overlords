@@ -2195,4 +2195,46 @@ export const heroes = [
       }
     ]
   },
+  {
+    id: "62",
+    name: "Captain Boomerang",
+    image: `${cardArtFolder}/Captain Boomerang.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "blue",
+    teams: ["Squad","Rogues"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Captain Boomerang can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Attack the Overlord`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `attackOverlordNoTravelNegateEffects`
+      }
+    ]
+  },
 ]
