@@ -651,6 +651,58 @@ export const heroes = [
     ]
   },
   {
+    id: "18",
+    name: "King Shark",
+    image: `${cardArtFolder}/King Shark.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "aqua",
+    teams: ["Squad"],
+    hp: "15",
+    damageThreshold: "3",
+    retreat: "5",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> King Shark's damaging Action Cards deal 1 additional Damage whilst he is in a Coastal City. <span class="line-gap"></span> 1/Game: Deal 5 Damage to a Henchman or Villain in either Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Increase 1+ Damage Cards while on Coast`
+      },
+      {
+        text: `Damage Coastal Villain by 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `in(Coastal)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `damageVillain(Choice(Coastal),5)`
+      }
+    ]
+  },
+  {
     id: "23",
     name: "Wonder Woman",
     image: `${cardArtFolder}/Wonder Woman.jpg`,
@@ -753,10 +805,10 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Damage Coastal Villain by 2`
+        text: `Increase 1+ Damage Cards while on Coast`
       },
       {
-        text: `Increase 1+ Damage Cards while on Coast`
+        text: `Damage Coastal Villain by 2`
       }
     ],
     abilitiesEffects: [
