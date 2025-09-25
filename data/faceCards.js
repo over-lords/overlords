@@ -703,6 +703,172 @@ export const heroes = [
     ]
   },
   {
+    id: "19",
+    name: "Reverse Flash",
+    image: `${cardArtFolder}/Reverse Flash.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "yellow",
+    teams: ["Flash","Squad","Legion"],
+    hp: "11",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "3",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> Reverse Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 3/Game: At the start of this Hero's turn, you can retrieve a card from Reverse Flash's discard pile instead of selecting a card from the deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Skip Selection, Retrieve 1`
+      },
+      {
+        text: `Increase 1+ Damage Cards By 1 Per Travel`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `quick`,
+        condition: `wouldDrawAtStart`,
+        uses: `3`,
+        shared: `no`,
+        effect: `skipSelectionRetrieve1`
+      },
+      {
+        type: `passive`,
+        condition: `Travel`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      }
+    ]
+  },
+  {
+    id: "20",
+    name: "Lex Luthor",
+    image: `${cardArtFolder}/Lex Luthor.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "blue",
+    teams: ["Legion","Justice League"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Once per turn, if Lex Luthor reduces a Henchman or Villain to 1 HP, he can KO it. <span class="line-gap"></span> 3/Game: KO the top 3 cards of Lex Luthor's deck, after KO the Henchman or Villain that Lex Luthor is in a City with, no one gains their Upon Victory effect.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `KO Damaged Foe`
+      },
+      {
+        text: `KO your cards to KO a Henchman or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `damagedVillain(1)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `koDamagedVillain`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `koTopXKOFoe(3)`
+      }
+    ]
+  },
+  {
+    id: "21",
+    name: "Giganta",
+    image: `${cardArtFolder}/Giganta.jpg`,
+    type: "Hero",
+    category: "Guardian",
+    color: "yellow",
+    teams: ["Legion","Squad"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "5",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> If Giganta is at to 6 or less HP, increase the Damage of her cards by 1. <span class="line-gap"></span> Giganta can use her cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Once per turn, knock the Henchman or Villain Giganta is fighting as far right as possible, she can then follow them or Retreat.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Power up at half HP`
+      },
+      {
+        text: `Use cards against Adjacent Henchmen and Villains`
+      },
+      {
+        text: `Move Engaged Foe to the Right`
+      },
+      {
+        text: `Follow or Retreat`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `isBelowHP(7)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `useCardsVsAdjacentNegateEffects`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `yes`,
+        effect: `moveEngagedRight(Max)`
+      },
+      {
+        type: `quick`,
+        condition: `usedSharedEffect`,
+        uses: `2`,
+        shared: `yes`,
+        effect: `followOrRetreat`
+      }
+    ]
+  },
+  {
     id: "23",
     name: "Wonder Woman",
     image: `${cardArtFolder}/Wonder Woman.jpg`,
@@ -956,6 +1122,38 @@ export const heroes = [
   },
   {
     id: "29",
+    name: "Vixen",
+    image: `${cardArtFolder}/Vixen.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "goldenrod",
+    teams: ["Justice League"],
+    hp: "12",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `3/Game: After playing from the Villain Deck, but before deciding where Vixen will act, you can increase this Hero's draw selection pool to 5 options, and choose before moving.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw early, and with more choices`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `afterVillainBeforeTravel`,
+        uses: `3`,
+        shared: `no`,
+        effect: `extendView(self,5)`
+      }
+    ],
+  },
+  {
+    id: "30",
     name: "White Lantern",
     image: `${cardArtFolder}/White Lantern.jpg`,
     type: "Hero",
@@ -987,7 +1185,7 @@ export const heroes = [
     ]
   },
   {
-    id: "30",
+    id: "31",
     name: "Red Hood",
     image: `${cardArtFolder}/Red Hood.jpg`,
     type: "Hero",
@@ -1029,7 +1227,7 @@ export const heroes = [
     ]
   },
   {
-    id: "31",
+    id: "32",
     name: "Arsenal",
     image: `${cardArtFolder}/Arsenal.jpg`,
     type: "Hero",
@@ -1071,7 +1269,7 @@ export const heroes = [
     ]
   },
   {
-    id: "32",
+    id: "33",
     name: "Tempest",
     image: `${cardArtFolder}/Tempest.jpg`,
     type: "Hero",
@@ -1123,7 +1321,7 @@ export const heroes = [
     ]
   },
   {
-    id: "33",
+    id: "34",
     name: "Miss Martian",
     image: `${cardArtFolder}/Miss Martian.jpg`,
     type: "Hero",
@@ -1165,7 +1363,7 @@ export const heroes = [
     ]
   },
   {
-    id: "34",
+    id: "35",
     name: "Wonder Girl",
     image: `${cardArtFolder}/Wonder Girl.jpg`,
     type: "Hero",
@@ -1227,7 +1425,7 @@ export const heroes = [
     ]
   },
   {
-    id: "35",
+    id: "36",
     name: "Blue Beetle",
     image: `${cardArtFolder}/Blue Beetle.jpg`,
     type: "Hero",
@@ -1279,7 +1477,7 @@ export const heroes = [
     ]
   },
   {
-    id: "36",
+    id: "37",
     name: "Batwoman",
     image: `${cardArtFolder}/Batwoman.jpg`,
     type: "Hero",
@@ -1300,7 +1498,7 @@ export const heroes = [
         text: `Permanently KO's all Henchmen and Villains`
       },
       {
-        text: `Draw early, and with more choice`
+        text: `Draw early, and with more choices`
       }
     ],
     abilitiesEffects: [
@@ -1328,7 +1526,7 @@ export const heroes = [
     ]
   },
   {
-    id: "37",
+    id: "38",
     name: "Batman Beyond",
     image: `${cardArtFolder}/Batman Beyond.jpg`,
     type: "Hero",
@@ -1390,7 +1588,7 @@ export const heroes = [
     ]
   },
   {
-    id: "38",
+    id: "39",
     name: "John Constantine",
     image: `${cardArtFolder}/Constantine.jpg`,
     type: "Hero",
@@ -1429,6 +1627,204 @@ export const heroes = [
     ]
   },
   {
+    id: "40",
+    name: "Deadshot",
+    image: `${cardArtFolder}/Deadshot.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Squad"],
+    hp: "11",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> Deadshot can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Once per turn, deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Use cards against Adjacent Henchmen and Villains`
+      },
+      {
+        text: `Damage the Overlord`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `useCardsVsAdjacentNegateEffects`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "41",
+    name: "Killer Frost",
+    image: `${cardArtFolder}/Killer Frost.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "blue",
+    teams: ["Squad","Legion","Justice League"],
+    hp: "10",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> When Killer Frost engages a Henchman or Villain in a City, they stop moving across the board. <span class="line-gap"></span> 3/Game: Once per turn, Lock any Henchman or Villain in their City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Stop moving when engaged`
+      },
+      {
+        text: `Lock a Henchman or Villain`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `stopMovingWhenEngaged`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `lockVillain(999)`
+      }
+    ]
+  },
+  {
+    id: "42",
+    name: "Black Manta",
+    image: `${cardArtFolder}/Black Manta.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "red",
+    teams: ["Aqua","Squad","Legion"],
+    hp: "13",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> Black Manta's Damage Threshold increases by 1 whilst he is in a Coastal City. <span class="line-gap"></span> 2/Game: Deal 2 Damage to a Henchman or Villain in either Coastal City, and if you do, they are Locked there.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Increase Damage Threshold by 1 while on Coast`
+      },
+      {
+        text: `Damage Coastal Villain for 2 and Lock them`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `passive`,
+        condition: `in(Coastal)`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamageThreshold(1)`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `no`,
+        effect: `damageVillainLock(Coastal,2)`
+      }
+    ]
+  },
+  {
+    id: "43",
+    name: "Sinestro",
+    image: `${cardArtFolder}/Sinestro.jpg`,
+    type: "Hero",
+    category: "Striker",
+    color: "yellow",
+    teams: ["Green Lantern","Legion"],
+    hp: "14",
+    damageThreshold: "2",
+    retreat: "4",
+    travel: "2",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, Reduce any one Henchman or Villain's Damage to 0 until the end of Sinestro's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Reduce Henchman or Villain's Damage to 0`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `3`,
+        shared: `no`,
+        effect: `reduceVillainDamage(3)`
+      }
+    ]
+  },
+  {
     id: "44",
     name: "Batman",
     image: `${cardArtFolder}/Batman.jpg`,
@@ -1436,7 +1832,7 @@ export const heroes = [
     category: "Tactician",
     color: "yellow",
     teams: ["Bat","Justice League"],
-    hp: "10",
+    hp: "12",
     damageThreshold: "2",
     retreat: "3",
     travel: "1",
@@ -1453,7 +1849,7 @@ export const heroes = [
         text: `Double Damage In Gotham`
       },
       {
-        text: `Draw early, and with more choice`
+        text: `Draw early, and with more choices`
       }
     ],
     abilitiesEffects: [
@@ -2196,6 +2592,58 @@ export const heroes = [
     ]
   },
   {
+    id: "61",
+    name: "Harley Quinn",
+    image: `${cardArtFolder}/Harley Quinn.jpg`,
+    type: "Hero",
+    category: "Tactician",
+    color: "red",
+    teams: ["Squad","Bat"],
+    hp: "9",
+    damageThreshold: "2",
+    retreat: "3",
+    travel: "1",
+    abilitiesText: [
+      {
+        text: `Permanent KO. <span class="line-gap"></span> If Harley Retreats, the Henchman or Villain left behind takes 1 Damage. <span class="line-gap"></span> 2/Game: Without rolling, Harley Quinn can retreat and take no Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Permanently KO's all Henchmen and Villains`
+      },
+      {
+        text: `Retreat without rolling`
+      },
+      {
+        text: `Burn on retreat`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentKODefeated`
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
+        shared: `no`,
+        effect: `retreatFree`
+      },
+      {
+        type: `passive`,
+        condition: `retreats`,
+        uses: `0`,
+        shared: `no`,
+        effect: `burnRemaining(1)`
+      }
+    ]
+  },
+  {
     id: "62",
     name: "Captain Boomerang",
     image: `${cardArtFolder}/Captain Boomerang.jpg`,
@@ -2209,7 +2657,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Captain Boomerang can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
+        text: `Permanent KO. <span class="line-gap"></span> One Henchmen or Villain of your choice that was damaged by Captain Boomerang during his turn takes 1 additional Damage at the end of his turn. <span class="line-gap"></span> 3/Game: Captain Boomerang can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
       }
     ],
     abilitiesNamePrint: [
@@ -2218,6 +2666,9 @@ export const heroes = [
       },
       {
         text: `Attack the Overlord`
+      },
+      {
+        text: `Burn one`
       }
     ],
     abilitiesEffects: [
@@ -2234,6 +2685,13 @@ export const heroes = [
         uses: `3`,
         shared: `no`,
         effect: `attackOverlordNoTravelNegateEffects`
+      },
+      {
+        type: `passive`,
+        condition: `endTurn`,
+        uses: `0`,
+        shared: `no`,
+        effect: `burnDamaged(choice(any),1)`
       }
     ]
   },
