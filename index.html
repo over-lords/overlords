@@ -203,6 +203,16 @@
         }
         window.addEventListener("resize", fixViewport);
         window.addEventListener("load", fixViewport);
+
+        function resizeApp() {
+            const app = document.querySelector(".main-content");
+            const scaleX = window.innerWidth / app.scrollWidth;
+            const scaleY = window.innerHeight / app.scrollHeight;
+            const scale = Math.min(scaleX, scaleY);
+            app.style.transform = `scale(${scale})`;
+        }
+        window.addEventListener("resize", resizeApp);
+        window.addEventListener("load", resizeApp);
     </script>
     </div>
     <br><br>

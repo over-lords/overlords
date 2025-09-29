@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   width: 100vw;           /* Full width */
-  height: 100vh;          /* Full height */
+  height: 100dvh;          /* Full height */
   background-image: url("https://raw.githubusercontent.com/over-lords/overlords/332d3e1b05c84f8b31022c7907034b6bd0e2db77/Public/Images/Site%20Assets/BoardReduced.jpg");
   background-size: cover; /* Scale and crop to fill */
   background-position: center;
@@ -222,6 +222,7 @@ html, body {
 }
 
 .main-content {
+  transform-origin: top left;
   height: 100dvh; /* always fill visible viewport */
   display: flex;
   flex-direction: column;
