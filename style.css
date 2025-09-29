@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   width: 100vw;           /* Full width */
-  height: 100dvh;          /* Full height */
+  height: 100vh;          /* Full height */
   background-image: url("https://raw.githubusercontent.com/over-lords/overlords/332d3e1b05c84f8b31022c7907034b6bd0e2db77/Public/Images/Site%20Assets/BoardReduced.jpg");
   background-size: cover; /* Scale and crop to fill */
   background-position: center;
@@ -214,16 +214,12 @@
 }
 
 html, body {
+  height: 100%;
   margin: 0;
-  padding: 0;
-  height: 100dvh; /* dynamic viewport height */
-  width: 100vw;
-  overflow: hidden;
 }
 
 .main-content {
-  transform-origin: top left;
-  height: 100dvh; /* always fill visible viewport */
+  height: 100dvh; /* dynamic viewport height */
   display: flex;
   flex-direction: column;
 }
