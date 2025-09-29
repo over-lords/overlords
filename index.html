@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, minimal-ui">
     <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
@@ -191,9 +191,14 @@
         .catch(error => {
             console.error("Error fetching GitHub contents:", error);
         });
+
+        window.addEventListener("load", () => {
+            setTimeout(() => {
+                window.scrollTo(0, 1);
+            }, 100);
+        });
     </script>
     </main-content>
     <br><br>
 </body>
 </html>
-
