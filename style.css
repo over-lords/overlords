@@ -214,14 +214,15 @@
 }
 
 html, body {
-    height: 100dvh; /* use full device viewport */
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  height: 100dvh; /* dynamic viewport height */
+  width: 100vw;
+  overflow: hidden;
 }
 
 .main-content {
-  height: 100dvh; /* dynamic viewport height */
+  height: 100dvh; /* always fill visible viewport */
   display: flex;
   flex-direction: column;
 }
