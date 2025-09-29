@@ -225,9 +225,27 @@ html, body {
   flex-direction: column;
 }
 
+
+#infoBox {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  height: 125px;
+  width: 300px;
+  background-color: rgba(0,0,0,0.8);
+  border: 2px solid #ffffff55;
+  border-radius: 10px;
+  box-shadow: 0 0 12px black;
+  color: white;
+  font-family: sans-serif;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+}
+
 .profilePicBox {
   position: fixed;
-  bottom: 175px;      /* adjust vertical position */
+  bottom: 142.5px;      /* adjust vertical position */
   right: 10px;     /* adjust horizontal position */
   width: 300px;   /* adjust width */
   height: 175px;  /* adjust height */
