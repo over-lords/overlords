@@ -31,7 +31,7 @@ export const heroCards = [
     damage: "5",
     abilitiesText: [
       {
-        text: `For every KO'd Hero this card deals 1 additional Damage.`
+        text: `Increase this card's Damage by 1 for every KO'd Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -59,12 +59,35 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Boost card damage`
+        text: `B`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `boostCardDamage(findKOdHeroes)`
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "3",
+    name: "Man of Steel",
+    hero: "Superman",
+    image: `${cardArtFolder}/Superman/Man of Steel.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Draw a card. <span class="line-gap"></span> Superman can Travel an additional time this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
       }
     ]
   }
