@@ -585,7 +585,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Choose 1 other active Teammate; they can take an additional turn right now. The Villain Deck is not drawn from on their turn.`
+        text: `Choose 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Batman is the only active Hero: Draw 3 cards.`
       }
     ],
     abilitiesNamePrint: [
