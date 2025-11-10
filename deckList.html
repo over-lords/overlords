@@ -210,6 +210,26 @@
             infoDiv.appendChild(retreat);
             infoDiv.appendChild(abilities);
 
+            // Deck List button
+            const deckListBtn = document.createElement('button');
+            deckListBtn.textContent = "Deck List";
+            deckListBtn.style.marginTop = "10px";
+            deckListBtn.style.padding = "6px 12px";
+            deckListBtn.style.borderRadius = "6px";
+            deckListBtn.style.border = "none";
+            deckListBtn.style.cursor = "pointer";
+            deckListBtn.style.background = "#e0e0e0";
+            deckListBtn.style.color = "black";
+            deckListBtn.style.fontWeight = "bold";
+
+            // Navigate to deckView.html with hero name as URL param
+            deckListBtn.addEventListener('click', () => {
+                const encodedName = encodeURIComponent(hero.name);
+                window.location.href = `deckView.html?name=${encodedName}`;
+            });
+
+            infoDiv.appendChild(deckListBtn);
+
             heroDetails.appendChild(heroImg);
             heroDetails.appendChild(infoDiv);
 

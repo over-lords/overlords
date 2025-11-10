@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+    <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
+    <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <title>Overlords</title>
+</head>
+<body style="background-color:white;" onload="window.scrollTo(0, 1)">
+    <main-content>
+    <div class="bg-image" alt="" style="opacity: 55%;"></div>
+    <div class="title-box" id="title-box"></div>
+    <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+
+    <div class="back-box" id="back-box" onclick="location.href='deckList.html'" style="cursor: pointer; margin-top: -30px;">
+            <h1 class="menu-text" style="margin-top: 2.5px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
+    </div>
+
+    <script>
+        // Get the 'name' parameter from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const heroName = urlParams.get('name');
+
+        // Print the name (you can replace with logic to load hero data later)
+        if (heroName) {
+            const nameDisplay = document.createElement('h2');
+            nameDisplay.textContent = `Selected Character: ${heroName}`;
+            nameDisplay.style.textAlign = "center";
+            nameDisplay.style.marginTop = "100px";
+            document.body.appendChild(nameDisplay);
+
+            console.log("Character clicked:", heroName);
+        }
+    </script>
+    </main-content>
+</body>
+</html>
