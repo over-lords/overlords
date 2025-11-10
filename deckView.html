@@ -62,79 +62,137 @@
     <h1 class="menu-text" style="margin-top: 2.5px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X</h1>
   </div>
 
-  <!-- <div class="backgroundBox" id="backgroundBox">
-    <div class="charName-box" id="charName-box"></div>
-  </div> -->
-
   <script type="module">
-  import { renderCard } from './utils/cardRenderer.js';
-  import { heroCards } from './data/heroCards.js';
-  import { heroes } from './data/faceCards.js';
+    import { renderCard } from './utils/cardRenderer.js';
+    import { heroCards } from './data/heroCards.js';
+    import { heroes } from './data/faceCards.js';
 
-  window.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const heroName = urlParams.get('name');
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const heroName = urlParams.get('name');
 
-    // === Get DOM elements ===
-    const titleEl = document.getElementById('hero-title');
+      // === Get DOM elements ===
+      const titleEl = document.getElementById('hero-title');
 
-    // === Find hero data ===
-    const heroData = heroes.find(h => h.name === heroName);
+      // === Find hero data ===
+      const heroData = heroes.find(h => h.name === heroName);
+      const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/4bb2b39a79b5b0b717ddd5fc62821adb7d7c9cd6/Public/Images/Card%20Assets/Misc";
 
-    // === Update title and hero name dynamically ===
-    if (heroData) {
-      if (titleEl) {
-        titleEl.textContent = heroData.name;
-        titleEl.style.color = heroData.color;
-        titleEl.style.textShadow = `
-          0 0 10px ${heroData.color}
-        `;
-        titleEl.style.fontSize = "32px";
+      // === Update title and hero name dynamically ===
+      if (heroData) {
+        if (titleEl) {
+          titleEl.textContent = heroData.name;
+          titleEl.style.color = heroData.color;
+          titleEl.style.textShadow = `0 0 4px black, 0 0 6px white, 0 0 8px black`;
+          titleEl.style.fontSize = "32px";
+          titleEl.style.fontFamily = "'Racing Sans One', sans-serif";
+        }
+      } else {
+        if (titleEl) {
+          titleEl.textContent = heroName || 'Unknown Hero';
+          titleEl.style.color = 'black';
+          titleEl.style.textShadow = 'none';
+        }
       }
 
-    } else {
-      if (titleEl) {
-        titleEl.textContent = heroName || 'Unknown Hero';
-        titleEl.style.color = 'black';
-        titleEl.style.textShadow = 'none';
+      // === Hero Info Box ===
+      if (heroData) {
+        const infoBox = document.createElement('div');
+        infoBox.style.position = 'absolute';
+        infoBox.style.top = '15px';
+        infoBox.style.right = '20px';
+        infoBox.style.width = '300px';
+        infoBox.style.background = 'rgba(255,255,255,0.8)';
+        infoBox.style.border = '2px solid black';
+        infoBox.style.borderRadius = '8px';
+        infoBox.style.padding = '8px';
+        infoBox.style.fontFamily = "'Racing Sans One', sans-serif";
+        infoBox.style.fontSize = '16px';
+        infoBox.style.color = 'black';
+        infoBox.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+
+        // Teams row
+        const teamDiv = document.createElement('div');
+        teamDiv.style.display = 'flex';
+        teamDiv.style.alignItems = 'center';
+        const teamLabel = document.createElement('span');
+        teamLabel.textContent = 'Teams: ';
+        teamLabel.style.fontWeight = 'bold';
+        teamDiv.appendChild(teamLabel);
+        heroData.teams.forEach(t => {
+          const img = document.createElement('img');
+          img.src = `${teamFolder}/${t}.png`;
+          img.style.width = '28px';
+          img.style.height = 'auto';
+          img.style.marginLeft = '5px';
+          teamDiv.appendChild(img);
+        });
+        infoBox.appendChild(teamDiv);
+
+        // Stats
+        const makeStat = (label, value) => {
+          const el = document.createElement('div');
+          el.innerHTML = `<span style="font-weight:bold">${label}:</span> ${value}`;
+          return el;
+        };
+        infoBox.appendChild(makeStat('HP', heroData.hp));
+        infoBox.appendChild(makeStat('Damage Threshold', heroData.damageThreshold));
+        infoBox.appendChild(makeStat('Travel Budget', heroData.travel));
+        infoBox.appendChild(makeStat('Retreat Requirement', heroData.retreat));
+
+        // Abilities
+        const abilities = document.createElement('div');
+        abilities.style.marginTop = '12px';
+        const abilitiesLabel = document.createElement('span');
+        abilitiesLabel.textContent = 'Abilities: ';
+        abilitiesLabel.style.fontWeight = 'bold';
+        abilities.appendChild(abilitiesLabel);
+        const abilitiesContent = document.createElement('span');
+        abilitiesContent.innerHTML = heroData.abilitiesText
+          ? heroData.abilitiesText.map(a => a.text).join('<br>')
+          : 'None';
+        abilitiesContent.style.display = 'inline-block';
+        abilitiesContent.style.marginLeft = '0.25em';
+        abilities.appendChild(abilitiesContent);
+        infoBox.appendChild(abilities);
+
+        document.body.appendChild(infoBox);
       }
-      if (nameBox) nameBox.textContent = heroName || 'Unknown';
-    }
 
-    // === Create deck container ===
-    const container = document.createElement('div');
-    container.classList.add('deck-container');
-    document.body.appendChild(container);
+      // === Create deck container ===
+      const container = document.createElement('div');
+      container.classList.add('deck-container');
+      document.body.appendChild(container);
 
-    // === Filter all cards for this hero ===
-    const heroDeck = heroCards.filter(c => c.hero === heroName);
-    if (heroDeck.length === 0) {
-      const none = document.createElement('div');
-      none.textContent = 'No cards found for this hero.';
-      none.style.fontWeight = 'bold';
-      none.style.color = 'black';
-      none.style.fontSize = '36px';
-      container.appendChild(none);
-      return;
-    }
+      // === Filter all cards for this hero ===
+      const heroDeck = heroCards.filter(c => c.hero === heroName);
+      if (heroDeck.length === 0) {
+        const none = document.createElement('div');
+        none.textContent = 'No cards found for this hero.';
+        none.style.fontWeight = 'bold';
+        none.style.color = 'black';
+        none.style.fontSize = '36px';
+        container.appendChild(none);
+        return;
+      }
 
-    // === Render each card with its perDeck quantity ===
-    heroDeck.forEach(cardData => {
-      const row = document.createElement('div');
-      row.classList.add('deck-row');
+      // === Render each card with its perDeck quantity ===
+      heroDeck.forEach(cardData => {
+        const row = document.createElement('div');
+        row.classList.add('deck-row');
 
-      const qty = document.createElement('div');
-      qty.classList.add('deck-qty');
-      qty.textContent = `${cardData.perDeck}x`;
+        const qty = document.createElement('div');
+        qty.classList.add('deck-qty');
+        qty.textContent = `${cardData.perDeck}x`;
 
-      const cardElement = renderCard(cardData.id);
-      row.appendChild(qty);
-      row.appendChild(cardElement);
+        const cardElement = renderCard(cardData.id);
+        row.appendChild(qty);
+        row.appendChild(cardElement);
 
-      container.appendChild(row);
+        container.appendChild(row);
+      });
     });
-  });
-</script>
+    </script>
 
 </body>
 </html>
