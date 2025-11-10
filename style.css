@@ -343,21 +343,75 @@ html, body {
   z-index: 1;    /* place behind text */
 }
 
+.close-box {
+  position: absolute;
+  top: 150px;      /* adjust vertical position */
+  right: -250px;     /* adjust horizontal position */
+  width: 385px;   /* adjust width */
+  height: 40px;  /* adjust height */
+  background-color: #777777;   /* dark grey */
+  border: 5px solid #000;   /* thick black border */
+
+  /* Diagonal right edge */
+  clip-path: polygon(
+    10% 0,        /* top-left (was 90% 0 mirrored across center) */
+    100% 0,       /* top-right (was 0 0) */
+    100% 100%,    /* bottom-right */
+    0 100%        /* bottom-left */
+  );
+
+  z-index: 1;    /* place behind text */
+}
+
 .backgroundBox {
-  background: rgba(255, 255, 255, 0.8); /* semi-transparent white */
-  border-radius: 16px;
-  padding: 20px;
-  margin: 100px auto;
-  width: 80%;
-  max-width: 600px;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  font-family: 'Poppins', sans-serif;
+  background: none; /* transparent, we’re repurposing this container */
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-left: 20px;
+  margin-top: 15px;
+  width: 100%;
 }
 
 .charName-box {
-  font-weight: 700;
-  font-size: 1.8rem;
-  color: #222;
-  margin-bottom: 15px;
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid black;
+  border-radius: 14px;
+  padding: 6px 14px;
+  font-family: 'Racing Sans One', sans-serif;
+  font-size: 26px;
+  color: black;
+  font-weight: bold;
+  text-align: left;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.deckTitle-box {
+  position: absolute;
+  top: 120px;      /* adjust vertical position on page */
+  left: -15px;    /* adjust horizontal position */
+  width: 425px;
+  height: 40px;
+  background-color: #bfbfbf;
+  border: 5px solid #000;
+  clip-path: polygon(
+    0 0,
+    90% 0,
+    100% 100%,
+    0 100%
+  );
+  z-index: 1;
+
+  display: flex;
+  justify-content: center; /* horizontal center */
+  align-items: center;     /* vertical center */
+}
+
+#hero-title {
+  position: relative;   /* inside flex box */
+  font-size: 24px;      /* adjust to fit box */
+  color: white;
+  pointer-events: none;
+  margin: 0;
 }

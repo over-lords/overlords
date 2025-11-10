@@ -8,72 +8,121 @@
   <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
   <link rel="stylesheet" href="style.css">
   <title>Overlords</title>
+  <style>
+    .deck-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 18px;
+      margin-top: 200px;
+      padding-left: 40px;
+      padding-bottom: 50px;
+    }
+    .deck-row {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .deck-qty {
+      flex-shrink: 0;
+      text-align: right;
+      font-weight: bold;
+      font-family: 'Racing Sans One', sans-serif;
+      font-size: 72px;
+      line-height: 1;
+      color: black;
+      padding-top: 10px;
+      width: 70px;
+    }
+  </style>
 </head>
 <body style="background-color:white;" onload="window.scrollTo(0, 1)">
   <div class="bg-image" alt="" style="opacity: 55%;"></div>
-  <div class="title-box" id="title-box"></div>
-  <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+    <div class="title-box" id="title-box"></div>
+    <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
-  <div class="back-box" id="back-box" onclick="location.href='deckList.html'" style="cursor: pointer; margin-top: -30px;">
-    <h1 class="menu-text" style="margin-top: 2.5px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
+  <div class="deckTitle-box" id="deckTitle-box" style="pointer-events: none;">
+    <h1 id="hero-title" class="glow-dynamic" style="pointer-events: none;"></h1>
   </div>
 
-  <div class="backgroundBox" id="backgroundBox">
+  <div class="close-box" id="close-box" onclick="location.href='deckList.html'" style="cursor: pointer; margin-top: -120px;">
+    <h1 class="menu-text" style="margin-top: 2.5px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X</h1>
+  </div>
+
+  <!-- <div class="backgroundBox" id="backgroundBox">
     <div class="charName-box" id="charName-box"></div>
-  </div>
+  </div> -->
 
   <script type="module">
-    import { renderCard } from './utils/cardRenderer.js';
-    import { heroCards } from './data/heroCards.js';
+  import { renderCard } from './utils/cardRenderer.js';
+  import { heroCards } from './data/heroCards.js';
+  import { heroes } from './data/faceCards.js';
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const heroName = urlParams.get('name');
-      const nameDisplay = document.getElementById('charName-box');
-      if (heroName && nameDisplay) nameDisplay.textContent = heroName;
+  window.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const heroName = urlParams.get('name');
 
-      // Create deck container
-      const container = document.createElement('div');
-      container.style.display = 'flex';
-      container.style.flexDirection = 'column';
-      container.style.alignItems = 'flex-start';
-      container.style.marginTop = '20px';
-      container.style.paddingLeft = '20px';
-      document.body.appendChild(container);
+    // === Get DOM elements ===
+    const titleEl = document.getElementById('hero-title');
 
-      // Filter all cards for this hero
-      const heroDeck = heroCards.filter(c => c.hero === heroName);
-      if (heroDeck.length === 0) {
-        const none = document.createElement('div');
-        none.textContent = 'No cards found for this hero.';
-        none.style.fontWeight = 'bold';
-        none.style.color = 'gray';
-        container.appendChild(none);
-        return;
+    // === Find hero data ===
+    const heroData = heroes.find(h => h.name === heroName);
+
+    // === Update title and hero name dynamically ===
+    if (heroData) {
+      if (titleEl) {
+        titleEl.textContent = heroData.name;
+        titleEl.style.color = heroData.color;
+        titleEl.style.textShadow = `
+          0 0 10px ${heroData.color}
+        `;
+        titleEl.style.fontSize = "32px";
       }
 
-      // Render each card with its perDeck quantity
-      heroDeck.forEach(cardData => {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.alignItems = 'center';
-        row.style.marginBottom = '12px';
+    } else {
+      if (titleEl) {
+        titleEl.textContent = heroName || 'Unknown Hero';
+        titleEl.style.color = 'black';
+        titleEl.style.textShadow = 'none';
+      }
+      if (nameBox) nameBox.textContent = heroName || 'Unknown';
+    }
 
-        const qty = document.createElement('div');
-        qty.textContent = `${cardData.perDeck}x`;
-        qty.style.width = '40px';
-        qty.style.fontWeight = 'bold';
-        qty.style.fontSize = '18px';
-        qty.style.textAlign = 'right';
-        qty.style.marginRight = '10px';
+    // === Create deck container ===
+    const container = document.createElement('div');
+    container.classList.add('deck-container');
+    document.body.appendChild(container);
 
-        const cardElement = renderCard(cardData.id);
-        row.appendChild(qty);
-        row.appendChild(cardElement);
+    // === Filter all cards for this hero ===
+    const heroDeck = heroCards.filter(c => c.hero === heroName);
+    if (heroDeck.length === 0) {
+      const none = document.createElement('div');
+      none.textContent = 'No cards found for this hero.';
+      none.style.fontWeight = 'bold';
+      none.style.color = 'black';
+      none.style.fontSize = '36px';
+      container.appendChild(none);
+      return;
+    }
 
-        container.appendChild(row);
-      });
+    // === Render each card with its perDeck quantity ===
+    heroDeck.forEach(cardData => {
+      const row = document.createElement('div');
+      row.classList.add('deck-row');
+
+      const qty = document.createElement('div');
+      qty.classList.add('deck-qty');
+      qty.textContent = `${cardData.perDeck}x`;
+
+      const cardElement = renderCard(cardData.id);
+      row.appendChild(qty);
+      row.appendChild(cardElement);
+
+      container.appendChild(row);
     });
-  </script>
+  });
+</script>
+
 </body>
 </html>
