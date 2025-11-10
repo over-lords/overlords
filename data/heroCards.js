@@ -18,7 +18,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: draw(2)
+        effect: `draw(2)`
       }
     ]
   },
@@ -27,6 +27,7 @@ export const heroCards = [
     name: "World of Cardboard",
     hero: "Superman",
     image: `${cardArtFolder}/Superman/World Made of Cardboard.jpg`,
+    perDeck: "1",
     damage: "5",
     abilitiesText: [
       {
@@ -40,7 +41,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: boostCardDamage(findKOdHeroes)
+        effect: `boostCardDamage(findKOdHeroes)`
       }
     ]
   }

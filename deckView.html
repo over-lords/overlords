@@ -1,40 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-    <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
-    <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
-    <link rel="stylesheet" href="style.css">
-    <title>Overlords</title>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
+  <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <title>Overlords</title>
 </head>
 <body style="background-color:white;" onload="window.scrollTo(0, 1)">
-    <main-content>
-    <div class="bg-image" alt="" style="opacity: 55%;"></div>
-    <div class="title-box" id="title-box"></div>
-    <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+  <div class="bg-image" alt="" style="opacity: 55%;"></div>
+  <div class="title-box" id="title-box"></div>
+  <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
-    <div class="back-box" id="back-box" onclick="location.href='deckList.html'" style="cursor: pointer; margin-top: -30px;">
-            <h1 class="menu-text" style="margin-top: 2.5px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
-    </div>
+  <div class="back-box" id="back-box" onclick="location.href='deckList.html'" style="cursor: pointer; margin-top: -30px;">
+    <h1 class="menu-text" style="margin-top: 2.5px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
+  </div>
 
-    <script>
-        // Get the 'name' parameter from the URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const heroName = urlParams.get('name');
+  <div class="backgroundBox" id="backgroundBox">
+    <div class="charName-box" id="charName-box"></div>
+  </div>
 
-        // Print the name (you can replace with logic to load hero data later)
-        if (heroName) {
-            const nameDisplay = document.createElement('h2');
-            nameDisplay.textContent = `Selected Character: ${heroName}`;
-            nameDisplay.style.textAlign = "center";
-            nameDisplay.style.marginTop = "100px";
-            document.body.appendChild(nameDisplay);
+  <script type="module">
+    import { renderCard } from './utils/cardRenderer.js';
+    import { heroCards } from './data/heroCards.js';
 
-            console.log("Character clicked:", heroName);
-        }
-    </script>
-    </main-content>
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const heroName = urlParams.get('name');
+      const nameDisplay = document.getElementById('charName-box');
+      if (heroName && nameDisplay) nameDisplay.textContent = heroName;
+
+      // Create deck container
+      const container = document.createElement('div');
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.alignItems = 'flex-start';
+      container.style.marginTop = '20px';
+      container.style.paddingLeft = '20px';
+      document.body.appendChild(container);
+
+      // Filter all cards for this hero
+      const heroDeck = heroCards.filter(c => c.hero === heroName);
+      if (heroDeck.length === 0) {
+        const none = document.createElement('div');
+        none.textContent = 'No cards found for this hero.';
+        none.style.fontWeight = 'bold';
+        none.style.color = 'gray';
+        container.appendChild(none);
+        return;
+      }
+
+      // Render each card with its perDeck quantity
+      heroDeck.forEach(cardData => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.marginBottom = '12px';
+
+        const qty = document.createElement('div');
+        qty.textContent = `${cardData.perDeck}x`;
+        qty.style.width = '40px';
+        qty.style.fontWeight = 'bold';
+        qty.style.fontSize = '18px';
+        qty.style.textAlign = 'right';
+        qty.style.marginRight = '10px';
+
+        const cardElement = renderCard(cardData.id);
+        row.appendChild(qty);
+        row.appendChild(cardElement);
+
+        container.appendChild(row);
+      });
+    });
+  </script>
 </body>
 </html>

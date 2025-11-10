@@ -342,3 +342,22 @@ html, body {
 
   z-index: 1;    /* place behind text */
 }
+
+.backgroundBox {
+  background: rgba(255, 255, 255, 0.8); /* semi-transparent white */
+  border-radius: 16px;
+  padding: 20px;
+  margin: 100px auto;
+  width: 80%;
+  max-width: 600px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
+}
+
+.charName-box {
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #222;
+  margin-bottom: 15px;
+}
