@@ -82,19 +82,23 @@ export function renderCard(cardId) {
 
   // Abilities text (left-aligned)
   const textBox = document.createElement('div');
-  textBox.style.flex = '1';
-  textBox.style.fontSize = '13px';
-  textBox.style.lineHeight = '1.2em';
-  textBox.style.textAlign = 'left';
-  textBox.style.marginRight = '10px';
+textBox.style.flex = '1';
+textBox.style.fontSize = '13px';
+textBox.style.lineHeight = '1.2em';
+textBox.style.textAlign = 'left';
+textBox.style.marginRight = '10px';
 
-  if (Array.isArray(cardData.abilitiesText)) {
-    cardData.abilitiesText.forEach(a => {
-      const line = document.createElement('div');
-      line.textContent = a.text;
-      textBox.appendChild(line);
-    });
-  }
+if (Array.isArray(cardData.abilitiesText)) {
+  cardData.abilitiesText.forEach(a => {
+    const line = document.createElement('div');
+
+    // Replace \n or desired newline markers with <span class="line-gap"></span>
+    const htmlWithGaps = a.text.replace(/\n/g, '<span class="line-gap"></span>');
+
+    line.innerHTML = htmlWithGaps; // Use innerHTML to render the span
+    textBox.appendChild(line);
+  });
+}
 
   bottomOverlay.appendChild(textBox);
 

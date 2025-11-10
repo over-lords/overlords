@@ -44,5 +44,28 @@ export const heroCards = [
         effect: `boostCardDamage(findKOdHeroes)`
       }
     ]
+  },
+  {
+    id: "2",
+    name: "Super Flare",
+    hero: "Superman",
+    image: `${cardArtFolder}/Superman/Super Flare.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `CHOOSE: This card deals 8 Damage and Superman cannot deal Damage on his next turn. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw a card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Boost card damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `boostCardDamage(findKOdHeroes)`
+      }
+    ]
   }
 ]
