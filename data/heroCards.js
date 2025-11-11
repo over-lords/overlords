@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/cebac8837b04b1d16a5bbd9e2864d0acf77ca10f/Public/Images/Card%20Assets";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/bf4e1e581d01f61d19b3eeb43d02e6093696eb8e/Public/Images/Card%20Assets";
 
 export const heroCards = [
   {
@@ -1612,7 +1612,7 @@ export const heroCards = [
     type: "Main",
     name: "Lost in the Speed Force",
     hero: "Flash (Wally West)",
-    image: `${cardArtFolder}/Wally West/Wally Lost in the Speedforce.jpg`,
+    image: `${cardArtFolder}/Wally West/Wally Lost in the Speedforce 2.jpg`,
     perDeck: "1",
     damage: "0",
     abilitiesText: [
