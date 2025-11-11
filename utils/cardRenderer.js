@@ -151,7 +151,10 @@ export function renderCard(cardId, container) {
       bottomOverlay.style.paddingRight = '0';
     }
 
-    return card;
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+    return wrapper;
   }
 }
 

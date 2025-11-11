@@ -9,6 +9,12 @@
   <link rel="stylesheet" href="style.css">
   <title>Overlords</title>
   <style>
+    .scroll-container {
+      position: relative;
+      min-height: 200vh; /* forces vertical scrolling */
+      overflow-y: auto;
+      padding-bottom: 200px;
+    }
     .deck-container {
       display: flex;
       flex-direction: column;
@@ -27,10 +33,10 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 14px;
+      gap: 0px;
     }
     .deck-qty {
-      flex-shrink: 0;               
+      flex-shrink: 0;
       text-align: center;
       font-weight: bold;
       font-family: 'Racing Sans One', sans-serif;
@@ -39,23 +45,51 @@
       color: black;
       padding: 10px 14px;
 
-      background-color: rgba(255, 255, 255, 0.7); 
+      background-color: rgba(255, 255, 255, 0.7);
       border: 4px solid black;
-      border-radius: 6px;           
+      border-radius: 6px;
       box-sizing: border-box;
 
       width: 120px; /* fixed width wide enough for largest qty */
       margin-right: 14px;
     }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow-x: hidden;
+    }
+    .bg-image {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: url('https://raw.githubusercontent.com/over-lords/overlords/332d3e1b05c84f8b31022c7907034b6bd0e2db77/Public/Images/Site%20Assets/BoardReduced.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: -1;
+      opacity: 0.55;
+    }
+    .card-wrapper {
+      display: inline-block;
+      transform: scale(0.8);
+      transform-origin: top left;
+      margin-bottom: -60px;
+    }
   </style>
 </head>
-<body style="background-color:white;" onload="window.scrollTo(0, 1)">
-  <div class="bg-image" alt="" style="opacity: 55%;"></div>
-    <div class="title-box" id="title-box"></div>
-    <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+<body>
+  <div class="bg-image" alt=""></div>
 
-  <div class="deckTitle-box" id="deckTitle-box" style="pointer-events: none;">
-    <h1 id="hero-title" class="glow-dynamic" style="pointer-events: none;"></h1>
+  <div class="scroll-container">
+    <div class="title-box" id="title-box"></div>
+    <h1 id="title-namePlate" class="glow-red" style="pointer-events: none;">Overlords</h1>
+
+    <div class="deckTitle-box" id="deckTitle-box" style="pointer-events: none;">
+      <h1 id="hero-title" class="glow-dynamic" style="pointer-events: none;"></h1>
+    </div>
   </div>
 
   <div class="close-box" id="close-box" onclick="location.href='deckList.html'" style="cursor: pointer; margin-top: -120px; background-color: red;">
@@ -66,6 +100,8 @@
     import { renderCard } from './utils/cardRenderer.js';
     import { heroCards } from './data/heroCards.js';
     import { heroes } from './data/faceCards.js';
+    import { keywords } from './data/keywords.js';
+    import { renderAbilityText } from './utils/cardRenderer.js';
 
     window.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -95,21 +131,42 @@
         }
       }
 
-      // === Hero Info Box ===
+      // === Hero Info Box (Collapsible) ===
       if (heroData) {
-        const infoBox = document.createElement('div');
-        infoBox.style.position = 'absolute';
-        infoBox.style.top = '15px';
-        infoBox.style.right = '20px';
-        infoBox.style.width = '300px';
-        infoBox.style.background = 'rgba(255,255,255,0.8)';
-        infoBox.style.border = '2px solid black';
-        infoBox.style.borderRadius = '8px';
-        infoBox.style.padding = '8px';
-        infoBox.style.fontFamily = "'Racing Sans One', sans-serif";
-        infoBox.style.fontSize = '16px';
-        infoBox.style.color = 'black';
-        infoBox.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+        // --- Outer wrapper ---
+        const infoWrapper = document.createElement('div');
+        infoWrapper.style.position = 'absolute';
+        infoWrapper.style.top = '15px';
+        infoWrapper.style.right = '145px';
+        infoWrapper.style.width = '275px';
+        infoWrapper.style.border = '2px solid black';
+        infoWrapper.style.borderRadius = '8px';
+        infoWrapper.style.overflow = 'hidden';
+        infoWrapper.style.background = 'rgba(255,255,255,0.8)';
+        infoWrapper.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+        infoWrapper.style.transition = 'max-height 0.4s ease';
+
+        // --- Header toggle line ---
+        const toggleHeader = document.createElement('div');
+        toggleHeader.textContent = 'Show Character Stats \\/';
+        toggleHeader.style.fontFamily = "'Racing Sans One', sans-serif";
+        toggleHeader.style.fontSize = '18px';
+        toggleHeader.style.fontWeight = 'bold';
+        toggleHeader.style.textAlign = 'center';
+        toggleHeader.style.cursor = 'pointer';
+        toggleHeader.style.padding = '6px 0';
+        toggleHeader.style.background = 'rgba(255,255,255,0.9)';
+        toggleHeader.style.borderBottom = '2px solid black';
+        toggleHeader.style.userSelect = 'none';
+        infoWrapper.appendChild(toggleHeader);
+
+        // --- Content area ---
+        const infoContent = document.createElement('div');
+        infoContent.style.padding = '8px';
+        infoContent.style.fontFamily = "'Racing Sans One', sans-serif";
+        infoContent.style.fontSize = '16px';
+        infoContent.style.color = 'black';
+        infoContent.style.display = 'none'; // hidden by default
 
         // Teams row
         const teamDiv = document.createElement('div');
@@ -127,7 +184,7 @@
           img.style.marginLeft = '5px';
           teamDiv.appendChild(img);
         });
-        infoBox.appendChild(teamDiv);
+        infoContent.appendChild(teamDiv);
 
         // Stats
         const makeStat = (label, value) => {
@@ -135,10 +192,10 @@
           el.innerHTML = `<span style="font-weight:bold">${label}:</span> ${value}`;
           return el;
         };
-        infoBox.appendChild(makeStat('HP', heroData.hp));
-        infoBox.appendChild(makeStat('Damage Threshold', heroData.damageThreshold));
-        infoBox.appendChild(makeStat('Travel Budget', heroData.travel));
-        infoBox.appendChild(makeStat('Retreat Requirement', heroData.retreat));
+        infoContent.appendChild(makeStat('HP', heroData.hp));
+        infoContent.appendChild(makeStat('Damage Threshold', heroData.damageThreshold));
+        infoContent.appendChild(makeStat('Travel Budget', heroData.travel));
+        infoContent.appendChild(makeStat('Retreat Requirement', heroData.retreat));
 
         // Abilities
         const abilities = document.createElement('div');
@@ -154,15 +211,36 @@
         abilitiesContent.style.display = 'inline-block';
         abilitiesContent.style.marginLeft = '0.25em';
         abilities.appendChild(abilitiesContent);
-        infoBox.appendChild(abilities);
+        infoContent.appendChild(abilities);
 
-        document.body.appendChild(infoBox);
+        infoWrapper.appendChild(infoContent);
+        document.body.appendChild(infoWrapper);
+
+        // --- Toggle logic ---
+        let isOpen = false;
+        toggleHeader.addEventListener('click', () => {
+          isOpen = !isOpen;
+          if (isOpen) {
+            infoContent.style.maxHeight = '0';
+            infoContent.style.overflow = 'hidden';
+            infoContent.style.transition = 'max-height 0.3s ease-out';
+            infoContent.style.display = 'block';
+            requestAnimationFrame(() => {
+              infoContent.style.maxHeight = infoContent.scrollHeight + 'px';
+            });
+            toggleHeader.textContent = 'Hide Character Stats /\\';
+          } else {
+            infoContent.style.maxHeight = '0';
+            setTimeout(() => (infoContent.style.display = 'none'), 300);
+            toggleHeader.textContent = 'Show Character Stats \\/';
+          }
+        });
       }
 
       // === Create deck container ===
       const container = document.createElement('div');
       container.classList.add('deck-container');
-      document.body.appendChild(container);
+      document.querySelector('.scroll-container').appendChild(container);
 
       // === Filter all cards for this hero ===
       const heroDeck = heroCards.filter(c => c.hero === heroName);
@@ -180,6 +258,7 @@
       heroDeck.forEach(cardData => {
         const row = document.createElement('div');
         row.classList.add('deck-row');
+        row.style.alignItems = 'flex-start'; // align card and text properly
 
         const qty = document.createElement('div');
         qty.classList.add('deck-qty');
@@ -189,6 +268,66 @@
         row.appendChild(qty);
         row.appendChild(cardElement);
 
+        // === Info Panel beside the card ===
+        const infoDiv = document.createElement('div');
+        infoDiv.style.display = 'flex';
+        infoDiv.style.flexDirection = 'column';
+        infoDiv.style.justifyContent = 'flex-start';
+        infoDiv.style.marginLeft = '12px';
+        infoDiv.style.color = 'white';
+        infoDiv.style.fontFamily = "'Racing Sans One', sans-serif";
+        infoDiv.style.fontSize = '18px';
+        infoDiv.style.maxWidth = '350px';
+        infoDiv.style.lineHeight = '1.3em';
+
+        const makeLine = (label, value) => {
+          const line = document.createElement('div');
+          line.innerHTML = `<b>${label}:</b> ${value ?? '—'}`;
+          return line;
+        };
+
+        infoDiv.appendChild(makeLine('Name', cardData.name));
+        infoDiv.appendChild(makeLine('Damage', cardData.damage));
+        let effectText = 'None';
+        if (Array.isArray(cardData.abilitiesText) && cardData.abilitiesText.length > 0) {
+          const rawText = cardData.abilitiesText.map(a => a.text).join('<br>');
+          effectText = renderAbilityText(rawText); // THIS parses [ICON:...] into <img> tags
+        }
+        infoDiv.appendChild(makeLine('Effect', effectText));
+
+        // === Keyword detection ===
+        const foundKeywords = [];
+        if (Array.isArray(cardData.abilitiesText)) {
+        const allText = cardData.abilitiesText.map(a => a.text).join(' ');
+        const textWords = allText.split(/[\s,.;:!?()]+/);
+          for (const [key, definition] of Object.entries(keywords)) {
+            if (textWords.includes(key)) {
+              foundKeywords.push({ key, definition });
+            }
+          }
+        }
+
+        if (foundKeywords.length > 0) {
+          const kwHeader = document.createElement('div');
+          kwHeader.innerHTML = `<b><u>Keyword Definitions</u></b>`;
+          kwHeader.style.marginTop = '8px';
+          infoDiv.appendChild(kwHeader);
+
+          const kwList = document.createElement('ul');
+          kwList.style.marginTop = '4px';
+          kwList.style.marginBottom = '0';
+          kwList.style.paddingLeft = '20px';
+
+          foundKeywords.forEach(k => {
+            const li = document.createElement('li');
+            li.innerHTML = `<b>${k.key}:</b> ${k.definition}`;
+            kwList.appendChild(li);
+          });
+
+          infoDiv.appendChild(kwList);
+        }
+
+        row.appendChild(infoDiv);
         container.appendChild(row);
       });
     });
