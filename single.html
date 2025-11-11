@@ -1,29 +1,257 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-    <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
-    <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
-    <link rel="stylesheet" href="style.css">
-    <title>Overlords</title>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
+  <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
+  <link rel="stylesheet" href="style.css">
+  <title>Overlords</title>
+  <style>
+  .hero-box {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;                  /* remove inner border so it blends into dropdown */
+  border-radius: 0 0 6px 6px;    /* keep rounded bottom to match dropdown */
+  margin: 0;                     /* remove outside margins */
+  padding: 15px;
+  width: 100%;                   /* fill full dropdown width */
+  box-sizing: border-box;        /* include padding in total width */
+}
+
+  /* Category container – wraps heroes into responsive rows */
+  .category-group {
+    border: 2px solid black;
+    border-radius: 6px;
+    margin: 15px 0;
+    padding: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+  }
+  .guardian-bg { background-color: rgba(173, 216, 230, 0.5); }  /* Light blue */
+  .striker-bg  { background-color: rgba(255, 182, 193, 0.5); }  /* Light red */
+  .tactician-bg{ background-color: rgba(255, 255, 153, 0.5); }  /* Light yellow */
+
+  .hero-category-title {
+    flex-basis: 100%;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+    text-shadow: 0 0 3px white;
+  }
+
+  .hero-card {
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .hero-card img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border: 2px solid black;
+    border-radius: 4px;
+  }
+
+  .hero-card.selected img {
+    box-shadow: 0 0 10px 5px yellow;
+    transform: scale(1.05);
+  }
+
+  .hero-card p {
+    margin-top: 5px;
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    }
+  .collapsible {
+  background-color: #5d5d5d;
+  color: white;
+  cursor: pointer;
+  padding: 10px;
+  width: 95%;
+  max-width: 1200px;
+  border: 2px solid black;
+  border-radius: 6px;
+  text-align: center;
+  margin: 20px auto 0 auto;
+  font-weight: bold;
+  transition: border-radius 0.2s ease, border-bottom 0.2s ease;
+  box-sizing: border-box;
+}
+
+.collapsible.active {
+  background-color: #777;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+}
+
+.content {
+  display: none;
+  overflow: hidden;
+  width: 95%;
+  max-width: 1200px;
+  margin: 0 auto;
+  border: 2px solid black;
+  border-top: none;             /* merge with open button border */
+  border-radius: 0 0 6px 6px;
+  box-sizing: border-box;       /* ensures exact same width */
+}
+
+.content.show {
+  display: block;
+}
+
+  .start-button {
+    background-color: gray;
+    border: 3px solid black;
+    border-radius: 6px;
+    color: black;
+    font-weight: bold;
+    font-size: 1.2rem;
+    width: 250px;
+    text-align: center;
+    margin: 20px auto;
+    padding: 10px;
+    cursor: not-allowed;
+  }
+
+  .start-button.active {
+    background-color: yellow;
+    cursor: pointer;
+  }
+</style>
 </head>
-<body style="background-color:white;" onload="window.scrollTo(0, 1)">
-    <div class="bg-image" alt="" style="opaCity: 35%;"></div>
-    <div class="container">
-        <div class="title-box" id="title-box"></div>
-        <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+    <body style="background-color:white;" onload="window.scrollTo(0, 1)">
+        <div class="bg-image" alt="" style="opacity: 35%;"></div>
+        <div class="container">
+            <div class="title-box" id="title-box"></div>
+            <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
-        <div class="back-box" id="back-box" onclick="location.href='play.html'" style="cursor: pointer; margin-top: -30px; height: 30px; background-color: #5d5d5d; border: 5px solid #000;">
-            <h1 class="menu-text" style="font-size: 1.8rem; margin-top: 0px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
+            <div class="back-box" id="back-box" onclick="location.href='play.html'" style="cursor: pointer; margin-top: -30px; height: 30px; background-color: #5d5d5d; border: 5px solid #000;">
+                <h1 class="menu-text" style="font-size: 1.8rem; margin-top: 0px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
+            </div>
+
+            <div class="container" style="margin-top: 180px; width: 100%;">
+
+                <button class="collapsible">Select Your Heroes</button>
+                <div class="content">
+                <div class="hero-box">
+                    <div id="hero-grid" class="hero-grid"></div>
+                </div>
+                </div>
+
+                <div class="start-button" id="start-button">Start Game!</div>
+                <br><br><br>
+            </div>
         </div>
 
-        <!-- ALL LISTS HERE -->
+        <script type="module">
+            import { heroes } from './data/faceCards.js';
 
-        <div class="deck-box" id="deck-box" onclick="location.href='game.html'" style="cursor: pointer; margin-top: -10px;">
-            <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Start Game!</h1>
-        </div>
-    </div>
-</body>
+            const collapsible = document.querySelector('.collapsible');
+            const content = document.querySelector('.content');
+            const heroGrid = document.getElementById('hero-grid');
+            const startButton = document.getElementById('start-button');
+
+            collapsible.addEventListener('click', () => {
+                collapsible.classList.toggle('active');
+                content.classList.toggle('show');
+            });
+
+            // Sort and filter heroes
+            const filteredHeroes = heroes
+                .filter(h => h.doNotShow !== "true")
+                .sort((a, b) => {
+                const order = { Guardian: 1, Striker: 2, Tactician: 3 };
+                if (order[a.category] !== order[b.category]) return order[a.category] - order[b.category];
+                return parseInt(a.id) - parseInt(b.id);
+                });
+
+            const categories = [
+                { name: 'Guardian', class: 'guardian-bg' },
+                { name: 'Striker', class: 'striker-bg' },
+                { name: 'Tactician', class: 'tactician-bg' }
+            ];
+
+            // Render categories with wrapping grids
+            categories.forEach(cat => {
+                const catHeroes = filteredHeroes.filter(h => h.category === cat.name);
+                if (!catHeroes.length) return;
+
+                const section = document.createElement('div');
+                section.classList.add('category-group', cat.class);
+
+                const title = document.createElement('div');
+                title.classList.add('hero-category-title');
+
+                // Count only heroes that are not doNotShow:true
+                const visibleCount = catHeroes.filter(h => h.doNotShow !== "true").length;
+
+                // Add an 's' for pluralized category names
+                title.textContent = `${cat.name}s (${visibleCount})`;
+
+                section.appendChild(title);
+
+                catHeroes.forEach(hero => {
+                const card = document.createElement('div');
+                card.classList.add('hero-card');
+                card.dataset.id = hero.id;
+
+                const img = document.createElement('img');
+                img.src = hero.image;
+                img.alt = hero.name;
+
+                const name = document.createElement('p');
+                name.textContent = hero.name;
+
+                card.appendChild(img);
+                card.appendChild(name);
+                section.appendChild(card);
+                });
+
+                heroGrid.appendChild(section);
+            });
+
+            // Selection logic
+            const selectedHeroes = new Set();
+
+            heroGrid.addEventListener('click', e => {
+                const card = e.target.closest('.hero-card');
+                if (!card) return;
+
+                const heroId = card.dataset.id;
+                if (selectedHeroes.has(heroId)) {
+                selectedHeroes.delete(heroId);
+                card.classList.remove('selected');
+                } else if (selectedHeroes.size < 6) {
+                selectedHeroes.add(heroId);
+                card.classList.add('selected');
+                }
+
+                if (selectedHeroes.size >= 1 && selectedHeroes.size <= 6) {
+                startButton.classList.add('active');
+                startButton.style.cursor = 'pointer';
+                } else {
+                startButton.classList.remove('active');
+                startButton.style.cursor = 'not-allowed';
+                }
+            });
+
+            startButton.addEventListener('click', () => {
+                if (!startButton.classList.contains('active')) return;
+                localStorage.setItem('selectedHeroes', JSON.stringify([...selectedHeroes]));
+                location.href = 'game.html';
+            });
+        </script>
+    </body>
 </html>
