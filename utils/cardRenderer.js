@@ -122,6 +122,8 @@ export function renderCard(cardId, container) {
       const dmgImg = document.createElement('img');
       dmgImg.src = "https://raw.githubusercontent.com/over-lords/overlords/4c0f2468199e5fcd6ee3a996f5803d11a9c9d981/Public/Images/Card%20Assets/Misc/Damage.png";
       dmgImg.alt = 'Damage';
+      dmgImg.style.position = 'absolute';
+      dmgImg.style.left = '-6px';
       dmgImg.style.width = '100%';
       dmgImg.style.height = '100%';
       dmgImg.style.objectFit = 'contain';
@@ -131,7 +133,7 @@ export function renderCard(cardId, container) {
       dmgNum.textContent = cardData.damage;
       dmgNum.style.position = 'absolute';
       dmgNum.style.top = '50%';
-      dmgNum.style.left = '50%';
+      dmgNum.style.left = 'calc(50% - 6px)';
       dmgNum.style.transform = 'translate(-50%, -50%)';
       dmgNum.style.fontSize = '22px';
       dmgNum.style.fontWeight = 'bold';
