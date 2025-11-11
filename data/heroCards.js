@@ -1415,6 +1415,366 @@ export const heroCards = [
       }
     ]
   },
+  {
+    id: "881",
+    type: "Main",
+    name: "Faster Than Light",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally g.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `All leftover Damage from this card is dealt to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "882",
+    type: "Main",
+    name: "At One with the Speed Force",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally h.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `All other Henchmen and Villains take 1 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "883",
+    type: "Main",
+    name: "Pure Momentum",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Flash (Wally) Pure Momentum.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every time Flash has traveled this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "884",
+    type: "Main",
+    name: "Reunited",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally e.jpg`,
+    perDeck: "1",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Select 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Flash has no active Teammates: Draw 2 cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "885",
+    type: "Main",
+    name: "Eternity of Waiting",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally Speedforce Runs Through Him.jpg`,
+    perDeck: "1",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage equal to the HP Flash has lost.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "886",
+    type: "Main",
+    name: "Next Generation",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally c.jpg`,
+    perDeck: "1",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `All other active [ICON:Titans] Heroes draw 2 cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "887",
+    type: "Main",
+    name: "Faster Than a Locomotive",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally f.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reveal the top card of the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the revealed card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "888",
+    type: "Main",
+    name: "Good 'ol Days",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally Old Times.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Gain a Sidekick. <span class="line-gap"></span> Increase this card's Damage by 1 for every active [ICON:Titans] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "889",
+    type: "Main",
+    name: "Lost in the Speed Force",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally Lost in the Speedforce.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw a card. <span class="line-gap"></span> Increase this card's Damage by 1 for every KO'd Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "890",
+    type: "Main",
+    name: "Love that Transcends Death",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally Linda Park.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE: Draw a card and rescue a Bystander. <span class="line-gap"></span> OR <span class="line-gap"></span> KO a Henchman or Villain that has a captured Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "891",
+    type: "Main",
+    name: "Vibrational Frequency",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Flash (Wally) Vibrational Frequency.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Once, before the start of Flash's next turn, he can prevent himself or another Hero from taking Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "892",
+    type: "Main",
+    name: "Out of Place",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally No Identity.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `You may draw from the Enemies and Allies Pile. <span class="line-gap"></span> [ICON:Flash]: OPTIONAL: Discard a card and increase this card's Damage by 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "893",
+    type: "Main",
+    name: "Rewrite Creation",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally Rewrite the Multiverse.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Every Hero can look at the top 3 cards of their decks and draw 1 of them.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "894",
+    type: "Main",
+    name: "Flash Time",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Flash (Wally) Perception.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `The next damaging card played has its Damage doubled.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "895",
+    type: "Main",
+    name: "Escape the Speed Force",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/Wally trapped.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2 cards. <span class="line-gap"></span> Flash can Travel an unlimited number of times this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
 ]
 
 // Starting ID for a deck: startID=(deckNumber−1)×cardsPerDeck+1
