@@ -119,7 +119,7 @@
           titleEl.textContent = heroData.name;
           titleEl.style.color = heroData.color;
           titleEl.style.textShadow = `0 0 4px black`;
-          titleEl.style.fontSize = "32px";
+          titleEl.style.fontSize = "27.5px";
           titleEl.style.fontFamily = "'Racing Sans One', sans-serif";
         }
       } else {
@@ -136,8 +136,8 @@
         const infoWrapper = document.createElement('div');
         infoWrapper.style.position = 'absolute';
         infoWrapper.style.top = '123px';
-        infoWrapper.style.right = '75px';
-        infoWrapper.style.width = '300px';
+        infoWrapper.style.right = '50px';
+        infoWrapper.style.width = '250px';
         infoWrapper.style.border = '2px solid black';
         infoWrapper.style.borderRadius = '8px';
         infoWrapper.style.overflow = 'hidden';
@@ -147,7 +147,7 @@
 
         // --- Header toggle line ---
         const toggleHeader = document.createElement('div');
-        toggleHeader.textContent = 'Show Character Stats \\/';
+        toggleHeader.textContent = 'Show Character Stats ▼';
         toggleHeader.style.fontFamily = "'Racing Sans One', sans-serif";
         toggleHeader.style.fontSize = '18px';
         toggleHeader.style.fontWeight = 'bold';
@@ -227,11 +227,11 @@
             requestAnimationFrame(() => {
               infoContent.style.maxHeight = infoContent.scrollHeight + 'px';
             });
-            toggleHeader.textContent = 'Hide Character Stats /\\';
+            toggleHeader.textContent = 'Hide Character Stats ▲';
           } else {
             infoContent.style.maxHeight = '0';
             setTimeout(() => (infoContent.style.display = 'none'), 300);
-            toggleHeader.textContent = 'Show Character Stats \\/';
+            toggleHeader.textContent = 'Show Character Stats ▼';
           }
         });
       }
