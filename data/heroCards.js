@@ -312,6 +312,30 @@ export const heroCards = [
     ]
   },
   {
+    id: "442",
+    type: "Main",
+    name: "Daughter of Zeus",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman i.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `After taking this card's Damage, Henchmen and Villains are shoved as far right as possible. <span class="line-gap"></span> CHOOSE: Wonder Woman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
     id: "445",
     type: "Main",
     name: "Lasso of Truth",
