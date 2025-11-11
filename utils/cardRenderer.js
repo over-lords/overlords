@@ -74,7 +74,7 @@ export function renderCard(cardId, container) {
       heroName.style.color = 'white';
       heroName.style.fontSize = '14px';
       heroName.style.textShadow = '1px 1px 3px black';
-      card.appendChild(heroName);
+      //card.appendChild(heroName);
     }
 
     // Bottom overlay (damage + abilities)
