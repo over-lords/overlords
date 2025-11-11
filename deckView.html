@@ -93,9 +93,7 @@
     </div>
   </div>
 
-  <div class="close-box" id="close-box" onclick="location.href='deckList.html'" style="cursor: pointer; margin-top: -120px; background-color: red;">
-    <h1 class="menu-text" style="margin-top: 2.5px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X</h1>
-  </div>
+  <div id="close-box" onclick="location.href='deckList.html'">X</div>
 
   <script type="module">
     import { renderCard } from './utils/cardRenderer.js';
@@ -120,7 +118,7 @@
         if (titleEl) {
           titleEl.textContent = heroData.name;
           titleEl.style.color = heroData.color;
-          titleEl.style.textShadow = `0 0 4px black, 0 0 6px white, 0 0 8px black`;
+          titleEl.style.textShadow = `0 0 4px black`;
           titleEl.style.fontSize = "32px";
           titleEl.style.fontFamily = "'Racing Sans One', sans-serif";
         }
@@ -137,13 +135,13 @@
         // --- Outer wrapper ---
         const infoWrapper = document.createElement('div');
         infoWrapper.style.position = 'absolute';
-        infoWrapper.style.top = '15px';
-        infoWrapper.style.right = '125px';
-        infoWrapper.style.width = '255px';
+        infoWrapper.style.top = '123px';
+        infoWrapper.style.right = '75px';
+        infoWrapper.style.width = '300px';
         infoWrapper.style.border = '2px solid black';
         infoWrapper.style.borderRadius = '8px';
         infoWrapper.style.overflow = 'hidden';
-        infoWrapper.style.background = 'rgba(255,255,255,0.8)';
+        infoWrapper.style.background = 'rgba(222,222,222,1)';
         infoWrapper.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
         infoWrapper.style.transition = 'max-height 0.4s ease';
 
@@ -156,7 +154,7 @@
         toggleHeader.style.textAlign = 'center';
         toggleHeader.style.cursor = 'pointer';
         toggleHeader.style.padding = '6px 0';
-        toggleHeader.style.background = 'rgba(255,255,255,0.9)';
+        toggleHeader.style.background = 'rgba(255,255,255,1)';
         toggleHeader.style.borderBottom = '2px solid black';
         toggleHeader.style.userSelect = 'none';
         infoWrapper.appendChild(toggleHeader);
@@ -215,7 +213,7 @@
         infoContent.appendChild(abilities);
 
         infoWrapper.appendChild(infoContent);
-        document.body.appendChild(infoWrapper);
+        document.querySelector('.scroll-container').appendChild(infoWrapper);
 
         // --- Toggle logic ---
         let isOpen = false;
