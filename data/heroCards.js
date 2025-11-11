@@ -249,7 +249,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `CHOOSE: Rescue a Bystander. <span class="line-gap"></span> OR <span class="line-gap"></span> KO any one Henchman or Villain that has captured a Bystander.`
+        text: `CHOOSE: Rescue a Bystander. <span class="line-gap"></span> OR <span class="line-gap"></span> KO a Henchman or Villain that has a captured Bystander.`
       }
     ],
     abilitiesNamePrint: [
@@ -849,7 +849,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Choose 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Batman is the only active Hero: Draw 3 cards.`
+        text: `Select 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Batman has no active Teammates: Draw 2 cards.`
       }
     ],
     abilitiesNamePrint: [

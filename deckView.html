@@ -294,13 +294,20 @@
         }
         infoDiv.appendChild(makeLine('Effect', effectText));
 
-        // === Keyword detection ===
+        // === Keyword detection (case-insensitive) ===
         const foundKeywords = [];
         if (Array.isArray(cardData.abilitiesText)) {
-        const allText = cardData.abilitiesText.map(a => a.text).join(' ');
-        const textWords = allText.split(/[\s,.;:!?()]+/);
+          // Combine all ability text, lowercase, and remove punctuation
+          const allText = cardData.abilitiesText
+            .map(a => a.text)
+            .join(' ')
+            .toLowerCase()
+            .replace(/[^\w\s]/g, ''); // remove punctuation like ' , . ! ?
+
           for (const [key, definition] of Object.entries(keywords)) {
-            if (textWords.includes(key)) {
+            const keywordLower = key.toLowerCase();
+            const regex = new RegExp(`\\b${keywordLower}\\b`, 'i');
+            if (regex.test(allText)) {
               foundKeywords.push({ key, definition });
             }
           }

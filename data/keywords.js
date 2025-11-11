@@ -1,3 +1,12 @@
 export const keywords = {
-    "CHOOSE": "Get either the effect before, or after, the OR divider.",
+    "CHOOSE": "You choose whether you get the effect before, or after, the OR divider.",
+    "OPTIONAL": "The effect listed after this text does not have to be performed in order to use the card.",
+    "If Discarded": "This effect only triggers if discarded by a card effect, and not if the card went unused and was discarded at the end of your turn.",
+    "Coastal City": "The leftmost and rightmost cities. The coastal cities change to remain the leftmost and rightmost cities if the leftmost or rightmost cities are destroyed.",
+    "Gain a Sidekick": "Place a Sidekick card into your discard pile. When drawn, it vanishes and you draw 2 more cards.",
+    "KO": "Reduce to 0 HP instantly.",
+    "Charge": "Move an additional number of spaces towards the end of the board.",
+    "Glide": "Occupies the same city as other non-Glide villains. Does not shove towards the end of the board. Always reaches the end in 6 turns unless frozen or locked.",
+    "Takeover": "If a Villain has this ability, and they reach the end of the board, supposing their Takeover ability number meets or exceeds the difficulty number on the Overlord, and they have the same (or more) HP than the current Overlord, they take over. They add the old Overlord’s remaining HP to whatever they still possess as well as replacing the Overlord’s Might of the Overlord ability with their own, and everything else operates the same, keeping any old additional loss conditions or dampening effects that the old Overlord may have set out at the start of the game.",
+    "Teleport": "Appears in a random unoccupied space on the board. If there are none, then this card is not played until there is space.",
 }
