@@ -288,6 +288,54 @@ export const heroCards = [
     ]
   },
   {
+    id: "441",
+    type: "Main",
+    name: "Goddess of War",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman a.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `CHOOSE: Deal 3 Damage to the Overlord. <span class="line-gap"></span> OR <span class="line-gap"></span> KO all Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "445",
+    type: "Main",
+    name: "Lasso of Truth",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman b.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `A Henchman or Villain Damaged by this card cannot move until after the end of Wonder Woman's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
     id: "861",
     type: "Main",
     name: "I Am Batman",
