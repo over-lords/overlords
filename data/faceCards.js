@@ -163,7 +163,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, if Hawkwoman reduces a Henchman or Villain to 2, or less, HP, she can KO it. <span class="line-gap"></span> If Hawkman is active, increase this card's Damage Threshold by 1.`
+        text: `3/Game: Once per turn, if Hawkwoman reduces a Henchman or Villain to 2 or less HP, she can KO it. <span class="line-gap"></span> If Hawkman is active, increase this card's Damage Threshold by 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -2320,7 +2320,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `5/Game: Once per turn, move Raven, or another Hero, to any other location without rolling to retreat. <span class="line-gap"></span> If Raven is at 5, or less, HP: Her damaging cards gain +1.`
+        text: `5/Game: Once per turn, move Raven, or another Hero, to any other location without rolling to retreat. <span class="line-gap"></span> If Raven is at 5 or less HP: Her damaging cards gain +1.`
       }
     ],
     abilitiesNamePrint: [
@@ -2560,7 +2560,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `1/Game: Reveal the top card of the Villain Deck, you may KO it.`
+        text: `Once per turn, you can look at the top card of the Villain Deck. <span class="line-gap"></span> 1/Game: KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -2599,7 +2599,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `1/Game: Zatanna can use each of the following effects. <span class="line-gap"></span> Tropelet: Zatanna can Travel or Retreat once without rolling. <span class="line-gap"></span> Dleihs: Zatanna can ignore taking Damage. <span class="line-gap"></span> Nrub: Deal 3 Damage to all Henchmen, Villains, and the Overlord. `
+        text: `1/Game: Zatanna can Travel or Retreat without rolling. <span class="line-gap"></span> 1/Game: Zatanna can ignore taking Damage. <span class="line-gap"></span> 1/Game: Deal 3 Damage to all Henchmen, Villains, and the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -2803,7 +2803,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> Increase Parasite's HP by 1 every time he KO's a Henchman or Villain. <span class="line-gap"></span> 3/Game: If Parasite would take Damage, except by his own effect, he can instead gain HP equal to the Damage.`
+        text: `Permanent KO. <span class="line-gap"></span> When Parasite KO's a Henchman or Villain, he gains 1 HP. <span class="line-gap"></span> 3/Game: If Parasite would take Damage, except by his own effect, he can instead gain HP equal to the Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -2855,7 +2855,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> 3/Game: If Cheetah remains in a City at the end of her turn, after being damaged by the Henchman or Villain there, she can reduce their remaining HP to 1.`
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: At the end of her turn, if Cheetah remains engaged in a City, reduce the Henchman or Villain there to 1 HP.`
       }
     ],
     abilitiesNamePrint: [
