@@ -201,7 +201,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `A Henchman or Villain Damaged by this card cannot move until after the end of Superman’s next turn.`
+        text: `A Henchman or Villain Damaged by this card cannot move until the end of Superman’s next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -336,7 +336,79 @@ export const heroCards = [
     ]
   },
   {
+    id: "443",
+    type: "Main",
+    name: "Monster Slayer",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman d.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `At the end of Wonder Woman's turn, if she takes Damage from a Villain, they take 2 Damage in return.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "444",
+    type: "Main",
+    name: "To the End and Back",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman G.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every time Wonder Woman has Traveled this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
     id: "445",
+    type: "Main",
+    name: "Relentless",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman f.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every 2 HP Wonder Woman has lost.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "446",
     type: "Main",
     name: "Lasso of Truth",
     hero: "Wonder Woman",
@@ -345,7 +417,127 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `A Henchman or Villain Damaged by this card cannot move until after the end of Wonder Woman's next turn.`
+        text: `A Henchman or Villain Damaged by this card cannot move until the end of Wonder Woman's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "447",
+    type: "Main",
+    name: "Princess of the Amazons",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman c.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `CHOOSE: Increase this card's Damage by 1 for every active [ICON:Wonder] Hero. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw a card for every KO'd [ICON:Wonder] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "448",
+    type: "Main",
+    name: "Immortal",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman h.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If Wonder Woman is at 5 or less HP, deal 5 damage to the Overlord. <span class="line-gap"></span> Otherwise, draw a card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "449",
+    type: "Main",
+    name: "Battle Armor",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman k.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reduce Wonder Woman's engaged Henchman or Villain's Damage by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "450",
+    type: "Main",
+    name: "Bracelets of Submission",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman e.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2 cards. <span class="line-gap"></span> Wonder Woman can Retreat without taking Damage this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "451",
+    type: "Main",
+    name: "Agent of Freedom",
+    hero: "Wonder Woman",
+    image: `${cardArtFolder}/Wonder Woman/Wonder Woman j.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE: Draw a card. <span class="line-gap"></span> OR <span class="line-gap"></span> Rescue all captured Bystanders.`
       }
     ],
     abilitiesNamePrint: [
@@ -513,7 +705,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `A Henchman or Villain Damaged by this card cannot move until after the end of Batman's next turn.`
+        text: `A Henchman or Villain Damaged by this card cannot move until the end of Batman's next turn.`
       }
     ],
     abilitiesNamePrint: [

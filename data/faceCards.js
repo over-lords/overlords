@@ -1633,7 +1633,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman Beyond deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: Negate the activation of a Might of the Overlord. <span class="line-gap"></span> Without another active Bat on his team: Batman Beyond takes half a Villain's Damage when entering a City, but then takes only half Damage if a retreat roll fails.`
+        text: `Batman Beyond deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: Negate the activation of a Might of the Overlord. <span class="line-gap"></span> Without another active Bat on his team: Batman Beyond takes half a Villain's Damage when entering a City, but then takes only half Damage if a Retreat Roll fails.`
       }
     ],
     abilitiesNamePrint: [
@@ -1932,7 +1932,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, you can increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, you can increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 3/Game: Without rolling, Batman can Retreat and take no Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -1984,7 +1984,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `2/Game: At the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Without rolling, Cyborg can retreat and take no Damage.`
+        text: `2/Game: At the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Without rolling, Cyborg can Retreat and take no Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -2320,7 +2320,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `5/Game: Once per turn, move Raven, or another Hero, to any other location without rolling to retreat. <span class="line-gap"></span> If Raven is at 5 or less HP: Her damaging cards gain +1.`
+        text: `5/Game: Once per turn, move Raven, or another Hero, to any other location without rolling to Retreat. <span class="line-gap"></span> If Raven is at 5 or less HP: Her damaging cards gain +1.`
       }
     ],
     abilitiesNamePrint: [
@@ -2699,7 +2699,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> If Harley Retreats, the Henchman or Villain left behind takes 1 Damage. <span class="line-gap"></span> 2/Game: Without rolling, Harley Quinn can retreat and take no Damage.`
+        text: `Permanent KO. <span class="line-gap"></span> If Harley Retreats, the Henchman or Villain left behind takes 1 Damage. <span class="line-gap"></span> 2/Game: Without rolling, Harley Quinn can Retreat and take no Damage.`
       }
     ],
     abilitiesNamePrint: [
