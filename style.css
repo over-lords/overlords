@@ -346,15 +346,15 @@ html, body {
 .close-box {
   position: absolute;
   top: 150px;      /* adjust vertical position */
-  right: -250px;     /* adjust horizontal position */
-  width: 385px;   /* adjust width */
+  right: 0px;     /* adjust horizontal position */
+  width: 115px;   /* adjust width */
   height: 40px;  /* adjust height */
   background-color: #777777;   /* dark grey */
   border: 5px solid #000;   /* thick black border */
 
   /* Diagonal right edge */
   clip-path: polygon(
-    10% 0,        /* top-left (was 90% 0 mirrored across center) */
+    30% 0,        /* top-left (was 90% 0 mirrored across center) */
     100% 0,       /* top-right (was 0 0) */
     100% 100%,    /* bottom-right */
     0 100%        /* bottom-left */
