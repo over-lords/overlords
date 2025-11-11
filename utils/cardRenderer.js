@@ -169,6 +169,7 @@ export function renderAbilityText(text) {
     Super: `${cardArtFolder}/Misc/Super.png`,
     Justice: `${cardArtFolder}/Misc/Justice League.png`,
     Lantern: `${cardArtFolder}/Misc/Green Lantern.png`,
+    Flash: `${cardArtFolder}/Misc/Flash.png`,
   };
 
   let html = text;

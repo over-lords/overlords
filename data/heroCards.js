@@ -816,6 +816,294 @@ export const heroCards = [
     ]
   },
   {
+    id: "461",
+    type: "Main",
+    name: "Infinite Mass Punch",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Infinite Mass Punch.jpg`,
+    perDeck: "1",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `If Flash has traveled this turn, this card's Damage gains another +1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "462",
+    type: "Main",
+    name: "Speed of Light",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Around the World.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `After damaging them, shove Flash's engaged Henchman or Villain back one space. <span class="line-gap"></span> CHOOSE: Flash can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "463",
+    type: "Main",
+    name: "Fastest Man Alive?",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Fastest.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `You may draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "464",
+    type: "Main",
+    name: "Speed Force Storm",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Flash Family.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Gain a Sidekick. <span class="line-gap"></span> [ICON:Flash]: Increase this card's Damage by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "465",
+    type: "Main",
+    name: "Analyze All Possibilities",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Pull of the Speed Force.jpg`,
+    perDeck: "1",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `OPTIONAL: This card deals no Damage, and next turn all of Flash's cards gain +1 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "466",
+    type: "Main",
+    name: "Transcend Time and Space",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Trancend.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Retrieve up to 2 cards from Flash's discard pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "467",
+    type: "Main",
+    name: "Back in a Flash",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Perception.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Draw a card. <span class="line-gap"></span><span class="line-gap"></span> Each time Flash KO's a Henchman or Villain this turn, he can rescue a Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "468",
+    type: "Main",
+    name: "Cyclone",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/FlashWhirlwind.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `A Henchman or Villain Damaged by this card cannot move until the end of Flash's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "469",
+    type: "Main",
+    name: "Creator of the Speed Force",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Creator.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Every Hero draws a card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "470",
+    type: "Main",
+    name: "Bullet Time",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Bullet Time.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Once, before the start of Flash's next turn, he can prevent himself or another Hero from taking Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "471",
+    type: "Main",
+    name: "Save a Life",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/Real Love.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw a card and rescue a Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "472",
+    type: "Main",
+    name: "In the Nick of Time",
+    hero: "Flash (Barry Allen)",
+    image: `${cardArtFolder}/Barry Allen/BA.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2 cards. Flash can only use them against Henchmen and Villains that other Heroes are engaged against. He does not need to Travel to do so.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
     id: "861",
     type: "Main",
     name: "I Am Batman",
