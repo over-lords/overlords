@@ -36,6 +36,10 @@
         const categories = groupByCategory(heroes);
         const container = document.getElementById('categories');
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const openHeroName = urlParams.get('name');
+        const openCategory = urlParams.get('category');
+
         Object.entries(categories).forEach(([category, heroList], catIndex) => {
         // Sort heroes by id
         heroList.sort((a, b) => Number(a.id) - Number(b.id));
@@ -68,8 +72,9 @@
         // Container for heroes
         const heroContainer = document.createElement('div');
         heroContainer.style.background = "#eeeeee"; // lighter than header
-        heroContainer.style.display = catIndex === 0 ? "block" : "none";
-        if(catIndex === 0) catArrow.style.transform = "rotate(180deg)";
+        const isOpenCategory = openCategory ? category === openCategory : catIndex === 0;
+        heroContainer.style.display = isOpenCategory ? "block" : "none";
+        catArrow.style.transform = isOpenCategory ? "rotate(180deg)" : "rotate(0deg)";
 
         categoryHeader.addEventListener('click', () => {
             const isVisible = heroContainer.style.display === "block";
@@ -140,11 +145,14 @@
             heroDetails.style.alignItems = "flex-start";
             heroDetails.style.gap = "1rem";
 
-            if(catIndex === 0 && heroIndex === 0){
-                heroDetails.style.display = "flex"; // open
+            const isOpenHero =
+                (openHeroName ? hero.name === openHeroName : catIndex === 0 && heroIndex === 0);
+
+            if (isOpenHero) {
+                heroDetails.style.display = "flex";
                 heroArrow.style.transform = "rotate(180deg)";
             } else {
-                heroDetails.style.display = "none"; // closed
+                heroDetails.style.display = "none";
                 heroArrow.style.transform = "rotate(0deg)";
             }
 

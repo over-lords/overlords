@@ -93,7 +93,7 @@
     </div>
   </div>
 
-  <div id="close-box" onclick="location.href='deckList.html'">X</div>
+  <div id="close-box">X</div>
 
   <script type="module">
     import { renderCard } from './utils/cardRenderer.js';
@@ -330,6 +330,20 @@
         container.appendChild(row);
       });
     });
+
+    const closeBox = document.getElementById('close-box');
+    if (closeBox) {
+      closeBox.addEventListener('click', () => {
+        const heroName = new URLSearchParams(window.location.search).get('name');
+        // Try to find the hero category for return context
+        import('./data/faceCards.js').then(module => {
+          const heroData = module.heroes.find(h => h.name === heroName);
+          const cat = heroData ? heroData.category : '';
+          const returnUrl = `deckList.html?name=${encodeURIComponent(heroName)}&category=${encodeURIComponent(cat)}`;
+          window.location.href = returnUrl;
+        });
+      });
+    }
     </script>
 
 </body>
