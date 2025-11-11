@@ -288,6 +288,270 @@ export const heroCards = [
     ]
   },
   {
+    id: "21",
+    type: "Main",
+    name: "Green Lantern's Light",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Light.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `All other Henchmen and Villains take 2 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "22",
+    type: "Main",
+    name: "Beware My Power",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern No Evil Shall Escape My Sight.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `Don't draw from the Villain Deck next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "23",
+    type: "Main",
+    name: "Let Those Who Worship Evil's Might",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Let Those Who Worship Evils Might.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `You must draw from the Enemies and Allies Pile. <span class="line-gap"></span> If Discarded: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "24",
+    type: "Main",
+    name: "No Evil Shall Escape My Sight",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Beware My Power.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `A Henchman or Villain Damaged by this card cannot move until the end of Green Lantern's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "25",
+    type: "Main",
+    name: "In Blackest Night",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern In Blackest Night.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Draw 2 cards, then Discard 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "26",
+    type: "Main",
+    name: "In Brightest Day",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern In Brightest Day.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Draw a card. <span class="line-gap"></span> You may also draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "27",
+    type: "Main",
+    name: "Founding Member",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Founding Member.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every active [ICON:Justice] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "28",
+    type: "Main",
+    name: "Unwavering Will",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Strong Will.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Increase Green Lantern's Damage Threshold by 1 until the end of this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "29",
+    type: "Main",
+    name: "Barrage",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Barrage.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Deal 1 Damage to up to 3 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "30",
+    type: "Main",
+    name: "Space Cop",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Space Cop.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Lock a Henchman or Villain in their City and reduce their Damage to 0 until the start of Green Lantern's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "31",
+    type: "Main",
+    name: "Leader of the Corps",
+    hero: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/Hal Jordan/Green Lantern Leader of the Corps.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Gain a Sidekick. <span class="line-gap"></span> [ICON:Lantern]: Increase this card's Damage by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
     id: "441",
     type: "Main",
     name: "Goddess of War",

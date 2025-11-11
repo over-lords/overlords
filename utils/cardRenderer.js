@@ -168,6 +168,7 @@ export function renderAbilityText(text) {
     Wonder: `${cardArtFolder}/Misc/Wonder.png`,
     Super: `${cardArtFolder}/Misc/Super.png`,
     Justice: `${cardArtFolder}/Misc/Justice League.png`,
+    Lantern: `${cardArtFolder}/Misc/Green Lantern.png`,
   };
 
   let html = text;
