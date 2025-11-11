@@ -173,6 +173,15 @@ export function renderAbilityText(text) {
     Lantern: `${cardArtFolder}/Misc/Green Lantern.png`,
     Flash: `${cardArtFolder}/Misc/Flash.png`,
     Titans: `${cardArtFolder}/Misc/Titans.png`,
+    Arrow: `${cardArtFolder}/Misc/Arrow.png`,
+    Aqua: `${cardArtFolder}/Misc/Aqua.png`,
+    Dark: `${cardArtFolder}/Misc/Dark.png`,
+    Hawk: `${cardArtFolder}/Misc/Hawk.png`,
+    Legion: `${cardArtFolder}/Misc/Legion.png`,
+    Martian: `${cardArtFolder}/Misc/Martian.png`,
+    Rogues: `${cardArtFolder}/Misc/Rogues.png`,
+    Shazam: `${cardArtFolder}/Misc/Shazam.png`,
+    Squad: `${cardArtFolder}/Misc/Squad.png`,
   };
 
   let html = text;
