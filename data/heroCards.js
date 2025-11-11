@@ -105,7 +105,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Increase this card's Damage by 3 if Superman is at, or below, 5 Hit Points.`
+        text: `Increase this card's Damage by 3 if Superman is at, or below, 5 HP.`
       }
     ],
     abilitiesNamePrint: [
@@ -393,7 +393,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `OPTIONAL: Discard 1 and Batman regains up to 2 Hit Points. <span class="line-gap"></span> If Discarded: Draw 2.`
+        text: `OPTIONAL: Discard 1 and Batman regains 2 HP. <span class="line-gap"></span> If Discarded: Draw 2.`
       }
     ],
     abilitiesNamePrint: [

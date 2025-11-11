@@ -57,7 +57,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, Deal 2 Damage to all Henchmen and Villains in Cities.`
+        text: `3/Game: Once per turn, Deal 2 Damage to all Henchmen and Villains.`
       }
     ],
     abilitiesNamePrint: [
@@ -89,7 +89,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Martian Manhunter can ignore taking Damage, after he cannot deal Damage until the end of his next turn. <span class="line-gap"></span> If Martian Manhunter is at Headquarters, all other Heroes within the Headquarters cannot take Damage.`
+        text: `3/Game: Martian Manhunter can ignore taking Damage. Then, he cannot deal Damage until the end of his next turn. <span class="line-gap"></span> If Martian Manhunter is at Headquarters, all other Heroes within the Headquarters cannot take Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -131,7 +131,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, deal 10 Damage to a Henchman or Villain, after this Hero cannot deal Damage until the end of his next turn.`
+        text: `3/Game: At the start of his turn, Shazam can deal 10 Damage to a Henchman or Villain. Then, he cannot deal Damage until the start of his next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -163,7 +163,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, if Hawkwoman reduces a Henchman or Villain to 2 or less HP, she can KO it. <span class="line-gap"></span> If Hawkman is active, increase this card's Damage Threshold by 1.`
+        text: `3/Game: Once per turn, if Hawkwoman reduces a Henchman or Villain to 2, or less, HP, she can KO it. <span class="line-gap"></span> If Hawkman is active, increase this card's Damage Threshold by 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -205,7 +205,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: At the start of your turn, after your initial Travel (if performed) but before your draw selection, deal 10 Damage to the Henchman, Villain, or Overlord that you are facing, afterwards Black Canary cannot deal Damage until the start of her next turn.`
+        text: `3/Game: At the start of her turn, Black Canary can deal 10 Damage to her engaged Henchman or Villain. Then, she cannot deal Damage until the start of her next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -237,7 +237,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Mera's Damage Threshold is increased by 1 whilst she is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card used while their Target is within a Coastal City. <span class="line-gap"></span> If this Hero is KO'd, KO the Henchman or Villain she was facing.`
+        text: `Mera's Damage Threshold is increased by 1 whilst she is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card used while their Target is within a Coastal City. <span class="line-gap"></span> If Mera is KO'd: KO the Henchman or Villain she was facing.`
       }
     ],
     abilitiesNamePrint: [
@@ -289,7 +289,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `2/Game: Once per turn, Deal 6 Damage to any one Henchmen or Villain in a City. <span class="line-gap"></span> 3/Game: Once per turn, KO the top 4 cards of your deck to regain 4 HP.`
+        text: `2/Game: Once per turn, Deal 6 Damage to a Henchmen or Villain. <span class="line-gap"></span> 3/Game: Once per turn, KO the top 4 cards of Red Lantern's deck and he regains 4 HP.`
       }
     ],
     abilitiesNamePrint: [
@@ -331,7 +331,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: After damaging them, Lock a Henchman or Villain in their City, after she can Retreat without rolling.`
+        text: `3/Game: After damaging them, Lock a Henchman or Villain in their City. Then, Donna Troy can Retreat without rolling.`
       }
     ],
     abilitiesNamePrint: [
@@ -454,7 +454,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Superboy can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Superman can ignore taking Damage, or he can Protect another Hero.`
+        text: `Superboy can use his cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Superboy can ignore taking Damage, or he can Protect another Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -506,7 +506,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `As Swamp Thing leaves a City, he can leave behind an unused card. Unused cards trigger and act as if played against the next Henchman or Villain that enters that City. <span class="line-gap"></span> 1/Game: Restore a Destroyed City.`
+        text: `When Swamp Thing leaves a City, he can leave behind one unused card. Unused cards trigger and act as if played against the next Henchman or Villain that enters that City. <span class="line-gap"></span> 1/Game: Restore a Destroyed City.`
       }
     ],
     abilitiesNamePrint: [
@@ -590,7 +590,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `This is not a selectable Hero. Jason Blood transforms into Etrigan at low HP. <span class="line-gap"></span> 3/Game: Once per turn, Deal 5 Damage to any one Henchmen or Villain in a City.`
+        text: `This is not a selectable Hero. Jason Blood transforms into Etrigan at low HP. <span class="line-gap"></span> 3/Game: Once per turn, Deal 5 Damage to a Henchmen or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -664,7 +664,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> Deathstroke cannot be damaged more than once by each Henchman or Villain. <span class="line-gap"></span> 3/Game: Once per turn, discard 1 then KO any one Henchman or Villain in a City.`
+        text: `Permanent KO. <span class="line-gap"></span> Deathstroke cannot be damaged more than once by each Henchman or Villain. <span class="line-gap"></span> 3/Game: Once per turn, discard 2 and KO a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -716,7 +716,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> King Shark's damaging Action Cards deal 1 additional Damage whilst he is in a Coastal City. <span class="line-gap"></span> 1/Game: Deal 5 Damage to a Henchman or Villain in either Coastal City.`
+        text: `Permanent KO. <span class="line-gap"></span> King Shark's damaging cards gain +1 whilst he is in a Coastal City. <span class="line-gap"></span> 1/Game: Deal 5 Damage to a Henchman or Villain in a Coastal City.`
       }
     ],
     abilitiesNamePrint: [
@@ -768,7 +768,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> Reverse Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 3/Game: At the start of this Hero's turn, you can retrieve a card from Reverse Flash's discard pile instead of selecting a card from the deck.`
+        text: `Permanent KO. <span class="line-gap"></span> If Reverse Flash travels, his damaging cards gain +1 per travel for that turn only. <span class="line-gap"></span> 3/Game: At the start of Reverse Flash's turn, you can retrieve a card from Reverse Flash's discard pile instead of selecting a card from the deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -820,7 +820,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Once per turn, if Lex Luthor reduces a Henchman or Villain to 1 HP, he can KO it. <span class="line-gap"></span> 3/Game: KO the top 3 cards of Lex Luthor's deck, after KO the Henchman or Villain that Lex Luthor is in a City with, no one gains their Upon Victory effect.`
+        text: `Once per turn, if Lex Luthor reduces a Henchman or Villain to 1 HP, he can KO it. <span class="line-gap"></span> 3/Game: Once per turn, KO the top 3 cards of Lex Luthor's deck and KO his engaged Henchman or Villain. No one gains their Upon Victory effect.`
       }
     ],
     abilitiesNamePrint: [
@@ -862,7 +862,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> If Giganta is at to 6 or less HP, increase the Damage of her cards by 1. <span class="line-gap"></span> Giganta can use her cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Once per turn, knock the Henchman or Villain Giganta is fighting as far right as possible, she can then follow them or Retreat.`
+        text: `Permanent KO. <span class="line-gap"></span> If Giganta is at to 6 or less HP, increase the Damage of all of her cards by 1. <span class="line-gap"></span> Giganta can use her cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Once per turn, shove Giganta's engaged Henchman or Villain as far right as possible. Then, she can follow them or Retreat.`
       }
     ],
     abilitiesNamePrint: [
@@ -934,7 +934,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, deal 10 Damage to a Henchman or Villain, after this Hero cannot deal Damage until the end of his next turn.`
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: At the start of his turn, Black Adam can deal 10 Damage to a Henchman or Villain. Then, he cannot deal Damage until the start of his next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -976,7 +976,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Once per turn, Lock any Henchman or Villain in their City. <span class="line-gap"></span> 1/Game: Double the Damage of a card, and if you do, ignore any additional effects it has.`
+        text: `2/Game: Once per turn, Lock a Henchman or Villain in their City. <span class="line-gap"></span> 1/Game: Double the Damage of one of Wonder Woman's cards, and if you do, negate its additional effects.`
       }
     ],
     abilitiesNamePrint: [
@@ -1018,7 +1018,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 2/Game: At the start of this Hero's turn, you can draw 2 instead of selecting a card.`
+        text: `If Flash travels, his damaging cards gain +1 per travel for that turn only. <span class="line-gap"></span> 2/Game: At the start of Flash's turn, he can draw 2 random cards instead of selecting one.`
       }
     ],
     abilitiesNamePrint: [
@@ -1060,7 +1060,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Aquaman's damaging Action Cards deal 1 additional Damage whilst he is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, you can deal 2 Damage to a Henchman or Villain in either Coastal City.`
+        text: `Aquaman's damaging cards gain +1 whilst he is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, deal 2 Damage to a Henchman or Villain in a Coastal City.`
       }
     ],
     abilitiesNamePrint: [
@@ -1102,7 +1102,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Hawkman can ignore taking Damage, after he draws 1 card. <span class="line-gap"></span> If Hawkwoman is active, Hawkman's damaging Action Cards deal 1 additional Damage.`
+        text: `2/Game: Hawkman can ignore taking Damage. Afterwards, he draws a card. <span class="line-gap"></span> If Hawkwoman is active, Hawkman's damaging cards gain +1.`
       }
     ],
     abilitiesNamePrint: [
@@ -1144,7 +1144,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `2/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Rescue the Captured Bystanders from any one Henchman or Villain in a City and deal 2 Damage to the capturing card.`
+        text: `2/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Rescue the Captured Bystanders from a Henchman or Villain and deal 2 Damage to them.`
       }
     ],
     abilitiesNamePrint: [
@@ -1196,7 +1196,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, you can shuffle any number of cards from your hand back into your deck, then draw the same number.`
+        text: `3/Game: Once per turn, you can shuffle any number of cards from your hand back into Firestorm's deck, then draw the same number.`
       }
     ],
     abilitiesNamePrint: [
@@ -1228,7 +1228,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: After playing from the Villain Deck, but before deciding where Vixen will act, you can increase this Hero's draw selection pool to 5 options, and choose before moving.`
+        text: `3/Game: At the start of her turn, you can increase Vixen's draw selection to 5 cards.`
       }
     ],
     abilitiesNamePrint: [
@@ -1292,7 +1292,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, KO any one Henchman in a City.`
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, KO a Henchman.`
       }
     ],
     abilitiesNamePrint: [
@@ -1334,7 +1334,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Arsenal can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Arsenal can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
+        text: `Arsenal can use his cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Arsenal can use any number of cards to Damage the Overlord without Traveling; the additional effects of those cards are negated.`
       }
     ],
     abilitiesNamePrint: [
@@ -1376,7 +1376,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Tempest's Damage Threshold increases by 1, and his damaging Action Cards deal 1 additional Damage, whilst he is in a Coastal City. <span class="line-gap"></span> 1/Game: KO a Henchman, or Villain with 4 or less HP, in either Coastal City.`
+        text: `Tempest's Damage Threshold increases by 1, and his damaging cards gain +1, whilst he is in a Coastal City. <span class="line-gap"></span> 1/Game: KO a Henchman, or Villain with 4 or less HP, in a Coastal City.`
       }
     ],
     abilitiesNamePrint: [
@@ -1428,7 +1428,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Once per turn, you can look at the top card of the Villain Deck. <span class="line-gap"></span> 1/Game: At the start of her turn, before her travel or draw, Miss Martian can deal 3 Damage to all Henchmen, Villains, and the Overlord, and also prevent the Villain Deck from being drawn from next turn. After, Miss Martian cannot deal damage until after the end of her next turn.`
+        text: `Once per turn, you can look at the top card of the Villain Deck. <span class="line-gap"></span> 1/Game: At the start of her turn, before her Travel or draw, Miss Martian can deal 3 Damage to all Henchmen and Villains, and also prevent the Villain Deck from being drawn from on the following turn. It then becomes the end of her turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1532,12 +1532,12 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `1/Game: Deal 10 Damage to any one Henchmen or Villain in a City. <span class="line-gap"></span> 1/Game: At the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Lock any Henchman or Villain in their City.`
+        text: `1/Game: Deal 7 Damage to a Henchmen or Villain. <span class="line-gap"></span> 1/Game: At the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Lock a Henchman or Villain in their City.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Deal 10 Damage to one Henchmen or Villain`
+        text: `Deal 7 Damage to one Henchmen or Villain`
       },
       {
         text: `Prevent Villain Deck draw`
@@ -1550,9 +1550,9 @@ export const heroes = [
       {
         type: `standard`,
         condition: `none`,
-        uses: `10`,
+        uses: `1`,
         shared: `no`,
-        effect: `damageVillain(Choice(Any),10)`
+        effect: `damageVillain(Choice(Any),7)`
       },
       {
         type: `quick`,
@@ -1584,7 +1584,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Without another active Bat on her Team, increase Batwoman's damaging cards' Damage by 1 and she Permanent KO's. <span class="line-gap"></span> With another active Bat on her team 3/Game: After playing from the Villain Deck, but before deciding where Batwoman will act, you can increase this Hero's draw selection pool to 4 options, and choose before moving.`
+        text: `With an active Bat on her team, Batwoman gains access to the following feature: 3/Game: At the start of her turn, you can increase Batwoman's draw selection to 4 cards. <span class="line-gap"></span> Otherwise: She gains Permanent KO, and her damaging cards gain +1.`
       }
     ],
     abilitiesNamePrint: [
@@ -1633,7 +1633,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman Beyond deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: Negate the activation of a Might of the Overlord. <span class="line-gap"></span> Without another active Bat on his team, Batman Beyond takes half a Villain's Damage when entering a City, and also takes only half Damage if a retreat roll fails.`
+        text: `Batman Beyond deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: Negate the activation of a Might of the Overlord. <span class="line-gap"></span> Without another active Bat on his team: Batman Beyond takes half a Villain's Damage when entering a City, but then takes only half Damage if a retreat roll fails.`
       }
     ],
     abilitiesNamePrint: [
@@ -1695,7 +1695,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `1/Game: If he is KO'd, you can KO the top 5 cards of Constantine's deck and restore him to 9 HP, then deal 5 Damage to the Overlord.`
+        text: `1/Game: If John Constantine is KO'd, you can KO the top 5 cards of his deck and restore him to full HP. Then, deal 5 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1734,7 +1734,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> Deadshot can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Once per turn, deal 3 Damage to the Overlord.`
+        text: `Permanent KO. <span class="line-gap"></span> Deadshot can use his cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Once per turn, deal 3 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1786,7 +1786,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> When Killer Frost engages a Henchman or Villain in a City, they stop moving across the board. <span class="line-gap"></span> 3/Game: Once per turn, Lock any Henchman or Villain in their City.`
+        text: `Permanent KO. <span class="line-gap"></span> When Killer Frost engages a Henchman or Villain, they stop moving. <span class="line-gap"></span> 3/Game: Once per turn, Lock a Henchman or Villain in their City.`
       }
     ],
     abilitiesNamePrint: [
@@ -1838,7 +1838,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> Black Manta's Damage Threshold increases by 1 whilst he is in a Coastal City. <span class="line-gap"></span> 2/Game: Deal 2 Damage to a Henchman or Villain in either Coastal City, and if you do, they are Locked there.`
+        text: `Permanent KO. <span class="line-gap"></span> Black Manta's Damage Threshold increases by 1 whilst he is in a Coastal City. <span class="line-gap"></span> 2/Game: Deal 2 Damage to a Henchman or Villain in a Coastal City. After being damaged, they are Locked there.`
       }
     ],
     abilitiesNamePrint: [
@@ -1890,7 +1890,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, Reduce any one Henchman or Villain's Damage to 0 until the end of Sinestro's next turn.`
+        text: `Permanent KO. <span class="line-gap"></span> 3/Game: Once per turn, reduce a Henchman or Villain's Damage to 0 until the end of Sinestro's next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1932,7 +1932,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: After playing from the Villain Deck, but before deciding where Batman will act, you can increase this Hero's draw selection pool to 4 options, and choose before moving. <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, you can increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 3/Game: Without rolling, Batman can retreat and take no Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -2026,7 +2026,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Green Arrow can use his cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Green Arrow can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
+        text: `Green Arrow can use his cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 3/Game: Green Arrow can use any number of cards to Damage the Overlord without Traveling; the additional effects of those cards are negated.`
       }
     ],
     abilitiesNamePrint: [
@@ -2110,7 +2110,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Robin deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Once per turn, deal 2 Damage to any one Henchman or Villain in a City.`
+        text: `Robin deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Once per turn, deal 2 Damage to a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -2152,7 +2152,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Nightwing's damaging Action Cards deal 1 additional Damage for each of his active Teammates. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card.`
+        text: `Nightwing's damaging cards gain +1 for each of his active Teammates. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card.`
       }
     ],
     abilitiesNamePrint: [
@@ -2194,7 +2194,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: Reveal the top 3 cards of the Villain Deck, you can KO one of them. <span class="line-gap"></span> 3/Game: Before they draw, increase a Hero's draw selection pool to 4 options.`
+        text: `3/Game: Reveal the top 3 cards of the Villain Deck, you can KO one of them. <span class="line-gap"></span> 3/Game: Before they draw, increase another Hero's draw selection to 4 cards.`
       }
     ],
     abilitiesNamePrint: [
@@ -2236,7 +2236,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: Red Robin can Travel an additional time, after he draws 1. <span class="line-gap"></span> 2/Game: KO an active Scenario.`
+        text: `3/Game: Red Robin can Travel an additional time. Afterwards, he draws a card. <span class="line-gap"></span> 2/Game: KO an active Scenario.`
       }
     ],
     abilitiesNamePrint: [
@@ -2278,7 +2278,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `2/Game: Rescue the Captured Bystanders from any one Henchman or Villain in a City and deal 1 Damage to the capturing card. <span class="line-gap"></span> 2/Game: Reduce any one Henchman or Villain's Damage by 1.`
+        text: `2/Game: Rescue all of the Captured Bystanders from a Henchman or Villain and deal 1 Damage to them. <span class="line-gap"></span> 2/Game: Reduce any one Henchman or Villain's Damage by 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -2320,7 +2320,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `5/Game: Once per turn, move Raven, or another Hero, to any other location without rolling to retreat. <span class="line-gap"></span> If Raven is at 5 or less HP, her damaging cards deal 1 additional Damage.`
+        text: `5/Game: Once per turn, move Raven, or another Hero, to any other location without rolling to retreat. <span class="line-gap"></span> If Raven is at 5, or less, HP: Her damaging cards gain +1.`
       }
     ],
     abilitiesNamePrint: [
@@ -2372,7 +2372,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `If Aqualad is in a Coastal City, or would leave a Coastal City, he can choose to Travel to the other Coastal City (if occupied) instead. <span class="line-gap"></span> 2/Game: Deal 1 Damage to any one Henchman or Villain in a City, and if you do, Lock them there.`
+        text: `Aqualad can Travel between Coastal Cities without using his Travel Budget. <span class="line-gap"></span> 2/Game: Deal 2 Damage to a Henchman or Villain. After being damaged, they are Locked in their City.`
       }
     ],
     abilitiesNamePrint: [
@@ -2424,7 +2424,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Artemis can use her cards to Damage the Henchmen and Villains in Adjacent Cities, however the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Discard 2, add 1 card from your deck to your hand.`
+        text: `Artemis can use her cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Once per turn, discard 2 and add 1 card from Artemis' deck to your hand.`
       }
     ],
     abilitiesNamePrint: [
@@ -2466,7 +2466,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Once per turn, you can look at the top card of either Omen's Deck, or the Villain Deck. <span class="line-gap"></span> 2/Game: Once per turn, KO the top card of the Villain Deck.`
+        text: `Once per turn, look at the top card of Omen's Deck or the Villain Deck. <span class="line-gap"></span> 2/Game: Once per turn, KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -2518,7 +2518,7 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `Kid Flash's damaging Action Cards deal 1 additional Damage equal to the number of times he has Traveled that turn. <span class="line-gap"></span> 2/Game: At the start of this Hero's turn, before Traveling, you can reduce your Travel Budget by 1 and KO any one Henchman.`
+        text: `If Kid Flash travels, his damaging cards gain +1 per travel for that turn only. <span class="line-gap"></span> 2/Game: At the start of Kid Flash's turn, reduce his Travel Budget by 1 and KO a Henchman.`
       }
     ],
     abilitiesNamePrint: [
@@ -2751,7 +2751,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> One Henchmen or Villain of your choice that was damaged by Captain Boomerang during his turn takes 1 additional Damage at the end of his turn. <span class="line-gap"></span> 3/Game: Captain Boomerang can use any number of cards to Damage the Overlord without Traveling, however the additional effects of those cards are negated.`
+        text: `Permanent KO. <span class="line-gap"></span> One Henchmen or Villain of your choice that was damaged by Captain Boomerang during his turn takes 1 additional Damage at the end of his turn. <span class="line-gap"></span> 3/Game: Captain Boomerang can use any number of cards to Damage the Overlord without Traveling; the additional effects of those cards are negated.`
       }
     ],
     abilitiesNamePrint: [
