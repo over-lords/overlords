@@ -22,5 +22,67 @@
         <!-- LIST RESULTS RETURNED HERE -->
 
     </div>
+
+    <script type="module">
+        import { heroes } from './data/faceCards.js';
+
+        // --- Decrypt Function ---
+        async function decryptData(cipherText, secretKey) {
+        const data = atob(cipherText);
+        const bytes = new Uint8Array([...data].map(c => c.charCodeAt(0)));
+        const iv = bytes.slice(0, 12);
+        const cipher = bytes.slice(12);
+
+        // Derive 256-bit key from the secret string
+        const keyMaterial = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secretKey));
+        const key = await crypto.subtle.importKey(
+            'raw',
+            keyMaterial,
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt']
+        );
+
+        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+        const decoded = new TextDecoder().decode(decrypted);
+        return JSON.parse(decoded);
+        }
+
+        // --- Display Heroes ---
+        (async () => {
+        const params = new URLSearchParams(window.location.search);
+        const encrypted = params.get('data');
+        const SECRET = 'GeimonHeroKey42';
+
+        if (!encrypted) {
+            document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
+            return;
+        }
+
+        try {
+            const selectedHeroes = await decryptData(encrypted, SECRET);
+
+            // Map IDs → hero objects (using imported heroes array)
+            const heroMap = new Map(heroes.map(h => [String(h.id), h]));
+            const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
+
+            // Create a container for display, moved down 200px
+            const container = document.createElement('div');
+            container.style.marginTop = '200px';
+            container.style.textAlign = 'center';
+            container.innerHTML = `
+            <h2 style="margin-bottom:10px;">Loaded Heroes (in order selected):</h2>
+            <ol style="display:inline-block; text-align:left;">
+                ${heroList.map(h => `<li>${h.name}</li>`).join('')}
+            </ol>
+            `;
+
+            document.querySelector('.container').appendChild(container);
+        } catch (e) {
+            console.error('Failed to decrypt data:', e);
+            document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">Invalid or corrupted data.</p>');
+        }
+        })();
+    </script>
 </body>
 </html>
