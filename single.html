@@ -363,9 +363,49 @@
   padding: 0 !important;
   margin: 0 !important;   /* kills the extra gap made by .category-group */
 }
+
 img {
   object-position: 50% 25%; /* 50% = center horizontally, 25% = crop 25% closer to top */
 }
+
+/* === Collapsible arrow styles === */
+.collapsible::after {
+  content: "▼";
+  float: right;
+  transition: transform 0.2s ease;
+  font-weight: bold;
+}
+.collapsible.active::after {
+  content: "▲";
+}
+
+/* ===== Villain collapsible arrows (on the left) ===== */
+.villain-collapsible {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+  width: 100%;
+  box-sizing: border-box;
+  padding-left: 10px;
+}
+
+.villain-collapsible::before {
+  content: "▼";
+  font-weight: bold;
+  margin-right: 6px;
+  transition: transform 0.2s ease;
+}
+
+.villain-collapsible.active::before {
+  content: "▲";
+}
+
+/* override the generic right-side arrow for villains */
+.villain-collapsible::after {
+  content: none !important;
+}
+
 </style>
 </head>
     <body style="background-color:white;" onload="window.scrollTo(0, 1)">
@@ -1698,6 +1738,7 @@ img {
 
                 // --- unified clickable header with checkbox ---
                 const header = document.createElement('div');
+                header.className = 'collapsible villain-collapsible';
                 header.style.cssText = `
                   display:flex; align-items:center; justify-content:space-between;
                   margin-top:10px; border:2px solid black; border-radius:6px;
