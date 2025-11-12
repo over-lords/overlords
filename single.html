@@ -923,8 +923,31 @@
 
               selectedTactics = [...selectedTactics, ...toAdd.map(t => String(t.id))];
               updateTacticStyles();
+
+              // --- Immediately fix enemy/allies sliders if new tactic has restrictions ---
+              let enemiesOnly = false;
+              let minEnemies = 15;
+              for (const tacticId of selectedTactics) {
+                const t = tactics.find(tt => String(tt.id) === String(tacticId));
+                if (Array.isArray(t.limitEaA) && t.limitEaA[0] === "allEnemies") {
+                  enemiesOnly = true;
+                  const match = t.limitEaA[1].match(/\d+/);
+                  minEnemies = match ? Number(match[0]) : 30;
+                  break;
+                }
+              }
+              if (enemiesOnly) {
+                enemiesCount = Math.floor(Math.random() * (50 - minEnemies + 1)) + minEnemies;
+                alliesCount = 0;
+              }
+              enemiesSlider.value = enemiesCount;
+              alliesSlider.value = alliesCount;
+              syncEnemyControls();
+              syncAllyControls();
+
               updateStartButton();
             }
+
 
             function undoTactics() {
               if (tacticsUndoStack.length === 0) return;
@@ -1307,17 +1330,68 @@
             };
 
             function topRandom() {
-              if (selectedOrder.length < limits.heroes.min) randomizeSelection();
-              if (selectedOverlords.length < limits.overlords.min) randomizeOverlords();
+              // --- First, randomize tactics so restrictions can be read ---
               if (selectedTactics.length < limits.tactics.min) randomizeTactics();
-              if (enemiesCount < 15) randomizeEnemies();
-              if (alliesCount < 15) randomizeAllies();
 
+              // --- Analyze selected tactics for special restrictions ---
+              let enemiesOnly = false;
+              let minEnemies = 15;
+              let minAllies = 15;
+              let requireTwoTactics = false;
+              let requireTwoOverlords = false;
+
+              for (const tacticId of selectedTactics) {
+                const t = tactics.find(tt => String(tt.id) === String(tacticId));
+                if (!t) continue;
+
+                if (Array.isArray(t.limitEaA) && t.limitEaA[0] === "allEnemies") {
+                  enemiesOnly = true;
+                  const match = t.limitEaA[1].match(/\d+/);
+                  minEnemies = match ? Number(match[0]) : 30;
+                  minAllies = 0;
+                }
+
+                if (t.multiTacticReq === "yes") requireTwoTactics = true;
+                if (t.multiOverlordReq === "yes") requireTwoOverlords = true;
+              }
+
+              // --- HEROES ---
+              if (selectedOrder.length < limits.heroes.min) randomizeSelection();
+
+              // --- OVERLORDS ---
+              if (requireTwoOverlords && selectedOverlords.length < 2) {
+                while (selectedOverlords.length < 2) randomizeOverlords();
+              } else if (selectedOverlords.length < limits.overlords.min) {
+                randomizeOverlords();
+              }
+
+              // --- TACTICS (ensure at least required number) ---
+              if (requireTwoTactics && selectedTactics.length < 2) {
+                while (selectedTactics.length < 2) randomizeTactics();
+              }
+
+              // --- ENEMIES & ALLIES ---
+              if (enemiesOnly) {
+                enemiesCount = Math.floor(Math.random() * (50 - minEnemies + 1)) + minEnemies;
+                alliesCount = 0;
+              } else {
+                enemiesCount = Math.floor(Math.random() * 36) + 15;
+                alliesCount = Math.floor(Math.random() * 36) + 15;
+              }
+
+              // Apply to sliders and sync visuals
+              enemiesSlider.value = enemiesCount;
+              alliesSlider.value = alliesCount;
+              syncEnemyControls();
+              syncAllyControls();
+
+              // Refresh visuals
               updateBadges();
               updateOverlordBadges();
               updateTacticStyles();
               updateStartButton();
             }
+
             document.getElementById('top-random').addEventListener('click', topRandom);
         </script>
     </body>
