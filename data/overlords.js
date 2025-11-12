@@ -103,12 +103,12 @@ export const overlords = [
         effect: `villainDraw(1*active)`
       }
     ],
-    evilWinsNamePrint: [
+    bonusNamePrint: [
       {
         text: `Bonus Round!`
       }
     ],
-    evilWinsEffects: [
+    bonusEffects: [
       {
         type: `endTurn`,
         condition: `batActive(3)`,
@@ -161,18 +161,130 @@ export const overlords = [
         effect: `villainPlay(5,hench+villains)`
       }
     ],
-    evilWinsNamePrint: [
+    bonusNamePrint: [
       {
         text: `No Peeking!`
       }
     ],
-    evilWinsEffects: [
+    bonusEffects: [
       {
         type: `passive`,
         condition: `heroKOd`,
         uses: `0`,
         shared: `no`,
         effect: `disableScan()`
+      }
+    ]
+  },
+  {
+    id: "4",
+    name: "Lex Luthor (Power Armor)",
+    image: `${cardArtFolder}/Lex Luthor Power Armor.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "35",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Might of the Overlord: Draw once from the Villain Deck and all active [ICON:Super] Heroes take 2 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `na`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `na`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `You'll Regret That!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `villainDraw(1),damage(1,Super)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `none`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5",
+    name: "Lex Luthor",
+    image: `${cardArtFolder}/Lex Luthor.jpg`,
+    type: "Overlord",
+    level: "1",
+    hp: "15",
+    doNotShow: "false",
+    abilitiesText: [
+      {
+        text: `Might of the Overlord: Play the next Enemy from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `na`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `na`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `My Wallet's Bigger!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `drawEnemy(1)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Are the backup plans ready?`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `1`,
+        shared: `no`,
+        effect: `addNextOverlord(4)`
       }
     ]
   },

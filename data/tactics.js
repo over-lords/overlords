@@ -16,10 +16,10 @@ export const tactics = [
       }
     ],
     abilitiesNamePrint: [
-        {
-            text: `na`
-        }
-        ],
+      {
+        text: `na`
+      }
+    ],
     abilitiesEffects: [
       {
         type: `none`,
@@ -31,7 +31,7 @@ export const tactics = [
     ],
     mightNamePrint: [
       {
-          text: `Boom! Boom! Boom!`
+        text: `Boom! Boom! Boom!`
       }
     ],
     mightEffects: [
@@ -68,15 +68,15 @@ export const tactics = [
     multiOverlordReq: "yes",
     abilitiesText: [
       {
-        text: `Required: 2+ Overlords, 2 Tactics, Enemies only (30 minimum). <span class="line-gap"></span>
+        text: `Required: 2+ Overlords, 2 Tactics, Enemies-Only (30 minimum). <span class="line-gap"></span>
               Might of the Overlord: Draw twice from the Enemies and Allies Pile, and once from the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
-        {
-            text: `na`
-        }
-        ],
+      {
+        text: `na`
+      }
+    ],
     abilitiesEffects: [
       {
         type: `none`,
@@ -88,7 +88,7 @@ export const tactics = [
     ],
     mightNamePrint: [
       {
-          text: `There's More?!`
+        text: `There's More?!`
       }
     ],
     mightEffects: [
@@ -98,6 +98,63 @@ export const tactics = [
         uses: `999`,
         shared: `no`,
         effect: `enemiesDraw(2),villainDraw(1)`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `none`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "3",
+    name: "Kryptonian Strength Enhancer",
+    image: `${cardArtFolder}/Tactic.jpg`,
+    type: "Tactic",
+    limitEaA: ["no"],
+    multiTacticReq: "no",
+    multiOverlordReq: "no",
+    abilitiesText: [
+      {
+        text: `The Overlord is immune to Damage that would reduce them to 0 HP while there is an active Henchman or Villain. <span class="line-gap"></span>
+               Might of the Overlord: The Overlord gains 10 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Unlimited Power!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `wouldTakeDamageWhileCityOccupied()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `ignoreDamage()`
+      }
+    ],
+    mightNamePrint: [
+      {
+        text: `I'm Just Getting Started!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `overlordGainLife(10)`
       }
     ],
     evilWinsNamePrint: [
