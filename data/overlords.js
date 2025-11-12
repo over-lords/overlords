@@ -59,7 +59,7 @@ export const overlords = [
       }
     ]
   },
-    {
+  {
     id: "2",
     name: "Joker",
     image: `${cardArtFolder}/Joker.jpg`,
@@ -115,6 +115,64 @@ export const overlords = [
         uses: `999`,
         shared: `no`,
         effect: `koCardorTakeDamage(2)`
+      }
+    ]
+  },
+  {
+    id: "3",
+    name: "Psimon",
+    image: `${cardArtFolder}/Psimon.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "55",
+    doNotShow: "false",
+    abilitiesText: [
+      {
+        text: `If a Hero is KO'd: Next turn do not draw from the Villain Deck, that Hero enters as a Villain. <span class="line-gap"></span>
+               Might of the Overlord: Of the next 5 cards in the Villain Deck, play all of the Henchmen and Villains. <span class="line-gap"></span>
+               Bonus Feature: After the first Hero is KO'd, Psimon implements this feature. No Heroes can look at the top cards of any decks.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You're Mine Now!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `heroKOd`,
+        uses: `999`,
+        shared: `no`,
+        effect: `returnHeroAsVillain`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `More Reinforcements!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `villainPlay(5,hench+villains)`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `No Peeking!`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `passive`,
+        condition: `heroKOd`,
+        uses: `0`,
+        shared: `no`,
+        effect: `disableScry`
       }
     ]
   },
