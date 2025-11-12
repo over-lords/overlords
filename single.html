@@ -246,6 +246,50 @@
   position: relative;
   display: inline-block;  /* keeps wrapper tight to image */
 }
+
+.overlord-card {
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.overlord-card img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border: 2px solid black;
+  border-radius: 6px;
+}
+
+.overlord-card.selected img {
+  box-shadow: 0 0 12px 6px yellow;
+  transform: scale(1.05);
+}
+
+.overlord-card p {
+  margin: 5px 0;
+  font-weight: bold;
+}
+
+.difficulty-1 {
+  background-color: rgba(0, 255, 0, 0.2);
+}
+
+.difficulty-2 {
+  background-color: rgba(255, 255, 0, 0.2);
+}
+
+.difficulty-3 {
+  background-color: rgba(255, 0, 0, 0.2);
+}
+
+.difficulty-title {
+  flex-basis: 100%;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+}
 </style>
 </head>
     <body style="background-color:white;" onload="window.scrollTo(0, 1)">
@@ -254,11 +298,9 @@
             <div class="title-box" id="title-box"></div>
             <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
-            <div class="back-box" id="back-box" onclick="location.href='play.html'" style="cursor: pointer; margin-top: -30px; height: 30px; background-color: #5d5d5d; border: 5px solid #000;">
-                <h1 class="menu-text" style="font-size: 1.8rem; margin-top: 0px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
-            </div>
+            <div id="close-box" onclick="location.href='play.html'">X</div>
 
-            <div class="container" style="margin-top: 180px; width: 100%;">
+            <div class="container" style="margin-top: 110px; width: 100%;">
                 <p class="boxed" style="font-weight: bold; font-family: 'Poppins', sans-serif;">Design your Singleplayer game!</p>
                 <div class="top-row">
                   <button id="import-loadout" class="import-btn">Import Loadout</button>
@@ -281,6 +323,19 @@
                 </div>
                 </div>
 
+                <button class="collapsible">Select Your Overlords (1-3)</button>
+                <div class="content">
+                  <div class="hero-box">
+                    <div class="hero-controls">
+                      <button id="undo-overlords">Undo</button>
+                      <button id="random-overlords">Random</button>
+                      <button id="redo-overlords">Redo</button>
+                    </div>
+                    <div id="overlord-grid" class="hero-grid"></div>
+                  </div>
+                </div>
+
+                <br>
                 <div class="bottom-row">
                   <button id="start-button" class="start-button">Start Game!</button>
                   <button id="export-loadout" class="export-btn">Export Loadout</button>
@@ -291,15 +346,20 @@
 
         <script type="module">
             import { heroes } from './data/faceCards.js';
+            import { overlords } from './data/overlords.js';
 
             const collapsible = document.querySelector('.collapsible');
             const content = document.querySelector('.content');
+
             const heroGrid = document.getElementById('hero-grid');
             const startButton = document.getElementById('start-button');
 
-            collapsible.addEventListener('click', () => {
-                collapsible.classList.toggle('active');
-                content.classList.toggle('show');
+            document.querySelectorAll('.collapsible').forEach(button => {
+              button.addEventListener('click', () => {
+                button.classList.toggle('active');
+                const content = button.nextElementSibling;
+                if (content) content.classList.toggle('show');
+              });
             });
 
             // Sort and filter heroes
@@ -391,16 +451,6 @@
               });
             }
 
-            function updateStartButton() {
-              if (selectedOrder.length >= 1 && selectedOrder.length <= 6) {
-                startButton.classList.add('active');
-                startButton.style.cursor = 'pointer';
-              } else {
-                startButton.classList.remove('active');
-                startButton.style.cursor = 'not-allowed';
-              }
-            }
-
             heroGrid.addEventListener('click', e => {
               const card = e.target.closest('.hero-card');
               if (!card) return;
@@ -448,14 +498,17 @@
             startButton.addEventListener("click", async () => {
               if (!startButton.classList.contains("active")) return;
 
-              const SECRET = "GeimonHeroKey42"; // any length OK now
-              const encrypted = await encryptData(selectedOrder, SECRET);
+              const SECRET = "GeimonHeroKey42";
+              const payload = {
+                heroes: selectedOrder,
+                overlords: selectedOverlords
+              };
+
+              const encrypted = await encryptData(payload, SECRET);
               const url = new URL("game.html", window.location.origin);
               url.searchParams.set("data", encrypted);
               window.location.href = url.toString();
             });
-
-
 
             // --- Randomization and Loadout Management ---
             let undoStack = [];
@@ -541,43 +594,6 @@
               reader.readAsText(file);
             }
 
-            // Top random (global) — only fills categories missing their minimum quota
-            function topRandom() {
-              undoStack.push([...selectedOrder]);
-              redoStack = [];
-
-              // --- Define minimums per category ---
-              const categoryMinimums = {
-                heroes: 1, // For now, only heroes exist
-                // future example: villains: 2, totems: 1
-              };
-
-              // --- HEROES category handling ---
-              const heroMinimum = categoryMinimums.heroes || 0;
-
-              // Count how many heroes are currently selected
-              const heroCount = selectedOrder.length;
-
-              if (heroCount < heroMinimum) {
-                const available = getUnselectedHeroes();
-                if (available.length > 0) {
-                  // Pick exactly enough to meet the minimum (or as many as possible)
-                  const toAdd = [];
-
-                  while (toAdd.length < (heroMinimum - heroCount) && available.length > 0) {
-                    const idx = Math.floor(Math.random() * available.length);
-                    toAdd.push(available.splice(idx, 1)[0]);
-                  }
-
-                  selectedOrder = [...selectedOrder, ...toAdd];
-                }
-              }
-
-              updateBadges();
-              updateStartButton();
-            }
-
-
             // --- Button bindings ---
             document.getElementById('random-heroes').addEventListener('click', randomizeSelection);
             document.getElementById('undo-random').addEventListener('click', undoRandom);
@@ -594,6 +610,199 @@
             document.body.appendChild(fileInput);
 
             document.getElementById('import-loadout').addEventListener('click', () => fileInput.click());
+
+            // ==================== OVERLORD SECTION ====================
+            const overlordGrid = document.getElementById('overlord-grid');
+            let selectedOverlords = [];
+            let overlordUndoStack = [];
+            let overlordRedoStack = [];
+
+            // Filter and group Overlords
+            const filteredOverlords = overlords
+              .filter(o => String(o.doNotShow).toLowerCase() !== "true")
+              .map(o => ({
+                ...o,
+                level: Number(o.level),
+                hp: Number(o.hp)
+              }))
+              .sort((a, b) => a.level - b.level || a.hp - b.hp);
+
+            // Group by difficulty
+            const difficulties = [
+              { level: 1, colorClass: 'difficulty-1', label: 'Easy' },
+              { level: 2, colorClass: 'difficulty-2', label: 'Medium' },
+              { level: 3, colorClass: 'difficulty-3', label: 'Hard' }
+            ];
+
+            difficulties.forEach(diff => {
+              const section = document.createElement('div');
+              section.classList.add('category-group', diff.colorClass);
+
+              const title = document.createElement('div');
+              title.classList.add('difficulty-title');
+              title.textContent = `Difficulty ${diff.level} (${diff.label})`;
+              section.appendChild(title);
+
+              const overlordGroup = filteredOverlords.filter(o => o.level === diff.level);
+              overlordGroup.forEach(overlord => {
+                const card = document.createElement('div');
+                card.classList.add('overlord-card');
+                card.dataset.id = overlord.id;
+                card.dataset.level = overlord.level;
+                card.dataset.hp = overlord.hp;
+
+                const img = document.createElement('img');
+                img.src = overlord.image;
+                img.alt = overlord.name;
+
+                const name = document.createElement('p');
+                name.textContent = overlord.name;
+
+                const hp = document.createElement('p');
+                hp.textContent = `${overlord.hp} HP`;
+
+                const badge = document.createElement('span');
+                badge.className = 'selection-badge';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'hero-image-wrapper';
+                wrapper.appendChild(img);
+                wrapper.appendChild(badge);
+
+                card.appendChild(wrapper);
+                card.appendChild(name);
+                card.appendChild(hp);
+                section.appendChild(card);
+              });
+
+              overlordGrid.appendChild(section);
+            });
+
+            // Update visuals
+            function updateOverlordBadges() {
+              document.querySelectorAll('.overlord-card').forEach(card => {
+                const id = card.dataset.id;
+                const idx = selectedOverlords.indexOf(id);
+                const badge = card.querySelector('.selection-badge');
+
+                if (idx > -1) {
+                  card.classList.add('selected');
+                  if (badge) {
+                    badge.style.display = 'flex';
+                    badge.textContent = String(idx + 1);
+                  }
+                } else {
+                  card.classList.remove('selected');
+                  if (badge) {
+                    badge.style.display = 'none';
+                    badge.textContent = '';
+                  }
+                }
+              });
+            }
+
+            function updateStartButton() {
+              const heroesValid = selectedOrder.length >= 1 && selectedOrder.length <= 6;
+              const overlordsValid = selectedOverlords.length >= 1 && selectedOverlords.length <= 3;
+
+              if (heroesValid && overlordsValid) {
+                startButton.classList.add('active');
+                startButton.style.cursor = 'pointer';
+              } else {
+                startButton.classList.remove('active');
+                startButton.style.cursor = 'not-allowed';
+              }
+            }
+
+            // Handle click
+            overlordGrid.addEventListener('click', e => {
+              const card = e.target.closest('.overlord-card');
+              if (!card) return;
+              const id = card.dataset.id;
+              const idx = selectedOverlords.indexOf(id);
+
+              if (idx > -1) {
+                selectedOverlords.splice(idx, 1);
+              } else if (selectedOverlords.length < 3) {
+                selectedOverlords.push(id);
+              }
+
+              // Sort by difficulty, then HP
+              const overlordData = overlords.filter(o => selectedOverlords.includes(String(o.id)));
+              overlordData.sort((a, b) => a.level - b.level || a.hp - b.hp);
+              selectedOverlords = overlordData.map(o => String(o.id));
+
+              updateOverlordBadges();
+              updateStartButton();
+            });
+
+            // Randomize Overlords
+            function randomizeOverlords() {
+              const maxSelectable = 3 - selectedOverlords.length;
+              if (maxSelectable <= 0) return;
+
+              const available = filteredOverlords
+                .filter(o => !selectedOverlords.includes(String(o.id)));
+              if (available.length === 0) return;
+
+              const countToAdd = Math.floor(Math.random() * maxSelectable) + 1;
+              const toAdd = [];
+
+              while (toAdd.length < countToAdd && available.length > 0) {
+                const idx = Math.floor(Math.random() * available.length);
+                toAdd.push(available.splice(idx, 1)[0]);
+              }
+
+              overlordUndoStack.push([...selectedOverlords]);
+              overlordRedoStack = [];
+
+              const newSelection = [...selectedOverlords, ...toAdd.map(o => String(o.id))];
+              const ordered = overlords
+                .filter(o => newSelection.includes(String(o.id)))
+                .sort((a, b) => a.level - b.level || a.hp - b.hp);
+              selectedOverlords = ordered.map(o => String(o.id));
+
+              updateOverlordBadges();
+              updateStartButton();
+            }
+
+            function undoOverlords() {
+              if (overlordUndoStack.length === 0) return;
+              overlordRedoStack.push([...selectedOverlords]);
+              selectedOverlords = overlordUndoStack.pop();
+              updateOverlordBadges();
+              updateStartButton();
+            }
+
+            function redoOverlords() {
+              if (overlordRedoStack.length === 0) return;
+              overlordUndoStack.push([...selectedOverlords]);
+              selectedOverlords = overlordRedoStack.pop();
+              updateOverlordBadges();
+              updateStartButton();
+            }
+
+            // Global random top button updates to fill categories missing minimums
+            function topRandom() {
+              undoStack.push([...selectedOrder]);
+              redoStack = [];
+
+              const heroMin = 1;
+              const overlordMin = 1;
+
+              if (selectedOrder.length < heroMin) randomizeSelection();
+              if (selectedOverlords.length < overlordMin) randomizeOverlords();
+
+              updateBadges();
+              updateOverlordBadges();
+              updateStartButton();
+            }
+
+            // Button bindings
+            document.getElementById('random-overlords').addEventListener('click', randomizeOverlords);
+            document.getElementById('undo-overlords').addEventListener('click', undoOverlords);
+            document.getElementById('redo-overlords').addEventListener('click', redoOverlords);
+
         </script>
     </body>
 </html>

@@ -19,12 +19,11 @@
             <h1 class="menu-text" style="font-size: 1.8rem; margin-top: 0px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return to Home</h1>
         </div>
 
-        <!-- LIST RESULTS RETURNED HERE -->
-
     </div>
 
     <script type="module">
         import { heroes } from './data/faceCards.js';
+        import { overlords } from './data/overlords.js';
 
         // --- Decrypt Function ---
         async function decryptData(cipherText, secretKey) {
@@ -60,20 +59,32 @@
         }
 
         try {
-            const selectedHeroes = await decryptData(encrypted, SECRET);
+            const selectedData = await decryptData(encrypted, SECRET);
+            const selectedHeroes = selectedData.heroes || [];
+            const selectedOverlords = selectedData.overlords || [];
 
-            // Map IDs → hero objects (using imported heroes array)
+            // HEROES
             const heroMap = new Map(heroes.map(h => [String(h.id), h]));
             const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
 
-            // Create a container for display, moved down 200px
+            // OVERLORDS
+            const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
+            const overlordList = selectedOverlords
+            .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
+            .sort((a, b) => a.level - b.level || a.hp - b.hp);
+
+            // Create hero container
             const container = document.createElement('div');
             container.style.marginTop = '200px';
             container.style.textAlign = 'center';
             container.innerHTML = `
-            <h2 style="margin-bottom:10px;">Loaded Heroes (in order selected):</h2>
+            <h2>Loaded Heroes (in order selected):</h2>
             <ol style="display:inline-block; text-align:left;">
                 ${heroList.map(h => `<li>${h.name}</li>`).join('')}
+            </ol>
+            <h2 style="margin-top:30px;">Loaded Overlords (sorted by difficulty & HP):</h2>
+            <ol style="display:inline-block; text-align:left;">
+                ${overlordList.map(o => `<li>${o.name} — ${o.hp} HP (Difficulty ${o.level})</li>`).join('')}
             </ol>
             `;
 

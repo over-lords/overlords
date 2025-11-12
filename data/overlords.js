@@ -8,6 +8,7 @@ export const overlords = [
     type: "Overlord",
     level: "3",
     hp: "150",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `At the end of a Hero's turn, if they engaged Darkseid, they take 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span>

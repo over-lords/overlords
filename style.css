@@ -227,10 +227,10 @@ html, body {
 
 .profilePicBox {
   position: fixed;
-  bottom: 142.5px;      /* adjust vertical position */
+  bottom: 130px;      /* adjust vertical position */
   right: 10px;     /* adjust horizontal position */
-  width: 300px;   /* adjust width */
-  height: 175px;  /* adjust height */
+  width: 290px;   /* adjust width */
+  height: 165px;  /* adjust height */
   background-color: rgba(0,0,0,0.8);
   border: 2px solid #ffffff55;
   border-radius: 10px;
@@ -243,7 +243,7 @@ html, body {
   position: absolute;
   top: 2.5px;      /* adjust vertical position */
   right: 2.5px;     /* adjust horizontal position */
-  width: 292.5px;   /* adjust width */
+  width: 280px;   /* adjust width */
   height: 25px;  /* adjust height */
   background-color: rgba(141, 141, 141, 0.8);
   border: 2px solid #ffffff55;
@@ -259,10 +259,10 @@ html, body {
 
 .profilePicConfirm {
   position: absolute;
-  bottom: 5px;      /* adjust vertical position */
+  bottom: 2.5px;      /* adjust vertical position */
   left: 5px;     /* adjust horizontal position */
   width: 102.5px;   /* adjust width */
-  height: 23.5px;  /* adjust height */
+  height: 15px;  /* adjust height */
   background-color: rgba(141, 141, 141, 0.8);
   border: 2px solid #ffffff55;
   border-radius: 10px;
@@ -294,8 +294,8 @@ html, body {
   position: absolute;
   top: 35px;
   right: 5px;
-  width: 168px;
-  height: 122.5px;
+  width: 155px;
+  height: 113.5px;
   background-color: rgba(141, 141, 141, 0.8);
   border: 2px solid #ffffff55;
   border-radius: 10px;
