@@ -898,7 +898,7 @@ img {
             // Create hidden file input for import
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.accept = '.txt';
+            fileInput.accept = '.json';
             fileInput.style.display = 'none';
             fileInput.addEventListener('change', importLoadout);
             document.body.appendChild(fileInput);
@@ -1991,7 +1991,6 @@ img {
               URL.revokeObjectURL(url);
             }
 
-
             // --- Import loadout from user file (Unified) ---
             function importLoadout(event) {
               const file = event.target.files[0];
@@ -2046,15 +2045,19 @@ img {
                     // Bystanders
                     if (data.villainDeck.bystanders){
                       const bd = data.villainDeck.bystanders;
+                      bystandersByType = Array.isArray(bd.byType) ? bd.byType : [];
                       bystandersCount = clamp(Number(bd.count)||0, 0, 15);
-                      bysSlider.value = bystandersCount; syncBystanders();
-                      if (Array.isArray(bd.byType)) { bystandersByType = bd.byType; renderBystandersBreakdown(); }
+                      bysSlider.value = bystandersCount;
+                      renderBystandersBreakdown();
+                      syncBystanders();
                     }
+
                     // Scenarios
                     if (Array.isArray(data.villainDeck.scenarios)){
                       selectedScenarios = data.villainDeck.scenarios.slice(0,5).map(String);
                       renderScenarios();
                     }
+                    
                     // Henchmen
                     if (Array.isArray(data.villainDeck.henchmen)){
                       henchmenCounts.clear();
