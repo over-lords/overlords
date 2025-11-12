@@ -547,7 +547,7 @@
               };
 
               const encrypted = await encryptData(payload, SECRET);
-              const url = new URL("game.html", window.location.origin);
+              const url = new URL("./game.html", window.location.href);
               url.searchParams.set("data", encrypted);
               window.location.href = url.toString();
             });
