@@ -1,15 +1,18 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4c0f2468199e5fcd6ee3a996f5803d11a9c9d981/Public/Images/Card%20Assets/Misc";
 
 export const tactics = [
-    {
+  {
     id: "1",
     name: "Metropolis Bank Robbery",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
+    limitEaA: "no",
+    multiTacticReq: "no",
+    multiOverlordReq: "no",
     abilitiesText: [
       {
         text: `Might of the Overlord: KO all captured Bystanders. Then, if there is a Villain in Metropolis, they capture 2 Bystanders. <span class="line-gap"></span>
-               Bonus Evil Wins Condition: Evil Wins when 10 Bystanders have been KO'd.`
+              Bonus Evil Wins Condition: Evil Wins when 10 Bystanders have been KO'd.`
       }
     ],
     abilitiesNamePrint: [
@@ -52,6 +55,63 @@ export const tactics = [
         uses: `1`,
         shared: `no`,
         effect: `evilWins`
+      }
+    ]
+  },
+  {
+    id: "2",
+    name: "Welcome to Hell",
+    image: `${cardArtFolder}/Tactic.jpg`,
+    type: "Tactic",
+    limitEaA: "allEnemies",
+    multiTacticReq: "yes",
+    multiOverlordReq: "yes",
+    abilitiesText: [
+      {
+        text: `Required: 2+ Overlords, 2 Tactics, Enemies only (30 minimum). <span class="line-gap"></span>
+              Might of the Overlord: Draw twice from the Enemies and Allies Pile, and once from the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+        {
+            text: `na`
+        }
+        ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `There's More?!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `enemiesDraw(2),villainDraw(1)`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `none`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
       }
     ]
   },

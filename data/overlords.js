@@ -59,4 +59,63 @@ export const overlords = [
       }
     ]
   },
+    {
+    id: "2",
+    name: "Joker",
+    image: `${cardArtFolder}/Joker.jpg`,
+    type: "Overlord",
+    level: "1",
+    hp: "40",
+    doNotShow: "false",
+    abilitiesText: [
+      {
+        text: `At the start of the game, Joker's Hit Points are increased by 3 for every active [ICON:Bat] Hero. <span class="line-gap"></span>
+               Might of the Overlord: Draw 1 card from the Villain Deck for every active Hero. <span class="line-gap"></span>
+               Bonus Feature: If there are 3 or more active [ICON:Bat] Heroes at the start of the game, Joker implements this feature. At the end of every 
+               Hero's turn, they must KO a card from their discard pile or take 2 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Filled with Glee`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `startGame`,
+        uses: `1`,
+        shared: `no`,
+        effect: `gainLife(3*bat)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Fiesta Time!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `villainDraw(1*active)`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `Bonus Round!`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `endTurn`,
+        condition: `batActive(3)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `koCardorTakeDamage(2)`
+      }
+    ]
+  },
 ]
