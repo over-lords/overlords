@@ -1684,40 +1684,50 @@ img {
             renderHenchmen();
 
             function randomHenchmen(){
-              henchmenUndoStack.push([...henchmenCounts.entries()]); henchmenRedoStack = [];
-              // Assign random 0–10 to some entries until 20–40 total
+              henchmenUndoStack.push([...henchmenCounts.entries()]);
+              henchmenRedoStack = [];
               henchmenCounts.clear();
+
+              const target = 20 + Math.floor(Math.random() * 21); // random 20–40
               let total = 0;
               const pool = [...henchFiltered];
-              while (pool.length && total < 20){
-                const i = Math.floor(Math.random()*pool.length);
-                const h = pool.splice(i,1)[0];
-                const qty = Math.floor(Math.random()*11); // 0–10
+
+              while (pool.length && total < target){
+                const i = Math.floor(Math.random() * pool.length);
+                const h = pool.splice(i, 1)[0];
+                const qty = Math.floor(Math.random() * 11); // 0–10
                 henchmenCounts.set(String(h.id), qty);
                 total += qty;
               }
-              // If still low (<20), top up randomly; if high (>40), trim
-              if (total < 20){
+
+              // If slightly below target, top up
+              if (total < target){
                 for (const h of henchFiltered){
-                  if (total>=20) break;
+                  if (total >= target) break;
                   const id = String(h.id);
                   const cur = henchmenCounts.get(id) ?? 0;
-                  const add = clamp(20-total, 0, 10-cur);
-                  henchmenCounts.set(id, cur+add);
+                  const add = clamp(target - total, 0, 10 - cur);
+                  henchmenCounts.set(id, cur + add);
                   total += add;
                 }
-              } else if (total > 40){
+              }
+
+              // If overshot beyond 40, trim down
+              if (total > 40){
                 for (const h of henchFiltered){
-                  if (total<=40) break;
+                  if (total <= 40) break;
                   const id = String(h.id);
                   const cur = henchmenCounts.get(id) ?? 0;
-                  const rem = clamp(total-40, 0, cur);
-                  henchmenCounts.set(id, cur-rem);
+                  const rem = clamp(total - 40, 0, cur);
+                  henchmenCounts.set(id, cur - rem);
                   total -= rem;
                 }
               }
-              renderHenchmen(); updateStartButton();
+
+              renderHenchmen();
+              updateStartButton();
             }
+
             function undoHenchmen(){ if(!henchmenUndoStack.length) return; henchmenRedoStack.push([...henchmenCounts.entries()]); henchmenCounts = new Map(henchmenUndoStack.pop()); renderHenchmen(); updateStartButton();}
             function redoHenchmen(){ if(!henchmenRedoStack.length) return; henchmenUndoStack.push([...henchmenCounts.entries()]); henchmenCounts = new Map(henchmenRedoStack.pop()); renderHenchmen(); updateStartButton();}
             document.getElementById('random-henchmen').addEventListener('click', randomHenchmen);
