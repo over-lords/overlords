@@ -15,9 +15,7 @@
         <div class="title-box" id="title-box"></div>
         <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
-        <div class="back-box" id="back-box" onclick="location.href='index.html'" style="cursor: pointer; margin-top: -30px; height: 30px; background-color: #5d5d5d; border: 5px solid #000;">
-            <h1 class="menu-text" style="font-size: 1.8rem; margin-top: 0px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Return to Home</h1>
-        </div>
+        <div id="close-box" onclick="location.href='play.html'">X</div>
 
     </div>
 
@@ -75,7 +73,7 @@
 
             // Create hero container
             const container = document.createElement('div');
-            container.style.marginTop = '200px';
+            container.style.marginTop = '140px';
             container.style.textAlign = 'center';
             container.innerHTML = `
             <h2>Loaded Heroes (in order selected):</h2>
