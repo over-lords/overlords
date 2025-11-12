@@ -375,6 +375,54 @@
                   </div>
                 </div>
 
+                <button class="collapsible">Enemies and Allies (15–50 each)</button>
+                <div class="content">
+                  <div class="hero-box" style="background-color: #ddd;">
+                    <p style="font-weight:bold; margin-bottom:25px;">
+                      Recommended 30 each for a total of 60
+                    </p>
+
+                    <div style="display:flex; flex-direction:column; gap:20px; align-items:center;">
+
+                      <!-- ENEMIES SLIDER -->
+                      <div style="display:flex; align-items:center; gap:10px; width:90%; max-width:600px;">
+                        <label style="width:50px; text-align:right;">Enemies</label>
+                        <div style="position:relative; flex:1;">
+                          <input id="enemies-slider" type="range" min="0" max="50" value="0" step="1"
+                                style="width:100%; cursor:pointer;">
+                          <div id="enemies-value"
+                              style="position:absolute; top:-15px; left:0; transform:translateX(0%);
+                                      font-weight:bold; text-align:center;">0</div>
+                        </div>
+                        <label style="width:20px; text-align:center;"></label>
+                        <input id="enemies-input" type="number" min="0" max="50" value="0"
+                              style="width:60px; text-align:center;">
+                      </div>
+
+                      <!-- ALLIES SLIDER -->
+                      <div style="display:flex; align-items:center; gap:10px; width:90%; max-width:600px;">
+                        <label style="width:50px; text-align:right;">Allies</label>
+                        <div style="position:relative; flex:1;">
+                          <input id="allies-slider" type="range" min="0" max="50" value="0" step="1"
+                                style="width:100%; cursor:pointer;">
+                          <div id="allies-value"
+                              style="position:absolute; top:-15px; left:0; transform:translateX(0%);
+                                      font-weight:bold; text-align:center;">0</div>
+                        </div>
+                        <label style="width:20px; text-align:center;"></label>
+                        <input id="allies-input" type="number" min="0" max="50" value="0"
+                              style="width:60px; text-align:center;">
+                      </div>
+
+                      <div class="hero-controls">
+                        <button id="undo-enemies">Undo</button>
+                        <button id="random-enemies">Random</button>
+                        <button id="redo-enemies">Redo</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <br>
                 <div class="bottom-row">
                   <button id="start-button" class="start-button">Start Game!</button>
@@ -388,6 +436,8 @@
             import { heroes } from './data/faceCards.js';
             import { overlords } from './data/overlords.js';
             import { tactics } from './data/tactics.js';
+            import { enemies } from './data/enemies.js';
+            import { allies } from './data/allies.js';
 
             const collapsible = document.querySelector('.collapsible');
             const content = document.querySelector('.content');
@@ -543,7 +593,9 @@
               const payload = {
                 heroes: selectedOrder,
                 overlords: selectedOverlords,
-                tactics: selectedTactics
+                tactics: selectedTactics,
+                enemies: enemiesCount,
+                allies: alliesCount
               };
 
               const encrypted = await encryptData(payload, SECRET);
@@ -608,60 +660,6 @@
               undoStack.push([...selectedOrder]);
               const next = redoStack.pop();
               applySelection(next);
-            }
-
-            // Export current loadout to a text file
-            function exportLoadout() {
-              const data = {
-                heroes: selectedOrder,
-                overlords: selectedOverlords,
-                tactics: selectedTactics
-              };
-              const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = 'loadout.json';
-              a.click();
-              URL.revokeObjectURL(url);
-            }
-
-
-            // Import loadout from user file
-            function importLoadout(event) {
-              const file = event.target.files[0];
-              if (!file) return;
-
-              const reader = new FileReader();
-              reader.onload = e => {
-                try {
-                  const data = JSON.parse(e.target.result);
-
-                  // --- Heroes ---
-                  if (Array.isArray(data.heroes)) {
-                    selectedOrder = data.heroes.slice(0, 6);
-                    updateBadges();
-                  }
-
-                  // --- Overlords ---
-                  if (Array.isArray(data.overlords)) {
-                    selectedOverlords = data.overlords.slice(0, 3);
-                    updateOverlordBadges();
-                  }
-
-                  // --- Tactics ---
-                  if (Array.isArray(data.tactics)) {
-                    selectedTactics = data.tactics.slice(0, 2);
-                    updateTacticStyles();
-                  }
-
-                  updateStartButton();
-                } catch (err) {
-                  console.error("Failed to import loadout:", err);
-                  alert("Invalid file format. Please use a valid .json loadout file.");
-                }
-              };
-              reader.readAsText(file);
             }
 
             // --- Button bindings ---
@@ -887,20 +885,6 @@
               });
             }
 
-            function updateStartButton() {
-              const heroesValid = selectedOrder.length >= 1 && selectedOrder.length <= 6;
-              const overlordsValid = selectedOverlords.length >= 1 && selectedOverlords.length <= 3;
-              const tacticsValid = selectedTactics.length >= 1 && selectedTactics.length <= 2;
-
-              if (heroesValid && overlordsValid && tacticsValid) {
-                startButton.classList.add('active');
-                startButton.style.cursor = 'pointer';
-              } else {
-                startButton.classList.remove('active');
-                startButton.style.cursor = 'not-allowed';
-              }
-            }
-
             // Handle click selection
             tacticsGrid.addEventListener('click', e => {
               const card = e.target.closest('.tactic-card');
@@ -963,6 +947,213 @@
             document.getElementById('undo-tactics').addEventListener('click', undoTactics);
             document.getElementById('redo-tactics').addEventListener('click', redoTactics);
 
+            // ==================== ENEMIES & ALLIES SECTION ====================
+            const enemiesSlider = document.getElementById('enemies-slider');
+            const alliesSlider = document.getElementById('allies-slider');
+            const enemiesValue = document.getElementById('enemies-value');
+            const alliesValue = document.getElementById('allies-value');
+            const enemiesInput = document.getElementById('enemies-input');
+            const alliesInput = document.getElementById('allies-input');
+
+            let enemiesCount = 0;
+            let alliesCount = 0;
+
+            let enemiesUndoStack = [];
+            let enemiesRedoStack = [];
+            let alliesUndoStack = [];
+            let alliesRedoStack = [];
+
+            // Update the position label above each slider
+            function updateSliderLabel(slider, label) {
+              const percent = (slider.value / slider.max) * 100;
+              label.textContent = slider.value;
+              label.style.left = `${percent}%`;
+              label.style.transform = 'translateX(-50%)';
+            }
+
+            function updateStartButton() {
+              const heroesValid = selectedOrder.length >= 1 && selectedOrder.length <= 6;
+              const overlordsValid = selectedOverlords.length >= 1 && selectedOverlords.length <= 3;
+              const tacticsValid = selectedTactics.length >= 1 && selectedTactics.length <= 2;
+              const enemiesValid = enemiesCount >= 15 && enemiesCount <= 50;
+              const alliesValid = alliesCount >= 15 && alliesCount <= 50;
+
+              if (heroesValid && overlordsValid && tacticsValid && enemiesValid && alliesValid) {
+                startButton.classList.add('active');
+                startButton.style.cursor = 'pointer';
+              } else {
+                startButton.classList.remove('active');
+                startButton.style.cursor = 'not-allowed';
+              }
+            }
+
+            // Sync slider ↔ number input
+            function syncEnemyControls() {
+              enemiesCount = Number(enemiesSlider.value);
+              enemiesInput.value = enemiesCount;
+              updateSliderLabel(enemiesSlider, enemiesValue);
+
+              // Visual validation: red if invalid, green if valid
+              if (enemiesCount < 15 || enemiesCount > 50) {
+                enemiesSlider.style.accentColor = 'red';
+              } else {
+                enemiesSlider.style.accentColor = 'green';
+              }
+
+              updateStartButton();
+            }
+
+            function syncAllyControls() {
+              alliesCount = Number(alliesSlider.value);
+              alliesInput.value = alliesCount;
+              updateSliderLabel(alliesSlider, alliesValue);
+
+              // Visual validation: red if invalid, green if valid
+              if (alliesCount < 15 || alliesCount > 50) {
+                alliesSlider.style.accentColor = 'red';
+              } else {
+                alliesSlider.style.accentColor = 'green';
+              }
+
+              updateStartButton();
+            }
+
+            enemiesSlider.addEventListener('input', syncEnemyControls);
+            enemiesInput.addEventListener('input', e => {
+              let val = Math.max(0, Math.min(50, Number(e.target.value)));
+              enemiesSlider.value = val;
+              syncEnemyControls();
+            });
+
+            alliesSlider.addEventListener('input', syncAllyControls);
+            alliesInput.addEventListener('input', e => {
+              let val = Math.max(0, Math.min(50, Number(e.target.value)));
+              alliesSlider.value = val;
+              syncAllyControls();
+            });
+
+            // Randomize functions
+            function randomizeEnemies() {
+              enemiesUndoStack.push(enemiesCount);
+              enemiesRedoStack = [];
+              enemiesCount = Math.floor(Math.random() * 36) + 15; // 15–50
+              enemiesSlider.value = enemiesCount;
+              syncEnemyControls();
+            }
+
+            function randomizeAllies() {
+              alliesUndoStack.push(alliesCount);
+              alliesRedoStack = [];
+              alliesCount = Math.floor(Math.random() * 36) + 15;
+              alliesSlider.value = alliesCount;
+              syncAllyControls();
+            }
+
+            document.getElementById('random-enemies').addEventListener('click', () => {
+              randomizeEnemies();
+              randomizeAllies();
+            });
+
+            document.getElementById('undo-enemies').addEventListener('click', () => {
+              if (enemiesUndoStack.length > 0) {
+                enemiesRedoStack.push(enemiesCount);
+                enemiesCount = enemiesUndoStack.pop();
+                enemiesSlider.value = enemiesCount;
+                syncEnemyControls();
+              }
+              if (alliesUndoStack.length > 0) {
+                alliesRedoStack.push(alliesCount);
+                alliesCount = alliesUndoStack.pop();
+                alliesSlider.value = alliesCount;
+                syncAllyControls();
+              }
+            });
+
+            document.getElementById('redo-enemies').addEventListener('click', () => {
+              if (enemiesRedoStack.length > 0) {
+                enemiesUndoStack.push(enemiesCount);
+                enemiesCount = enemiesRedoStack.pop();
+                enemiesSlider.value = enemiesCount;
+                syncEnemyControls();
+              }
+              if (alliesRedoStack.length > 0) {
+                alliesUndoStack.push(alliesCount);
+                alliesCount = alliesRedoStack.pop();
+                alliesSlider.value = alliesCount;
+                syncAllyControls();
+              }
+            });
+
+            // Include in export/import
+            function exportLoadout() {
+              const data = {
+                heroes: selectedOrder,
+                overlords: selectedOverlords,
+                tactics: selectedTactics,
+                enemies: enemiesCount,
+                allies: alliesCount
+              };
+              const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'loadout.json';
+              a.click();
+              URL.revokeObjectURL(url);
+            }
+
+            // --- Import loadout from user file (Unified) ---
+            function importLoadout(event) {
+              const file = event.target.files[0];
+              if (!file) return;
+
+              const reader = new FileReader();
+              reader.onload = e => {
+                try {
+                  const data = JSON.parse(e.target.result);
+
+                  // --- HEROES ---
+                  if (Array.isArray(data.heroes)) {
+                    selectedOrder = data.heroes.slice(0, 6);
+                    updateBadges();
+                  }
+
+                  // --- OVERLORDS ---
+                  if (Array.isArray(data.overlords)) {
+                    selectedOverlords = data.overlords.slice(0, 3);
+                    updateOverlordBadges();
+                  }
+
+                  // --- TACTICS ---
+                  if (Array.isArray(data.tactics)) {
+                    selectedTactics = data.tactics.slice(0, 2);
+                    updateTacticStyles();
+                  }
+
+                  // --- ENEMIES ---
+                  if (typeof data.enemies === 'number') {
+                    enemiesCount = Math.min(50, Math.max(0, data.enemies));
+                    enemiesSlider.value = enemiesCount;
+                    syncEnemyControls();
+                  }
+
+                  // --- ALLIES ---
+                  if (typeof data.allies === 'number') {
+                    alliesCount = Math.min(50, Math.max(0, data.allies));
+                    alliesSlider.value = alliesCount;
+                    syncAllyControls();
+                  }
+
+                  updateStartButton();
+                } catch (err) {
+                  console.error('Failed to import loadout:', err);
+                  alert('Invalid file format. Please use a valid .json loadout file.');
+                }
+              };
+
+              reader.readAsText(file);
+            }
+
             const limits = {
               heroes: { min: 1, max: 6 },
               overlords: { min: 1, max: 3 },
@@ -973,8 +1164,9 @@
               if (selectedOrder.length < limits.heroes.min) randomizeSelection();
               if (selectedOverlords.length < limits.overlords.min) randomizeOverlords();
               if (selectedTactics.length < limits.tactics.min) randomizeTactics();
+              if (enemiesCount < 15) randomizeEnemies();
+              if (alliesCount < 15) randomizeAllies();
 
-              // Update visuals for all
               updateBadges();
               updateOverlordBadges();
               updateTacticStyles();

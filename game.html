@@ -23,6 +23,8 @@
         import { heroes } from './data/faceCards.js';
         import { overlords } from './data/overlords.js';
         import { tactics } from './data/tactics.js';
+        import { enemies } from './data/enemies.js';
+        import { allies } from './data/allies.js';
 
         // --- Decrypt Function ---
         async function decryptData(cipherText, secretKey) {
@@ -81,6 +83,13 @@
                 return t;
             });
 
+            // ENEMIES & ALLIES
+            const selectedEnemies = selectedData.enemies || 0;
+            const selectedAllies = selectedData.allies || 0;
+
+            const enemyNames = enemies.map(e => e.name);
+            const allyNames = allies.map(a => a.name);
+
             // Create hero container
             const container = document.createElement('div');
             container.style.marginTop = '140px';
@@ -106,6 +115,20 @@
                 </li>
                 `).join('')}
             </ol>
+            `;
+
+            container.innerHTML += `
+            <h2 style="margin-top:30px;">Enemies & Allies:</h2>
+            <div style="display:flex; justify-content:center; gap:60px; text-align:left;">
+                <div>
+                <b>Enemies (${selectedEnemies} chosen)</b><br>
+                <ul>${enemyNames.map(n => `<li>${n}</li>`).join('')}</ul>
+                </div>
+                <div>
+                <b>Allies (${selectedAllies} chosen)</b><br>
+                <ul>${allyNames.map(n => `<li>${n}</li>`).join('')}</ul>
+                </div>
+            </div>
             `;
 
             document.querySelector('.container').appendChild(container);

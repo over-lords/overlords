@@ -63,7 +63,7 @@ export const tactics = [
     name: "Welcome to Hell",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    limitEaA: "allEnemies",
+    limitEaA: ["allEnemies","min(30)"],
     multiTacticReq: "yes",
     multiOverlordReq: "yes",
     abilitiesText: [
