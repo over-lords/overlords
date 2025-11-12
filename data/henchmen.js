@@ -138,7 +138,7 @@ export const henchmen = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `draw(1)`
+        effect: `enaDraw(1,0)`
       }
     ]
   },
