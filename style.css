@@ -227,7 +227,7 @@ html, body {
 
 .profilePicBox {
   position: fixed;
-  bottom: 130px;      /* adjust vertical position */
+  bottom: 114px;      /* adjust vertical position */
   right: 10px;     /* adjust horizontal position */
   width: 290px;   /* adjust width */
   height: 165px;  /* adjust height */
