@@ -27,4 +27,30 @@ export const scenarios = [
         }
         ]
     },
+    {
+        id: "2",
+        name: "Enemy Telepath",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        hp: "10",
+        abilitiesText: [
+        {
+            text: `Heroes cannot Scan.`
+        }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Stop Cheating!`
+            }
+            ],
+        abilitiesEffects: [
+        {
+            type: `passive`,
+            condition: `none`,
+            uses: `0`,
+            shared: `no`,
+            effect: `disableScan()`
+        }
+        ]
+    },
 ]

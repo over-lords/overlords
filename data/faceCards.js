@@ -1462,7 +1462,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Once per turn, you can look at the top card of the Villain Deck. <span class="line-gap"></span> 1/Game: At the start of her turn, before her Travel or draw, Miss Martian can deal 3 Damage to all Henchmen and Villains, and also prevent the Villain Deck from being drawn from on the following turn. It then becomes the end of her turn.`
+        text: `Once per turn, Scan 1 from the Villain Deck. <span class="line-gap"></span> 1/Game: At the start of her turn, before her Travel or draw, Miss Martian can deal 3 Damage to all Henchmen and Villains, and also prevent the Villain Deck from being drawn from on the following turn. It then becomes the end of her turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -2244,12 +2244,12 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: Reveal the top 3 cards of the Villain Deck, you can KO one of them. <span class="line-gap"></span> 3/Game: Before they draw, increase another Hero's draw selection to 4 cards.`
+        text: `3/Game: Scan 3 cards from the Villain Deck, you can KO one of them. <span class="line-gap"></span> 3/Game: Before they draw, increase another Hero's draw selection to 4 cards.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Reveal 3 from the Villain Deck`
+        text: `Scan 3 from the Villain Deck`
       },
       {
         text: `Allow to Preview 4`
@@ -2522,7 +2522,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Once per turn, look at the top card of Omen's Deck or the Villain Deck. <span class="line-gap"></span> 2/Game: Once per turn, KO the top card of the Villain Deck.`
+        text: `Once per turn, Scan 1 from Omen's or the Villain's Deck. <span class="line-gap"></span> 2/Game: Once per turn, KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -2618,26 +2618,29 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `Once per turn, you can look at the top card of the Villain Deck. <span class="line-gap"></span> 1/Game: KO the top card of the Villain Deck.`
+        text: `Once per turn, Scan 1 from the Villain Deck. <span class="line-gap"></span> 2/Game: KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Reveal and possibly KO the top card of the Villain Deck`
+        text: `Scan 1 from the Villain Deck.`
+      },
+      {
+        text: `KO the top card of the Villain Deck.`
       }
     ],
     abilitiesEffects: [
       {
         type: `standard`,
         condition: `none`,
-        uses: `1`,
+        uses: `999`,
         shared: `no`,
         effect: `revealTop(Villain)`
       },
       {
-        type: `quick`,
-        condition: `usedOtherFaceAbility`,
-        uses: `1`,
+        type: `standard`,
+        condition: `none`,
+        uses: `2`,
         shared: `no`,
         effect: `koTop(Villain)`
       }

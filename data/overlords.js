@@ -130,7 +130,7 @@ export const overlords = [
       {
         text: `If a Hero is KO'd: Next turn do not draw from the Villain Deck, that Hero enters as a Villain. <span class="line-gap"></span>
                Might of the Overlord: Of the next 5 cards in the Villain Deck, play all of the Henchmen and Villains. <span class="line-gap"></span>
-               Bonus Feature: After the first Hero is KO'd, Psimon implements this feature. No Heroes can look at the top cards of any decks.`
+               Bonus Feature: After the first Hero is KO'd, Psimon implements this feature. Heroes cannot Scan.`
       }
     ],
     abilitiesNamePrint: [
@@ -172,7 +172,7 @@ export const overlords = [
         condition: `heroKOd`,
         uses: `0`,
         shared: `no`,
-        effect: `disableScry`
+        effect: `disableScan()`
       }
     ]
   },

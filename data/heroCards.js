@@ -1305,7 +1305,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `You may draw from the Enemies and Allies Pile. <span class="line-gap"></span> If Discarded: Look at the top 3 cards of the Enemies and Allies Pile. Activate or KO your choice of the revealed cards.`
+        text: `You may draw from the Enemies and Allies Pile. <span class="line-gap"></span> If Discarded: Scan 3 from the Enemies and Allies Pile. <span class="line-gap"></span> CHOOSE: Activate. <span class="line-gap"></span> OR <span class="line-gap"></span> KO your choice of the revealed cards.`
       }
     ],
     abilitiesNamePrint: [
@@ -1329,7 +1329,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw a card. <span class="line-gap"></span><span class="line-gap"></span> Reveal the top card of the Villain Deck. You may KO it.`
+        text: `Draw a card. <span class="line-gap"></span><span class="line-gap"></span> Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -1569,7 +1569,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reveal the top card of the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the revealed card.`
+        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -1713,7 +1713,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Every Hero can look at the top 3 cards of their decks and draw 1 of them.`
+        text: `Every Hero can Scan 3 from their decks and draw 1 of them.`
       }
     ],
     abilitiesNamePrint: [
