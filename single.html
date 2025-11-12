@@ -323,6 +323,47 @@
   margin: 5px 0 0 0;
   font-size: 0.9rem;
 }
+
+.henchmen-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.henchmen-section .collapsible {
+  width: 100%;
+  max-width: 900px; /* match the villain section width */
+  box-sizing: border-box;
+}
+
+.henchmen-section .content {
+  width: 100%;
+  max-width: 900px;
+  box-sizing: border-box;
+}
+
+/* Power 1 → pale green */
+#henchmen-section > .henchmen-section:nth-of-type(2) > .collapsible { background-color:#ccffcc; color:black; }
+/* Power 2 → pale yellow */
+#henchmen-section > .henchmen-section:nth-of-type(3) > .collapsible { background-color:#fff7cc; color:black; }
+/* Power 3 → pale red */
+#henchmen-section > .henchmen-section:nth-of-type(4) > .collapsible { background-color:#ffcccc; color:black; }
+
+#henchmen-section > .henchmen-section:nth-of-type(2) > .content { background-color:#f6fff6; }
+#henchmen-section > .henchmen-section:nth-of-type(3) > .content { background-color:#fffdf2; }
+#henchmen-section > .henchmen-section:nth-of-type(4) > .content { background-color:#fff5f5; }
+
+#henchmen-grid-1,
+#henchmen-grid-2,
+#henchmen-grid-3 {
+  border: none !important;
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;   /* kills the extra gap made by .category-group */
+}
+
 </style>
 </head>
     <body style="background-color:white;" onload="window.scrollTo(0, 1)">
@@ -339,7 +380,7 @@
                   <button id="import-loadout" class="import-btn">Import Loadout</button>
                   <button id="top-random" class="top-random-btn">Random</button>
                 </div>
-                <button class="collapsible">Select Your Heroes (1-6)</button>
+                <button class="collapsible" style="background-color: lightgreen; color: black;">Select Your Heroes (1-6)</button>
                 <div class="content">
                 <div class="hero-box">
                   <div class="hero-controls">
@@ -351,7 +392,7 @@
                 </div>
                 </div>
 
-                <button class="collapsible">Select Your Overlords (1-3)</button>
+                <button class="collapsible" style="background-color: lightcoral; color: black;">Select Your Overlords (1-3)</button>
                 <div class="content">
                   <div class="hero-box">
                     <div class="hero-controls">
@@ -363,9 +404,9 @@
                   </div>
                 </div>
 
-                <button class="collapsible">Select Your Tactics (1-2)</button>
+                <button class="collapsible" style="background-color: lightskyblue; color: black;">Select Your Tactics (1-2)</button>
                 <div class="content">
-                  <div class="hero-box" style="background-color: #ccc;">
+                  <div class="hero-box">
                     <div class="hero-controls">
                       <button id="undo-tactics">Undo</button>
                       <button id="random-tactics">Random</button>
@@ -375,9 +416,9 @@
                   </div>
                 </div>
 
-                <button class="collapsible">Enemies and Allies (15–50 each)</button>
+                <button class="collapsible" style="background-color: rgb(235, 36, 235); color: black;">Enemies and Allies (15–50 each)</button>
                 <div class="content">
-                  <div class="hero-box" style="background-color: #ddd;">
+                  <div class="hero-box">
                     <p style="font-weight:bold; margin-bottom:25px;">
                       Recommended 30 each for a total of 60
                     </p>
@@ -423,6 +464,106 @@
                   </div>
                 </div>
 
+                <button class="collapsible" style="background-color: rgb(255, 85, 85); color: black;">Villain Deck (60–140)</button>
+                <div class="content" id="villain-deck">
+                  <div class="hero-box">
+                    <p style="font-weight:bold;margin-bottom:12px;">Villain Deck (60-140) — Recommended 90 total</p>
+
+                    <!-- Mights of the Overlord -->
+                    <div style="display:flex; align-items:center; gap:10px; width:90%; max-width:700px; margin:10px auto;">
+                      <label style="width:170px; text-align:right;">Mights (3–10)</label>
+                      <div style="position:relative; flex:1;">
+                        <input id="mights-slider" type="range" min="0" max="10" value="0" step="1" style="width:100%;">
+                        <div id="mights-value" style="position:absolute; top:-15px; left:0; font-weight:bold; transform:translateX(-50%);">8</div>
+                      </div>
+                      <span style="font-size:.9rem;">Recommended: 8</span>
+                      <input id="mights-input" type="number" min="0" max="10" value="0" style="width:60px; text-align:center;">
+                    </div>
+
+                    <!-- Bystanders -->
+                    <div style="display:flex; align-items:center; gap:10px; width:90%; max-width:700px; margin:10px auto;">
+                      <label style="width:170px; text-align:right;">Bystanders (7–15)</label>
+                      <div style="position:relative; flex:1;">
+                        <input id="bystanders-slider" type="range" min="0" max="15" value="0" step="1" style="width:100%;">
+                        <div id="bystanders-value" style="position:absolute; top:-15px; left:0; font-weight:bold; transform:translateX(-50%);">10</div>
+                      </div>
+                      <span style="font-size:.9rem;">Recommended: 10</span>
+                      <input id="bystanders-input" type="number" min="0" max="15" value="0" style="width:60px; text-align:center;">
+                    </div>
+
+                    <!-- Bystander breakdown (auto-filled distribution) -->
+                    <div id="bystanders-breakdown" style="width:90%; max-width:700px; margin:6px auto 14px auto; font-size:0rem; color: transparent;"></div>
+
+                    <!-- Scenarios (0–5) -->
+                    <div style="margin-top:16px;">
+                      <div style="font-weight:bold; margin-bottom:6px;">Scenarios (0–5) — Recommended 2</div>
+                      <div class="hero-controls">
+                        <button id="undo-scenarios">Undo</button>
+                        <button id="random-scenarios">Random</button>
+                        <button id="redo-scenarios">Redo</button>
+                      </div>
+                      <div id="scenarios-grid" style="display:flex; flex-direction:column; gap:10px; align-items:center;"></div>
+                    </div>
+
+                    <!-- Henchmen (20–40) -->
+                    <div style="margin-top:16px;">
+                      <div style="font-weight:bold; margin-bottom:6px;">Henchmen (20–40) — Recommended 30</div>
+                      <div id="henchmen-section">
+                        <div style="display:flex; gap:10px; align-items:center; justify-content:space-between;">
+                          <div><button id="henchmen-deselect-all">Deselect All</button></div>
+                          <div class="hero-controls">
+                            <button id="undo-henchmen">Undo</button>
+                            <button id="random-henchmen">Random</button>
+                            <button id="redo-henchmen">Redo</button>
+                          </div>
+                        </div>
+
+                        <div class="henchmen-section">
+                          <button class="collapsible">Henchmen — Power 1</button>
+                          <div class="content">
+                            <div id="henchmen-grid-1" class="category-group"></div>
+                          </div>
+                        </div>
+
+                        <div class="henchmen-section">
+                          <button class="collapsible">Henchmen — Power 2</button>
+                          <div class="content">
+                            <div id="henchmen-grid-2" class="category-group"></div>
+                          </div>
+                        </div>
+
+                        <div class="henchmen-section">
+                          <button class="collapsible">Henchmen — Power 3</button>
+                          <div class="content">
+                            <div id="henchmen-grid-3" class="category-group"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <div id="henchmen-total" style="text-align:right; font-weight:bold; margin-top:6px;">Total: 0</div>
+                    </div>
+
+                    <!-- Villains (30–70) -->
+                    <div style="margin-top:16px;">
+                      <div style="font-weight:bold; margin-bottom:6px;">Villains (30–70) — Recommended 40</div>
+
+                      <div style="display:flex; gap:10px; align-items:center; justify-content:space-between;">
+                        <div><button id="villains-deselect-all">Deselect All</button></div>
+                        <div class="hero-controls">
+                          <button id="undo-villains">Undo</button>
+                          <button id="random-villains">Random</button>
+                          <button id="redo-villains">Redo</button>
+                        </div>
+                      </div>
+
+                      <div id="villains-groups"></div>
+                      <div id="villains-total" style="text-align:right; font-weight:bold; margin-top:6px;">Total: 0</div>
+                    </div>
+
+                    <!-- Villain Deck total indicator -->
+                    <div id="villain-deck-total" style="margin-top:14px; text-align:right; font-weight:bold;">Deck Total: 0</div>
+                  </div>
+                </div>
+
                 <br>
                 <div class="bottom-row">
                   <button id="start-button" class="start-button">Start Game!</button>
@@ -438,6 +579,11 @@
             import { tactics } from './data/tactics.js';
             import { enemies } from './data/enemies.js';
             import { allies } from './data/allies.js';
+            import { bystanders } from './data/bystanders.js';
+            import { scenarios } from './data/scenarios.js';
+            import { henchmen } from './data/henchmen.js';
+            import { villains } from './data/villains.js';
+            import { renderAbilityText } from './utils/cardRenderer.js';
 
             const collapsible = document.querySelector('.collapsible');
             const content = document.querySelector('.content');
@@ -596,6 +742,16 @@
                 tactics: selectedTactics,
                 enemies: { count: enemiesCount, ids: selectedEnemies },
                 allies: { count: alliesCount, ids: selectedAllies },
+                villainDeck: {
+                  mights: mightsCount,
+                  bystanders: {
+                    count: bystandersCount,
+                    byType: bystandersByType
+                  },
+                  scenarios: selectedScenarios, // ids
+                  henchmen: Array.from(henchmenCounts.entries()).map(([id,count]) => ({id, count})),
+                  villains: Array.from(selectedVillains) // ids
+                }
               };
 
               const encrypted = await encryptData(payload, SECRET);
@@ -862,11 +1018,14 @@
               title.textContent = t.name;
 
               const desc = document.createElement('div');
-              desc.innerHTML = t.abilitiesText
-                ?.map(a => a.text)
-                .join('<br><br>') || 'No effect listed.';
+              const rawText = Array.isArray(t.abilitiesText)
+                ? t.abilitiesText.map(a => a.text).join('<br><br>')
+                : 'No effect listed.';
+              desc.innerHTML = renderAbilityText(rawText);
               desc.style.fontSize = '0.9rem';
               desc.style.marginTop = '5px';
+              desc.style.lineHeight = '1.25em';
+              desc.style.textAlign = 'left';
 
               card.appendChild(title);
               card.appendChild(desc);
@@ -997,7 +1156,7 @@
             function updateStartButton() {
               const startButton = document.getElementById("start-button");
 
-              // --- Base conditions ---
+              // --- Base conditions from earlier ---
               const hasHero = selectedOrder.length >= 1;
               const hasOverlord = selectedOverlords.length >= 1;
               const hasTactic = selectedTactics.length >= 1;
@@ -1006,65 +1165,68 @@
               let eaAValid = true;
               let tacticValid = true;
               let overlordValid = true;
+
+              // read tactic restrictions
               let allEnemiesRestriction = false;
               let minEnemiesRequired = 15;
-              let minAlliesRequired = 15;
+              let minAlliesRequired  = 15;
               let requiresMultiTactic = false;
               let requiresMultiOverlord = false;
 
-              // --- Evaluate each selected tactic ---
               for (const tacticId of selectedTactics) {
                 const tacticData = tactics.find(t => String(t.id) === String(tacticId));
                 if (!tacticData) continue;
-
-                // Handle enemies/allies limits
-                if (Array.isArray(tacticData.limitEaA) &&
-                    tacticData.limitEaA[0] === "allEnemies") {
+                if (Array.isArray(tacticData.limitEaA) && tacticData.limitEaA[0]==='allEnemies'){
                   allEnemiesRestriction = true;
-                  const match = tacticData.limitEaA[1].match(/\d+/);
-                  if (match) minEnemiesRequired = Number(match[0]);
-                  minAlliesRequired = 0; // 0 allies required for this rule
+                  const m = tacticData.limitEaA[1].match(/\d+/); if (m) minEnemiesRequired = Number(m[0]);
+                  minAlliesRequired = 0;
                 }
-
-                // Handle multi-requirements
-                if (tacticData.multiTacticReq === "yes") requiresMultiTactic = true;
-                if (tacticData.multiOverlordReq === "yes") requiresMultiOverlord = true;
+                if (tacticData.multiTacticReq === 'yes') requiresMultiTactic = true;
+                if (tacticData.multiOverlordReq === 'yes') requiresMultiOverlord = true;
               }
 
-              // --- Apply Enemies/Allies rules ---
-              if (allEnemiesRestriction) {
+              // --- Enemies/Allies validity ---
+              if (allEnemiesRestriction){
                 if (enemiesCount < minEnemiesRequired) eaAValid = false;
-                if (alliesCount !== 0) eaAValid = false; // must be exactly 0
+                if (alliesCount !== 0) eaAValid = false;
               } else {
-                // default normal bounds 15–50 for both
                 if (enemiesCount < 15 || enemiesCount > 50) eaAValid = false;
                 if (alliesCount < 15 || alliesCount > 50) eaAValid = false;
               }
 
-              // --- Apply tactic/overlord count rules ---
               if (requiresMultiTactic && selectedTactics.length < 2) tacticValid = false;
               if (requiresMultiOverlord && selectedOverlords.length < 2) overlordValid = false;
 
-              // --- Final decision ---
+              // --- Villain Deck validations ---
+              const henchTotal = Array.from(henchmenCounts.values()).reduce((a,b)=>a+(Number(b)||0),0);
+              const villainsTotal = selectedVillains.size;
+
+              const mightsValid = (mightsCount >= 3 && mightsCount <= 10);
+              const bysValid    = (bystandersCount >= 7 && bystandersCount <= 15);
+              const henchValid  = (henchTotal >= 20 && henchTotal <= 40);
+              const villsValid  = (villainsTotal >= 30 && villainsTotal <= 70); //set min here to 1 for testing
+
+              const deckTotal = mightsCount + bystandersCount + henchTotal + villainsTotal;
+              deckTotalEl.textContent = `Deck Total: ${deckTotal}`;
+              const deckTotalValid = (deckTotal >= 60 && deckTotal <= 140); //set min here to 1 for testing
+
+              const villainDeckValid = mightsValid && bysValid && henchValid && villsValid && deckTotalValid;
+
               const canStart =
-                hasHero &&
-                hasOverlord &&
-                hasTactic &&
-                eaAValid &&
-                tacticValid &&
-                overlordValid;
+                hasHero && hasOverlord && hasTactic &&
+                eaAValid && tacticValid && overlordValid &&
+                villainDeckValid;
 
               startButton.disabled = !canStart;
               startButton.classList.toggle("active", canStart);
               startButton.style.opacity = canStart ? "1" : "0.5";
 
-              // --- Tooltip feedback ---
-              let reason = "";
-              if (!eaAValid) reason = "Enemy/Ally count invalid for this scenario.";
-              else if (!tacticValid) reason = "Requires 2 Tactics for this scenario.";
-              else if (!overlordValid) reason = "Requires 2 or more Overlords for this scenario.";
-
-              startButton.title = canStart ? "Start Game" : reason;
+              // quick color feedback on sliders
+              setAccent(mightsSlider, mightsValid);
+              setAccent(bysSlider, bysValid);
+              henchmenTotalEl.style.color = henchValid ? 'inherit' : 'red';
+              villainsTotalEl.style.color = villsValid ? 'inherit' : 'red';
+              deckTotalEl.style.color = deckTotalValid ? 'inherit' : 'red';
             }
 
             let selectedEnemies = [];
@@ -1250,6 +1412,474 @@
               }
             });
 
+            // ===================== VILLAIN DECK STATE =====================
+            let mightsCount = 8;     // 3–10 (recommended 8)
+            let bystandersCount = 10; // 7–15 (recommended 10)
+            let bystandersByType = []; // [{id,name,count}]
+
+            let selectedScenarios = [];    // ids (0–5 allowed)
+            let scenariosUndoStack = [];
+            let scenariosRedoStack = [];
+
+            let henchmenCounts = new Map(); // key: henchmen id, value: qty (0–10)
+            let henchmenUndoStack = [];
+            let henchmenRedoStack = [];
+
+            let selectedVillains = new Set(); // one each allowed (checkbox per villain)
+            let openVillainGroups = new Set();
+            let villainsUndoStack = [];
+            let villainsRedoStack = [];
+
+            const mightsSlider = document.getElementById('mights-slider');
+            const mightsValue  = document.getElementById('mights-value');
+            const mightsInput  = document.getElementById('mights-input');
+
+            const bysSlider = document.getElementById('bystanders-slider');
+            const bysValue  = document.getElementById('bystanders-value');
+            const bysInput  = document.getElementById('bystanders-input');
+            const bysBreak  = document.getElementById('bystanders-breakdown');
+
+            const scenariosGrid = document.getElementById('scenarios-grid');
+
+            const hGrid1 = document.getElementById('henchmen-grid-1');
+            const hGrid2 = document.getElementById('henchmen-grid-2');
+            const hGrid3 = document.getElementById('henchmen-grid-3');
+            const henchmenTotalEl = document.getElementById('henchmen-total');
+
+            const villainsGroups = document.getElementById('villains-groups');
+            const villainsTotalEl = document.getElementById('villains-total');
+
+            const deckTotalEl = document.getElementById('villain-deck-total');
+
+            function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+            function setAccent(el, valid){ el.style.accentColor = valid ? 'green':'red'; }
+            function moveLabelToSlider(slider,label){
+              const pct = (Number(slider.value) / Number(slider.max)) * 100;
+              label.textContent = slider.value;
+              label.style.left = `${pct}%`;
+              label.style.transform = 'translateX(-50%)';
+            }
+
+            // ----- Mights -----
+            function syncMights(){
+              mightsCount = Number(mightsSlider.value);
+              mightsInput.value = mightsCount;
+              moveLabelToSlider(mightsSlider, mightsValue);
+              // valid range 3–10
+              setAccent(mightsSlider, mightsCount >= 3 && mightsCount <= 10);
+              updateStartButton();
+            }
+            mightsSlider.addEventListener('input', syncMights);
+            mightsInput.addEventListener('input', e => {
+              const v = clamp(Number(e.target.value)||0, 0, 10);
+              mightsSlider.value = v; syncMights();
+            });
+
+            // ----- Bystanders -----
+            function distributeBystanders(total){
+              // Even distribution across types currently available
+              const types = bystanders.filter(b => String(b.doNotShow).toLowerCase() !== 'true');
+              if (types.length === 0){ bystandersByType = []; return; }
+              const base = Math.floor(total / types.length);
+              let rem = total % types.length;
+              bystandersByType = types.map(t => ({ id:String(t.id), name:t.name, count: base }));
+              for (let i=0;i<bystandersByType.length && rem>0;i++,rem--) bystandersByType[i].count += 1;
+            }
+            function renderBystandersBreakdown(){
+              if (!bystandersByType.length){ bysBreak.innerHTML = '<i>No bystanders</i>'; return; }
+              bysBreak.innerHTML = '<ul style="margin:0;padding-left:16px;">'+
+                bystandersByType.filter(x=>x.count>0).map(x => `<li>${x.count}× ${x.name}</li>`).join('')+
+                '</ul>';
+            }
+            function syncBystanders(){
+              bystandersCount = Number(bysSlider.value);
+              bysInput.value = bystandersCount;
+              moveLabelToSlider(bysSlider, bysValue);
+              // valid 7–15
+              setAccent(bysSlider, bystandersCount >= 7 && bystandersCount <= 15);
+              distributeBystanders(bystandersCount);
+              renderBystandersBreakdown();
+              updateStartButton();
+            }
+            bysSlider.addEventListener('input', syncBystanders);
+            bysInput.addEventListener('input', e => {
+              const v = clamp(Number(e.target.value)||0, 0, 15);
+              bysSlider.value = v; syncBystanders();
+            });
+
+            // init values
+            syncMights();
+            syncBystanders();
+
+            // ===================== SCENARIOS =====================
+            let filteredScenarios = scenarios
+              .filter(s => String(s.doNotShow).toLowerCase() !== 'true')
+              .sort((a,b) => a.name.localeCompare(b.name));
+
+            // render cards (white bubble on gray sub)
+            function renderScenarios(){
+              scenariosGrid.innerHTML = '';
+              filteredScenarios.forEach(s=>{
+                const card = document.createElement('div');
+                card.className = 'tactic-card'; // re-use same white bubble styling
+                card.dataset.id = s.id;
+                const h = document.createElement('h3'); h.textContent = s.name;
+                const p = document.createElement('p');
+                const raw = Array.isArray(s.abilitiesText)
+                  ? s.abilitiesText.map(a => a.text).join('<br><br>')
+                  : '';
+                p.innerHTML = renderAbilityText(raw);
+                card.appendChild(h); card.appendChild(p);
+                if (selectedScenarios.includes(String(s.id))) card.classList.add('selected');
+                card.addEventListener('click', ()=>{
+                  const id = String(s.id);
+                  const i = selectedScenarios.indexOf(id);
+                  if (i>-1) selectedScenarios.splice(i,1);
+                  else if (selectedScenarios.length < 5) selectedScenarios.push(id);
+                  renderScenarios(); updateStartButton();
+                });
+                scenariosGrid.appendChild(card);
+              });
+            }
+            renderScenarios();
+
+            function randomScenarios(){
+              const avail = filteredScenarios.filter(s => !selectedScenarios.includes(String(s.id)));
+              const pick = Math.floor(Math.random()*Math.min(5-selectedScenarios.length, Math.max(1, avail.length))) || 1;
+              scenariosUndoStack.push([...selectedScenarios]); scenariosRedoStack = [];
+              const bag = [...avail]; const add=[];
+              while(add.length < pick && bag.length){
+                const i = Math.floor(Math.random()*bag.length);
+                add.push(String(bag.splice(i,1)[0].id));
+              }
+              selectedScenarios = [...selectedScenarios, ...add]; renderScenarios(); updateStartButton();
+            }
+            function undoScenarios(){ if(!scenariosUndoStack.length) return; scenariosRedoStack.push([...selectedScenarios]); selectedScenarios = scenariosUndoStack.pop(); renderScenarios(); updateStartButton(); }
+            function redoScenarios(){ if(!scenariosRedoStack.length) return; scenariosUndoStack.push([...selectedScenarios]); selectedScenarios = scenariosRedoStack.pop(); renderScenarios(); updateStartButton(); }
+
+            document.getElementById('random-scenarios').addEventListener('click', randomScenarios);
+            document.getElementById('undo-scenarios').addEventListener('click', undoScenarios);
+            document.getElementById('redo-scenarios').addEventListener('click', redoScenarios);
+
+            // ===================== HENCHMEN =====================
+            const henchFiltered = henchmen
+              .filter(h => String(h.doNotShow).toLowerCase() !== 'true')
+              .map(h => ({
+                ...h,
+                power: Number(h.hp) || 1   // directly use the card's own power value
+              }))
+              .sort((a,b) => a.name.localeCompare(b.name));
+
+            function henchCard(h){
+              const wrap = document.createElement('div');
+              wrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px; border-radius:8px; width:190px;';
+              const img = document.createElement('img');
+              img.src = h.image; img.alt = h.name; img.style.cssText='width:80px;height:80px;object-fit:cover;border:2px solid black;border-radius:6px;';
+              const name = document.createElement('div');
+              name.style.cssText = 'font-weight:bold; font-size:0.7rem; text-align:center;';
+              name.textContent = h.name;
+              const qty = document.createElement('input');
+              qty.type='number'; qty.min='0'; qty.max='10'; qty.value = henchmenCounts.get(String(h.id)) ?? 0;
+              qty.style.cssText = 'width:30px; text-align:center; font-size:0.6rem;';
+              qty.addEventListener('input', ()=>{
+                const v = clamp(Number(qty.value)||0, 0, 10);
+                qty.value = v;
+                henchmenCounts.set(String(h.id), v);
+                renderHenchmenTotals();
+                updateStartButton();
+              });
+              wrap.appendChild(img); wrap.appendChild(name);
+              const box = document.createElement('div');
+              box.style.cssText='display:flex;align-items:center;gap:6px;';
+              const label = document.createElement('span');
+              label.style.cssText = 'font-size:0.65rem;';
+              label.textContent = 'Qty:';
+              box.appendChild(label); box.appendChild(qty);
+              wrap.appendChild(box);
+              return wrap;
+            }
+
+            function renderHenchmen(){
+              [hGrid1,hGrid2,hGrid3].forEach(g=>g.innerHTML='');
+              henchFiltered.filter(h=>h.power===1).forEach(h=> hGrid1.appendChild(henchCard(h)));
+              henchFiltered.filter(h=>h.power===2).forEach(h=> hGrid2.appendChild(henchCard(h)));
+              henchFiltered.filter(h=>h.power===3).forEach(h=> hGrid3.appendChild(henchCard(h)));
+              renderHenchmenTotals();
+            }
+            function renderHenchmenTotals(){
+              let total = 0; henchmenCounts.forEach(v => total += (Number(v)||0));
+              henchmenTotalEl.textContent = `Total: ${total}`;
+            }
+            renderHenchmen();
+
+            function randomHenchmen(){
+              henchmenUndoStack.push([...henchmenCounts.entries()]); henchmenRedoStack = [];
+              // Assign random 0–10 to some entries until 20–40 total
+              henchmenCounts.clear();
+              let total = 0;
+              const pool = [...henchFiltered];
+              while (pool.length && total < 20){
+                const i = Math.floor(Math.random()*pool.length);
+                const h = pool.splice(i,1)[0];
+                const qty = Math.floor(Math.random()*11); // 0–10
+                henchmenCounts.set(String(h.id), qty);
+                total += qty;
+              }
+              // If still low (<20), top up randomly; if high (>40), trim
+              if (total < 20){
+                for (const h of henchFiltered){
+                  if (total>=20) break;
+                  const id = String(h.id);
+                  const cur = henchmenCounts.get(id) ?? 0;
+                  const add = clamp(20-total, 0, 10-cur);
+                  henchmenCounts.set(id, cur+add);
+                  total += add;
+                }
+              } else if (total > 40){
+                for (const h of henchFiltered){
+                  if (total<=40) break;
+                  const id = String(h.id);
+                  const cur = henchmenCounts.get(id) ?? 0;
+                  const rem = clamp(total-40, 0, cur);
+                  henchmenCounts.set(id, cur-rem);
+                  total -= rem;
+                }
+              }
+              renderHenchmen(); updateStartButton();
+            }
+            function undoHenchmen(){ if(!henchmenUndoStack.length) return; henchmenRedoStack.push([...henchmenCounts.entries()]); henchmenCounts = new Map(henchmenUndoStack.pop()); renderHenchmen(); updateStartButton();}
+            function redoHenchmen(){ if(!henchmenRedoStack.length) return; henchmenUndoStack.push([...henchmenCounts.entries()]); henchmenCounts = new Map(henchmenRedoStack.pop()); renderHenchmen(); updateStartButton();}
+            document.getElementById('random-henchmen').addEventListener('click', randomHenchmen);
+            document.getElementById('undo-henchmen').addEventListener('click', undoHenchmen);
+            document.getElementById('redo-henchmen').addEventListener('click', redoHenchmen);
+            document.getElementById('henchmen-deselect-all').addEventListener('click', ()=>{ henchmenCounts.clear(); renderHenchmen(); updateStartButton(); });
+
+            // ===================== VILLAINS =====================
+            const heroMapIdToHero = new Map(heroes.map(h => [String(h.id), h]));
+            const villainByHero = new Map();
+
+            // group villains by hero (use 999 for "Misc" or when missing)
+            villains
+              .filter(v => String(v.doNotShow).toLowerCase() !== 'true')
+              .forEach(v => {
+                const heroId = String(v.heroId ?? (v.hero === 'Misc' ? 999 : v.hero));
+                if (!villainByHero.has(heroId)) villainByHero.set(heroId, []);
+                villainByHero.get(heroId).push(v);
+              });
+
+            // Render grouped collapsibles; skip empty categories
+            function renderVillainGroups(){
+              villainsGroups.innerHTML = '';
+              // order by hero id, put 999 (Misc) last
+              const heroIds = [...villainByHero.keys()].sort((a,b)=>{
+                if (a==='999' && b!=='999') return 1;
+                if (b==='999' && a!=='999') return -1;
+                return Number(a)-Number(b);
+              });
+              heroIds.forEach(hid=>{
+                const list = villainByHero.get(hid);
+                if (!list || !list.length) return;
+
+                const heroName = (hid==='999' ? 'Misc' : (heroMapIdToHero.get(hid)?.name ?? `${hid}`));
+
+                // --- unified clickable header with checkbox ---
+                const header = document.createElement('div');
+                header.style.cssText = `
+                  display:flex; align-items:center; justify-content:space-between;
+                  margin-top:10px; border:2px solid black; border-radius:6px;
+                  background:#f5f5f5; padding:6px 10px; cursor:pointer; font-weight:bold;
+                `;
+
+                const label = document.createElement('div');
+                label.textContent = `${heroName}'s Villains`;
+
+                // Look up this hero's color from faceCards.js
+                const matchingHero = heroes.find(h => h.name === heroName);
+                const heroColor = matchingHero ? matchingHero.color : '#5d5d5d';
+
+                // Apply that color to the header background and border
+                header.style.backgroundColor = heroColor;
+                header.style.borderColor = 'black';
+                header.style.color = 'white';
+
+                // --- Compute pale variant ---
+                function lightenColor(color) {
+                  const map = {
+                    red: '#ffcccc',
+                    blue: '#cce0ff',
+                    green: '#ccffcc',
+                    yellow: '#fff7cc',
+                    orange: '#ffe5cc',
+                    aqua: '#ccffff',
+                    ivory: '#fffff0',
+                    DarkRed: '#d28a8a',
+                    // default fallback
+                    default: '#f0f0f0'
+                  };
+                  return map[color] || map.default;
+                }
+                const paleColor = lightenColor(heroColor);
+
+
+                const right = document.createElement('label');
+                right.style.cssText = 'display:flex; align-items:center; gap:6px; cursor:default;';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = list.every(v => selectedVillains.has(String(v.id)));
+                right.appendChild(document.createTextNode('Select All'));
+                right.appendChild(cb);
+
+                header.appendChild(label);
+                header.appendChild(right);
+                villainsGroups.appendChild(header);
+
+                // content directly under header
+                const cont = document.createElement('div');
+                cont.className = 'content';
+                cont.style.cssText = `
+                  border:2px solid black;
+                  border-top:none;
+                  border-radius:0 0 6px 6px;
+                  padding:10px;
+                  margin-bottom:10px;
+                  width:100%; /* matches header’s border width */
+                  background-color:${paleColor};
+                `;
+                const grid = document.createElement('div');
+                grid.className = 'category-group';
+                grid.style.background = 'none';
+                grid.style.border = 'none';
+                grid.style.borderRadius = '0';
+
+                // restore open/closed state for this hero
+                if (openVillainGroups.has(hid)) {
+                  cont.classList.add('show');
+                  header.classList.add('active');
+                }
+
+                // expand/collapse by clicking anywhere except the checkbox
+                header.addEventListener('click', (e) => {
+                  if (e.target === cb) return; // ignore checkbox click
+                  const isOpen = cont.classList.toggle('show');
+                  header.classList.toggle('active', isOpen);
+
+                  if (isOpen) {
+                    // when open: seamless merge into the dropdown
+                    header.style.borderBottom = 'none';
+                    header.style.borderBottomLeftRadius = '0';
+                    header.style.borderBottomRightRadius = '0';
+                    cont.style.borderTop = 'none';
+                  } else {
+                    // restore normal styling when closed
+                    header.style.borderBottom = '2px solid black';
+                    header.style.borderBottomLeftRadius = '6px';
+                    header.style.borderBottomRightRadius = '6px';
+                    cont.style.borderTop = '2px solid black';
+                  }
+
+                  if (isOpen) openVillainGroups.add(hid);
+                  else openVillainGroups.delete(hid);
+                });
+
+                list.sort((a,b)=> a.name.localeCompare(b.name)).forEach(v => {
+                  const card = document.createElement('div');
+                  card.style.cssText = `
+                    width:120px; padding:4px; display:flex;
+                    flex-direction:column; align-items:center; gap:4px; cursor:pointer; border:none;
+                  `;
+                  card.dataset.id = v.id;
+
+                  const img = document.createElement('img');
+                  img.src = v.image;
+                  img.alt = v.name;
+                  img.style.cssText = `
+                    width:100px; height:100px; object-fit:cover; border:2px solid black; border-radius:8px;
+                  `;
+
+                  const name = document.createElement('div');
+                  name.style.cssText = 'font-weight:bold; text-align:center; font-size:14px;';
+                  name.textContent = v.name;
+
+                  const stats = document.createElement('div');
+                  stats.style.cssText = 'font-size:12px; text-align:center; color:#333;';
+                  stats.textContent = `${v.hp} HP • ${v.damage} DMG`;
+
+                  // highlight if selected
+                  if (selectedVillains.has(String(v.id))) {
+                    card.style.boxShadow = '0 0 10px 4px yellow';
+                  }
+
+                  // IMPORTANT: do NOT rebuild; just mutate state + visuals
+                  card.addEventListener('click', (e) => {
+                    e.stopPropagation(); // never collapse when clicking a card
+                    const id = String(v.id);
+                    if (selectedVillains.has(id)) selectedVillains.delete(id);
+                    else selectedVillains.add(id);
+
+                    // update visuals in place
+                    card.style.boxShadow = selectedVillains.has(id) ? '0 0 10px 4px yellow' : '';
+                    // sync "Select All" checkbox for this hero
+                    cb.checked = list.every(x => selectedVillains.has(String(x.id)));
+
+                    // update totals and validity
+                    renderVillainTotals();
+                    updateStartButton(); // this updates Deck Total readout
+                  });
+
+                  card.appendChild(img);
+                  card.appendChild(name);
+                  card.appendChild(stats);
+                  grid.appendChild(card);
+                });
+
+                cont.appendChild(grid);
+                villainsGroups.appendChild(cont);
+
+                // Select/Deselect all without rebuilding
+                cb.addEventListener('change', (e) => {
+                  if (cb.checked) list.forEach(v => selectedVillains.add(String(v.id)));
+                  else list.forEach(v => selectedVillains.delete(String(v.id)));
+
+                  // update every card in this grid to match the new selection
+                  Array.from(grid.children).forEach(cardEl => {
+                    const id = String(cardEl.dataset.id);
+                    cardEl.style.boxShadow = selectedVillains.has(id) ? '0 0 10px 4px yellow' : '';
+                  });
+
+                  renderVillainTotals();
+                  updateStartButton();
+                });
+              });
+            }
+
+            function renderVillainTotals(){
+              villainsTotalEl.textContent = `Total: ${selectedVillains.size}`;
+            }
+
+            function randomVillains(){
+              villainsUndoStack.push(new Set(selectedVillains)); villainsRedoStack = [];
+              selectedVillains.clear();
+              // pick between 30–70 (or as many as exist)
+              const pool = villains.filter(v => String(v.doNotShow).toLowerCase() !== 'true');
+              const need = clamp(Math.floor(Math.random()*41)+30, 0, pool.length);
+              const bag = [...pool];
+              while (selectedVillains.size < need && bag.length){
+                const i = Math.floor(Math.random()*bag.length);
+                selectedVillains.add(String(bag.splice(i,1)[0].id));
+              }
+              renderVillainTotals(); renderVillainGroups(); updateStartButton();
+            }
+            function undoVillains(){ if(!villainsUndoStack.length) return; villainsRedoStack.push(new Set(selectedVillains)); selectedVillains = villainsUndoStack.pop(); renderVillainTotals(); renderVillainGroups(); updateStartButton();}
+            function redoVillains(){ if(!villainsRedoStack.length) return; villainsUndoStack.push(new Set(selectedVillains)); selectedVillains = villainsRedoStack.pop(); renderVillainTotals(); renderVillainGroups(); updateStartButton();}
+
+            document.getElementById('random-villains').addEventListener('click', randomVillains);
+            document.getElementById('undo-villains').addEventListener('click', undoVillains);
+            document.getElementById('redo-villains').addEventListener('click', redoVillains);
+            document.getElementById('villains-deselect-all').addEventListener('click', ()=>{ selectedVillains.clear(); renderVillainTotals(); renderVillainGroups(); updateStartButton(); });
+
+            // initial render
+            renderVillainGroups(); renderVillainTotals();
+
             // Include in export/import
             function exportLoadout() {
               const data = {
@@ -1257,7 +1887,17 @@
                 overlords: selectedOverlords,
                 tactics: selectedTactics,
                 enemies: { count: enemiesCount, ids: selectedEnemies },
-                allies: { count: alliesCount, ids: selectedAllies }
+                allies: { count: alliesCount, ids: selectedAllies },
+                villainDeck: {
+                  mights: mightsCount,
+                  bystanders: {
+                    count: bystandersCount,
+                    byType: bystandersByType
+                  },
+                  scenarios: selectedScenarios, // ids
+                  henchmen: Array.from(henchmenCounts.entries()).map(([id,count]) => ({id, count})),
+                  villains: Array.from(selectedVillains) // ids
+                }
               };
               const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
               const url = URL.createObjectURL(blob);
@@ -1311,6 +1951,40 @@
                     alliesCount = data.allies.count || selectedAllies.length;
                     alliesSlider.value = alliesCount;
                     syncAllyControls();
+                  }
+
+                  // --- VILLAIN DECK ---
+                  if (data.villainDeck){
+                    // Mights
+                    if (typeof data.villainDeck.mights === 'number'){
+                      mightsCount = clamp(data.villainDeck.mights, 0, 10);
+                      mightsSlider.value = mightsCount; syncMights();
+                    }
+                    // Bystanders
+                    if (data.villainDeck.bystanders){
+                      const bd = data.villainDeck.bystanders;
+                      bystandersCount = clamp(Number(bd.count)||0, 0, 15);
+                      bysSlider.value = bystandersCount; syncBystanders();
+                      if (Array.isArray(bd.byType)) { bystandersByType = bd.byType; renderBystandersBreakdown(); }
+                    }
+                    // Scenarios
+                    if (Array.isArray(data.villainDeck.scenarios)){
+                      selectedScenarios = data.villainDeck.scenarios.slice(0,5).map(String);
+                      renderScenarios();
+                    }
+                    // Henchmen
+                    if (Array.isArray(data.villainDeck.henchmen)){
+                      henchmenCounts.clear();
+                      data.villainDeck.henchmen.forEach(x=>{
+                        if (x && x.id!=null) henchmenCounts.set(String(x.id), clamp(Number(x.count)||0,0,10));
+                      });
+                      renderHenchmen();
+                    }
+                    // Villains
+                    if (Array.isArray(data.villainDeck.villains)){
+                      selectedVillains = new Set(data.villainDeck.villains.map(String));
+                      renderVillainTotals(); renderVillainGroups();
+                    }
                   }
 
                   updateStartButton();
@@ -1384,6 +2058,62 @@
               alliesSlider.value = alliesCount;
               syncEnemyControls();
               syncAllyControls();
+
+              // --- VILLAIN DECK RANDOMIZATION ---
+              mightsCount = Math.floor(Math.random()*(10-3+1))+3;
+              bystandersCount = Math.floor(Math.random()*(15-7+1))+7;
+              mightsSlider.value = mightsCount; moveLabelToSlider(mightsSlider, mightsValue);
+              bysSlider.value = bystandersCount; moveLabelToSlider(bysSlider, bysValue);
+              distributeBystanders(bystandersCount); renderBystandersBreakdown();
+
+              // Scenarios: 0–2 randomly (bias to recommended 2)
+              selectedScenarios = [];
+              if (Math.random()<0.15) selectedScenarios = []; else {
+                const want = Math.random()<0.25 ? 1 : 2;
+                const bag = [...filteredScenarios];
+                while (selectedScenarios.length < want && bag.length){
+                  const i = Math.floor(Math.random()*bag.length);
+                  selectedScenarios.push(String(bag.splice(i,1)[0].id));
+                }
+              }
+              renderScenarios();
+
+              // Henchmen: try to hit 20–40 total, each 0–10
+              henchmenCounts.clear();
+              let targetH = Math.floor(Math.random()*(40-20+1))+20;
+              let remain = targetH;
+              const hbag = [...henchFiltered];
+              while (hbag.length && remain>0){
+                const i = Math.floor(Math.random()*hbag.length);
+                const h = hbag.splice(i,1)[0];
+                const take = clamp(Math.floor(Math.random()*Math.min(11, remain+1)), 0, 10);
+                henchmenCounts.set(String(h.id), take);
+                remain -= take;
+              }
+              if (remain>0){
+                for (const h of henchFiltered){
+                  if (remain<=0) break;
+                  const id = String(h.id);
+                  const cur = henchmenCounts.get(id) ?? 0;
+                  const add = clamp(remain, 0, 10-cur);
+                  henchmenCounts.set(id, cur+add);
+                  remain -= add;
+                }
+              }
+              renderHenchmen();
+
+              // Villains: 30–70
+              selectedVillains.clear();
+              {
+                const pool = villains.filter(v => String(v.doNotShow).toLowerCase() !== 'true');
+                const want = clamp(Math.floor(Math.random()*41)+30, 0, pool.length);
+                const bag = [...pool];
+                while (selectedVillains.size < want && bag.length){
+                  const i = Math.floor(Math.random()*bag.length);
+                  selectedVillains.add(String(bag.splice(i,1)[0].id));
+                }
+              }
+              renderVillainTotals(); renderVillainGroups();
 
               // Refresh visuals
               updateBadges();

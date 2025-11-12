@@ -18,6 +18,7 @@
         <div id="close-box" onclick="location.href='play.html'">X</div>
 
     </div>
+    <br><br><br>
 
     <script type="module">
         import { heroes } from './data/faceCards.js';
@@ -25,6 +26,10 @@
         import { tactics } from './data/tactics.js';
         import { enemies } from './data/enemies.js';
         import { allies } from './data/allies.js';
+        import { bystanders } from './data/bystanders.js';
+        import { scenarios } from './data/scenarios.js';
+        import { henchmen } from './data/henchmen.js';
+        import { villains } from './data/villains.js';
 
         // --- Decrypt Function ---
         async function decryptData(cipherText, secretKey) {
@@ -145,6 +150,69 @@
                     ? selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
                     : '<li>None selected</li>'
                 }</ul>
+                </div>
+            </div>
+            `;
+
+            // -------- VILLAIN DECK --------
+            const vdeck = selectedData.villainDeck || {};
+
+            const vd_mights = typeof vdeck.mights === 'number' ? vdeck.mights : 0;
+
+            const vd_bys_count = Number(vdeck.bystanders?.count)||0;
+            const vd_bys_types = Array.isArray(vdeck.bystanders?.byType) ? vdeck.bystanders.byType : [];
+
+            const vd_scenarios = Array.isArray(vdeck.scenarios) ? vdeck.scenarios.map(String) : [];
+            const scenMap = new Map(scenarios.map(s => [String(s.id), s]));
+
+            const vd_hench_list = Array.isArray(vdeck.henchmen) ? vdeck.henchmen : [];
+            const henchMap = new Map(henchmen.map(h=>[String(h.id), h]));
+
+            const vd_villain_ids = Array.isArray(vdeck.villains) ? vdeck.villains.map(String) : [];
+            const villainMap = new Map(villains.map(v=>[String(v.id), v]));
+
+            const byBreakHTML = vd_bys_types.length
+            ? ('<ul style="margin:0;padding-left:18px;">'+vd_bys_types.filter(x=>x.count>0).map(x=>`<li>${x.count}× ${x.name || ('Type '+x.id)}</li>`).join('')+'</ul>')
+            : '<i>No bystanders</i>';
+
+            const scenariosHTML = vd_scenarios.length
+            ? ('<ul style="margin:0;padding-left:18px;">'+vd_scenarios.map(id=>`<li>${scenMap.get(id)?.name || ('Unknown '+id)}</li>`).join('')+'</ul>')
+            : '<i>None selected</i>';
+
+            const henchHTML = vd_hench_list.length
+            ? ('<ul style="margin:0;padding-left:18px;">'
+                + vd_hench_list.filter(x=>Number(x.count)>0).map(x=>{
+                    const h = henchMap.get(String(x.id));
+                    return `<li>${x.count}× ${h?.name || ('Hench '+x.id)}</li>`;
+                    }).join('')
+                +'</ul>')
+            : '<i>None selected</i>';
+
+            const vilsHTML = vd_villain_ids.length
+            ? ('<ul style="margin:0;padding-left:18px;">'+vd_villain_ids.map(id=>{
+                    const v = villainMap.get(id);
+                    return `<li>${v?.name || ('Villain '+id)}${v?` — ${v.hp} HP • ${v.damage} DMG`:''}</li>`;
+                }).join('')+'</ul>')
+            : '<i>None selected</i>';
+
+            container.innerHTML += `
+            <h2 style="margin-top:30px;">Villain Deck</h2>
+            <div style="display:grid;grid-template-columns: 1fr 1fr; gap:24px; max-width:900px; margin:0 auto; text-align:left;">
+                <div>
+                <b>Mights:</b> ${vd_mights}
+                <br><br>
+                <b>Bystanders:</b> ${vd_bys_count}
+                <div style="margin-top:6px;">${byBreakHTML}</div>
+                <br>
+                <b>Scenarios (${vd_scenarios.length}):</b>
+                <div style="margin-top:6px;">${scenariosHTML}</div>
+                </div>
+                <div>
+                <b>Henchmen:</b>
+                <div style="margin-top:6px;">${henchHTML}</div>
+                <br>
+                <b>Villains (${vd_villain_ids.length}):</b>
+                <div style="margin-top:6px;">${vilsHTML}</div>
                 </div>
             </div>
             `;
