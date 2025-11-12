@@ -84,11 +84,14 @@
             });
 
             // ENEMIES & ALLIES
-            const selectedEnemies = selectedData.enemies || 0;
-            const selectedAllies = selectedData.allies || 0;
+            const enemiesData = selectedData.enemies || {};
+            const alliesData = selectedData.allies || {};
 
-            const enemyNames = enemies.map(e => e.name);
-            const allyNames = allies.map(a => a.name);
+            const selectedEnemies = Array.isArray(enemiesData.ids) ? enemiesData.ids : [];
+            const selectedAllies = Array.isArray(alliesData.ids) ? alliesData.ids : [];
+            const enemiesCount = enemiesData.count || selectedEnemies.length;
+            const alliesCount = alliesData.count || selectedAllies.length;
+
 
             // Create hero container
             const container = document.createElement('div');
@@ -117,16 +120,19 @@
             </ol>
             `;
 
+            const enemyMap = new Map(enemies.map(e => [String(e.id), e.name]));
+            const allyMap = new Map(allies.map(a => [String(a.id), a.name]));
+
             container.innerHTML += `
             <h2 style="margin-top:30px;">Enemies & Allies:</h2>
             <div style="display:flex; justify-content:center; gap:60px; text-align:left;">
                 <div>
-                <b>Enemies (${selectedEnemies} chosen)</b><br>
-                <ul>${enemyNames.map(n => `<li>${n}</li>`).join('')}</ul>
+                <b>Enemies (${enemiesCount} chosen)</b><br>
+                <ul>${selectedEnemies.map(id => `<li>${enemyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')}</ul>
                 </div>
                 <div>
-                <b>Allies (${selectedAllies} chosen)</b><br>
-                <ul>${allyNames.map(n => `<li>${n}</li>`).join('')}</ul>
+                <b>Allies (${alliesCount} chosen)</b><br>
+                <ul>${selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')}</ul>
                 </div>
             </div>
             `;
