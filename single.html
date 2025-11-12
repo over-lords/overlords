@@ -18,7 +18,96 @@
   width: 100%;                   /* fill full dropdown width */
   box-sizing: border-box;        /* include padding in total width */
 }
+.hero-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+.hero-controls button {
+  background-color: yellow;
+  border: 2px solid black;
+  border-radius: 4px;
+  font-weight: bold;
+  padding: 5px 12px;
+  cursor: pointer;
+}
 
+.top-row {
+  width: 95%;
+  max-width: 1200px;
+  margin: 10px auto 20px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.import-btn {
+  background-color: yellow;
+  border: 2px solid black;
+  border-radius: 4px;
+  font-weight: bold;
+  padding: 6px 12px;
+  cursor: pointer;
+  position: absolute;
+  left: 0;
+}
+
+.top-random-btn {
+  background-color: yellow;
+  border: 2px solid black;
+  border-radius: 4px;
+  font-weight: bold;
+  padding: 6px 12px;
+  cursor: pointer;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* --- BOTTOM ROW --- */
+.bottom-row {
+  width: 95%;
+  max-width: 1200px;
+  margin: 25px auto 40px auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.start-button {
+  background-color: gray;
+  border: 3px solid black;
+  border-radius: 6px;
+  color: black;
+  font-weight: bold;
+  font-size: 1.2rem;
+  width: 250px;
+  text-align: center;
+  padding: 10px;
+  cursor: not-allowed;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.start-button.active {
+  background-color: yellow;
+  cursor: pointer;
+}
+
+.export-btn {
+  background-color: yellow;
+  border: 2px solid black;
+  border-radius: 4px;
+  font-weight: bold;
+  padding: 8px 16px;
+  cursor: pointer;
+  position: absolute;
+  right: 0;
+}
   /* Category container – wraps heroes into responsive rows */
   .category-group {
     border: 2px solid black;
@@ -129,6 +218,34 @@
     background-color: yellow;
     cursor: pointer;
   }
+  .boxed {
+    display: inline-block;
+    border: 3px solid black;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 6px 10px;
+    border-radius: 4px;
+  }
+  .hero-card { position: relative; }
+.selection-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: yellow;
+  border: 2px solid black;
+  color: black;
+  font-weight: 800;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+.hero-image-wrapper {
+  position: relative;
+  display: inline-block;  /* keeps wrapper tight to image */
+}
 </style>
 </head>
     <body style="background-color:white;" onload="window.scrollTo(0, 1)">
@@ -142,15 +259,32 @@
             </div>
 
             <div class="container" style="margin-top: 180px; width: 100%;">
-
-                <button class="collapsible">Select Your Heroes</button>
+                <p class="boxed" style="font-weight: bold; font-family: 'Poppins', sans-serif;">Design your Singleplayer game!</p>
+                <div class="top-row">
+                  <button id="import-loadout" class="import-btn">Import Loadout</button>
+                  <button id="top-random" class="top-random-btn">Random</button>
+                </div>
+                <button class="collapsible">Select Your Heroes (1-6)</button>
                 <div class="content">
                 <div class="hero-box">
-                    <div id="hero-grid" class="hero-grid"></div>
+                  <div class="hero-controls">
+                    <button id="undo-random">Undo</button>
+                    <button id="random-heroes">Random</button>
+                    <button id="redo-random">Redo</button>
+                  </div>
+                    <div id="hero-grid" class="hero-grid">
+                      <div class="hero-image-wrapper">
+                        <img src="..." alt="">
+                        <span class="selection-badge"></span>
+                      </div>
+                    </div>
                 </div>
                 </div>
 
-                <div class="start-button" id="start-button">Start Game!</div>
+                <div class="bottom-row">
+                  <button id="start-button" class="start-button">Start Game!</button>
+                  <button id="export-loadout" class="export-btn">Export Loadout</button>
+                </div>
                 <br><br><br>
             </div>
         </div>
@@ -214,7 +348,16 @@
                 const name = document.createElement('p');
                 name.textContent = hero.name;
 
-                card.appendChild(img);
+                const badge = document.createElement('span');
+                badge.className = 'selection-badge';
+                badge.textContent = '';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'hero-image-wrapper';
+                wrapper.appendChild(img);
+                wrapper.appendChild(badge);
+
+                card.appendChild(wrapper);
                 card.appendChild(name);
                 section.appendChild(card);
                 });
@@ -222,36 +365,176 @@
                 heroGrid.appendChild(section);
             });
 
-            // Selection logic
-            const selectedHeroes = new Set();
+            // Keep ordered selection
+            let selectedOrder = [];
 
-            heroGrid.addEventListener('click', e => {
-                const card = e.target.closest('.hero-card');
-                if (!card) return;
+            // Paint all badges and selected styles based on selectedOrder
+            function updateBadges() {
+              document.querySelectorAll('.hero-card').forEach(card => {
+                const id = card.dataset.id;
+                const idx = selectedOrder.indexOf(id);
+                const badge = card.querySelector('.selection-badge');
 
-                const heroId = card.dataset.id;
-                if (selectedHeroes.has(heroId)) {
-                selectedHeroes.delete(heroId);
-                card.classList.remove('selected');
-                } else if (selectedHeroes.size < 6) {
-                selectedHeroes.add(heroId);
-                card.classList.add('selected');
+                if (idx > -1) {
+                  card.classList.add('selected');
+                  if (badge) {
+                    badge.style.display = 'flex';
+                    badge.textContent = String(idx + 1);
+                  }
+                } else {
+                  card.classList.remove('selected');
+                  if (badge) {
+                    badge.style.display = 'none';
+                    badge.textContent = '';
+                  }
                 }
+              });
+            }
 
-                if (selectedHeroes.size >= 1 && selectedHeroes.size <= 6) {
+            function updateStartButton() {
+              if (selectedOrder.length >= 1 && selectedOrder.length <= 6) {
                 startButton.classList.add('active');
                 startButton.style.cursor = 'pointer';
-                } else {
+              } else {
                 startButton.classList.remove('active');
                 startButton.style.cursor = 'not-allowed';
-                }
+              }
+            }
+
+            heroGrid.addEventListener('click', e => {
+              const card = e.target.closest('.hero-card');
+              if (!card) return;
+
+              const heroId = card.dataset.id;
+              const idx = selectedOrder.indexOf(heroId);
+
+              if (idx > -1) {
+                // Deselect: remove and reindex others
+                selectedOrder.splice(idx, 1);
+              } else if (selectedOrder.length < 6) {
+                // Select: append to the end; order matters
+                selectedOrder.push(heroId);
+              }
+
+              updateBadges();
+              updateStartButton();
             });
 
+            // Keep the rest the same; just save the ordered list
             startButton.addEventListener('click', () => {
-                if (!startButton.classList.contains('active')) return;
-                localStorage.setItem('selectedHeroes', JSON.stringify([...selectedHeroes]));
-                location.href = 'game.html';
+              if (!startButton.classList.contains('active')) return;
+              localStorage.setItem('selectedHeroes', JSON.stringify(selectedOrder));
+              location.href = 'game.html';
             });
+
+            // --- Randomization and Loadout Management ---
+            let undoStack = [];
+            let redoStack = [];
+
+            // Utility: get all hero IDs not yet chosen
+            function getUnselectedHeroes() {
+              const allIds = Array.from(document.querySelectorAll('.hero-card')).map(c => c.dataset.id);
+              return allIds.filter(id => !selectedOrder.includes(id));
+            }
+
+            // Utility: apply selected order visually
+            function applySelection(order) {
+              selectedOrder = order.slice();
+              updateBadges();
+              updateStartButton();
+            }
+
+            // Randomly fill remaining slots up to 6
+            function randomizeSelection() {
+              const maxSelectable = 6 - selectedOrder.length;
+              if (maxSelectable <= 0) return;
+
+              const available = getUnselectedHeroes();
+              if (available.length === 0) return;
+
+              // Choose a random number of new heroes between 1 and maxSelectable
+              const countToAdd = Math.floor(Math.random() * maxSelectable) + 1;
+              const toAdd = [];
+
+              while (toAdd.length < countToAdd && available.length > 0) {
+                const idx = Math.floor(Math.random() * available.length);
+                toAdd.push(available.splice(idx, 1)[0]);
+              }
+
+              undoStack.push([...selectedOrder]);  // save pre-random state
+              redoStack = [];                      // clear redo on new random
+              selectedOrder = [...selectedOrder, ...toAdd];
+
+              updateBadges();
+              updateStartButton();
+            }
+
+            // Undo last random
+            function undoRandom() {
+              if (undoStack.length === 0) return;
+              redoStack.push([...selectedOrder]);
+              const prev = undoStack.pop();
+              applySelection(prev);
+            }
+
+            // Redo last undone random
+            function redoRandom() {
+              if (redoStack.length === 0) return;
+              undoStack.push([...selectedOrder]);
+              const next = redoStack.pop();
+              applySelection(next);
+            }
+
+            // Export current loadout to a text file
+            function exportLoadout() {
+              const text = selectedOrder.join(',');
+              const blob = new Blob([text], { type: 'text/plain' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'loadout.txt';
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }
+
+            // Import loadout from user file
+            function importLoadout(event) {
+              const file = event.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = e => {
+                const ids = e.target.result.split(',').map(x => x.trim()).filter(Boolean);
+                applySelection(ids.slice(0, 6)); // cap at 6
+              };
+              reader.readAsText(file);
+            }
+
+            // Top random (global)
+            function topRandom() {
+              undoStack.push([...selectedOrder]);
+              redoStack = [];
+              selectedOrder = [];
+              randomizeSelection();
+            }
+
+            // --- Button bindings ---
+            document.getElementById('random-heroes').addEventListener('click', randomizeSelection);
+            document.getElementById('undo-random').addEventListener('click', undoRandom);
+            document.getElementById('redo-random').addEventListener('click', redoRandom);
+            document.getElementById('top-random').addEventListener('click', topRandom);
+            document.getElementById('export-loadout').addEventListener('click', exportLoadout);
+
+            // Create hidden file input for import
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.txt';
+            fileInput.style.display = 'none';
+            fileInput.addEventListener('change', importLoadout);
+            document.body.appendChild(fileInput);
+
+            document.getElementById('import-loadout').addEventListener('click', () => fileInput.click());
         </script>
     </body>
 </html>
