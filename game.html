@@ -83,16 +83,6 @@
                 return t;
             });
 
-            // ENEMIES & ALLIES
-            const enemiesData = selectedData.enemies || {};
-            const alliesData = selectedData.allies || {};
-
-            const selectedEnemies = Array.isArray(enemiesData.ids) ? enemiesData.ids : [];
-            const selectedAllies = Array.isArray(alliesData.ids) ? alliesData.ids : [];
-            const enemiesCount = enemiesData.count || selectedEnemies.length;
-            const alliesCount = alliesData.count || selectedAllies.length;
-
-
             // Create hero container
             const container = document.createElement('div');
             container.style.marginTop = '140px';
@@ -120,6 +110,20 @@
             </ol>
             `;
 
+            // --- Handle enemies and allies safely whether array or object ---
+            const enemiesData = selectedData.enemies || {};
+            const alliesData = selectedData.allies || {};
+
+            const selectedEnemies = Array.isArray(enemiesData.ids) ? enemiesData.ids : [];
+            const selectedAllies = Array.isArray(alliesData.ids) ? alliesData.ids : [];
+
+            const enemiesCount = typeof enemiesData.count === "number"
+            ? enemiesData.count
+            : selectedEnemies.length;
+            const alliesCount = typeof alliesData.count === "number"
+            ? alliesData.count
+            : selectedAllies.length;
+
             const enemyMap = new Map(enemies.map(e => [String(e.id), e.name]));
             const allyMap = new Map(allies.map(a => [String(a.id), a.name]));
 
@@ -128,11 +132,19 @@
             <div style="display:flex; justify-content:center; gap:60px; text-align:left;">
                 <div>
                 <b>Enemies (${enemiesCount} chosen)</b><br>
-                <ul>${selectedEnemies.map(id => `<li>${enemyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')}</ul>
+                <ul>${
+                    selectedEnemies.length
+                    ? selectedEnemies.map(id => `<li>${enemyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
+                    : '<li>None selected</li>'
+                }</ul>
                 </div>
                 <div>
                 <b>Allies (${alliesCount} chosen)</b><br>
-                <ul>${selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')}</ul>
+                <ul>${
+                    selectedAllies.length
+                    ? selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
+                    : '<li>None selected</li>'
+                }</ul>
                 </div>
             </div>
             `;

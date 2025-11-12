@@ -972,19 +972,76 @@
             }
 
             function updateStartButton() {
-              const heroesValid = selectedOrder.length >= 1 && selectedOrder.length <= 6;
-              const overlordsValid = selectedOverlords.length >= 1 && selectedOverlords.length <= 3;
-              const tacticsValid = selectedTactics.length >= 1 && selectedTactics.length <= 2;
-              const enemiesValid = enemiesCount >= 15 && enemiesCount <= 50;
-              const alliesValid = alliesCount >= 15 && alliesCount <= 50;
+              const startButton = document.getElementById("start-button");
 
-              if (heroesValid && overlordsValid && tacticsValid && enemiesValid && alliesValid) {
-                startButton.classList.add('active');
-                startButton.style.cursor = 'pointer';
-              } else {
-                startButton.classList.remove('active');
-                startButton.style.cursor = 'not-allowed';
+              // --- Base conditions ---
+              const hasHero = selectedOrder.length >= 1;
+              const hasOverlord = selectedOverlords.length >= 1;
+              const hasTactic = selectedTactics.length >= 1;
+
+              // --- Reset per-update state ---
+              let eaAValid = true;
+              let tacticValid = true;
+              let overlordValid = true;
+              let allEnemiesRestriction = false;
+              let minEnemiesRequired = 15;
+              let minAlliesRequired = 15;
+              let requiresMultiTactic = false;
+              let requiresMultiOverlord = false;
+
+              // --- Evaluate each selected tactic ---
+              for (const tacticId of selectedTactics) {
+                const tacticData = tactics.find(t => String(t.id) === String(tacticId));
+                if (!tacticData) continue;
+
+                // Handle enemies/allies limits
+                if (Array.isArray(tacticData.limitEaA) &&
+                    tacticData.limitEaA[0] === "allEnemies") {
+                  allEnemiesRestriction = true;
+                  const match = tacticData.limitEaA[1].match(/\d+/);
+                  if (match) minEnemiesRequired = Number(match[0]);
+                  minAlliesRequired = 0; // 0 allies required for this rule
+                }
+
+                // Handle multi-requirements
+                if (tacticData.multiTacticReq === "yes") requiresMultiTactic = true;
+                if (tacticData.multiOverlordReq === "yes") requiresMultiOverlord = true;
               }
+
+              // --- Apply Enemies/Allies rules ---
+              if (allEnemiesRestriction) {
+                if (enemiesCount < minEnemiesRequired) eaAValid = false;
+                if (alliesCount !== 0) eaAValid = false; // must be exactly 0
+              } else {
+                // default normal bounds 15–50 for both
+                if (enemiesCount < 15 || enemiesCount > 50) eaAValid = false;
+                if (alliesCount < 15 || alliesCount > 50) eaAValid = false;
+              }
+
+              // --- Apply tactic/overlord count rules ---
+              if (requiresMultiTactic && selectedTactics.length < 2) tacticValid = false;
+              if (requiresMultiOverlord && selectedOverlords.length < 2) overlordValid = false;
+
+              // --- Final decision ---
+              const canStart =
+                hasHero &&
+                hasOverlord &&
+                hasTactic &&
+                eaAValid &&
+                tacticValid &&
+                overlordValid;
+
+              startButton.disabled = !canStart;
+              startButton.classList.toggle("active", canStart);
+              startButton.style.opacity = canStart ? "1" : "0.5";
+
+              // --- Tooltip feedback ---
+              let reason = "";
+              if (!eaAValid) reason = "Enemy/Ally count invalid for this scenario.";
+              else if (!tacticValid) reason = "Requires 2 Tactics for this scenario.";
+              else if (!overlordValid) reason = "Requires 2 or more Overlords for this scenario.";
+
+              startButton.title = canStart ? "Start Game" : reason;
             }
 
             let selectedEnemies = [];
@@ -995,6 +1052,16 @@
               enemiesCount = Number(enemiesSlider.value);
               enemiesInput.value = enemiesCount;
               updateSliderLabel(enemiesSlider, enemiesValue);
+
+              // --- Determine if any selected tactic sets allEnemies restriction ---
+              let allEnemiesRestriction = false;
+              for (const tacticId of selectedTactics) {
+                const tacticData = tactics.find(t => String(t.id) === String(tacticId));
+                if (Array.isArray(tacticData?.limitEaA) && tacticData.limitEaA[0] === "allEnemies") {
+                  allEnemiesRestriction = true;
+                  break;
+                }
+              }
 
               // Ensure selectedEnemies is populated even when manually changed
               if (selectedEnemies.length === 0 && enemies.length > 0) {
@@ -1007,13 +1074,21 @@
                 selectedEnemies = chosen;
               }
 
-              // Visual feedback
-              if (enemiesCount < 15 || enemiesCount > 50) {
-                enemiesSlider.style.accentColor = 'red';
-                enemiesSlider.style.outline = '2px solid red';
+              // --- Visual feedback ---
+              if (allEnemiesRestriction) {
+                // For "allEnemies" tactics
+                if (enemiesCount < 30 || enemiesCount > 50) {
+                  enemiesSlider.style.accentColor = 'red';
+                } else {
+                  enemiesSlider.style.accentColor = 'green';
+                }
               } else {
-                enemiesSlider.style.accentColor = 'green';
-                enemiesSlider.style.outline = '2px solid green';
+                // Default mode
+                if (enemiesCount < 15 || enemiesCount > 50) {
+                  enemiesSlider.style.accentColor = 'red';
+                } else {
+                  enemiesSlider.style.accentColor = 'green';
+                }
               }
 
               updateStartButton();
@@ -1023,6 +1098,16 @@
               alliesCount = Number(alliesSlider.value);
               alliesInput.value = alliesCount;
               updateSliderLabel(alliesSlider, alliesValue);
+
+              // --- Determine if any selected tactic sets allEnemies restriction ---
+              let allEnemiesRestriction = false;
+              for (const tacticId of selectedTactics) {
+                const tacticData = tactics.find(t => String(t.id) === String(tacticId));
+                if (Array.isArray(tacticData?.limitEaA) && tacticData.limitEaA[0] === "allEnemies") {
+                  allEnemiesRestriction = true;
+                  break;
+                }
+              }
 
               // Ensure selectedAllies is populated even when manually changed
               if (selectedAllies.length === 0 && allies.length > 0) {
@@ -1035,12 +1120,21 @@
                 selectedAllies = chosen;
               }
 
-              if (alliesCount < 15 || alliesCount > 50) {
-                alliesSlider.style.accentColor = 'red';
-                alliesSlider.style.outline = '2px solid red';
+              // --- Visual feedback ---
+              if (allEnemiesRestriction) {
+                // For "allEnemies" tactics
+                if (alliesCount === 0) {
+                  alliesSlider.style.accentColor = 'green';
+                } else {
+                  alliesSlider.style.accentColor = 'red';
+                }
               } else {
-                alliesSlider.style.accentColor = 'green';
-                alliesSlider.style.outline = '2px solid green';
+                // Default mode
+                if (alliesCount < 15 || alliesCount > 50) {
+                  alliesSlider.style.accentColor = 'red';
+                } else {
+                  alliesSlider.style.accentColor = 'green';
+                }
               }
 
               updateStartButton();
