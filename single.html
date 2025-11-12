@@ -284,6 +284,45 @@
   margin-top: 10px;
   text-align: center;
 }
+#tactics-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tactic-card {
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 12px;
+  padding: 10px 15px;
+  width: 80%;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.tactic-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 6px rgba(0,0,0,0.3);
+}
+
+.tactic-card.selected {
+  box-shadow: 0 0 10px 4px yellow;
+}
+
+.tactic-card h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.tactic-card p {
+  margin: 5px 0 0 0;
+  font-size: 0.9rem;
+}
 </style>
 </head>
     <body style="background-color:white;" onload="window.scrollTo(0, 1)">
@@ -308,12 +347,7 @@
                     <button id="random-heroes">Random</button>
                     <button id="redo-random">Redo</button>
                   </div>
-                    <div id="hero-grid" class="hero-grid">
-                      <div class="hero-image-wrapper">
-                        <img src="..." alt="">
-                        <span class="selection-badge"></span>
-                      </div>
-                    </div>
+                    <div id="hero-grid" class="hero-grid"></div>
                 </div>
                 </div>
 
@@ -329,6 +363,18 @@
                   </div>
                 </div>
 
+                <button class="collapsible">Select Your Tactics (1-2)</button>
+                <div class="content">
+                  <div class="hero-box" style="background-color: #ccc;">
+                    <div class="hero-controls">
+                      <button id="undo-tactics">Undo</button>
+                      <button id="random-tactics">Random</button>
+                      <button id="redo-tactics">Redo</button>
+                    </div>
+                    <div id="tactics-grid" class="hero-grid"></div>
+                  </div>
+                </div>
+
                 <br>
                 <div class="bottom-row">
                   <button id="start-button" class="start-button">Start Game!</button>
@@ -341,6 +387,7 @@
         <script type="module">
             import { heroes } from './data/faceCards.js';
             import { overlords } from './data/overlords.js';
+            import { tactics } from './data/tactics.js';
 
             const collapsible = document.querySelector('.collapsible');
             const content = document.querySelector('.content');
@@ -495,7 +542,8 @@
               const SECRET = "GeimonHeroKey42";
               const payload = {
                 heroes: selectedOrder,
-                overlords: selectedOverlords
+                overlords: selectedOverlords,
+                tactics: selectedTactics
               };
 
               const encrypted = await encryptData(payload, SECRET);
@@ -564,26 +612,54 @@
 
             // Export current loadout to a text file
             function exportLoadout() {
-              const text = selectedOrder.join(',');
-              const blob = new Blob([text], { type: 'text/plain' });
+              const data = {
+                heroes: selectedOrder,
+                overlords: selectedOverlords,
+                tactics: selectedTactics
+              };
+              const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
               const url = URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
-              a.download = 'loadout.txt';
-              document.body.appendChild(a);
+              a.download = 'loadout.json';
               a.click();
-              document.body.removeChild(a);
               URL.revokeObjectURL(url);
             }
+
 
             // Import loadout from user file
             function importLoadout(event) {
               const file = event.target.files[0];
               if (!file) return;
+
               const reader = new FileReader();
               reader.onload = e => {
-                const ids = e.target.result.split(',').map(x => x.trim()).filter(Boolean);
-                applySelection(ids.slice(0, 6)); // cap at 6
+                try {
+                  const data = JSON.parse(e.target.result);
+
+                  // --- Heroes ---
+                  if (Array.isArray(data.heroes)) {
+                    selectedOrder = data.heroes.slice(0, 6);
+                    updateBadges();
+                  }
+
+                  // --- Overlords ---
+                  if (Array.isArray(data.overlords)) {
+                    selectedOverlords = data.overlords.slice(0, 3);
+                    updateOverlordBadges();
+                  }
+
+                  // --- Tactics ---
+                  if (Array.isArray(data.tactics)) {
+                    selectedTactics = data.tactics.slice(0, 2);
+                    updateTacticStyles();
+                  }
+
+                  updateStartButton();
+                } catch (err) {
+                  console.error("Failed to import loadout:", err);
+                  alert("Invalid file format. Please use a valid .json loadout file.");
+                }
               };
               reader.readAsText(file);
             }
@@ -592,7 +668,6 @@
             document.getElementById('random-heroes').addEventListener('click', randomizeSelection);
             document.getElementById('undo-random').addEventListener('click', undoRandom);
             document.getElementById('redo-random').addEventListener('click', redoRandom);
-            document.getElementById('top-random').addEventListener('click', topRandom);
             document.getElementById('export-loadout').addEventListener('click', exportLoadout);
 
             // Create hidden file input for import
@@ -695,19 +770,6 @@
               });
             }
 
-            function updateStartButton() {
-              const heroesValid = selectedOrder.length >= 1 && selectedOrder.length <= 6;
-              const overlordsValid = selectedOverlords.length >= 1 && selectedOverlords.length <= 3;
-
-              if (heroesValid && overlordsValid) {
-                startButton.classList.add('active');
-                startButton.style.cursor = 'pointer';
-              } else {
-                startButton.classList.remove('active');
-                startButton.style.cursor = 'not-allowed';
-              }
-            }
-
             // Handle click
             overlordGrid.addEventListener('click', e => {
               const card = e.target.closest('.overlord-card');
@@ -739,7 +801,7 @@
                 .filter(o => !selectedOverlords.includes(String(o.id)));
               if (available.length === 0) return;
 
-              const countToAdd = Math.floor(Math.random() * maxSelectable) + 1;
+              const countToAdd = Math.max(1, Math.ceil(Math.random() * maxSelectable));
               const toAdd = [];
 
               while (toAdd.length < countToAdd && available.length > 0) {
@@ -776,27 +838,149 @@
               updateStartButton();
             }
 
-            // Global random top button updates to fill categories missing minimums
-            function topRandom() {
-              undoStack.push([...selectedOrder]);
-              redoStack = [];
-
-              const heroMin = 1;
-              const overlordMin = 1;
-
-              if (selectedOrder.length < heroMin) randomizeSelection();
-              if (selectedOverlords.length < overlordMin) randomizeOverlords();
-
-              updateBadges();
-              updateOverlordBadges();
-              updateStartButton();
-            }
-
             // Button bindings
             document.getElementById('random-overlords').addEventListener('click', randomizeOverlords);
             document.getElementById('undo-overlords').addEventListener('click', undoOverlords);
             document.getElementById('redo-overlords').addEventListener('click', redoOverlords);
 
+            // ==================== TACTICS SECTION ====================
+            const tacticsGrid = document.getElementById('tactics-grid');
+            let selectedTactics = [];
+            let tacticsUndoStack = [];
+            let tacticsRedoStack = [];
+
+            // Filter and sort tactics alphabetically, ignoring doNotShow:true
+            const filteredTactics = tactics
+              .filter(t => String(t.doNotShow).toLowerCase() !== "true")
+              .sort((a, b) => a.name.localeCompare(b.name));
+
+            // Render tactics
+            filteredTactics.forEach(t => {
+              const card = document.createElement('div');
+              card.classList.add('tactic-card');
+              card.dataset.id = t.id;
+
+              const title = document.createElement('h3');
+              title.textContent = t.name;
+
+              const desc = document.createElement('div');
+              desc.innerHTML = t.abilitiesText
+                ?.map(a => a.text)
+                .join('<br><br>') || 'No effect listed.';
+              desc.style.fontSize = '0.9rem';
+              desc.style.marginTop = '5px';
+
+              card.appendChild(title);
+              card.appendChild(desc);
+              tacticsGrid.appendChild(card);
+            });
+
+            // Update visuals
+            function updateTacticStyles() {
+              document.querySelectorAll('.tactic-card').forEach(card => {
+                const id = card.dataset.id;
+                if (selectedTactics.includes(id)) {
+                  card.classList.add('selected');
+                } else {
+                  card.classList.remove('selected');
+                }
+              });
+            }
+
+            function updateStartButton() {
+              const heroesValid = selectedOrder.length >= 1 && selectedOrder.length <= 6;
+              const overlordsValid = selectedOverlords.length >= 1 && selectedOverlords.length <= 3;
+              const tacticsValid = selectedTactics.length >= 1 && selectedTactics.length <= 2;
+
+              if (heroesValid && overlordsValid && tacticsValid) {
+                startButton.classList.add('active');
+                startButton.style.cursor = 'pointer';
+              } else {
+                startButton.classList.remove('active');
+                startButton.style.cursor = 'not-allowed';
+              }
+            }
+
+            // Handle click selection
+            tacticsGrid.addEventListener('click', e => {
+              const card = e.target.closest('.tactic-card');
+              if (!card) return;
+              const id = card.dataset.id;
+              const idx = selectedTactics.indexOf(id);
+
+              if (idx > -1) {
+                selectedTactics.splice(idx, 1);
+              } else if (selectedTactics.length < 2) {
+                selectedTactics.push(id);
+              }
+
+              updateTacticStyles();
+              updateStartButton();
+            });
+
+            // Randomize Tactics
+            function randomizeTactics() {
+              const maxSelectable = 2 - selectedTactics.length;
+              if (maxSelectable <= 0) return;
+
+              const available = filteredTactics.filter(t => !selectedTactics.includes(String(t.id)));
+              if (available.length === 0) return;
+
+              const countToAdd = Math.floor(Math.random() * maxSelectable) + 1;
+              const toAdd = [];
+
+              while (toAdd.length < countToAdd && available.length > 0) {
+                const idx = Math.floor(Math.random() * available.length);
+                toAdd.push(available.splice(idx, 1)[0]);
+              }
+
+              tacticsUndoStack.push([...selectedTactics]);
+              tacticsRedoStack = [];
+
+              selectedTactics = [...selectedTactics, ...toAdd.map(t => String(t.id))];
+              updateTacticStyles();
+              updateStartButton();
+            }
+
+            function undoTactics() {
+              if (tacticsUndoStack.length === 0) return;
+              tacticsRedoStack.push([...selectedTactics]);
+              selectedTactics = tacticsUndoStack.pop();
+              updateTacticStyles();
+              updateStartButton();
+            }
+
+            function redoTactics() {
+              if (tacticsRedoStack.length === 0) return;
+              tacticsUndoStack.push([...selectedTactics]);
+              selectedTactics = tacticsRedoStack.pop();
+              updateTacticStyles();
+              updateStartButton();
+            }
+
+            // Add button bindings
+            document.getElementById('random-tactics').addEventListener('click', randomizeTactics);
+            document.getElementById('undo-tactics').addEventListener('click', undoTactics);
+            document.getElementById('redo-tactics').addEventListener('click', redoTactics);
+
+            const limits = {
+              heroes: { min: 1, max: 6 },
+              overlords: { min: 1, max: 3 },
+              tactics: { min: 1, max: 2 }
+            };
+
+            function topRandom() {
+              if (selectedOrder.length < limits.heroes.min) randomizeSelection();
+              if (selectedOverlords.length < limits.overlords.min) randomizeOverlords();
+              if (selectedTactics.length < limits.tactics.min) randomizeTactics();
+
+              // Update visuals for all
+              updateBadges();
+              updateOverlordBadges();
+              updateTacticStyles();
+              updateStartButton();
+            }
+            document.getElementById('top-random').addEventListener('click', topRandom);
         </script>
     </body>
 </html>

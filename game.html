@@ -22,6 +22,7 @@
     <script type="module">
         import { heroes } from './data/faceCards.js';
         import { overlords } from './data/overlords.js';
+        import { tactics } from './data/tactics.js';
 
         // --- Decrypt Function ---
         async function decryptData(cipherText, secretKey) {
@@ -60,6 +61,7 @@
             const selectedData = await decryptData(encrypted, SECRET);
             const selectedHeroes = selectedData.heroes || [];
             const selectedOverlords = selectedData.overlords || [];
+            const selectedTactics = selectedData.tactics || [];
 
             // HEROES
             const heroMap = new Map(heroes.map(h => [String(h.id), h]));
@@ -70,6 +72,14 @@
             const overlordList = selectedOverlords
             .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
             .sort((a, b) => a.level - b.level || a.hp - b.hp);
+
+            // TACTICS
+            const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+            const tacticList = selectedTactics.map(id => {
+                const t = tacticMap.get(String(id));
+                if (!t) return { name: `Unknown (ID ${id})`, abilitiesText: [{ text: '?' }] };
+                return t;
+            });
 
             // Create hero container
             const container = document.createElement('div');
@@ -83,6 +93,18 @@
             <h2 style="margin-top:30px;">Loaded Overlords (sorted by difficulty & HP):</h2>
             <ol style="display:inline-block; text-align:left;">
                 ${overlordList.map(o => `<li>${o.name} — ${o.hp} HP (Difficulty ${o.level})</li>`).join('')}
+            </ol>
+            `;
+
+            container.innerHTML += `
+            <h2 style="margin-top:30px;">Loaded Tactics:</h2>
+            <ol style="display:inline-block; text-align:left; max-width:700px;">
+                ${tacticList.map(t => `
+                <li style="margin-bottom:10px;">
+                    <b>${t.name}</b><br>
+                    ${t.abilitiesText.map(a => a.text).join('<br><br>')}
+                </li>
+                `).join('')}
             </ol>
             `;
 
