@@ -172,4 +172,61 @@ export const tactics = [
       }
     ]
   },
+  {
+    id: "4",
+    name: "We Are Legion",
+    image: `${cardArtFolder}/Tactic.jpg`,
+    type: "Tactic",
+    limitEaA: ["no"],
+    multiTacticReq: "no",
+    multiOverlordReq: "no",
+    abilitiesText: [
+      {
+        text: `Henchmen enter the map with 1 additional HP. <span class="line-gap"></span>
+               Might of the Overlord: Play the next 2 Henchmen or Villains from the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Intergang's Going Public.`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `henchmenRallied()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `ralliedHenchGainLife(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+        text: `We Need Backup!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `rallyNextHenchVillains(2)`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `none`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
 ]
