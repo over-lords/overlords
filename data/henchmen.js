@@ -142,4 +142,107 @@ export const henchmen = [
       }
     ]
   },
+  {
+    id: "5",
+    name: "Hive Soldiers",
+    image: `${cardArtFolder}/hiveSoldiers.jpg`,
+    type: "Henchman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: You may draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `enaDraw(1,0)`
+      }
+    ]
+  },
+  {
+    id: "6",
+    name: "Demons",
+    image: `${cardArtFolder}/Demons.jpg`,
+    type: "Henchman",
+    hp: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span>
+               Reward: You may return an active Henchman or Villain to the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `From Hell they Come!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        uses: `1`,
+        shared: `no`,
+        effect: `teleport(random)`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `returnHenchOrVillain(1)`
+      }
+    ]
+  },
+  {
+    id: "7",
+    name: "Manhunters",
+    image: `${cardArtFolder}/Manhunters.jpg`,
+    type: "Henchman",
+    hp: "3",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Heroes cannot Retreat when engaging Manhunters. <span class="line-gap"></span>
+               Reward: Your Hero regains 1 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `No Man Escapes the Manhunters!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `isEngaged()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `disableRetreat()`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `regainLife(1)`
+      }
+    ]
+  },
 ]
