@@ -15,6 +15,34 @@
     <div class="title-box" id="title-box"></div>
     <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
+    <div id="expand-collapse-controls"
+        style="display:flex; justify-content:flex-start; gap:10px; margin:120px 0px -110px 20px;">
+
+        <button id="expand-all"
+                style="
+                    background-color: yellow;
+                    border: 2px solid black;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    padding: 8px 16px;
+                    cursor: pointer;
+                ">
+            Expand All
+        </button>
+
+        <button id="collapse-all"
+                style="
+                    background-color: yellow;
+                    border: 2px solid black;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    padding: 8px 16px;
+                    cursor: pointer;
+                ">
+            Collapse All
+        </button>
+    </div>
+
     <div id="close-box" onclick="location.href='index.html'">X</div>
 
     <div id="categories" style="position: relative; z-index: 1; text-align: left; margin: 8rem 0 0 0rem;"></div>
@@ -45,18 +73,39 @@
         // Category container
         const categoryBox = document.createElement('div');
         categoryBox.style.borderRadius = "8px";
+        categoryBox.style.margin = "15px";
         categoryBox.style.marginBottom = "1rem";
         categoryBox.style.overflow = "hidden";
-        
+
         // Category header
         const categoryHeader = document.createElement('div');
-        categoryHeader.style.background = "#cccccc"; // slightly darker
+        categoryHeader.style.background = "#cccccc";
         categoryHeader.style.padding = "0.5rem 1rem";
         categoryHeader.style.cursor = "pointer";
         categoryHeader.style.display = "flex";
         categoryHeader.style.justifyContent = "space-between";
         categoryHeader.style.fontSize = "2rem";
         categoryHeader.style.fontWeight = "bold";
+
+        /* NEW — margins + borders + rounded top corners */
+        categoryHeader.style.margin = "0px";
+        categoryHeader.style.marginBottom = "0px";  // no gap against body
+        categoryHeader.style.border = "2px solid black";
+        categoryHeader.style.borderRadius = "6px 6px 0 0";  // round top corners
+
+
+        // ===============================
+        // CATEGORY COLOR THEMING
+        // ===============================
+        if (category.toLowerCase() === "guardian") {
+            categoryHeader.style.background = "rgba(173, 216, 230)"; // Light blue
+        }
+        else if (category.toLowerCase() === "striker") {
+            categoryHeader.style.background = "rgba(255, 182, 193)"; // Light red
+        }
+        else if (category.toLowerCase() === "tactician") {
+            categoryHeader.style.background = "rgba(255, 255, 153)"; // Light yellow
+        }
 
         const catText = document.createElement('span');
         catText.textContent = category;
@@ -69,15 +118,56 @@
 
         // Container for heroes
         const heroContainer = document.createElement('div');
-        heroContainer.style.background = "#eeeeee"; // lighter than header
+        heroContainer.style.background = "#eeeeee";
+        heroContainer.style.paddingTop = "5px";
+
+        /* NEW — borders + margin + rounded bottom */
+        heroContainer.style.margin = "0";
+        heroContainer.style.border = "2px solid black";
+        heroContainer.style.borderTop = "none";                // connects to header
+        heroContainer.style.borderRadius = "0 0 6px 6px";      // rounded bottom corners
+
         const isOpenCategory = openCategory ? category === openCategory : catIndex === 0;
         heroContainer.style.display = isOpenCategory ? "block" : "none";
         catArrow.style.transform = isOpenCategory ? "rotate(180deg)" : "rotate(0deg)";
 
+        if (isOpenCategory) {
+            // If open at page load → remove bottom border
+            categoryHeader.style.borderBottom = "none";
+            categoryHeader.style.borderRadius = "6px 6px 0 0";
+        } else {
+            // If closed at page load → show full border
+            categoryHeader.style.borderBottom = "2px solid black";
+            categoryHeader.style.borderRadius = "6px";
+        }
+
         categoryHeader.addEventListener('click', () => {
             const isVisible = heroContainer.style.display === "block";
-            heroContainer.style.display = isVisible ? "none" : "block";
-            catArrow.style.transform = isVisible ? "rotate(0deg)" : "rotate(180deg)";
+            if (isVisible) {
+                // COLLAPSE
+                heroContainer.style.display = "none";
+
+                // Header gets full border & rounding
+                categoryHeader.style.borderBottom = "2px solid black";
+                categoryHeader.style.borderRadius = "6px";
+
+                // Arrow
+                catArrow.style.transform = "rotate(0deg)";
+            } else {
+                // EXPAND
+                heroContainer.style.display = "block";
+
+                // Header merges into body
+                categoryHeader.style.borderBottom = "none";
+                categoryHeader.style.borderRadius = "6px 6px 0 0";
+
+                // Body merges to header
+                heroContainer.style.borderTop = "none";
+                heroContainer.style.borderRadius = "0 0 6px 6px";
+
+                // Arrow
+                catArrow.style.transform = "rotate(180deg)";
+            }
         });
 
         // Add heroes
@@ -103,8 +193,9 @@
 
             const bgColor = hero.color || "gray";
             heroBox.style.background = applyOpacity(bgColor, 0.4); // 40% opacity
-            heroBox.style.margin = "0.25rem 0";
+            heroBox.style.margin = "0px 5px 5px";
             heroBox.style.borderRadius = "6px";
+            heroBox.style.border = "2px solid black";
 
             // Hero header
             const heroHeader = document.createElement('div');
@@ -262,6 +353,65 @@
             default expanded first
                 expanded has image, teams, hp, damageThreshold, travel, retreat, abilitiesText
         */
+
+        // ===========================
+        // EXPAND ALL / COLLAPSE ALL
+        // ===========================
+        document.getElementById("expand-all").addEventListener("click", () => {
+            document.querySelectorAll("#categories > div").forEach(categoryBox => {
+                
+                const categoryHeader = categoryBox.children[0];
+                const heroContainer  = categoryBox.children[1];
+
+                // Expand category
+                heroContainer.style.display = "block";
+                // Header loses bottom border + radius when open
+                categoryHeader.style.borderBottom = "none";
+                categoryHeader.style.borderRadius = "6px 6px 0 0";
+
+                // Body keeps bottom radius when open
+                heroContainer.style.borderTop = "none";
+                heroContainer.style.borderRadius = "0 0 6px 6px";
+                const catArrow = categoryHeader.children[1];
+                catArrow.style.transform = "rotate(180deg)";
+
+                // Expand all heroes in this category
+                Array.from(heroContainer.children).forEach(heroBox => {
+                    const heroHeader  = heroBox.children[0];
+                    const heroDetails = heroBox.children[1];
+                    const heroArrow   = heroHeader.children[1];
+
+                    heroDetails.style.display = "flex";
+                    heroArrow.style.transform = "rotate(180deg)";
+                });
+            });
+        });
+
+        document.getElementById("collapse-all").addEventListener("click", () => {
+            document.querySelectorAll("#categories > div").forEach(categoryBox => {
+                
+                const categoryHeader = categoryBox.children[0];
+                const heroContainer  = categoryBox.children[1];
+
+                // Collapse category
+                heroContainer.style.display = "none";
+                categoryHeader.style.borderBottom = "2px solid black";
+                categoryHeader.style.borderRadius = "6px";  // fully rounded
+
+                const catArrow = categoryHeader.children[1];
+                catArrow.style.transform = "rotate(0deg)";
+
+                // Collapse all heroes in this category
+                Array.from(heroContainer.children).forEach(heroBox => {
+                    const heroHeader  = heroBox.children[0];
+                    const heroDetails = heroBox.children[1];
+                    const heroArrow   = heroHeader.children[1];
+
+                    heroDetails.style.display = "none";
+                    heroArrow.style.transform = "rotate(0deg)";
+                });
+            });
+        });
     </script>
     </main-content>
     <br><br>

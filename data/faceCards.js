@@ -556,13 +556,13 @@ export const heroes = [
     doNotShow: "true",
     color: "DarkRed",
     teams: ["Dark"],
-    hp: "9",
+    hp: "10",
     damageThreshold: "1",
     retreat: "3",
     travel: "1",
     abilitiesText: [
       {
-        text: `1/Game: Return a Henchman or Villain in a City to the top of the Villain Deck. <span class="line-gap"></span> If Jason Blood is reduced to 4 or fewer HP, he transforms into Etrigan.`
+        text: `If Jason Blood is reduced to 5 or fewer HP, he transforms into Etrigan. <span class="line-gap"></span> 1/Game: Return a Henchman or Villain in a City to the top of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -599,7 +599,7 @@ export const heroes = [
     doNotShow: "true", // this is the only doNotShow entry that expects to stay 'true'
     color: "yellow",
     teams: ["Dark"],
-    hp: "9",
+    hp: "10",
     damageThreshold: "3",
     retreat: "5",
     travel: "2",
