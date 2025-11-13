@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/bf4e1e581d01f61d19b3eeb43d02e6093696eb8e/Public/Images/Card%20Assets";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/f8dae46835c412a717cf9c82b648d9ff51235d72/Public/Images/Card%20Assets";
 
 export const heroCards = [
   {
@@ -1418,6 +1418,294 @@ export const heroCards = [
   {
     id: "881",
     type: "Main",
+    name: "Booyah!",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/booyah.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `After dealing Damage with this card, KO all Henchmen and Villains at 2 or less HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "882",
+    type: "Main",
+    name: "Plasma Cannon",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/plasmaCannon.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `Henchmen and Villains in adjacent Cities take 1 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "883",
+    type: "Main",
+    name: "Apokaliptian Power",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/apokaliptianPower.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Scan 1 from Cyborg's deck. If it deals Damage, draw it.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "884",
+    type: "Main",
+    name: "Human Instinct",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/humanInstinct.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "886",
+    type: "Main",
+    name: "Rapid Self-Modification",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/rapidSelfModification.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Scan 3 from Cyborg's deck. <span class="line-gap"></span> OPTIONAL: Draw 2 and KO the third.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "887",
+    type: "Main",
+    name: "Victory or Nothing",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/victoryOrNothing.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the end of Cyborg's turn, if he takes Damage from a Villain, they take 2 Damage in return.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "888",
+    type: "Main",
+    name: "Robot Vision",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/robotVision.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Play the next Ally from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "889",
+    type: "Main",
+    name: "Half Man, Half Machine",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/Cold Heart.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Scan 5 from Cyborg's deck. <span class="line-gap"></span> Draw 1 and return the rest in an order of your choice.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "890",
+    type: "Main",
+    name: "Self-Repair",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/selfRepair.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE: If Cyborg takes Damage this turn, he regains 3 HP afterwards. <span class="line-gap"></span> OR <span class="line-gap"></span> If Cyborg takes Damage this turn, draw 3 random cards at the start of Cyborg's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "891",
+    type: "Main",
+    name: "Tougher Than Most",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/tougherThanMost.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw a card and increase Cyborg's Damage Threshold by 1 until the start of his next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "892",
+    type: "Main",
+    name: "Hack the System",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/hackTheSystem.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Retrieve up to 2 cards from Cyborg's discard pile. For every card not retrieved, draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "893",
+    type: "Main",
+    name: "Power of the People",
+    hero: "Cyborg",
+    image: `${cardArtFolder}/Cyborg/powerOfThePeople.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2 cards. <span class="line-gap"></span> Increase this card's Damage by 1 for every rescued Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `B`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `b`
+      }
+    ]
+  },
+  {
+    id: "1021",
+    type: "Main",
     name: "Faster Than Light",
     hero: "Flash (Wally West)",
     image: `${cardArtFolder}/Wally West/Wally g.jpg`,
@@ -1440,7 +1728,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "882",
+    id: "1022",
     type: "Main",
     name: "At One with the Speed Force",
     hero: "Flash (Wally West)",
@@ -1464,7 +1752,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "883",
+    id: "1023",
     type: "Main",
     name: "Pure Momentum",
     hero: "Flash (Wally West)",
@@ -1488,7 +1776,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "884",
+    id: "1024",
     type: "Main",
     name: "Reunited",
     hero: "Flash (Wally West)",
@@ -1512,7 +1800,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "885",
+    id: "1025",
     type: "Main",
     name: "Eternity of Waiting",
     hero: "Flash (Wally West)",
@@ -1536,7 +1824,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "886",
+    id: "1026",
     type: "Main",
     name: "Next Generation",
     hero: "Flash (Wally West)",
@@ -1560,7 +1848,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "887",
+    id: "1027",
     type: "Main",
     name: "Faster Than a Locomotive",
     hero: "Flash (Wally West)",
@@ -1584,7 +1872,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "888",
+    id: "1028",
     type: "Main",
     name: "Good 'ol Days",
     hero: "Flash (Wally West)",
@@ -1608,7 +1896,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "889",
+    id: "1029",
     type: "Main",
     name: "Lost in the Speed Force",
     hero: "Flash (Wally West)",
@@ -1632,7 +1920,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "890",
+    id: "1030",
     type: "Main",
     name: "Love that Transcends Death",
     hero: "Flash (Wally West)",
@@ -1656,7 +1944,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "891",
+    id: "1031",
     type: "Main",
     name: "Vibrational Frequency",
     hero: "Flash (Wally West)",
@@ -1680,7 +1968,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "892",
+    id: "1032",
     type: "Main",
     name: "Out of Place",
     hero: "Flash (Wally West)",
@@ -1704,7 +1992,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "893",
+    id: "1033",
     type: "Main",
     name: "Rewrite Creation",
     hero: "Flash (Wally West)",
@@ -1728,7 +2016,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "894",
+    id: "1034",
     type: "Main",
     name: "Flash Time",
     hero: "Flash (Wally West)",
@@ -1752,7 +2040,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "895",
+    id: "1035",
     type: "Main",
     name: "Escape the Speed Force",
     hero: "Flash (Wally West)",

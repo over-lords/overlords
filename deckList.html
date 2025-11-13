@@ -172,6 +172,7 @@
 
         // Add heroes
         heroList.forEach((hero, heroIndex) => {
+            if (hero.doNotShow === "true") return;
             const heroBox = document.createElement('div');
 
             // Function to apply opacity to any CSS color (named or hex)
