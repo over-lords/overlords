@@ -160,4 +160,550 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5",
+    name: "Metallo",
+    image: `${cardArtFolder}/metallo.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `[ICON:Super] Heroes deal half Damage against Metallo. <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "6",
+    name: "Ultra-Humanite",
+    image: `${cardArtFolder}/ultraHumanite.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> Might of the Overlord: Draw 2 cards from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "7",
+    name: "Parasite",
+    image: `${cardArtFolder}/parasite.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "15",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the end of a turn in which Parasite took Damage, increase his Damage by 1. <span class="line-gap"></span> Reward: Deal 3 Damage to up to 2 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "8",
+    name: "Silver Banshee",
+    image: `${cardArtFolder}/silverBanshee.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Glide <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "9",
+    name: "Toyman",
+    image: `${cardArtFolder}/toyman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "10",
+    name: "Hector Hammond",
+    image: `${cardArtFolder}/hectorHammond.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Heroes engaged with Hector Hammond cannot use their Icon Abilities. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "11",
+    name: "Livewire",
+    image: `${cardArtFolder}/livewire.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Glide <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "12",
+    name: "Cyborg Superman",
+    image: `${cardArtFolder}/cyborgSuperman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "18",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "13",
+    name: "Atomic Skull",
+    image: `${cardArtFolder}/atomicSkull.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "14",
+    name: "Firefly",
+    image: `${cardArtFolder}/firefly.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "7",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1, Glide <span class="line-gap"></span> Reward: Increase your Hero's Travel Budget by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "15",
+    name: "Black Mask",
+    image: `${cardArtFolder}/blackMask.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "3",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> Might of the Overlord: Play the Henchmen and Villains amongst the next 5 cards in the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> Reward: KO all Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "16",
+    name: "Man-Bat",
+    image: `${cardArtFolder}/manBat.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Glide <span class="line-gap"></span> Reward: Draw a card and increase your Hero's Travel Budget by 1 for this turn only.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "17",
+    name: "Deadshot",
+    image: `${cardArtFolder}/deadshot.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 2 Damage. <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "18",
+    name: "Deathstroke",
+    image: `${cardArtFolder}/deathstroke.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Deathstroke cannot be damaged by the same card more than once. <span class="line-gap"></span> Reward: Deal 4 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
 ]

@@ -1876,7 +1876,7 @@ img {
                 `;
 
                 const label = document.createElement('div');
-                label.textContent = `${heroName}'s Villains`;
+                label.textContent = `${heroName}'s Villains (${list.length})`;
 
                 // Look up this hero's color from faceCards.js
                 const matchingHero = heroes.find(h => h.name === heroName);

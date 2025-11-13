@@ -1277,7 +1277,7 @@ export const heroes = [
   },
   {
     id: "30",
-    name: "White Lantern",
+    name: "White Lantern (Kyle Rayner)",
     image: `${cardArtFolder}/White Lantern.jpg`,
     type: "Hero",
     category: "Striker",
