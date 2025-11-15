@@ -432,7 +432,7 @@ export function renderCard(cardId, container) {
 
 // === Helper: render ability text with inline icons ===
 export function renderAbilityText(text) {
-  const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/a61d7fb50e273106d490476bd3c621f3a6f45047/Public/Images/Card%20Assets";
+  const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets";
 
   // Define simple replacements: [ICON:Name] → <img src=".../Name.png">
   const iconMap = {
@@ -537,7 +537,7 @@ function shrinkTextToFitWidth(element, minFontSize = 8) {
 
 export function getTeamIcon(teamName) {
   const cardArtFolder =
-    "https://raw.githubusercontent.com/over-lords/overlords/a61d7fb50e273106d490476bd3c621f3a6f45047/Public/Images/Card%20Assets/Misc";
+    "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets/Misc";
 
   const map = {
     Bat: `${cardArtFolder}/Bat.png`,
