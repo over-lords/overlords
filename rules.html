@@ -372,6 +372,18 @@
     </div>
 
     <script type="module">
+        import { heroes } from './data/faceCards.js';
+        import { heroCards } from './data/heroCards.js';
+        import { bystanders } from './data/bystanders.js';
+        import { enemies } from './data/enemies.js';
+        import { allies } from './data/allies.js';
+        import { henchmen } from './data/henchmen.js';
+        import { overlords } from './data/overlords.js';
+        import { scenarios } from './data/scenarios.js';
+        import { tactics } from './data/tactics.js';
+        import { villains } from './data/villains.js';
+        import { renderCard } from './utils/cardRenderer.js';
+
         function openTab(evt, tabId) {
             const tabs = document.querySelectorAll('.tab');
             const buttons = document.querySelectorAll('.tab-button');
@@ -395,18 +407,6 @@
             evt.currentTarget.classList.add('active');
         }
         window.openSubTab = openSubTab;
-
-        import { heroes } from '../data/faceCards.js';
-        import { heroCards } from '../data/heroCards.js';
-        import { bystanders } from '../data/bystanders.js';
-        import { enemies } from '../data/enemies.js';
-        import { allies } from '../data/allies.js';
-        import { henchmen } from '../data/henchmen.js';
-        import { overlords } from '../data/overlords.js';
-        import { scenarios } from '../data/scenarios.js';
-        import { tactics } from '../data/tactics.js';
-        import { villains } from '../data/villains.js';
-        import { renderCard } from './utils/cardRenderer.js';
 
         export function findAnyCardById(id) {
             const dataSources = [
