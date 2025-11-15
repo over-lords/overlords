@@ -205,51 +205,75 @@ export function renderCard(cardId, container) {
     card.appendChild(img);
 
     // === TOP NAME STRIP ===
+    const NAME_STRIP_HEIGHT = 40;  // <- hard-coded forever-safe height
+
     const nameStrip = document.createElement('div');
+    nameStrip.classList.add('hero-name-strip');
     nameStrip.style.position = 'absolute';
     nameStrip.style.top = '0';
     nameStrip.style.left = '0';
     nameStrip.style.width = '100%';
+    nameStrip.style.height = NAME_STRIP_HEIGHT + 'px';
     nameStrip.style.background = 'rgba(0,0,0,0.55)';
-    nameStrip.style.borderBottom = '1px solid lightgray';
-    nameStrip.style.textAlign = 'center';
-    nameStrip.style.padding = '6px 0 2px 0';
+    nameStrip.style.display = 'flex';
+    nameStrip.style.flexDirection = 'column';
+    nameStrip.style.alignItems = 'center';
+    nameStrip.style.justifyContent = 'center';
+    nameStrip.style.overflow = 'hidden';
     card.appendChild(nameStrip);
 
+    // Hero name
     const nameEl = document.createElement('div');
+    nameEl.classList.add('hero-name');
     nameEl.textContent = cardData.name;
     nameEl.style.fontWeight = 'bold';
-    nameEl.style.fontSize = '18px';
+    nameEl.style.fontSize = '24px';
+    nameEl.style.whiteSpace = "nowrap";
+    nameEl.style.maxWidth = "100%";     // REQUIRED
+    nameEl.style.display = "block";     // REQUIRED for correct measurement
+    nameEl.style.textAlign = "center";  // still centered
     nameEl.style.color = cardData.color || 'white';
+    nameEl.style.whiteSpace = 'nowrap';
+    nameEl.style.webkitTextStroke = '1px rgba(211, 211, 211, 0.9)';
+    nameEl.style.textStroke = '1px rgba(211, 211, 211, 0.9)';
     nameEl.style.textShadow = '1px 1px 3px black';
     nameStrip.appendChild(nameEl);
 
-    requestAnimationFrame(() => shrinkTextToFitWidth(nameEl, 10));
+    // Shrink to fit both width AND height
+    requestAnimationFrame(() => {
+        shrinkToFitWidth(nameEl, 10);
+        shrinkTextToFitHeight(nameEl, NAME_STRIP_HEIGHT, 10);
+    });
 
-    // === TEAM ICON ROW ===
-    const teamRow = document.createElement('div');
-    teamRow.style.display = 'flex';
-    teamRow.style.justifyContent = 'center';
-    teamRow.style.gap = '6px';
-    teamRow.style.marginTop = '2px';
-    nameStrip.appendChild(teamRow);
+    // === TEAM COLUMN BELOW NAME STRIP ===
+    const teamColumn = document.createElement('div');
+    teamColumn.style.position = 'absolute';
+    teamColumn.style.top = NAME_STRIP_HEIGHT + 'px'; // <-- hard-coded start
+    teamColumn.style.left = '4px';
+    teamColumn.style.display = 'flex';
+    teamColumn.style.flexDirection = 'column';
+    teamColumn.style.alignItems = 'flex-start';
+    teamColumn.style.gap = '4px';
+    teamColumn.style.zIndex = '5';
+    card.appendChild(teamColumn);
 
     if (Array.isArray(cardData.teams)) {
-      cardData.teams.forEach(team => {
-        const iconSrc = getTeamIcon(team);
-        if (iconSrc) {
-          const icon = document.createElement('img');
-          icon.src = iconSrc;
-          icon.alt = team;
-          icon.style.width = '26px';
-          icon.style.height = '26px';
-          icon.style.objectFit = 'contain';
-          teamRow.appendChild(icon);
-        }
-      });
+        cardData.teams.forEach(team => {
+            const iconSrc = getTeamIcon(team);
+            if (iconSrc) {
+                const icon = document.createElement('img');
+                icon.src = iconSrc;
+                icon.alt = team;
+                icon.style.width = '24px';
+                icon.style.height = '24px';
+                icon.style.objectFit = 'contain';
+                icon.style.filter = 'drop-shadow(1px 1px 2px black)';
+                teamColumn.appendChild(icon);
+            }
+        });
     }
 
-    // === BOTTOM STRIP (HP, Threshold, Travel, Retreat, Abilities) ===
+    // === BOTTOM STRIP (3-column, 5-space layout) ===
     const bottomStrip = document.createElement('div');
     bottomStrip.style.position = 'absolute';
     bottomStrip.style.bottom = '0';
@@ -258,46 +282,75 @@ export function renderCard(cardId, container) {
     bottomStrip.style.height = '110px';
     bottomStrip.style.background = 'rgba(0,0,0,0.65)';
     bottomStrip.style.color = 'white';
-    bottomStrip.style.display = 'flex';
-    bottomStrip.style.flexDirection = 'column';
-    bottomStrip.style.alignItems = 'center';
-    bottomStrip.style.justifyContent = 'flex-start';
-    bottomStrip.style.paddingTop = '4px';
+    bottomStrip.style.display = 'grid';
+    bottomStrip.style.gridTemplateColumns = '1fr 4fr 1fr'; // left - center (wide) - right
+    bottomStrip.style.gridTemplateRows = '1fr 1fr'; // two rows
     bottomStrip.style.boxSizing = 'border-box';
+    bottomStrip.style.padding = '4px 6px';
     card.appendChild(bottomStrip);
 
-    // === STATS GRID (Shield / Heart / Travel / Retreat) ===
-    const statGrid = document.createElement('div');
-    statGrid.style.width = '100%';
-    statGrid.style.display = 'grid';
-    statGrid.style.gridTemplateColumns = '1fr 1fr';
-    statGrid.style.gridTemplateRows = '1fr 1fr';
-    statGrid.style.padding = '0 8px';
-    statGrid.style.boxSizing = 'border-box';
-    bottomStrip.appendChild(statGrid);
+    // LEFT COLUMN (2 rows)
+    const leftTop = document.createElement('div');
+    const leftBottom = document.createElement('div');
 
-    // Helper to build a stat block
-    function statBlock(imgSrc, valueText) {
+    // CENTER COLUMN (1 tall row spanning both)
+    const center = document.createElement('div');
+    center.style.gridRow = '1 / span 2';
+    center.style.gridColumn = '2';
+    center.style.display = 'flex';
+    center.style.alignItems = 'center';
+    center.style.justifyContent = 'center';
+    center.style.textAlign = 'center';
+    center.style.padding = '0 3px';
+    center.style.overflow = 'hidden';
+
+    // RIGHT COLUMN (2 rows)
+    const rightTop = document.createElement('div');
+    const rightBottom = document.createElement('div');
+
+    // common stat box builder
+    function statBlock(imgSrc, valueText, options = {}) {
+      const {
+        iconSize = 32,
+        iconMargin = "0px",
+        textMargin = "-22px 0 0 0",
+        className = "",
+        wrapperStyles = {},
+        textStyles = {},
+        iconStyles = {}
+      } = options;
+
       const box = document.createElement('div');
       box.style.position = 'relative';
       box.style.display = 'flex';
       box.style.alignItems = 'center';
       box.style.justifyContent = 'flex-start';
       box.style.gap = '2px';
-      box.style.fontSize = '16px';
+      box.style.fontSize = '15px';
       box.style.fontWeight = 'bold';
       box.style.textShadow = '2px 2px 3px black';
+      box.className = className;
+
+      // Apply optional wrapper overrides
+      Object.assign(box.style, wrapperStyles);
 
       const icon = document.createElement('img');
       icon.src = imgSrc;
-      icon.style.width = '30px';
-      icon.style.height = '30px';
+      icon.style.width = iconSize + 'px';
+      icon.style.height = iconSize + 'px';
       icon.style.objectFit = 'contain';
+      icon.style.margin = iconMargin;
+
+      // Apply optional icon overrides
+      Object.assign(icon.style, iconStyles);
 
       const num = document.createElement('div');
       num.textContent = valueText;
-      num.style.marginLeft = '-24px';
+      num.style.margin = textMargin;
       num.style.color = 'white';
+
+      // Apply optional text overrides
+      Object.assign(num.style, textStyles);
 
       box.appendChild(icon);
       box.appendChild(num);
@@ -306,18 +359,52 @@ export function renderCard(cardId, container) {
 
     const assets = "https://raw.githubusercontent.com/over-lords/overlords/main/Public/Images/Card%20Assets/Misc";
 
-    statGrid.appendChild(statBlock(`${assets}/Shield.png`, cardData.damageThreshold));
-    statGrid.appendChild(statBlock(`${assets}/Travel.png`, cardData.travel));
-    statGrid.appendChild(statBlock(`${assets}/Heart.png`, cardData.hp));
-    statGrid.appendChild(statBlock(`${assets}/Retreat.png`, cardData.retreat));
+    // fill the 5 spaces:
+    leftTop.appendChild(
+      statBlock(`${assets}/Shield.png`, cardData.damageThreshold, {
+        iconSize: 34,
+        iconMargin: "4px 0 0 -2px",
+        textMargin: "0px 0 0 -24px",
+        className: "shieldBlock",
+        wrapperStyles: { justifyContent: "flex-start" },
+        iconStyles: {},
+        textStyles: {}
+      })
+    );
 
-    // === ABILITIES TEXT CENTERED ===
+    leftBottom.appendChild(
+      statBlock(`${assets}/Heart.png`, cardData.hp, {
+        iconSize: 32,
+        iconMargin: "0px 0 0 0px",
+        textMargin: "-5px 0 0 -26px",
+        className: "heartBlock"
+      })
+    );
+
+    rightTop.appendChild(
+      statBlock(`${assets}/Travel.png`, cardData.travel, {
+        iconSize: 30,
+        iconMargin: "4px 0 0 8px",
+        textMargin: "8px 0 0 -22px",
+        className: "travelBlock"
+      })
+    );
+
+    rightBottom.appendChild(
+      statBlock(`${assets}/Retreat.png`, cardData.retreat, {
+        iconSize: 36,
+        iconMargin: "-4px 0 0 5px",
+        textMargin: "-2px 0 0 -25px",
+        className: "retreatBlock"
+      })
+    );
+
+    // center abilities (tall middle area)
     const abilityBox = document.createElement('div');
-    abilityBox.style.width = '96%';
-    abilityBox.style.fontSize = '12px';
+    abilityBox.style.width = '100%';
+    abilityBox.style.fontSize = '10px';
     abilityBox.style.lineHeight = '1.1em';
     abilityBox.style.textAlign = 'center';
-    abilityBox.style.marginTop = '2px';
 
     if (Array.isArray(cardData.abilitiesText)) {
       cardData.abilitiesText.forEach(a => {
@@ -327,7 +414,14 @@ export function renderCard(cardId, container) {
       });
     }
 
-    bottomStrip.appendChild(abilityBox);
+    center.appendChild(abilityBox);
+
+    // place in grid
+    bottomStrip.appendChild(leftTop);
+    bottomStrip.appendChild(center);
+    bottomStrip.appendChild(rightTop);
+    bottomStrip.appendChild(leftBottom);
+    bottomStrip.appendChild(rightBottom);
 
     const wrapper = document.createElement('div');
     wrapper.classList.add('card-wrapper');
@@ -396,6 +490,22 @@ function autoShrinkTextToFit(element, minSize = 8) {
   }
 }
 
+function shrinkToFitWidth(el, minSize = 10) {
+    let size = parseFloat(window.getComputedStyle(el).fontSize);
+    while (el.scrollWidth > el.clientWidth && size > minSize) {
+        size -= 1;
+        el.style.fontSize = size + "px";
+    }
+}
+
+function shrinkTextToFitHeight(el, maxHeight, minSize) {
+    let size = parseFloat(window.getComputedStyle(el).fontSize);
+    while (el.scrollHeight > maxHeight && size > minSize) {
+        size -= 1;
+        el.style.fontSize = size + "px";
+    }
+}
+
 function shrinkTextToFitWidth(element, minFontSize = 8) {
   if (!element) return;
 
@@ -430,6 +540,7 @@ export function getTeamIcon(teamName) {
     "https://raw.githubusercontent.com/over-lords/overlords/a61d7fb50e273106d490476bd3c621f3a6f45047/Public/Images/Card%20Assets/Misc";
 
   const map = {
+    Bat: `${cardArtFolder}/Bat.png`,
     Wonder: `${cardArtFolder}/Wonder.png`,
     Super: `${cardArtFolder}/Super.png`,
     Justice: `${cardArtFolder}/Justice League.png`,
