@@ -1,14 +1,16 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4c0f2468199e5fcd6ee3a996f5803d11a9c9d981/Public/Images/Card%20Assets/Bystanders";
 
+// ids 4201-4250
+
 export const bystanders = [
     {
-        id: "1",
+        id: "4201",
         name: "Bystander",
         image: `${cardArtFolder}/Bystander.jpg`,
         type: "Bystander"
     },
     {
-        id: "2",
+        id: "4202",
         name: "Undercover Bystander",
         image: `${cardArtFolder}/Undercover.jpg`,
         type: "Bystander",
@@ -33,7 +35,7 @@ export const bystanders = [
         ]
     },
     {
-        id: "3",
+        id: "4203",
         name: "Captured Argus Agent",
         image: `${cardArtFolder}/Argus Agent.jpg`,
         type: "Bystander",
@@ -58,7 +60,7 @@ export const bystanders = [
         ]
     },
     {
-        id: "4",
+        id: "4204",
         name: "Medic",
         image: `${cardArtFolder}/Medic.jpg`,
         type: "Bystander",
@@ -83,7 +85,7 @@ export const bystanders = [
         ]
     },
     {
-        id: "5",
+        id: "4205",
         name: "Captured Sidekick",
         image: `${cardArtFolder}/Sidekick.jpg`,
         type: "Bystander",

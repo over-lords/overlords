@@ -239,7 +239,9 @@
                             <span style="text-decoration: underline;">Hero Cards:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;Icon Cards are the "Face Card" for your Hero. This card moves between the Headquarters (the bench), and it contains the Hero's name, teams, HP, Damage Threshold, Retreat Requirement, Travel Count, and their Icon Ability (or abilities). Every Hero has a limited ability, one that can be used 1-3 times per game, it's useful and reliable, it will come up. Some Heroes have an ability that is passive, and simply applies in certain situations, these Heroes likely have a weaker limited ability to handicap them for also having a passive.</span>
-                            <br><br>
+                            <br>
+                                <div id="cardPreviewArea"></div>
+                            <br>
                             <span style="font-style: italic;">&emsp;&emsp;Action cards are the cards that you will play. These are bound to a Hero, there are a total of 20 in their decks with some repeats, though not many. Each Action Card has a unique name, effect, and possibly a damage value. You can play as many cards as you can draw, and you can waste them rather than wait until the end of your turn to discard them.</span>
                             <br><br>
                             <span style="text-decoration: underline;">Might of the Overlord:</span>
@@ -364,6 +366,61 @@
             evt.currentTarget.classList.add('active');
         }
         window.openSubTab = openSubTab;
+
+        import { heroes } from '../data/faceCards.js';
+        import { heroCards } from '../data/heroCards.js';
+        import { bystanders } from '../data/bystanders.js';
+        import { enemies } from '../data/enemies.js';
+        import { allies } from '../data/allies.js';
+        import { henchmen } from '../data/henchmen.js';
+        import { overlords } from '../data/overlords.js';
+        import { scenarios } from '../data/scenarios.js';
+        import { tactics } from '../data/tactics.js';
+        import { villains } from '../data/villains.js';
+        import { renderCard } from './utils/cardRenderer.js';
+
+        export function findAnyCardById(id) {
+            const dataSources = [
+                heroes,
+                heroCards,
+                villains,
+                henchmen,
+                bystanders,
+                enemies,
+                allies,
+                overlords,
+                tactics,
+                scenarios
+            ];
+
+            for (const source of dataSources) {
+                if (!Array.isArray(source)) continue;
+                const match = source.find(c => c.id == id);
+                if (match) return match;
+            }
+            return null;
+        }
+
+        export function printCardAnywhere(id, targetSelector) {
+            const cardData = findAnyCardById(id);
+
+            if (!cardData) {
+                console.warn(`Card with id ${id} not found in ANY data file.`);
+                return;
+            }
+
+            const target = document.querySelector(targetSelector);
+            if (!target) {
+                console.warn(`printCardAnywhere(): Cannot find target element ${targetSelector}`);
+                return;
+            }
+
+            // Use your existing renderCard()
+            const rendered = renderCard(cardData.id);
+            target.appendChild(rendered);
+        }
+
+        //printCardAnywhere("23", "#cardPreviewArea");
     </script>
     </main-content>
 </body>

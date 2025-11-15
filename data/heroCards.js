@@ -1,5 +1,8 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/f8dae46835c412a717cf9c82b648d9ff51235d72/Public/Images/Card%20Assets";
 
+// ids 0 + 201-4200
+// Starting ID for a deck: startID=(deckNumber−1)×cardsPerDeck+201
+
 export const heroCards = [
   {
     id: "0",
@@ -24,7 +27,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1",
+    id: "201",
     type: "Main",
     name: "World of Cardboard",
     hero: "Superman",
@@ -48,7 +51,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "2",
+    id: "202",
     type: "Main",
     name: "Super Flare",
     hero: "Superman",
@@ -72,7 +75,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "3",
+    id: "203",
     type: "Main",
     name: "Man of Steel",
     hero: "Superman",
@@ -96,7 +99,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "4",
+    id: "204",
     type: "Main",
     name: "Against All Odds",
     hero: "Superman",
@@ -120,7 +123,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "5",
+    id: "205",
     type: "Main",
     name: "Trinity",
     hero: "Superman",
@@ -144,7 +147,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "6",
+    id: "206",
     type: "Main",
     name: "Heat Vision",
     hero: "Superman",
@@ -168,7 +171,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "7",
+    id: "207",
     type: "Main",
     name: "Head of the Family",
     hero: "Superman",
@@ -192,7 +195,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "8",
+    id: "208",
     type: "Main",
     name: "Freeze Breath",
     hero: "Superman",
@@ -216,7 +219,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "9",
+    id: "209",
     type: "Main",
     name: "Beacon of Hope",
     hero: "Superman",
@@ -240,7 +243,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "10",
+    id: "210",
     type: "Main",
     name: "Damsel in Distress",
     hero: "Superman",
@@ -264,7 +267,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "11",
+    id: "211",
     type: "Main",
     name: "Faster than a Speeding Bullet",
     hero: "Superman",
@@ -288,7 +291,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "21",
+    id: "221",
     type: "Main",
     name: "Green Lantern's Light",
     hero: "Green Lantern (Hal Jordan)",
@@ -312,7 +315,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "22",
+    id: "222",
     type: "Main",
     name: "Beware My Power",
     hero: "Green Lantern (Hal Jordan)",
@@ -336,7 +339,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "23",
+    id: "223",
     type: "Main",
     name: "Let Those Who Worship Evil's Might",
     hero: "Green Lantern (Hal Jordan)",
@@ -360,7 +363,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "24",
+    id: "224",
     type: "Main",
     name: "No Evil Shall Escape My Sight",
     hero: "Green Lantern (Hal Jordan)",
@@ -384,7 +387,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "25",
+    id: "225",
     type: "Main",
     name: "In Blackest Night",
     hero: "Green Lantern (Hal Jordan)",
@@ -408,7 +411,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "26",
+    id: "226",
     type: "Main",
     name: "In Brightest Day",
     hero: "Green Lantern (Hal Jordan)",
@@ -432,7 +435,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "27",
+    id: "227",
     type: "Main",
     name: "Founding Member",
     hero: "Green Lantern (Hal Jordan)",
@@ -456,7 +459,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "28",
+    id: "228",
     type: "Main",
     name: "Unwavering Will",
     hero: "Green Lantern (Hal Jordan)",
@@ -480,7 +483,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "29",
+    id: "229",
     type: "Main",
     name: "Barrage",
     hero: "Green Lantern (Hal Jordan)",
@@ -504,7 +507,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "30",
+    id: "230",
     type: "Main",
     name: "Space Cop",
     hero: "Green Lantern (Hal Jordan)",
@@ -528,7 +531,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "31",
+    id: "231",
     type: "Main",
     name: "Leader of the Corps",
     hero: "Green Lantern (Hal Jordan)",
@@ -552,7 +555,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "441",
+    id: "641",
     type: "Main",
     name: "Goddess of War",
     hero: "Wonder Woman",
@@ -576,7 +579,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "442",
+    id: "642",
     type: "Main",
     name: "Daughter of Zeus",
     hero: "Wonder Woman",
@@ -600,7 +603,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "443",
+    id: "643",
     type: "Main",
     name: "Monster Slayer",
     hero: "Wonder Woman",
@@ -624,7 +627,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "444",
+    id: "644",
     type: "Main",
     name: "To the End and Back",
     hero: "Wonder Woman",
@@ -648,7 +651,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "445",
+    id: "645",
     type: "Main",
     name: "Relentless",
     hero: "Wonder Woman",
@@ -672,7 +675,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "446",
+    id: "646",
     type: "Main",
     name: "Lasso of Truth",
     hero: "Wonder Woman",
@@ -696,7 +699,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "447",
+    id: "647",
     type: "Main",
     name: "Princess of the Amazons",
     hero: "Wonder Woman",
@@ -720,7 +723,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "448",
+    id: "648",
     type: "Main",
     name: "Immortal",
     hero: "Wonder Woman",
@@ -744,7 +747,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "449",
+    id: "649",
     type: "Main",
     name: "Battle Armor",
     hero: "Wonder Woman",
@@ -768,7 +771,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "450",
+    id: "650",
     type: "Main",
     name: "Bracelets of Submission",
     hero: "Wonder Woman",
@@ -792,7 +795,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "451",
+    id: "651",
     type: "Main",
     name: "Agent of Freedom",
     hero: "Wonder Woman",
@@ -816,7 +819,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "461",
+    id: "661",
     type: "Main",
     name: "Infinite Mass Punch",
     hero: "Flash (Barry Allen)",
@@ -840,7 +843,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "462",
+    id: "662",
     type: "Main",
     name: "Speed of Light",
     hero: "Flash (Barry Allen)",
@@ -864,7 +867,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "463",
+    id: "663",
     type: "Main",
     name: "Fastest Man Alive?",
     hero: "Flash (Barry Allen)",
@@ -888,7 +891,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "464",
+    id: "664",
     type: "Main",
     name: "Speed Force Storm",
     hero: "Flash (Barry Allen)",
@@ -912,7 +915,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "465",
+    id: "665",
     type: "Main",
     name: "Analyze All Possibilities",
     hero: "Flash (Barry Allen)",
@@ -936,7 +939,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "466",
+    id: "666",
     type: "Main",
     name: "Transcend Time and Space",
     hero: "Flash (Barry Allen)",
@@ -960,7 +963,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "467",
+    id: "667",
     type: "Main",
     name: "Back in a Flash",
     hero: "Flash (Barry Allen)",
@@ -984,7 +987,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "468",
+    id: "668",
     type: "Main",
     name: "Cyclone",
     hero: "Flash (Barry Allen)",
@@ -1008,7 +1011,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "469",
+    id: "669",
     type: "Main",
     name: "Creator of the Speed Force",
     hero: "Flash (Barry Allen)",
@@ -1032,7 +1035,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "470",
+    id: "670",
     type: "Main",
     name: "Bullet Time",
     hero: "Flash (Barry Allen)",
@@ -1056,7 +1059,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "471",
+    id: "671",
     type: "Main",
     name: "Save a Life",
     hero: "Flash (Barry Allen)",
@@ -1080,7 +1083,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "472",
+    id: "672",
     type: "Main",
     name: "In the Nick of Time",
     hero: "Flash (Barry Allen)",
@@ -1104,7 +1107,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "861",
+    id: "1061",
     type: "Main",
     name: "I Am Batman",
     hero: "Batman",
@@ -1128,7 +1131,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "862",
+    id: "1062",
     type: "Main",
     name: "I Am The Night",
     hero: "Batman",
@@ -1152,7 +1155,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "863",
+    id: "1063",
     type: "Main",
     name: "I Am Vengeance",
     hero: "Batman",
@@ -1176,7 +1179,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "864",
+    id: "1064",
     type: "Main",
     name: "Caped Crusader",
     hero: "Batman",
@@ -1200,7 +1203,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "865",
+    id: "1065",
     type: "Main",
     name: "Just Getting Started",
     hero: "Batman",
@@ -1224,7 +1227,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "866",
+    id: "1066",
     type: "Main",
     name: "Legacy",
     hero: "Batman",
@@ -1248,7 +1251,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "867",
+    id: "1067",
     type: "Main",
     name: "Master of Fear",
     hero: "Batman",
@@ -1272,7 +1275,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "868",
+    id: "1068",
     type: "Main",
     name: "The Most Dangerous Man in the World",
     hero: "Batman",
@@ -1296,7 +1299,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "869",
+    id: "1069",
     type: "Main",
     name: "Secret Weapon",
     hero: "Batman",
@@ -1320,7 +1323,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "870",
+    id: "1070",
     type: "Main",
     name: "Partners in...?",
     hero: "Batman",
@@ -1344,7 +1347,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "871",
+    id: "1071",
     type: "Main",
     name: "Dynamic Duo",
     hero: "Batman",
@@ -1368,7 +1371,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "872",
+    id: "1072",
     type: "Main",
     name: "Gotham Defender",
     hero: "Batman",
@@ -1392,7 +1395,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "873",
+    id: "1073",
     type: "Main",
     name: "Alone No Longer",
     hero: "Batman",
@@ -1416,7 +1419,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "881",
+    id: "1081",
     type: "Main",
     name: "Booyah!",
     hero: "Cyborg",
@@ -1440,7 +1443,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "882",
+    id: "1082",
     type: "Main",
     name: "Plasma Cannon",
     hero: "Cyborg",
@@ -1464,7 +1467,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "883",
+    id: "1083",
     type: "Main",
     name: "Apokaliptian Power",
     hero: "Cyborg",
@@ -1488,7 +1491,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "884",
+    id: "1084",
     type: "Main",
     name: "Human Instinct",
     hero: "Cyborg",
@@ -1512,7 +1515,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "886",
+    id: "1086",
     type: "Main",
     name: "Rapid Self-Modification",
     hero: "Cyborg",
@@ -1536,7 +1539,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "887",
+    id: "1087",
     type: "Main",
     name: "Victory or Nothing",
     hero: "Cyborg",
@@ -1560,7 +1563,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "888",
+    id: "1088",
     type: "Main",
     name: "Robot Vision",
     hero: "Cyborg",
@@ -1584,7 +1587,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "889",
+    id: "1089",
     type: "Main",
     name: "Half Man, Half Machine",
     hero: "Cyborg",
@@ -1608,7 +1611,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "890",
+    id: "1090",
     type: "Main",
     name: "Self-Repair",
     hero: "Cyborg",
@@ -1632,7 +1635,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "891",
+    id: "1091",
     type: "Main",
     name: "Tougher Than Most",
     hero: "Cyborg",
@@ -1656,7 +1659,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "892",
+    id: "1092",
     type: "Main",
     name: "Hack the System",
     hero: "Cyborg",
@@ -1680,7 +1683,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "893",
+    id: "1093",
     type: "Main",
     name: "Power of the People",
     hero: "Cyborg",
@@ -1704,7 +1707,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1021",
+    id: "1221",
     type: "Main",
     name: "Faster Than Light",
     hero: "Flash (Wally West)",
@@ -1728,7 +1731,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1022",
+    id: "1222",
     type: "Main",
     name: "At One with the Speed Force",
     hero: "Flash (Wally West)",
@@ -1752,7 +1755,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1023",
+    id: "1223",
     type: "Main",
     name: "Pure Momentum",
     hero: "Flash (Wally West)",
@@ -1776,7 +1779,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1024",
+    id: "1224",
     type: "Main",
     name: "Reunited",
     hero: "Flash (Wally West)",
@@ -1800,7 +1803,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1025",
+    id: "1225",
     type: "Main",
     name: "Eternity of Waiting",
     hero: "Flash (Wally West)",
@@ -1824,7 +1827,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1026",
+    id: "1226",
     type: "Main",
     name: "Next Generation",
     hero: "Flash (Wally West)",
@@ -1848,7 +1851,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1027",
+    id: "1227",
     type: "Main",
     name: "Faster Than a Locomotive",
     hero: "Flash (Wally West)",
@@ -1872,7 +1875,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1028",
+    id: "1228",
     type: "Main",
     name: "Good 'ol Days",
     hero: "Flash (Wally West)",
@@ -1896,7 +1899,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1029",
+    id: "1229",
     type: "Main",
     name: "Lost in the Speed Force",
     hero: "Flash (Wally West)",
@@ -1920,7 +1923,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1030",
+    id: "1230",
     type: "Main",
     name: "Love that Transcends Death",
     hero: "Flash (Wally West)",
@@ -1944,7 +1947,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1031",
+    id: "1231",
     type: "Main",
     name: "Vibrational Frequency",
     hero: "Flash (Wally West)",
@@ -1968,7 +1971,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1032",
+    id: "1232",
     type: "Main",
     name: "Out of Place",
     hero: "Flash (Wally West)",
@@ -1992,7 +1995,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1033",
+    id: "1233",
     type: "Main",
     name: "Rewrite Creation",
     hero: "Flash (Wally West)",
@@ -2016,7 +2019,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1034",
+    id: "1234",
     type: "Main",
     name: "Flash Time",
     hero: "Flash (Wally West)",
@@ -2040,7 +2043,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1035",
+    id: "1235",
     type: "Main",
     name: "Escape the Speed Force",
     hero: "Flash (Wally West)",
@@ -2064,5 +2067,3 @@ export const heroCards = [
     ]
   },
 ]
-
-// Starting ID for a deck: startID=(deckNumber−1)×cardsPerDeck+1

@@ -1,8 +1,10 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/82b59b48f07f4daed14ea431943467732b842350/Public/Images/Card%20Assets/Henchmen";
 
+// ids 4851-5000
+
 export const henchmen = [
   {
-    id: "1",
+    id: "4851",
     name: "Joker Gang",
     image: `${cardArtFolder}/Joker Gang.jpg`,
     type: "Henchman",
@@ -29,7 +31,7 @@ export const henchmen = [
     ]
   },
   {
-    id: "2",
+    id: "4852",
     name: "Mobsters",
     image: `${cardArtFolder}/Mobsters.jpg`,
     type: "Henchman",
@@ -56,7 +58,7 @@ export const henchmen = [
     ]
   },
   {
-    id: "3",
+    id: "4853",
     name: "Parademons",
     image: `${cardArtFolder}/Parademons.jpg`,
     type: "Henchman",
@@ -94,7 +96,7 @@ export const henchmen = [
     ]
   },
   {
-    id: "4",
+    id: "4854",
     name: "Brainiac Drones",
     image: `${cardArtFolder}/Braniac Drones.jpg`,
     type: "Henchman",
@@ -143,7 +145,7 @@ export const henchmen = [
     ]
   },
   {
-    id: "5",
+    id: "4855",
     name: "Hive Soldiers",
     image: `${cardArtFolder}/hiveSoldiers.jpg`,
     type: "Henchman",
@@ -170,7 +172,7 @@ export const henchmen = [
     ]
   },
   {
-    id: "6",
+    id: "4856",
     name: "Demons",
     image: `${cardArtFolder}/Demons.jpg`,
     type: "Henchman",
@@ -208,7 +210,7 @@ export const henchmen = [
     ]
   },
   {
-    id: "7",
+    id: "4857",
     name: "Manhunters",
     image: `${cardArtFolder}/Manhunters.jpg`,
     type: "Henchman",

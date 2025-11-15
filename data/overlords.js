@@ -1,8 +1,10 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/0cbdcd8b5a28b55d0e3be3bb2ceb9f1e00e3825a/Public/Images/Card%20Assets/Overlords";
 
+// ids 5001-5200
+
 export const overlords = [
     {
-    id: "1",
+    id: "5001",
     name: "Darkseid",
     image: `${cardArtFolder}/Darkseid.jpg`,
     type: "Overlord",
@@ -60,7 +62,7 @@ export const overlords = [
     ]
   },
   {
-    id: "2",
+    id: "5002",
     name: "Joker",
     image: `${cardArtFolder}/Joker.jpg`,
     type: "Overlord",
@@ -119,7 +121,7 @@ export const overlords = [
     ]
   },
   {
-    id: "3",
+    id: "5003",
     name: "Psimon",
     image: `${cardArtFolder}/Psimon.jpg`,
     type: "Overlord",
@@ -177,7 +179,7 @@ export const overlords = [
     ]
   },
   {
-    id: "4",
+    id: "5004",
     name: "Lex Luthor (Power Armor)",
     image: `${cardArtFolder}/Lex Luthor Power Armor.jpg`,
     type: "Overlord",
@@ -233,7 +235,7 @@ export const overlords = [
     ]
   },
   {
-    id: "5",
+    id: "5005",
     name: "Lex Luthor",
     image: `${cardArtFolder}/Lex Luthor.jpg`,
     type: "Overlord",
@@ -284,7 +286,7 @@ export const overlords = [
         condition: `gameStart()`,
         uses: `1`,
         shared: `no`,
-        effect: `addNextOverlord(4)`
+        effect: `addNextOverlord(5004)`
       }
     ]
   },

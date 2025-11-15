@@ -1,8 +1,10 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4c0f2468199e5fcd6ee3a996f5803d11a9c9d981/Public/Images/Card%20Assets/Misc";
 
+// ids 5401-5600
+
 export const tactics = [
   {
-    id: "1",
+    id: "5401",
     name: "Metropolis Bank Robbery",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
@@ -59,7 +61,7 @@ export const tactics = [
     ]
   },
   {
-    id: "2",
+    id: "5402",
     name: "Welcome to Hell",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
@@ -116,7 +118,7 @@ export const tactics = [
     ]
   },
   {
-    id: "3",
+    id: "5403",
     name: "Kryptonian Strength Enhancer",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
@@ -173,7 +175,7 @@ export const tactics = [
     ]
   },
   {
-    id: "4",
+    id: "5404",
     name: "We Are Legion",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",

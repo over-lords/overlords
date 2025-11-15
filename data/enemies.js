@@ -1,8 +1,10 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4c0f2468199e5fcd6ee3a996f5803d11a9c9d981/Public/Images/Card%20Assets/Enemies";
 
+// ids 4251-4550
+
 export const enemies = [
     {
-        id: "1",
+        id: "4251",
         name: "Rival",
         image: `${cardArtFolder}/Rival.jpg`,
         type: "Enemy",

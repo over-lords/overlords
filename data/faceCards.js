@@ -1,5 +1,7 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4bb2b39a79b5b0b717ddd5fc62821adb7d7c9cd6/Public/Images/Card%20Assets/HeroCards"
 
+// ids 1-200
+
 export const heroes = [
   {
     id: "1",

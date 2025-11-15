@@ -1,8 +1,10 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/1104a8d417845a2e5764fddb16bf194889a19668/Public/Images/Card%20Assets/Villains";
 
+// ids 5601-7000
+
 export const villains = [
   {
-    id: "1",
+    id: "5601",
     name: "Faora",
     image: `${cardArtFolder}/Faora.jpg`,
     type: "Villain",
@@ -42,7 +44,7 @@ export const villains = [
     ]
   },
   {
-    id: "2",
+    id: "5602",
     name: "Blight",
     image: `${cardArtFolder}/Blight.jpg`,
     type: "Villain",
@@ -83,7 +85,7 @@ export const villains = [
     ]
   },
   {
-    id: "3",
+    id: "5603",
     name: "Ravager",
     image: `${cardArtFolder}/Ravager (Grant).jpg`,
     type: "Villain",
@@ -122,7 +124,7 @@ export const villains = [
     ]
   },
   {
-    id: "4",
+    id: "5604",
     name: "Peacemaker",
     image: `${cardArtFolder}/Peacemaker.jpg`,
     type: "Villain",
@@ -161,7 +163,7 @@ export const villains = [
     ]
   },
   {
-    id: "5",
+    id: "5605",
     name: "Metallo",
     image: `${cardArtFolder}/metallo.jpg`,
     type: "Villain",
@@ -200,7 +202,7 @@ export const villains = [
     ]
   },
   {
-    id: "6",
+    id: "5606",
     name: "Ultra-Humanite",
     image: `${cardArtFolder}/ultraHumanite.jpg`,
     type: "Villain",
@@ -239,7 +241,7 @@ export const villains = [
     ]
   },
   {
-    id: "7",
+    id: "5607",
     name: "Parasite",
     image: `${cardArtFolder}/parasite.jpg`,
     type: "Villain",
@@ -278,7 +280,7 @@ export const villains = [
     ]
   },
   {
-    id: "8",
+    id: "5608",
     name: "Silver Banshee",
     image: `${cardArtFolder}/silverBanshee.jpg`,
     type: "Villain",
@@ -317,7 +319,7 @@ export const villains = [
     ]
   },
   {
-    id: "9",
+    id: "5609",
     name: "Toyman",
     image: `${cardArtFolder}/toyman.jpg`,
     type: "Villain",
@@ -356,7 +358,7 @@ export const villains = [
     ]
   },
   {
-    id: "10",
+    id: "5610",
     name: "Hector Hammond",
     image: `${cardArtFolder}/hectorHammond.jpg`,
     type: "Villain",
@@ -395,7 +397,7 @@ export const villains = [
     ]
   },
   {
-    id: "11",
+    id: "5611",
     name: "Livewire",
     image: `${cardArtFolder}/livewire.jpg`,
     type: "Villain",
@@ -434,7 +436,7 @@ export const villains = [
     ]
   },
   {
-    id: "12",
+    id: "5612",
     name: "Cyborg Superman",
     image: `${cardArtFolder}/cyborgSuperman.jpg`,
     type: "Villain",
@@ -512,7 +514,7 @@ export const villains = [
     ]
   },
   {
-    id: "14",
+    id: "5614",
     name: "Firefly",
     image: `${cardArtFolder}/firefly.jpg`,
     type: "Villain",
@@ -551,7 +553,7 @@ export const villains = [
     ]
   },
   {
-    id: "15",
+    id: "5615",
     name: "Black Mask",
     image: `${cardArtFolder}/blackMask.jpg`,
     type: "Villain",
@@ -590,7 +592,7 @@ export const villains = [
     ]
   },
   {
-    id: "16",
+    id: "5616",
     name: "Man-Bat",
     image: `${cardArtFolder}/manBat.jpg`,
     type: "Villain",
@@ -629,7 +631,7 @@ export const villains = [
     ]
   },
   {
-    id: "17",
+    id: "5617",
     name: "Deadshot",
     image: `${cardArtFolder}/deadshot.jpg`,
     type: "Villain",
@@ -668,7 +670,7 @@ export const villains = [
     ]
   },
   {
-    id: "18",
+    id: "5618",
     name: "Deathstroke",
     image: `${cardArtFolder}/deathstroke.jpg`,
     type: "Villain",
