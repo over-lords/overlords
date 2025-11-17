@@ -8,6 +8,7 @@ export const henchmen = [
     name: "Joker Gang",
     image: `${cardArtFolder}/Joker Gang.jpg`,
     type: "Henchman",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
@@ -35,6 +36,7 @@ export const henchmen = [
     name: "Mobsters",
     image: `${cardArtFolder}/Mobsters.jpg`,
     type: "Henchman",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
@@ -62,6 +64,7 @@ export const henchmen = [
     name: "Parademons",
     image: `${cardArtFolder}/Parademons.jpg`,
     type: "Henchman",
+    doNotShow: "false",
     hp: "2",
     damage: "2",
     abilitiesText: [
@@ -100,6 +103,7 @@ export const henchmen = [
     name: "Brainiac Drones",
     image: `${cardArtFolder}/Braniac Drones.jpg`,
     type: "Henchman",
+    doNotShow: "false",
     hp: "3",
     damage: "3",
     abilitiesText: [
@@ -149,6 +153,7 @@ export const henchmen = [
     name: "Hive Soldiers",
     image: `${cardArtFolder}/hiveSoldiers.jpg`,
     type: "Henchman",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
@@ -176,6 +181,7 @@ export const henchmen = [
     name: "Demons",
     image: `${cardArtFolder}/Demons.jpg`,
     type: "Henchman",
+    doNotShow: "false",
     hp: "2",
     damage: "2",
     abilitiesText: [
@@ -214,6 +220,7 @@ export const henchmen = [
     name: "Manhunters",
     image: `${cardArtFolder}/Manhunters.jpg`,
     type: "Henchman",
+    doNotShow: "true",
     hp: "3",
     damage: "3",
     abilitiesText: [

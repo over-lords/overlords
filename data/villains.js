@@ -48,7 +48,7 @@ export const villains = [
     name: "Blight",
     image: `${cardArtFolder}/Blight.jpg`,
     type: "Villain",
-    doNotShow: "false",
+    doNotShow: "true",
     hero: "Batman Beyond",
     hp: "15",
     damage: "2",
@@ -56,7 +56,7 @@ export const villains = [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
                Might of the Overlord: KO 2 Bystanders. <span class="line-gap"></span> 
-               Reward: You may draw from the Enemies and Allies Pile.`
+               Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
       }
     ],
     abilitiesNamePrint: [
@@ -134,7 +134,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: You may draw from the Enemies and Allies Pile.`
+        text: `Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
       }
     ],
     abilitiesNamePrint: [
@@ -557,7 +557,7 @@ export const villains = [
     name: "Black Mask",
     image: `${cardArtFolder}/blackMask.jpg`,
     type: "Villain",
-    doNotShow: "false",
+    doNotShow: "true",
     hero: "Batman",
     hp: "3",
     damage: "1",

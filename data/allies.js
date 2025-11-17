@@ -8,6 +8,7 @@ export const allies = [
         name: "Frankenstein",
         image: `${cardArtFolder}/Frankenstein.jpg`,
         type: "Ally",
+        doNotShow: "false",
         abilitiesText: [
             {
                 text: `Deal 10 Damage to the Overlord.`

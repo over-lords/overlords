@@ -8,6 +8,7 @@ export const enemies = [
         name: "Rival",
         image: `${cardArtFolder}/Rival.png`,
         type: "Enemy",
+        doNotShow: "false",
         abilitiesText: [
             {
                 text: `Your Hero's Damage Threshold is reduced to 1 until the start of their next turn.`

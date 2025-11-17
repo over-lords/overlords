@@ -10,7 +10,7 @@ export const overlords = [
     type: "Overlord",
     level: "3",
     hp: "150",
-    doNotShow: "false",
+    doNotShow: "true",
     abilitiesText: [
       {
         text: `At the end of a Hero's turn, if they engaged Darkseid, they take 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span>
@@ -68,7 +68,7 @@ export const overlords = [
     type: "Overlord",
     level: "1",
     hp: "40",
-    doNotShow: "false",
+    doNotShow: "true",
     abilitiesText: [
       {
         text: `At the start of the game, Joker's Hit Points are increased by 3 for every active [ICON:Bat] Hero. <span class="line-gap"></span>
@@ -127,7 +127,7 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "55",
-    doNotShow: "false",
+    doNotShow: "true",
     abilitiesText: [
       {
         text: `If a Hero is KO'd: Next turn do not draw from the Villain Deck, that Hero enters as a Villain. <span class="line-gap"></span>

@@ -8,6 +8,7 @@ export const scenarios = [
         name: "Kid Stuff",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
         {
@@ -34,6 +35,7 @@ export const scenarios = [
         name: "Enemy Telepath",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
+        doNotShow: "true",
         hp: "10",
         abilitiesText: [
         {
