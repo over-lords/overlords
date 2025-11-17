@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/f8dae46835c412a717cf9c82b648d9ff51235d72/Public/Images/Card%20Assets";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Card%20Assets";
 
 // ids 0 + 201-4200
 // Starting ID for a deck: startID=(deckNumber−1)×cardsPerDeck+201
