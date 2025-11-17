@@ -427,7 +427,287 @@ export function renderCard(cardId, container) {
     wrapper.classList.add('card-wrapper');
     wrapper.appendChild(card);
     return wrapper;
+  } else if (cardData.type === "Might") {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.position = 'relative';
+    card.style.width = '230px';
+    card.style.height = '350px';
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '8px';
+    card.style.border = '2px solid black';
+    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = '#000';
+
+    // Body image
+    const img = document.createElement('img');
+    img.src = "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets/Misc/Might%20of%20the%20Overlord.jpg";
+    img.alt = "Might of the Overlord";
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    card.appendChild(img);
+
+    // Bottom label strip
+    const label = document.createElement('div');
+    label.textContent = "Might of the Overlord";
+    label.style.position = 'absolute';
+    label.style.bottom = '0';
+    label.style.left = '0';
+    label.style.width = '100%';
+    label.style.background = 'rgba(0,0,0,0.6)';
+    label.style.color = '#d0d0d0';
+    label.style.textAlign = 'center';
+    label.style.padding = '8px 0';
+    label.style.fontSize = '18px';
+    label.style.fontWeight = 'bold';
+    label.style.textShadow = '1px 1px 3px black';
+    card.appendChild(label);
+
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+    return wrapper;
+  } else if (cardData.type === "Ally" || cardData.type === "Enemy") {
+    const isAlly = cardData.type === "Ally";
+
+    // Colors
+    const overlayColor = isAlly
+        ? "rgba(0, 80, 200, 0.55)"    // blue, semi-transparent
+        : "rgba(200, 0, 0, 0.55)";    // red, semi-transparent
+
+    // === CARD BASE ===
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.position = 'relative';
+    card.style.width = '230px';
+    card.style.height = '350px';
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '8px';
+    card.style.border = '2px solid black';
+    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = '#000';
+
+    // === FULL IMAGE ===
+    const img = document.createElement('img');
+    img.src = cardData.image;
+    img.alt = cardData.name;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    card.appendChild(img);
+
+    // === TOP TITLE STRIP ===
+    const topBar = document.createElement('div');
+    topBar.style.position = 'absolute';
+    topBar.style.top = '0';
+    topBar.style.left = '0';
+    topBar.style.width = '100%';
+    topBar.style.height = '40px';
+    topBar.style.background = overlayColor;
+    topBar.style.display = 'flex';
+    topBar.style.alignItems = 'center';
+    topBar.style.justifyContent = 'center';
+    topBar.style.color = '#d0d0d0';
+    topBar.style.fontSize = '20px';
+    topBar.style.fontWeight = 'bold';
+    topBar.style.textShadow = '1px 1px 3px black';
+    topBar.style.overflow = 'hidden';
+    topBar.style.whiteSpace = 'nowrap';
+    topBar.style.textAlign = 'center';
+    topBar.textContent = cardData.name;
+    card.appendChild(topBar);
+
+    requestAnimationFrame(() => {
+        shrinkToFitWidth(topBar, 10);
+    });
+
+    // === BOTTOM ABILITY STRIP ===
+    const bottomBar = document.createElement('div');
+    bottomBar.style.position = 'absolute';
+    bottomBar.style.bottom = '0';
+    bottomBar.style.left = '0';
+    bottomBar.style.width = '100%';
+    bottomBar.style.height = '100px';
+    bottomBar.style.background = overlayColor;
+    bottomBar.style.color = '#d0d0d0';
+    bottomBar.style.display = 'flex';
+    bottomBar.style.alignItems = 'center';
+    bottomBar.style.justifyContent = 'center';
+    bottomBar.style.padding = '8px';
+    bottomBar.style.textAlign = 'center';
+    bottomBar.style.fontSize = '14px';
+    bottomBar.style.lineHeight = '1.2em';
+    bottomBar.style.overflow = 'hidden';
+    card.appendChild(bottomBar);
+
+    const textBox = document.createElement('div');
+    textBox.style.width = '100%';
+    textBox.style.maxHeight = '100%';
+    textBox.style.overflow = 'hidden';
+
+    if (Array.isArray(cardData.abilitiesText)) {
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement('div');
+            line.innerHTML = renderAbilityText(a.text);
+            line.style.display = "flex";
+            line.style.textAlign = "center";
+            line.style.width = "92.5%";
+            textBox.appendChild(line);
+        });
+    }
+
+    bottomBar.appendChild(textBox);
+
+    requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
+
+    // === WRAP & RETURN ===
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+    return wrapper;
+  } else if (cardData.type === "Henchman" || cardData.type === "Villain") {
+
+  } else if (cardData.type === "Overlord") {
+
+  } else if (cardData.type === "Scenario") {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.position = 'relative';
+    card.style.width = '230px';
+    card.style.height = '350px';
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '8px';
+    card.style.border = '2px solid black';
+    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = '#000';
+
+    // === BACKGROUND IMAGE ===
+    const img = document.createElement('img');
+    img.src = "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets/Misc/Scenario.jpg";
+    img.alt = cardData.name;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.objectPosition = 'center';
+    card.appendChild(img);
+
+    // === TOP NAME STRIP ===
+    const nameStrip = document.createElement('div');
+    nameStrip.style.position = 'absolute';
+    nameStrip.style.top = '0';
+    nameStrip.style.left = '0';
+    nameStrip.style.width = '100%';
+    nameStrip.style.height = '32px';
+    nameStrip.style.background = 'rgba(0,0,0,0.55)';
+    nameStrip.style.display = 'flex';
+    nameStrip.style.justifyContent = 'center';
+    nameStrip.style.alignItems = 'center';
+    nameStrip.style.color = '#d0d0d0';
+    nameStrip.style.fontSize = '20px';
+    nameStrip.style.fontWeight = 'bold';
+    nameStrip.style.textShadow = '1px 1px 3px black';
+    nameStrip.style.overflow = 'hidden';
+    nameStrip.style.whiteSpace = 'nowrap';
+    nameStrip.textContent = cardData.name;
+    card.appendChild(nameStrip);
+
+    requestAnimationFrame(() => {
+        shrinkToFitWidth(nameStrip, 10);
+    });
+
+    // === BOTTOM STRIP ===
+    const bottom = document.createElement('div');
+    bottom.style.position = 'absolute';
+    bottom.style.bottom = '0';
+    bottom.style.left = '0';
+    bottom.style.width = '100%';
+    bottom.style.height = '100px';
+    bottom.style.background = 'rgba(0,0,0,0.65)';
+    bottom.style.color = 'white';
+    bottom.style.display = 'flex';
+    bottom.style.justifyContent = 'space-between';
+    bottom.style.alignItems = 'center';
+    bottom.style.padding = '8px 10px';
+    card.appendChild(bottom);
+
+    // === ABILITY TEXT (LEFT) ===
+    const textBox = document.createElement('div');
+    textBox.style.flex = '1';
+    textBox.style.fontSize = '13px';
+    textBox.style.lineHeight = '1.2em';
+    textBox.style.textAlign = 'left';
+    textBox.style.marginRight = '10px';
+    textBox.style.overflow = 'hidden';
+
+    if (Array.isArray(cardData.abilitiesText)) {
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement('div');
+            line.innerHTML = renderAbilityText(a.text);
+            textBox.appendChild(line);
+        });
+    }
+
+    bottom.appendChild(textBox);
+
+    requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
+
+    // === HP ON HEART ICON (RIGHT) ===
+    const hpContainer = document.createElement('div');
+    hpContainer.style.position = 'relative';
+    hpContainer.style.width = '60px';
+    hpContainer.style.height = '60px';
+    hpContainer.style.flexShrink = '0';
+
+    const heartImg = document.createElement('img');
+    heartImg.src = "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets/Misc/Heart.png";
+    heartImg.alt = "HP";
+    heartImg.style.position = 'absolute';
+    heartImg.style.left = '-8px';
+    heartImg.style.width = '80%';
+    heartImg.style.height = '80%';
+    heartImg.style.objectFit = 'contain';
+    hpContainer.appendChild(heartImg);
+
+    const hpNum = document.createElement('div');
+    hpNum.textContent = cardData.hp || "0";
+    hpNum.style.position = 'absolute';
+    hpNum.style.top = '37%';
+    hpNum.style.left = 'calc(50% - 13px)';
+    hpNum.style.transform = 'translate(-50%, -50%)';
+    hpNum.style.fontSize = '21px';
+    hpNum.style.fontWeight = 'bold';
+    hpNum.style.color = 'white';
+    hpNum.style.textShadow = '2px 2px 4px black';
+    hpContainer.appendChild(hpNum);
+
+    bottom.appendChild(hpContainer);
+
+    // Wrap & return
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+    return wrapper;
+  } else if (cardData.type === "Bystander") {
+
   }
+
+  // If card not found, display card type name
+    const placeholder = document.createElement("div");
+    placeholder.style.width = "230px";
+    placeholder.style.height = "350px";
+    placeholder.style.background = "white";
+    placeholder.style.display = "flex";
+    placeholder.style.alignItems = "center";
+    placeholder.style.justifyContent = "center";
+    placeholder.style.border = "2px solid black";
+    placeholder.style.borderRadius = "8px";
+    placeholder.textContent = `TODO: ${cardData.type}`;
+
+    return placeholder;
 }
 
 // === Helper: render ability text with inline icons ===

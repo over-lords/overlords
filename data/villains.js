@@ -475,7 +475,7 @@ export const villains = [
     ]
   },
   {
-    id: "13",
+    id: "5613",
     name: "Atomic Skull",
     image: `${cardArtFolder}/atomicSkull.jpg`,
     type: "Villain",

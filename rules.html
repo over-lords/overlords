@@ -276,26 +276,52 @@
                             <span style="text-decoration: underline;">Might of the Overlord:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;A Might of the Overlord triggers all effects on the field labeled "Might of the Overlord". If that card is pulled, those effects will activate.</span>
-                            <br><br>
+                            <br>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="mightCardPreview"></div>
+                                </div></div></div>
+                            <br>
                             <span style="text-decoration: underline;">Bystander:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;There are five kinds of Bystander. These are placed into the Villain Deck at random, and can also be captured directly, or rescued without being captured. They have unique effects, and go into your hand and remain there until used like any other card. They are counted as rescued at that time, and do not need to be used to be counted as rescued. No discard effect can un-rescue a Bystander.</span>
-                            <br><br>
+                            <br>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="bystanderCardPreview"></div>
+                                </div></div></div>
+                            <br>
                             <span style="text-decoration: underline;">Scenario:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;Unique cards that temporarily overlay upon the Overlord and blanket them for a few turns. Scenarios have HP and you can smack them until they're destroyed. You can't win if there's one there, so you have to go through it.</span>
-                            <br><br>
+                            <br>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="scenarioCardPreview"></div>
+                                </div></div></div>
+                            <br>
                             <span style="text-decoration: underline;">Henchmen:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;The weakest enemies you will face directly, Henchmen have 1-3 HP and Damage, they always match, and they always come with a positive "Upon Victory" effect. When you beat a Henchman, you get a prize. So knock 'em down fast to get an edge on beating the harder enemies.</span>
-                            <br><br>
+                            <br>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="henchmanCardPreview"></div>
+                                </div></div></div>
+                            <br>
                             <span style="text-decoration: underline;">Villains:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;The harder enemy variety you fight directly, these enter cities, have varying amounts of HP and Damage, as well as passives, active effects, and various Upon Victory effects.</span>
-                            <br><br>
+                            <br>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="villainCardPreview"></div>
+                                </div></div></div>
+                            <br>
                             <span style="text-decoration: underline;">Enemies & Allies:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;Drawn from their own unique pile upon a card or ability's activation, these two types of cards are almost identical, having a slight buff or debuff unique to each card when drawn. Heroes are never required to draw from the pile when given the chance, but sometimes you don't have a choice as the Villains always draw from it when they can. In singleplayer, you can decide your ratio of Enemies to Allies within the deck, unless the Tactic or Overlord prevents you from doing so.</span>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="allyCardPreview"></div>
+                                </div></div></div>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="enemyCardPreview"></div>
+                                </div></div></div>
                         </text-body>
                     </div>
                 </div>
@@ -306,7 +332,11 @@
                             <span style="text-decoration: underline;">Overlords:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;Every evil plot needs a big bad, and for this game, that's the Overlord. There are 3 difficulties of Overlord, as denoted in the selector by a 1 (easy), 2 (medium), or 3 (hard). Each Overlord has HP, as well as their basic abilities and their Might of the Overlord ability, which is activated each time a Might of the Overlord is pulled from the Villain Deck.</span>
-                            <br><br>
+                            <br>
+                                <div style="text-align:center;"><div class="card-holder scale60"><div class="card-scale">
+                                    <div id="overlordCardPreview"></div>
+                                </div></div></div>
+                            <br>
                             <span style="text-decoration: underline;">Tactics:</span>
                             <br><br>
                             <span style="font-style: italic;">&emsp;&emsp;Tactics are not cards, just plans that the Overlord uses. Tactics have difficulty levels 1 (easy), 2 (medium), or 3 (hard), just like Overlords. Most Tactics are split into two parts - 1. The passive change to the game's rules. 2. A Might of the Overlord effect. Some may not have one or the other, but most have both.</span>
@@ -452,6 +482,14 @@
 
         printCardAnywhere("23", "#iconCardPreview");
         printCardAnywhere("641", "#heroCardPreview");
+        printCardAnywhere("7001", "#mightCardPreview");
+        printCardAnywhere("4205", "#bystanderCardPreview");
+        printCardAnywhere("5613", "#villainCardPreview");
+        printCardAnywhere("5201", "#scenarioCardPreview");
+        printCardAnywhere("4551", "#allyCardPreview");
+        printCardAnywhere("4251", "#enemyCardPreview");
+        printCardAnywhere("4853", "#henchmanCardPreview");
+        printCardAnywhere("5001", "#overlordCardPreview");
     </script>
     </main-content>
 </body>

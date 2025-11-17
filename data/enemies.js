@@ -6,7 +6,7 @@ export const enemies = [
     {
         id: "4251",
         name: "Rival",
-        image: `${cardArtFolder}/Rival.jpg`,
+        image: `${cardArtFolder}/Rival.png`,
         type: "Enemy",
         abilitiesText: [
             {

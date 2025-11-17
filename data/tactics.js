@@ -1,8 +1,15 @@
 const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4c0f2468199e5fcd6ee3a996f5803d11a9c9d981/Public/Images/Card%20Assets/Misc";
 
-// ids 5401-5600
+// ids 5401-5600 + 7001 (for MOTO)
 
 export const tactics = [
+  {
+    id: "7001",
+    name: "Might of the Overlord",
+    image: `${cardArtFolder}/Might of the Overlord.jpg`,
+    doNotShow: "true",
+    type: "Might",
+  },
   {
     id: "5401",
     name: "Metropolis Bank Robbery",
