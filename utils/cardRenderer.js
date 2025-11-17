@@ -570,8 +570,297 @@ export function renderCard(cardId, container) {
     return wrapper;
   } else if (cardData.type === "Henchman" || cardData.type === "Villain") {
 
-  } else if (cardData.type === "Overlord") {
+    const card = document.createElement("div");
+    card.classList.add("card");
+    card.style.position = "relative";
+    card.style.width = "230px";
+    card.style.height = "350px";
+    card.style.overflow = "hidden";
+    card.style.borderRadius = "8px";
+    card.style.border = "2px solid black";
+    card.style.boxShadow = "2px 3px 8px rgba(0,0,0,0.3)";
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = "#000";
 
+    // === BACKGROUND IMAGE ===
+    const img = document.createElement("img");
+    img.src = cardData.image;
+    img.alt = cardData.name;
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "cover";
+    img.style.objectPosition = "center";
+    card.appendChild(img);
+
+    // === TOP NAME STRIP ===
+    const topStrip = document.createElement("div");
+    topStrip.style.position = "absolute";
+    topStrip.style.top = "0";
+    topStrip.style.left = "0";
+    topStrip.style.width = "100%";
+    topStrip.style.height = "35px";
+    topStrip.style.background = "rgba(0,0,0,0.55)";
+    topStrip.style.color = "#d0d0d0";
+    topStrip.style.display = "flex";
+    topStrip.style.alignItems = "center";
+    topStrip.style.justifyContent = "center";
+    topStrip.style.fontSize = "18px";
+    topStrip.style.fontWeight = "bold";
+    topStrip.style.textShadow = "1px 1px 3px black";
+    topStrip.style.whiteSpace = "nowrap";
+    topStrip.style.overflow = "hidden";
+    topStrip.textContent = cardData.name;
+    card.appendChild(topStrip);
+
+    requestAnimationFrame(() => shrinkToFitWidth(topStrip, 10));
+
+    // === BOTTOM STRIP (same height as Scenario) ===
+    const bottom = document.createElement("div");
+    bottom.style.position = "absolute";
+    bottom.style.bottom = "0";
+    bottom.style.left = "0";
+    bottom.style.width = "100%";
+    bottom.style.height = "100px";
+    bottom.style.background = "rgba(0,0,0,0.65)";
+    bottom.style.color = "white";
+    bottom.style.display = "flex";
+    bottom.style.alignItems = "center";
+    bottom.style.justifyContent = "space-between";
+    bottom.style.padding = "8px 10px";
+    card.appendChild(bottom);
+
+    // ============================
+    // LEFT SIDE DAMAGE (icon + number)
+    // ============================
+    const dmgContainer = document.createElement("div");
+    dmgContainer.style.position = "relative";
+    dmgContainer.style.width = "45px";
+    dmgContainer.style.height = "45px";
+    dmgContainer.style.flexShrink = "0";
+
+    const dmgImg = document.createElement("img");
+    dmgImg.src =
+      "https://raw.githubusercontent.com/over-lords/overlords/a61d7fb50e273106d490476bd3c621f3a6f45047/Public/Images/Card%20Assets/Misc/Damage.png";
+    dmgImg.alt = "Damage";
+    dmgImg.style.position = "absolute";
+    dmgImg.style.left = "-8px";
+    dmgImg.style.width = "85%";
+    dmgImg.style.height = "85%";
+    dmgImg.style.objectFit = "contain";
+    dmgContainer.appendChild(dmgImg);
+
+    const dmgNum = document.createElement("div");
+    dmgNum.textContent = cardData.damage ?? "0";
+    dmgNum.style.position = "absolute";
+    dmgNum.style.top = "48%";
+    dmgNum.style.left = "calc(50% - 12px)";
+    dmgNum.style.transform = "translate(-50%, -50%)";
+    dmgNum.style.fontSize = "20px";
+    dmgNum.style.fontWeight = "bold";
+    dmgNum.style.color = "white";
+    dmgNum.style.textShadow = "2px 2px 4px black";
+    dmgContainer.appendChild(dmgNum);
+
+    bottom.appendChild(dmgContainer);
+
+    // ============================
+    // CENTER ABILITIES TEXT
+    // ============================
+    const textBox = document.createElement("div");
+    textBox.style.flex = "1";
+    textBox.style.margin = "0 5px 0 -14px";
+    textBox.style.textAlign = "left";
+    textBox.style.fontSize = "11.5px";
+    textBox.style.lineHeight = "1.2em";
+    textBox.style.overflow = "hidden";
+
+    if (Array.isArray(cardData.abilitiesText)) {
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement("div");
+            line.innerHTML = renderAbilityText(a.text);
+            textBox.appendChild(line);
+        });
+    }
+
+    bottom.appendChild(textBox);
+    requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
+
+    // ============================
+    // RIGHT SIDE HP (heart + number)
+    // ============================
+    const hpContainer = document.createElement("div");
+    hpContainer.style.position = "relative";
+    hpContainer.style.width = "45px";
+    hpContainer.style.height = "45px";
+    hpContainer.style.flexShrink = "0";
+
+    const heartImg = document.createElement("img");
+    heartImg.src =
+      "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets/Misc/Heart.png";
+    heartImg.alt = "HP";
+    heartImg.style.position = "absolute";
+    heartImg.style.left = "-6px";
+    heartImg.style.marginTop = "4px";
+    heartImg.style.width = "75%";
+    heartImg.style.height = "75%";
+    heartImg.style.objectFit = "contain";
+    hpContainer.appendChild(heartImg);
+
+    const hpNum = document.createElement("div");
+    hpNum.textContent = cardData.hp ?? "0";
+    hpNum.style.position = "absolute";
+    hpNum.style.top = "45%";
+    hpNum.style.left = "calc(50% - 12px)";
+    hpNum.style.transform = "translate(-50%, -50%)";
+    hpNum.style.fontSize = "20px";
+    hpNum.style.fontWeight = "bold";
+    hpNum.style.color = "white";
+    hpNum.style.textShadow = "2px 2px 4px black";
+    hpContainer.appendChild(hpNum);
+
+    bottom.appendChild(hpContainer);
+
+    // === WRAP & RETURN ===
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("card-wrapper");
+    wrapper.appendChild(card);
+    return wrapper;
+  } else if (cardData.type === "Overlord") {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.position = 'relative';
+    card.style.width = '230px';
+    card.style.height = '350px';
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '8px';
+    card.style.border = '2px solid black';
+    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = '#000';
+
+    // === BACKGROUND IMAGE ===
+    const img = document.createElement('img');
+    img.src = cardData.image;
+    img.alt = cardData.name;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.objectPosition = 'center';
+    card.appendChild(img);
+
+    // === TOP NAME STRIP ===
+    const nameStrip = document.createElement('div');
+    nameStrip.style.position = 'absolute';
+    nameStrip.style.top = '0';
+    nameStrip.style.left = '0';
+    nameStrip.style.width = '100%';
+    nameStrip.style.height = '40px';
+    nameStrip.style.background = 'rgba(0,0,0,0.55)';
+    nameStrip.style.display = 'flex';
+    nameStrip.style.alignItems = 'center';
+    nameStrip.style.justifyContent = 'center';
+    nameStrip.style.color = '#d0d0d0';
+    nameStrip.style.fontSize = '20px';
+    nameStrip.style.fontWeight = 'bold';
+    nameStrip.style.textShadow = '1px 1px 3px black';
+    nameStrip.style.whiteSpace = 'nowrap';
+    nameStrip.style.overflow = 'hidden';
+    nameStrip.textContent = cardData.name;
+    card.appendChild(nameStrip);
+
+    requestAnimationFrame(() => shrinkToFitWidth(nameStrip, 10));
+
+    // === LEFT-SIDE LEVEL CIRCLE BELOW NAME ===
+    const levelCircle = document.createElement('div');
+    levelCircle.style.position = 'absolute';
+    levelCircle.style.top = '45px';       // below the top bar
+    levelCircle.style.left = '10px';
+    levelCircle.style.width = '40px';
+    levelCircle.style.height = '40px';
+    levelCircle.style.borderRadius = '50%';
+    levelCircle.style.background = 'rgba(0,0,0,0.8)';
+    levelCircle.style.border = '2px solid white';
+    levelCircle.style.display = 'flex';
+    levelCircle.style.alignItems = 'center';
+    levelCircle.style.justifyContent = 'center';
+    levelCircle.style.color = 'white';
+    levelCircle.style.fontWeight = 'bold';
+    levelCircle.style.fontSize = '22px';
+    levelCircle.style.textShadow = '1px 1px 3px black';
+    levelCircle.textContent = cardData.level ?? "0";
+    card.appendChild(levelCircle);
+
+    // === BOTTOM ABILITIES STRIP (taller than Scenario) ===
+    const bottom = document.createElement('div');
+    bottom.style.position = 'absolute';
+    bottom.style.bottom = '0';
+    bottom.style.left = '0';
+    bottom.style.width = '100%';
+    bottom.style.height = '125px';
+    bottom.style.background = 'rgba(0,0,0,0.65)';
+    bottom.style.color = 'white';
+    bottom.style.display = 'flex';
+    bottom.style.alignItems = 'center';
+    bottom.style.justifyContent = 'space-between';
+    bottom.style.padding = '10px 12px';
+    card.appendChild(bottom);
+
+    // === ABILITIES TEXT (LEFT SIDE) ===
+    const textBox = document.createElement('div');
+    textBox.style.flex = '1';
+    textBox.style.textAlign = 'left';
+    textBox.style.fontSize = '10px';
+    textBox.style.lineHeight = '1.15em';
+    textBox.style.marginRight = '10px';
+    textBox.style.overflow = 'hidden';
+
+    if (Array.isArray(cardData.abilitiesText)) {
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement('div');
+            line.innerHTML = renderAbilityText(a.text);
+            textBox.appendChild(line);
+        });
+    }
+
+    bottom.appendChild(textBox);
+
+    requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
+
+    // === HP WITH HEART ICON (RIGHT SIDE) ===
+    const hpContainer = document.createElement('div');
+    hpContainer.style.position = 'relative';
+    hpContainer.style.width = '45px';
+    hpContainer.style.height = '45px';
+    hpContainer.style.flexShrink = '0';
+
+    const hpImg = document.createElement('img');
+    hpImg.src = "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets/Misc/Heart.png";
+    hpImg.style.position = 'absolute';
+    hpImg.style.left = '-18px';
+    hpImg.style.width = '100%';
+    hpImg.style.height = '100%';
+    hpImg.style.objectFit = 'contain';
+    hpContainer.appendChild(hpImg);
+
+    const hpNum = document.createElement('div');
+    hpNum.textContent = cardData.hp ?? "0";
+    hpNum.style.position = 'absolute';
+    hpNum.style.top = '45%';
+    hpNum.style.left = 'calc(50% - 18px)';
+    hpNum.style.transform = 'translate(-50%, -50%)';
+    hpNum.style.fontSize = '18px';    // ← smaller than scenario
+    hpNum.style.fontWeight = 'bold';
+    hpNum.style.color = 'white';
+    hpNum.style.textShadow = '2px 2px 4px black';
+    hpContainer.appendChild(hpNum);
+
+    bottom.appendChild(hpContainer);
+
+    // === WRAP & RETURN ===
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+    return wrapper;
   } else if (cardData.type === "Scenario") {
     const card = document.createElement('div');
     card.classList.add('card');
@@ -692,7 +981,91 @@ export function renderCard(cardId, container) {
     wrapper.appendChild(card);
     return wrapper;
   } else if (cardData.type === "Bystander") {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.position = 'relative';
+    card.style.width = '230px';
+    card.style.height = '350px';
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '8px';
+    card.style.border = '2px solid black';
+    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = '#000';
 
+    // === FULL BACKGROUND IMAGE (like Main cards) ===
+    const img = document.createElement('img');
+    img.src = cardData.image;
+    img.alt = cardData.name;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.objectPosition = 'center';
+    card.appendChild(img);
+
+    // === TOP NAME STRIP ===
+    const topStrip = document.createElement('div');
+    topStrip.style.position = 'absolute';
+    topStrip.style.top = '0';
+    topStrip.style.left = '0';
+    topStrip.style.width = '100%';
+    topStrip.style.height = '40px';
+    topStrip.style.background = 'rgba(0,0,0,0.55)';
+    topStrip.style.display = 'flex';
+    topStrip.style.alignItems = 'center';
+    topStrip.style.justifyContent = 'center';
+    topStrip.style.color = '#d0d0d0';
+    topStrip.style.fontSize = '18px';
+    topStrip.style.fontWeight = 'bold';
+    topStrip.style.textShadow = '1px 1px 3px black';
+    topStrip.style.whiteSpace = 'nowrap';
+    topStrip.style.overflow = 'hidden';
+    topStrip.textContent = cardData.name;
+    card.appendChild(topStrip);
+
+    requestAnimationFrame(() => shrinkToFitWidth(topStrip, 10));
+
+    // === BOTTOM ABILITIES STRIP ===
+    const bottom = document.createElement('div');
+    bottom.style.position = 'absolute';
+    bottom.style.bottom = '0';
+    bottom.style.left = '0';
+    bottom.style.width = '100%';
+    bottom.style.height = '100px';
+    bottom.style.background = 'rgba(0,0,0,0.65)';
+    bottom.style.color = 'white';
+    bottom.style.display = 'flex';
+    bottom.style.alignItems = 'center';
+    bottom.style.justifyContent = 'center';
+    bottom.style.padding = '6px';
+    bottom.style.textAlign = 'center';
+    bottom.style.overflow = 'hidden';
+    card.appendChild(bottom);
+
+    const textBox = document.createElement('div');
+    textBox.style.width = '100%';
+    textBox.style.fontSize = '14px';
+    textBox.style.lineHeight = '1.2em';
+    textBox.style.textAlign = 'center';
+    textBox.style.overflow = 'hidden';
+
+    if (Array.isArray(cardData.abilitiesText)) {
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement('div');
+            line.innerHTML = renderAbilityText(a.text);
+            textBox.appendChild(line);
+        });
+    }
+
+    bottom.appendChild(textBox);
+
+    requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
+
+    // === RETURN WRAPPER ===
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+    return wrapper;
   }
 
   // If card not found, display card type name
