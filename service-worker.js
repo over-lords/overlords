@@ -1,28 +1,28 @@
 const CACHE_NAME = "overlords-pwa-v1";
 
 const ASSETS = [
-  "/", 
-  "/overlords/index.html",
-  "/overlords/style.css",
-  "/overlords/game.html",
-  "/overlords/play.html",
-  "/overlords/manifest.json",
+  "/",
+  "/index.html",
+  "/style.css",
+  "/manifest.json",
+
+  "/play.html",
+  "/deckList.html",
+  "/rules.html",
+  "/login.html",
+  "/register.html",
+
+  // JS
+  "/utils/login.js",
+  "/utils/register.js",
+  "/supabaseClient.js",
 
   // Data files
-  "/overlords/data/faceCards.js",
-  "/overlords/data/overlords.js",
-  "/overlords/data/tactics.js",
-  "/overlords/data/enemies.js",
-  "/overlords/data/allies.js",
-  "/overlords/data/bystanders.js",
-  "/overlords/data/scenarios.js",
-  "/overlords/data/henchmen.js",
-  "/overlords/data/villains.js",
+  "/data/news.js",
+  "/data/issues.js",
 
   // Images
-  "/overlords/Public/Images/Site Assets/Board.jpg",
-  "/overlords/Public/Images/Site Assets/BoardReduced.jpg",
-  "/overlords/Public/Images/Site Assets/favicon.png"
+  "/Public/Images/Site Assets/favicon.png",
 ];
 
 self.addEventListener("install", event => {

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site Assets/favicon.png">
@@ -65,6 +66,14 @@
     </style>
 </head>
 <body style="background-color:white;" onload="window.scrollTo(0, 1)">
+    <script>
+        // redirect if not logged in
+        const uid = localStorage.getItem("session_user_id");
+        if (!uid) {
+            window.location = "login.html";
+        }
+    </script>
+
     <div class="main-content">
     <div class="bg-image" alt="" style="opacity: 55%;"></div>
     <div class="title-box" id="title-box"></div>
@@ -82,9 +91,10 @@
         <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">How to Play</h1>
     </div>
 
-    <div class="logout-box" id="logout-box" onclick="location.href='logout.html'" style="cursor: pointer;">
+    <div class="logout-box" id="logout-box" onclick="logoutUser()" style="cursor: pointer;">
         <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Logout</h1>
     </div>
+
 
     <div class="install-box" id="install-box" style="display:none;">
         <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Install Overlords</h1>
@@ -100,12 +110,10 @@
         </div>
 
         <div class="profilePicBox" id="profilePicBox">
-            <div class="profilePicTitle" id="profilePicTitle" style="font-size: 1.1rem; text-align: center; color: white; font-weight: bold; font-family: 'Poppins', sans-serif; font-style: italic; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">
-                Profile Picture
+            <div class="profilePicTitle" id="profilePicTitle"
+                style="font-size: 1.1rem; text-align: center; color: white; font-weight: bold; font-family: 'Poppins', sans-serif; font-style: italic; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">
             </div>
-            <div class="profilePicConfirm" 
-                id="profilePicConfirm" 
-                onclick="alert('confirm clicked')" 
+            <div class="profilePicConfirm" id="profilePicConfirm"
                 style="font-size: 0.85rem; 
                         text-align: center; 
                         color: white; 
@@ -123,10 +131,19 @@
             <div class="profilePicCurrent" id="profilePicCurrent"></div>
             <div class="profilePicList" id="profilePicList"></div>
         </div>
+    </div>
 
     <script src="./data/news.js"></script>
     <script src="./data/issues.js"></script>
     <script>
+        function logoutUser() {
+            // Clear session
+            localStorage.removeItem("session_user_id");
+
+            // Redirect to login
+            window.location = "login.html";
+        }
+
         function populateInfo() {
             const newsDiv = document.getElementById('news');
             const issuesDiv = document.getElementById('issues');
@@ -155,52 +172,6 @@
         }
         document.addEventListener("DOMContentLoaded", populateInfo);
 
-        const listContainer = document.getElementById("profilePicList");
-        const currentDisplay = document.getElementById("profilePicCurrent");
-
-        const githubContentsUrl =
-        "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Profile%20Pictures";
-
-        fetch(githubContentsUrl)
-        .then(response => {
-            if (!response.ok) {
-            throw new Error("GitHub API request failed: " + response.status);
-            }
-            return response.json();
-        })
-        .then(items => {
-            // items is an array of objects, e.g. { name, path, download_url, type, ... }
-            items.forEach(item => {
-            if (item.type === "file" && item.download_url) {
-                // Only image file types
-                if (item.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                const img = document.createElement("img");
-                img.src = item.download_url;
-                img.alt = item.name;
-
-                img.addEventListener("click", () => {
-                    // remove selection from others
-                    document.querySelectorAll(".profilePicList img").forEach(el => {
-                    el.classList.remove("selected");
-                    });
-                    // highlight this one
-                    img.classList.add("selected");
-
-                    // show in the Current box
-                    currentDisplay.style.backgroundImage = `url('${item.download_url}')`;
-                    currentDisplay.style.backgroundSize = "cover";
-                    currentDisplay.style.backgroundPosition = "center";
-                });
-
-                listContainer.appendChild(img);
-                }
-            }
-            });
-        })
-        .catch(error => {
-            console.error("Error fetching GitHub contents:", error);
-        });
-
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
                 navigator.serviceWorker.register("service-worker.js")
@@ -225,6 +196,118 @@
             document.getElementById("install-box").style.display = "none";
         });
     </script>
-    </div>
+
+    <script type="module">
+        import { supabase } from "./supabaseClient.js";
+
+        const listContainer = document.getElementById("profilePicList");
+        const currentDisplay = document.getElementById("profilePicCurrent");
+        const confirmBtn = document.getElementById("profilePicConfirm");
+
+        let githubImages = [];
+        let selectedFilename = null;
+
+        async function loadGitHubImages() {
+            const res = await fetch(
+                "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Profile%20Pictures"
+            );
+
+            let data = await res.json();
+
+            if (!Array.isArray(data)) {
+                console.error("GitHub API error:", data);
+                return;
+            }
+
+            githubImages = data
+                .filter(item =>
+                    item.type === "file" &&
+                    item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)
+                )
+                .map(item => ({
+                    filename: item.name.trim(),
+                    url: item.download_url
+                }));
+
+            // Fill thumbnail list
+            githubImages.forEach(imgData => {
+                const img = document.createElement("img");
+                img.src = imgData.url;
+                img.alt = imgData.filename;
+
+                img.addEventListener("click", () => {
+                    document.querySelectorAll(".profilePicList img")
+                        .forEach(el => el.classList.remove("selected"));
+
+                    img.classList.add("selected");
+                    selectedFilename = imgData.filename;
+
+                    currentDisplay.style.backgroundImage = `url('${imgData.url}')`;
+                });
+
+                listContainer.appendChild(img);
+            });
+        }
+
+        async function loadUserProfile() {
+            const uid = localStorage.getItem("session_user_id");
+            if (!uid) return;
+
+            const { data: user, error } = await supabase
+                .from("users")
+                .select("username, profile_picture")
+                .eq("id", uid)
+                .single();
+
+            if (error || !user) {
+                console.error("Error loading profile:", error);
+                return;
+            }
+
+            const titleBox = document.getElementById("profilePicTitle");
+            titleBox.textContent = `Welcome, ${user.username}!`;
+
+            const normalized = user.profile_picture?.trim()?.toLowerCase();
+
+            const match = githubImages.find(
+                img => img.filename.toLowerCase() === normalized
+            );
+
+            if (!match) {
+                console.warn("No match for saved image:", normalized);
+                return;
+            }
+
+            currentDisplay.style.backgroundImage = `url('${match.url}')`;
+            selectedFilename = match.filename;
+        }
+
+        async function saveSelectedPicture() {
+            const uid = localStorage.getItem("session_user_id");
+            if (!uid || !selectedFilename) return;
+
+            const { error } = await supabase
+                .from("users")
+                .update({ profile_picture: selectedFilename })
+                .eq("id", uid);
+
+            if (error) {
+                alert("Error saving profile picture: " + error.message);
+                return;
+            }
+
+            alert("Profile picture updated!");
+        }
+
+        confirmBtn.addEventListener("click", saveSelectedPicture);
+
+        // MASTER LOADER
+        async function initProfilePictures() {
+            await loadGitHubImages();
+            await loadUserProfile();
+        }
+
+        initProfilePictures();
+    </script>
 </body>
 </html>

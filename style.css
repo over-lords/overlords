@@ -285,6 +285,9 @@ html, body {
   border: 2px solid #ffffff55;
   border-radius: 10px;
   box-shadow: 0 0 12px black;
+  background-size: cover;        /* like object-fit: cover */
+  background-position: center;   /* center the crop */
+  background-repeat: no-repeat;
 
   z-index: 10;    /* place behind text */
 
