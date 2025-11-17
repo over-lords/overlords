@@ -705,6 +705,9 @@ img {
             const heroGrid = document.getElementById('hero-grid');
             const startButton = document.getElementById('start-button');
 
+            let g_allEnemiesRestriction = false;
+            let g_minEnemiesRequired = 15;
+
             document.querySelectorAll('.collapsible').forEach(button => {
               button.addEventListener('click', () => {
                 button.classList.toggle('active');
@@ -1281,8 +1284,20 @@ img {
               let overlordValid = true;
 
               // read tactic restrictions
-              let allEnemiesRestriction = false;
-              let minEnemiesRequired = 15;
+              g_allEnemiesRestriction = false;
+              g_minEnemiesRequired = 15;
+
+              // read restrictions from tactics
+              for (const tacticId of selectedTactics) {
+                const tacticData = tactics.find(t => String(t.id) === String(tacticId));
+                if (Array.isArray(tacticData?.limitEaA) && tacticData.limitEaA[0] === "allEnemies") {
+                  g_allEnemiesRestriction = true;
+
+                  const m = tacticData.limitEaA[1].match(/\d+/);
+                  if (m) g_minEnemiesRequired = Number(m[0]);
+                }
+              }
+
               let minAlliesRequired  = 15;
               let requiresMultiTactic = false;
               let requiresMultiOverlord = false;
@@ -1291,8 +1306,8 @@ img {
                 const tacticData = tactics.find(t => String(t.id) === String(tacticId));
                 if (!tacticData) continue;
                 if (Array.isArray(tacticData.limitEaA) && tacticData.limitEaA[0]==='allEnemies'){
-                  allEnemiesRestriction = true;
-                  const m = tacticData.limitEaA[1].match(/\d+/); if (m) minEnemiesRequired = Number(m[0]);
+                  g_allEnemiesRestriction = true;
+                  const m = tacticData.limitEaA[1].match(/\d+/); if (m) g_minEnemiesRequired = Number(m[0]);
                   minAlliesRequired = 0;
                 }
                 if (tacticData.multiTacticReq === 'yes') requiresMultiTactic = true;
@@ -1300,8 +1315,8 @@ img {
               }
 
               // --- Enemies/Allies validity ---
-              if (allEnemiesRestriction){
-                if (enemiesCount < minEnemiesRequired) eaAValid = false;
+              if (g_allEnemiesRestriction){
+                if (enemiesCount < g_minEnemiesRequired) eaAValid = false;
                 if (alliesCount !== 0) eaAValid = false;
               } else {
                 if (enemiesCount < 15 || enemiesCount > 50) eaAValid = false;
@@ -1366,11 +1381,17 @@ img {
                     break;
 
                   case "ea":
-                    // Use the same criteria updateStartButton uses
-                    ok = (
-                      enemiesCount >= 15 && enemiesCount <= 50 &&
-                      alliesCount >= 15 && alliesCount <= 50
-                    );
+                    if (g_allEnemiesRestriction === true) {
+                      ok = (
+                        enemiesCount >= g_minEnemiesRequired &&
+                        alliesCount === 0
+                      );
+                    } else {
+                      ok = (
+                        enemiesCount >= 15 && enemiesCount <= 50 &&
+                        alliesCount >= 15 && alliesCount <= 50
+                      );
+                    }
                     break;
 
                   case "villain":
@@ -1410,11 +1431,10 @@ img {
               updateSliderLabel(enemiesSlider, enemiesValue);
 
               // --- Determine if any selected tactic sets allEnemies restriction ---
-              let allEnemiesRestriction = false;
               for (const tacticId of selectedTactics) {
                 const tacticData = tactics.find(t => String(t.id) === String(tacticId));
                 if (Array.isArray(tacticData?.limitEaA) && tacticData.limitEaA[0] === "allEnemies") {
-                  allEnemiesRestriction = true;
+                  g_allEnemiesRestriction = true;
                   break;
                 }
               }
@@ -1431,7 +1451,7 @@ img {
               }
 
               // --- Visual feedback ---
-              if (allEnemiesRestriction) {
+              if (g_allEnemiesRestriction) {
                 // For "allEnemies" tactics
                 if (enemiesCount < 30 || enemiesCount > 50) {
                   enemiesSlider.style.accentColor = 'red';
@@ -1456,11 +1476,10 @@ img {
               updateSliderLabel(alliesSlider, alliesValue);
 
               // --- Determine if any selected tactic sets allEnemies restriction ---
-              let allEnemiesRestriction = false;
               for (const tacticId of selectedTactics) {
                 const tacticData = tactics.find(t => String(t.id) === String(tacticId));
                 if (Array.isArray(tacticData?.limitEaA) && tacticData.limitEaA[0] === "allEnemies") {
-                  allEnemiesRestriction = true;
+                  g_allEnemiesRestriction = true;
                   break;
                 }
               }
@@ -1477,7 +1496,7 @@ img {
               }
 
               // --- Visual feedback ---
-              if (allEnemiesRestriction) {
+              if (g_allEnemiesRestriction) {
                 // For "allEnemies" tactics
                 if (alliesCount === 0) {
                   alliesSlider.style.accentColor = 'green';
