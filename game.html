@@ -8,17 +8,61 @@
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <title>Overlords</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #game-board-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+
+        #game-board {
+            display: block;
+
+            max-width: calc(100vw - 16px);
+            max-height: calc(100vh - 16px);
+
+            width: auto;
+            height: auto;
+
+            border: 4px solid white;
+            border-radius: 8px;
+            box-sizing: border-box;
+            user-select: none;
+            pointer-events: none;
+            object-fit: contain;
+        }
+    </style>
 </head>
 <body style="background-color:white;" onload="window.scrollTo(0, 1)">
     <div class="bg-image" alt="" style="opaCity: 35%;"></div>
     <div class="container">
-        <div class="title-box" id="title-box"></div>
-        <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
+
+        <div id="game-board-container">
+            <img id="game-board" alt="Overlords Board"
+                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/Board.jpg"
+            >
+        </div>
 
         <div id="close-box" onclick="location.href='play.html'">X</div>
-
     </div>
-    <br><br><br>
 
     <script type="module">
         import { heroes } from './data/faceCards.js';
@@ -217,7 +261,7 @@
             </div>
             `;
 
-            document.querySelector('.container').appendChild(container);
+            //document.querySelector('.container').appendChild(container);
         } catch (e) {
             console.error('Failed to decrypt data:', e);
             document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">Invalid or corrupted data.</p>');

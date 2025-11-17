@@ -421,3 +421,27 @@ html, body {
   pointer-events: none;
   margin: 0;
 }
+
+.install-box {
+  position: absolute;
+  top: 355px;       /* directly below Logout */
+  left: -50px;
+  width: 275px;     /* matches logout-box */
+  height: 30px;
+  background-color: #5d5d5d; 
+  border: 5px solid #000;
+  cursor: pointer;
+
+  clip-path: polygon(
+    0 0,
+    90% 0,
+    100% 100%,
+    0 100%
+  );
+
+  z-index: 1;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 50px;
+}

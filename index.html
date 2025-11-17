@@ -7,6 +7,11 @@
     <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site Assets/favicon.png">
     <title>Overlords</title>
     <style>
         #infoBox {
@@ -79,6 +84,10 @@
 
     <div class="logout-box" id="logout-box" onclick="location.href='logout.html'" style="cursor: pointer;">
         <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Logout</h1>
+    </div>
+
+    <div class="install-box" id="install-box" style="display:none;">
+        <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Install Overlords</h1>
     </div>
 
         <div id="infoBox">
@@ -190,6 +199,30 @@
         })
         .catch(error => {
             console.error("Error fetching GitHub contents:", error);
+        });
+
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("service-worker.js")
+                .then(reg => console.log("Service worker registered:", reg))
+                .catch(err => console.error("Service worker error:", err));
+            });
+        }
+
+        let deferredPrompt;
+
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const box = document.getElementById("install-box");
+            box.style.display = "block";    // show the install menu box
+        });
+
+        document.getElementById("install-box").addEventListener("click", () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt = null;
+            document.getElementById("install-box").style.display = "none";
         });
     </script>
     </div>
