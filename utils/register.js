@@ -39,12 +39,12 @@ window.addEventListener("DOMContentLoaded", () => {
         const confirm = document.getElementById("confirmPassword").value;
 
         if (!email || !username || !pass || !confirm) {
-            alert("Please fill out all fields.");
+            //alert("Please fill out all fields.");
             return;
         }
 
         if (pass !== confirm) {
-            alert("Passwords do not match.");
+            //alert("Passwords do not match.");
             return;
         }
 
@@ -55,7 +55,7 @@ window.addEventListener("DOMContentLoaded", () => {
         });
 
         if (authError) {
-            alert("Auth error: " + authError.message);
+            //alert("Auth error: " + authError.message);
             return;
         }
 
@@ -74,11 +74,11 @@ window.addEventListener("DOMContentLoaded", () => {
         });
 
         if (dbError) {
-            alert("DB error: " + dbError.message);
+            //alert("DB error: " + dbError.message);
             return;
         }
 
-        alert("Account created! Please login.");
+        //alert("Account created! Please login.");
         window.location = "login.html";
     });
 

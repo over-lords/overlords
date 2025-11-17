@@ -18,7 +18,7 @@ window.addEventListener("DOMContentLoaded", () => {
         const pass = document.getElementById("password").value;
 
         if (!identifier || !pass) {
-            alert("Please enter your email and password.");
+            //alert("Please enter your email and password.");
             return;
         }
 
@@ -34,7 +34,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 .single();
 
             if (lookupErr || !userByUsername) {
-                alert("Invalid username or password.");
+                //alert("Invalid username or password.");
                 return;
             }
 
@@ -48,12 +48,12 @@ window.addEventListener("DOMContentLoaded", () => {
         });
 
         if (error) {
-            alert("Login error: " + error.message);
+            //alert("Login error: " + error.message);
             return;
         }
 
         // Save session using Supabase Auth token automatically
-        alert("Login successful!");
+        //alert("Login successful!");
         window.location = "index.html";
     });
 
