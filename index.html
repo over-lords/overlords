@@ -96,11 +96,6 @@
         <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Logout</h1>
     </div>
 
-
-    <div class="install-box" id="install-box" style="display:none;">
-        <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Install Overlords</h1>
-    </div>
-
         <div id="infoBox">
             <div class="tabs">
                 <button class="tab-button active" onclick="showTab('news')" style="color: white; font-weight: bold; font-family: 'Poppins', sans-serif; font-style: italic; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">News and Updates</button>
@@ -169,22 +164,6 @@
             event.currentTarget.classList.add('active');
         }
         document.addEventListener("DOMContentLoaded", populateInfo);
-
-        let deferredPrompt;
-
-        window.addEventListener("beforeinstallprompt", (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            const box = document.getElementById("install-box");
-            box.style.display = "block";    // show the install menu box
-        });
-
-        document.getElementById("install-box").addEventListener("click", () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            deferredPrompt = null;
-            document.getElementById("install-box").style.display = "none";
-        });
     </script>
 
     <script type="module">
