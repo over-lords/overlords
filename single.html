@@ -459,6 +459,9 @@ img {
                 <div class="top-row">
                   <button id="import-loadout" class="import-btn">Import Loadout</button>
                   <button id="top-random" class="top-random-btn">Random</button>
+                  <button id="load-beginner" class="import-btn" style="right:0; left:auto; position:absolute;">
+                      Load Beginner Game
+                  </button>
                 </div>
                 <button class="collapsible main-drop" data-section="heroes"
                         style="background-color: rgb(112, 253, 112); color: black;">
@@ -951,6 +954,20 @@ img {
 
             document.getElementById('import-loadout').addEventListener('click', () => fileInput.click());
 
+            document.getElementById('load-beginner').addEventListener('click', async () => {
+              try {
+                const res = await fetch('./data/beginnerLoadout.json');
+                if (!res.ok) throw new Error("beginnerLoadout.json not found");
+                const json = await res.json();
+
+                // Reuse same importLoadout() format by simulating file import
+                importLoadoutJSON(json);
+
+              } catch (err) {
+                alert("Failed to load beginner loadout:\n" + err);
+              }
+            });
+
             // ==================== OVERLORD SECTION ====================
             const overlordGrid = document.getElementById('overlord-grid');
             let selectedOverlords = [];
@@ -1334,8 +1351,9 @@ img {
               const bysValid    = (bystandersCount >= 7 && bystandersCount <= 15);
               const henchValid  = (henchTotal >= 20 && henchTotal <= 40);
               const villsValid  = (villainsTotal >= 30 && villainsTotal <= 70); //set min here to 1 for testing
+              const scenarioTotal = selectedScenarios.length;
 
-              const deckTotal = mightsCount + bystandersCount + henchTotal + villainsTotal;
+              const deckTotal = mightsCount + bystandersCount + henchTotal + villainsTotal + scenarioTotal;
               deckTotalEl.textContent = `Deck Total: ${deckTotal}`;
               const deckTotalValid = (deckTotal >= 60 && deckTotal <= 140); //set min here to 1 for testing
 
@@ -2210,6 +2228,108 @@ img {
               tactics: { min: 1, max: 2 }
             };
 
+            function importLoadoutJSON(data) {
+              // --- HEROES ---
+              if (Array.isArray(data.heroes)) {
+                selectedOrder = data.heroes.slice(0, 6);
+                updateBadges();
+              }
+
+              // --- OVERLORDS ---
+              if (Array.isArray(data.overlords)) {
+                selectedOverlords = data.overlords.slice(0, 3);
+                updateOverlordBadges();
+              }
+
+              // --- TACTICS ---
+              if (Array.isArray(data.tactics)) {
+                selectedTactics = data.tactics.slice(0, 2);
+                updateTacticStyles();
+              }
+
+              // --- ENEMIES ---
+              if (typeof data.enemies === 'object' && data.enemies !== null) {
+                selectedEnemies = Array.isArray(data.enemies.ids) ? data.enemies.ids : [];
+                enemiesCount = data.enemies.count || selectedEnemies.length;
+                enemiesSlider.value = enemiesCount;
+                syncEnemyControls();
+              }
+
+              // --- ALLIES ---
+              if (typeof data.allies === 'object' && data.allies !== null) {
+                selectedAllies = Array.isArray(data.allies.ids) ? data.allies.ids : [];
+                alliesCount = data.allies.count || selectedAllies.length;
+                alliesSlider.value = alliesCount;
+                syncAllyControls();
+              }
+
+              // --- VILLAIN DECK ---
+              if (data.villainDeck) {
+
+                // Mights
+                if (typeof data.villainDeck.mights === 'number') {
+                  mightsCount = clamp(data.villainDeck.mights, 0, 10);
+                  mightsSlider.value = mightsCount;
+                  syncMights();
+                }
+
+                // Bystanders
+                if (data.villainDeck.bystanders) {
+                  const bd = data.villainDeck.bystanders;
+                  bystandersByType = Array.isArray(bd.byType) ? bd.byType : [];
+                  bystandersCount = clamp(Number(bd.count) || 0, 0, 15);
+                  bysSlider.value = bystandersCount;
+                  renderBystandersBreakdown();
+                  syncBystanders();
+                }
+
+                // Scenarios
+                if (Array.isArray(data.villainDeck.scenarios)) {
+                  selectedScenarios = data.villainDeck.scenarios
+                    .slice(0, 5)
+                    .map(String);
+                  renderScenarios();
+                }
+
+                // Henchmen
+                if (Array.isArray(data.villainDeck.henchmen)) {
+                  henchmenCounts.clear();
+                  data.villainDeck.henchmen.forEach(x => {
+                    if (x && x.id != null)
+                      henchmenCounts.set(
+                        String(x.id),
+                        clamp(Number(x.count) || 0, 0, 10)
+                      );
+                  });
+                  renderHenchmen();
+                }
+
+                // Villains
+                if (Array.isArray(data.villainDeck.villains)) {
+                  selectedVillains = new Set(
+                    data.villainDeck.villains.map(String)
+                  );
+                  renderVillainTotals();
+                  renderVillainGroups();
+                }
+              }
+
+              // Final validation pass
+              updateDropdownIcons?.();
+              updateStartButton();
+            }
+
+            function updateScenarioStyles() {
+              document.querySelectorAll('#scenarios-grid .tactic-card').forEach(card => {
+                const id = card.dataset.id;
+                if (selectedScenarios.includes(id)) {
+                  card.classList.add('selected');
+                } else {
+                  card.classList.remove('selected');
+                }
+              });
+            }
+
             function topRandom() {
               // --- First, randomize tactics so restrictions can be read ---
               if (selectedTactics.length < limits.tactics.min) randomizeTactics();
@@ -2326,6 +2446,7 @@ img {
               updateBadges();
               updateOverlordBadges();
               updateTacticStyles();
+              updateScenarioStyles();
               updateStartButton();
             }
 
