@@ -46,7 +46,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `boostCardDamage(findKOdHeroes)`
+        effect: `boostCardDamage(findKOdHeroes())`
       }
     ]
   },

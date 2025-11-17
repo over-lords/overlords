@@ -708,4 +708,745 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5619",
+    name: "Mirror Master",
+    image: `${cardArtFolder}/mirrorMaster.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Lock a Henchman or Villain until the end of your Hero's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5620",
+    name: "Weather Wizard",
+    image: `${cardArtFolder}/weatherWizard.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Glide <span class="line-gap"></span> If unengaged at the end of a Hero's turn, a random Hero will take 2 Damage. <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5621",
+    name: "Blockbuster",
+    image: `${cardArtFolder}/blockbuster.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5622",
+    name: "First Born",
+    image: `${cardArtFolder}/firstBorn.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Wonder Woman",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5623",
+    name: "Cheetah",
+    image: `${cardArtFolder}/cheetah.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Wonder Woman",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: CHOOSE: Draw a card. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5624",
+    name: "Dr Destiny",
+    image: `${cardArtFolder}/drDestiny.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Lock a Henchman or Villain in their City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5625",
+    name: "Giganta",
+    image: `${cardArtFolder}/giganta.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Wonder Woman",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> If Giganta makes it to Keystone City, double her remaining HP. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5626",
+    name: "Circe",
+    image: `${cardArtFolder}/circe.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Wonder Woman",
+    hp: "20",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> Might of the Overlord: KO all captured Bystanders. <span class="line-gap"></span> Reward: Deal 1 Damage to all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5627",
+    name: "Doomsday",
+    image: `${cardArtFolder}/doomsday.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "50",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Clash <span class="line-gap"></span> Reward: Deal 5 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5628",
+    name: "Bane",
+    image: `${cardArtFolder}/bane.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> Might of the Overlord: KO the top card of every Hero's discard pile. <span class="line-gap"></span><span class="line-gap"></span> Charge 1 <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5629",
+    name: "Clayface",
+    image: `${cardArtFolder}/clayface.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "14",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5630",
+    name: "Electrocutioner",
+    image: `${cardArtFolder}/electrocutioner.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Eject <span class="line-gap"></span> Reward: Draw a card, your Hero can Travel an extra time this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5631",
+    name: "Kite Man",
+    image: `${cardArtFolder}/kiteMan.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Glide <span class="line-gap"></span> Reward: Draw a card, your Hero can Travel an extra time this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5632",
+    name: "Catwoman",
+    image: `${cardArtFolder}/catwoman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "8",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Glide <span class="line-gap"></span> Reward: Draw 2 cards, your Hero can Travel an extra time this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5633",
+    name: "Kalibak",
+    image: `${cardArtFolder}/kalibak.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "20",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: CHOOSE: Restore a Destroyed City or Deal 5 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5634",
+    name: "Shadow Thief",
+    image: `${cardArtFolder}/shadowThief.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Glide <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL: Draw 3 cards and Travel to engage the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5635",
+    name: "Dr Polaris",
+    image: `${cardArtFolder}/drPolaris.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `[ICON:Bat], [ICON:Arrow], and [ICON:Hawk] Heroes deal half Damage against Dr Polaris. <span class="line-gap"></span> Reward: Deal 2x the Overlord's Level back to them as Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5636",
+    name: "Enchantress",
+    image: `${cardArtFolder}/enchantress.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> Might of the Overlord: Play the next 2 Enemies from the Enemies and Allies Pile. <span class="line-gap"></span><span class="line-gap"></span> Teleport <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5637",
+    name: "Dark Archer",
+    image: `${cardArtFolder}/darkArcher.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Arrow",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `none`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
 ]

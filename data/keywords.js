@@ -10,4 +10,6 @@ export const keywords = {
     "Takeover": "If a Villain has this ability, and they reach the end of the board, supposing their Takeover ability number meets or exceeds the difficulty number on the Overlord, and they have the same (or more) HP than the current Overlord, they take over. They add the old Overlord’s remaining HP to whatever they still possess as well as replacing the Overlord’s Might of the Overlord ability with their own, and everything else operates the same, keeping any old additional loss conditions or dampening effects that the old Overlord may have set out at the start of the game.",
     "Teleport": "Appears in a random unoccupied space on the board. If there are none, then this card is not played until there is space.",
     "Scan": "Reveal the top card(s) of a given deck for all to see.",
+    "Clash": "When engaged with this Henchman or Villain, you do not continue to move across the board.",
+    "Eject": "When damaged by this Henchman or Villain, your Hero is sent back to Headquarters.",
 }
