@@ -14,36 +14,46 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     loginBtn.addEventListener("click", async () => {
-        const identifier = document.getElementById("identifier").value.trim();
+        const identifier = document.getElementById("identifier").value.trim(); 
         const pass = document.getElementById("password").value;
 
         if (!identifier || !pass) {
-            alert("Please enter both identifier and password.");
+            alert("Please enter your email and password.");
             return;
         }
 
-        // get user by email OR username
-        const { data: user, error } = await supabase
-            .from("users")
-            .select("*")
-            .or(`email.eq.${identifier},username.eq.${identifier}`)
-            .single();
+        // If identifier looks like email, log in with it
+        let emailToUse = identifier;
 
-        if (error || !user) {
-            alert("User not found.");
+        // If user typed a username instead of email, resolve it:
+        if (!identifier.includes("@")) {
+            const { data: userByUsername, error: lookupErr } = await supabase
+                .from("users")
+                .select("email")
+                .eq("username", identifier)
+                .single();
+
+            if (lookupErr || !userByUsername) {
+                alert("Invalid username or password.");
+                return;
+            }
+
+            emailToUse = userByUsername.email;
+        }
+
+        // REAL Supabase Auth login
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: emailToUse,
+            password: pass
+        });
+
+        if (error) {
+            alert("Login error: " + error.message);
             return;
         }
 
-        const ok = bcrypt.compareSync(pass, user.password);
-
-        if (!ok) {
-            alert("Incorrect password.");
-            return;
-        }
-
-        // Save session token
-        localStorage.setItem("session_user_id", user.id);
-
+        // Save session using Supabase Auth token automatically
+        alert("Login successful!");
         window.location = "index.html";
     });
 
@@ -51,9 +61,43 @@ window.addEventListener("DOMContentLoaded", () => {
         window.location = "register.html";
     });
 
-    // NOTE: full secure reset flow needs Supabase Auth or a backend.
-    // For now, stub it so the button doesn't break the page.
+    const forgotModal = document.getElementById("forgotModal");
+    const resetEmailInput = document.getElementById("resetEmailInput");
+    const sendResetBtn = document.getElementById("sendResetBtn");
+    const cancelResetBtn = document.getElementById("cancelResetBtn");
+
+    // Show modal
     forgotBtn.addEventListener("click", () => {
-        alert("Forgot password is not implemented yet.\n\nLater we can hook this to a real reset flow.");
+        forgotModal.style.display = "flex";
+    });
+
+    // Hide modal
+    cancelResetBtn.addEventListener("click", () => {
+        forgotModal.style.display = "none";
+        resetEmailInput.value = "";
+    });
+
+    // Send reset email
+    sendResetBtn.addEventListener("click", async () => {
+        const email = resetEmailInput.value.trim();
+        if (!email) return;
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: "https://over-lords.github.io/overlords/reset.html"
+        });
+
+        if (error) {
+            forgotModal.querySelector(".modal-content").innerHTML =
+                `<h3>Error</h3><p>${error.message}</p>`;
+            return;
+        }
+
+        forgotModal.querySelector(".modal-content").innerHTML =
+            `<h3>Email Sent!</h3><p>Check your inbox.</p>`;
+
+        setTimeout(() => {
+            forgotModal.style.display = "none";
+            resetEmailInput.value = "";
+        }, 2000);
     });
 });

@@ -64,14 +64,22 @@ self.addEventListener("activate", event => {
 // 3. FETCH → network-first (forces updated assets)
 // -----------------------------------------------------
 self.addEventListener("fetch", event => {
+  // Only GET requests can be cached
+  if (event.request.method !== "GET") return;
+
+  // Only cache http/https requests (skip chrome-extension:// etc.)
+  if (!event.request.url.startsWith("http")) return;
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Update cache in background with fresh version
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        // Skip opaque responses (cross-origin without CORS headers)
+        if (response.type !== "opaqueredirect" && response.type !== "opaque") {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        }
         return response;
       })
-      .catch(() => caches.match(event.request)) // fallback only
+      .catch(() => caches.match(event.request))
   );
 });
