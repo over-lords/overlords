@@ -474,8 +474,8 @@ export function renderCard(cardId, container) {
 
     // Colors
     const overlayColor = isAlly
-        ? "rgba(0, 80, 200, 0.55)"    // blue, semi-transparent
-        : "rgba(200, 0, 0, 0.55)";    // red, semi-transparent
+        ? "rgba(0, 80, 200, 0.8)"    // blue, semi-transparent
+        : "rgba(200, 0, 0, 0.8)";    // red, semi-transparent
 
     // === CARD BASE ===
     const card = document.createElement('div');
