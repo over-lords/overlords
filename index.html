@@ -145,13 +145,13 @@
             if (Array.isArray(newsData)) {
                 newsDiv.innerHTML = newsData.map(entry => `
                     <p><strong>${entry.date}:</strong> ${entry.text}</p>
-                `).join('<br><br>');
+                `).join('<br>');
             }
 
             if (Array.isArray(issueData)) {
                 issuesDiv.innerHTML = issueData.map(entry => `
                     <p><strong>${entry.title}</strong><br>${entry.text}</p>
-                `).join('<br><br>');
+                `).join('<br>');
             }
         }
         function showTab(tabName) {
