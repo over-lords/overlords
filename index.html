@@ -65,12 +65,10 @@
     </style>
 </head>
 <body style="background-color:white;" onload="window.scrollTo(0, 1)">
-    <script type="module">
-        import { supabase } from "./supabaseClient.js";
-
-        const { data: { session } } = await supabase.auth.getSession();
-
-        if (!session) {
+    <script>
+        // redirect if not logged in
+        const uid = localStorage.getItem("session_user_id");
+        if (!uid) {
             window.location = "login.html";
         }
     </script>
@@ -132,8 +130,11 @@
     <script src="./data/news.js"></script>
     <script src="./data/issues.js"></script>
     <script>
-        async function logoutUser() {
-            await supabase.auth.signOut();
+        function logoutUser() {
+            // Clear session
+            localStorage.removeItem("session_user_id");
+
+            // Redirect to login
             window.location = "login.html";
         }
 

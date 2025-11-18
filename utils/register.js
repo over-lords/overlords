@@ -48,40 +48,28 @@ window.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // ⭐ 1) Sign up in Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password: pass
-        });
+        const hashed = bcrypt.hashSync(pass, 10);
 
-        if (authError) {
-            //alert("Auth error: " + authError.message);
-            return;
-        }
-
-        // Get the auth user's UUID
-        const userId = authData.user.id;
-
-        // ⭐ NEW: Get random profile picture
+        // ⭐ NEW: Get a random profile picture filename
         const randomPic = await getRandomProfilePicture();
 
-        // ⭐ 2) Insert into your own table with REAL auth user ID
-        const { error: dbError } = await supabase.from("users").insert({
-            id: userId,          // this links your table to Supabase auth
-            email,
-            username,
-            profile_picture: randomPic
-        });
+        const { error } = await supabase
+            .from("users")
+            .insert({
+                email,
+                username,
+                password: hashed,
+                profile_picture: randomPic
+            });
 
-        if (dbError) {
-            //alert("DB error: " + dbError.message);
+        if (error) {
+            //alert("Error: " + error.message);
             return;
         }
 
         //alert("Account created! Please login.");
         window.location = "login.html";
     });
-
 
     goLoginBtn.addEventListener("click", () => {
         window.location = "login.html";
