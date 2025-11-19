@@ -12,4 +12,6 @@ export const keywords = {
     "Scan": "Reveal the top card(s) of a given deck for all to see.",
     "Clash": "When engaged with this Henchman or Villain, you do not continue to move across the board.",
     "Eject": "When damaged by this Henchman or Villain, your Hero is sent back to Headquarters.",
+    "Block": "Prevent a Hero, specified by the effect, from taking Damage one time.",
+    "Freeze": "The Henchman or Villain cannot move for a specified amount of time.",
 }
