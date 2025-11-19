@@ -18,12 +18,12 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Superman can ignore taking Damage, or he can Protect another Hero.`
+        text: `3/Game: Once per turn, Superman can Block himself or another Hero.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Ignore the Damage`
+        text: `Protect Superman`
       },
       {
         text: `Protect another Hero`
@@ -1001,7 +1001,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Once per turn, Lock a Henchman or Villain in their City. <span class="line-gap"></span> 1/Game: Double the Damage of one of Wonder Woman's cards, and if you do, negate its additional effects.`
+        text: `2/Game: Once per turn, permanently Freeze a Henchman or Villain. <span class="line-gap"></span> 2/Game: Once per turn, double the Damage of one of Wonder Woman's cards, and if you do, negate its additional effects.`
       }
     ],
     abilitiesNamePrint: [
@@ -1023,7 +1023,7 @@ export const heroes = [
       {
         type: `quick`,
         condition: `useDamageCard`,
-        uses: `1`,
+        uses: `2`,
         shared: `no`,
         effect: `ignoreTextDoubleDamage`
       }
@@ -1978,12 +1978,12 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, you can increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 3/Game: Without rolling, Batman can Retreat and take no Damage.`
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 2/Game: Once per turn, Batman can succeed a failed Retreat Roll.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Retreat without rolling`
+        text: `Declare Retreat Successful`
       },
       {
         text: `Double Damage In Gotham`
@@ -1994,9 +1994,9 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
-        type: `standard`,
-        condition: `none`,
-        uses: `3`,
+        type: `quick`,
+        condition: `failedRetreat()`,
+        uses: `2`,
         shared: `no`,
         effect: `retreatFree`
       },
