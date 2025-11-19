@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/2f136e08092d67f2e4329b8f428e95db19e95562/Public/Images/Card%20Assets/Villains";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Card%20Assets/Villains";
 
 // ids 5601-7000
 
@@ -789,7 +789,7 @@ export const villains = [
   {
     id: "5621",
     name: "Blockbuster",
-    image: `${cardArtFolder}/blockbuster.jpg`,
+    image: `${cardArtFolder}/blockBusterAlt.jpg`,
     type: "Villain",
     doNotShow: "false",
     hero: "Teen Titan",
