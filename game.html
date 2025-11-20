@@ -48,13 +48,229 @@
             pointer-events: none;
             object-fit: contain;
         }
+
+        .city-slot .card-wrapper {
+            transform: scale(0.80);
+            transform-origin: top left;
+        }
+
+        #city-grid-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #city-grid {
+            display: flex;
+            gap: 22px;
+            pointer-events: none;
+        }
+
+        .city-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .city-slot {
+            width: 200px;      /* >184px shrunk card width */
+            height: 300px;     /* >280px shrunk card height */
+            background: rgba(0,0,0,0.25);
+            border: 2px solid black;
+            border-radius: 8px;
+            box-shadow: 2px 3px 5px rgba(0,0,0,0.35);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+        }
+        .city-slot .card-wrapper {
+            transform: scale(0.80);       /* SHRINK TO FIT */
+            transform-origin: top left;
+        }
+        .city-spacer {
+            width: 200px;
+            height: 32px;
+            background: #fff;
+            border: 2px solid black;
+            border-radius: 6px;
+            font-family: 'Racing Sans One', sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .city-slot img.city-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;         /* fill slot and crop excess */
+            object-position: center;   /* crop from center */
+            pointer-events: none;
+            border-radius: 8px;        /* match slot rounding */
+        }
+
+        #dropdown-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            max-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: rgba(255,255,255,0.97);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: max-height 0.45s ease;
+            z-index: 9999;
+        }
+
+        /* ▼ open tab at top */
+        #dropdown-tab {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: white;
+            font-size: 24px;
+            width: 40px;
+            height: 28px;
+            border-radius: 0 0 8px 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        /* ▲ close tab at bottom */
+        #dropdown-close {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: white;
+            font-size: 24px;
+            width: 40px;
+            height: 28px;
+            border-radius: 8px 8px 0 0;
+            display: none; /* hidden until open */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10000;
+        }
+
+        #dropdown-content {
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1 1 auto;
+            padding: 20px;
+        }
     </style>
 </head>
 <body style="background-color:white;">
+    <div id="dropdown-tab">▼</div>
+        <div id="dropdown-panel">
+            <div id="dropdown-content"></div>
+        </div>
+    <div id="dropdown-close">▲</div>
+
     <div class="bg-image" alt="" style="opacity: 35%;"></div>
     <div class="container">
         <div id="game-board-container">
-            <img id="game-board" alt="Overlords Board" src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/BoardReduced.jpg">
+        <img id="game-board"
+            alt="Overlords Board"
+            style="opacity: 75%;"
+            src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/BoardReduced.jpg">
+
+            <div id="city-grid-wrapper">
+                <div id="city-grid">
+                    <!-- STAR CITY -->
+                    <div class="city-column">
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/starUpper.jpg">
+                        </div>
+                        <div class="city-spacer">Star City</div>
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/starLower.jpg">
+                        </div>
+                    </div>
+
+                    <!-- COAST CITY -->
+                    <div class="city-column">
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/coastUpper.jpg">
+                        </div>
+                        <div class="city-spacer">Coast City</div>
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/coastLower.jpg">
+                        </div>
+                    </div>
+
+                    <!-- KEYSTONE -->
+                    <div class="city-column">
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/keystoneUpper.jpg">
+                        </div>
+                        <div class="city-spacer">Keystone City</div>
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/keystoneLower.jpg">
+                        </div>
+                    </div>
+
+                    <!-- CENTRAL CITY -->
+                    <div class="city-column">
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/centralUpper.jpg">
+                        </div>
+                        <div class="city-spacer">Central City</div>
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/centralLower.jpg">
+                        </div>
+                    </div>
+
+                    <!-- METROPOLIS -->
+                    <div class="city-column">
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/metropolisUpper.jpg">
+                        </div>
+                        <div class="city-spacer">Metropolis</div>
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/metropolisLower.jpg">
+                        </div>
+                    </div>
+
+                    <!-- GOTHAM CITY -->
+                    <div class="city-column">
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/gothamUpper.jpg">
+                        </div>
+                        <div class="city-spacer">Gotham City</div>
+                        <div class="city-slot">
+                            <img class="city-image"
+                                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/gothamLower.jpg">
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -69,6 +285,7 @@
         import { henchmen } from './data/henchmen.js';
         import { villains } from './data/villains.js';
         import { renderCard } from './utils/cardRenderer.js';
+        import { renderCountdown } from './utils/cardRenderer.js';
 
         async function decryptData(cipherText, secretKey) {
             const data = atob(cipherText);
@@ -126,7 +343,7 @@
 
                 // Create hero container
                 const container = document.createElement('div');
-                container.style.marginTop = '140px';
+                container.style.marginTop = '0px';
                 container.style.textAlign = 'center';
                 container.innerHTML = `
                 <h2>Loaded Heroes (in order selected):</h2>
@@ -253,7 +470,7 @@
                 </div>
                 `;
 
-                //document.querySelector('.container').appendChild(container);
+                document.getElementById("dropdown-content").appendChild(container);
             } catch (e) {
                 console.error('Failed to decrypt data:', e);
                 document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">Invalid or corrupted data.</p>');
@@ -281,6 +498,53 @@
             visualViewport.addEventListener("scroll", resizeBoardToViewport);
         }
         window.addEventListener("resize", resizeBoardToViewport);
+
+        function scaleGridToBoard() {
+            const board = document.getElementById("game-board");
+            const wrapper = document.getElementById("city-grid-wrapper");
+            const grid = document.getElementById("city-grid");
+
+            // Natural grid size
+            const gridWidth = grid.scrollWidth;
+            const gridHeight = grid.scrollHeight;
+
+            // Visible board box
+            const boardRect = board.getBoundingClientRect();
+            const maxW = boardRect.width * 0.90;  // slight padding
+            const maxH = boardRect.height * 0.80; // slight padding
+
+            // Required scale
+            const scale = Math.min(maxW / gridWidth, maxH / gridHeight);
+
+            wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        window.addEventListener("load", scaleGridToBoard);
+        window.addEventListener("resize", scaleGridToBoard);
+
+        // === DROPDOWN TOGGLE LOGIC ===
+        const dropdownPanel = document.getElementById("dropdown-panel");
+        const dropdownTab   = document.getElementById("dropdown-tab");
+        const dropdownClose = document.getElementById("dropdown-close");
+
+        // OPEN ▼ — only visible when closed
+        dropdownTab.addEventListener("click", () => {
+            dropdownPanel.style.maxHeight = "80vh";
+            dropdownTab.style.display = "none";      // hide open tab
+            dropdownClose.style.display = "flex";    // show close tab at bottom
+        });
+
+        // CLOSE ▲ — only visible when open
+        dropdownClose.addEventListener("click", () => {
+            dropdownPanel.style.maxHeight = "0";
+
+            dropdownClose.style.display = "none";  // hide close tab immediately
+
+            // Show the open tab AFTER collapse animation
+            setTimeout(() => {
+                dropdownTab.style.display = "flex";
+            }, 450);
+        });
     </script>
 </body>
 </html>
