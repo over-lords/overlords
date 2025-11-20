@@ -51,7 +51,7 @@
     </style>
 </head>
 <body style="background-color:white;">
-    <div class="bg-image" alt="" style="opaCity: 35%;"></div>
+    <div class="bg-image" alt="" style="opacity: 35%;"></div>
     <div class="container">
         <div id="game-board-container">
             <img id="game-board" alt="Overlords Board" src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/BoardReduced.jpg">
@@ -70,208 +70,203 @@
         import { villains } from './data/villains.js';
         import { renderCard } from './utils/cardRenderer.js';
 
-        // --- Decrypt Function ---
         async function decryptData(cipherText, secretKey) {
-        const data = atob(cipherText);
-        const bytes = new Uint8Array([...data].map(c => c.charCodeAt(0)));
-        const iv = bytes.slice(0, 12);
-        const cipher = bytes.slice(12);
+            const data = atob(cipherText);
+            const bytes = new Uint8Array([...data].map(c => c.charCodeAt(0)));
+            const iv = bytes.slice(0, 12);
+            const cipher = bytes.slice(12);
 
-        // Derive 256-bit key from the secret string
-        const keyMaterial = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secretKey));
-        const key = await crypto.subtle.importKey(
-            'raw',
-            keyMaterial,
-            { name: 'AES-GCM' },
-            false,
-            ['decrypt']
-        );
+            const keyMaterial = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secretKey));
+            const key = await crypto.subtle.importKey(
+                'raw',
+                keyMaterial,
+                { name: 'AES-GCM' },
+                false,
+                ['decrypt']
+            );
 
-        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
-        const decoded = new TextDecoder().decode(decrypted);
-        return JSON.parse(decoded);
+            const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+            const decoded = new TextDecoder().decode(decrypted);
+            return JSON.parse(decoded);
         }
 
-        // --- Display Heroes ---
         (async () => {
-        const params = new URLSearchParams(window.location.search);
-        const encrypted = params.get('data');
-        const SECRET = 'GeimonHeroKey42';
+            const params = new URLSearchParams(window.location.search);
+            const encrypted = params.get('data');
+            const SECRET = 'GeimonHeroKey42';
 
-        if (!encrypted) {
-            document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
-            return;
-        }
+            if (!encrypted) {
+                document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
+                return;
+            }
 
-        try {
-            const selectedData = await decryptData(encrypted, SECRET);
-            const selectedHeroes = selectedData.heroes || [];
-            const selectedOverlords = selectedData.overlords || [];
-            const selectedTactics = selectedData.tactics || [];
+            try {
+                const selectedData = await decryptData(encrypted, SECRET);
+                const selectedHeroes = selectedData.heroes || [];
+                const selectedOverlords = selectedData.overlords || [];
+                const selectedTactics = selectedData.tactics || [];
 
-            // HEROES
-            const heroMap = new Map(heroes.map(h => [String(h.id), h]));
-            const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
+                // HEROES
+                const heroMap = new Map(heroes.map(h => [String(h.id), h]));
+                const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
 
-            // OVERLORDS
-            const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
-            const overlordList = selectedOverlords
-            .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
-            .sort((a, b) => a.level - b.level || a.hp - b.hp);
+                // OVERLORDS
+                const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
+                const overlordList = selectedOverlords
+                .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
+                .sort((a, b) => a.level - b.level || a.hp - b.hp);
 
-            // TACTICS
-            const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
-            const tacticList = selectedTactics.map(id => {
-                const t = tacticMap.get(String(id));
-                if (!t) return { name: `Unknown (ID ${id})`, abilitiesText: [{ text: '?' }] };
-                return t;
-            });
+                // TACTICS
+                const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+                const tacticList = selectedTactics.map(id => {
+                    const t = tacticMap.get(String(id));
+                    if (!t) return { name: `Unknown (ID ${id})`, abilitiesText: [{ text: '?' }] };
+                    return t;
+                });
 
-            // Create hero container
-            const container = document.createElement('div');
-            container.style.marginTop = '140px';
-            container.style.textAlign = 'center';
-            container.innerHTML = `
-            <h2>Loaded Heroes (in order selected):</h2>
-            <ol style="display:inline-block; text-align:left;">
-                ${heroList.map(h => `<li>${h.name}</li>`).join('')}
-            </ol>
-            <h2 style="margin-top:30px;">Loaded Overlords (sorted by difficulty & HP):</h2>
-            <ol style="display:inline-block; text-align:left;">
-                ${overlordList.map(o => `<li>${o.name} — ${o.hp} HP (Difficulty ${o.level})</li>`).join('')}
-            </ol>
-            `;
+                // Create hero container
+                const container = document.createElement('div');
+                container.style.marginTop = '140px';
+                container.style.textAlign = 'center';
+                container.innerHTML = `
+                <h2>Loaded Heroes (in order selected):</h2>
+                <ol style="display:inline-block; text-align:left;">
+                    ${heroList.map(h => `<li>${h.name}</li>`).join('')}
+                </ol>
+                <h2 style="margin-top:30px;">Loaded Overlords (sorted by difficulty & HP):</h2>
+                <ol style="display:inline-block; text-align:left;">
+                    ${overlordList.map(o => `<li>${o.name} — ${o.hp} HP (Difficulty ${o.level})</li>`).join('')}
+                </ol>
+                `;
 
-            container.innerHTML += `
-            <h2 style="margin-top:30px;">Loaded Tactics:</h2>
-            <ol style="display:inline-block; text-align:left; max-width:700px;">
-                ${tacticList.map(t => `
-                <li style="margin-bottom:10px;">
-                    <b>${t.name}</b><br>
-                    ${t.abilitiesText.map(a => a.text).join('<br><br>')}
-                </li>
-                `).join('')}
-            </ol>
-            `;
+                container.innerHTML += `
+                <h2 style="margin-top:30px;">Loaded Tactics:</h2>
+                <ol style="display:inline-block; text-align:left; max-width:700px;">
+                    ${tacticList.map(t => `
+                    <li style="margin-bottom:10px;">
+                        <b>${t.name}</b><br>
+                        ${t.abilitiesText.map(a => a.text).join('<br><br>')}
+                    </li>
+                    `).join('')}
+                </ol>
+                `;
 
-            // --- Handle enemies and allies safely whether array or object ---
-            const enemiesData = selectedData.enemies || {};
-            const alliesData = selectedData.allies || {};
+                // Handle enemies and allies safely whether array or object
+                const enemiesData = selectedData.enemies || {};
+                const alliesData = selectedData.allies || {};
 
-            const selectedEnemies = Array.isArray(enemiesData.ids) ? enemiesData.ids : [];
-            const selectedAllies = Array.isArray(alliesData.ids) ? alliesData.ids : [];
+                const selectedEnemies = Array.isArray(enemiesData.ids) ? enemiesData.ids : [];
+                const selectedAllies = Array.isArray(alliesData.ids) ? alliesData.ids : [];
 
-            const enemiesCount = typeof enemiesData.count === "number"
-            ? enemiesData.count
-            : selectedEnemies.length;
-            const alliesCount = typeof alliesData.count === "number"
-            ? alliesData.count
-            : selectedAllies.length;
+                const enemiesCount = typeof enemiesData.count === "number"
+                ? enemiesData.count
+                : selectedEnemies.length;
+                const alliesCount = typeof alliesData.count === "number"
+                ? alliesData.count
+                : selectedAllies.length;
 
-            const enemyMap = new Map(enemies.map(e => [String(e.id), e.name]));
-            const allyMap = new Map(allies.map(a => [String(a.id), a.name]));
+                const enemyMap = new Map(enemies.map(e => [String(e.id), e.name]));
+                const allyMap = new Map(allies.map(a => [String(a.id), a.name]));
 
-            container.innerHTML += `
-            <h2 style="margin-top:30px;">Enemies & Allies:</h2>
-            <div style="display:flex; justify-content:center; gap:60px; text-align:left;">
-                <div>
-                <b>Enemies (${enemiesCount} chosen)</b><br>
-                <ul>${
-                    selectedEnemies.length
-                    ? selectedEnemies.map(id => `<li>${enemyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
-                    : '<li>None selected</li>'
-                }</ul>
+                container.innerHTML += `
+                <h2 style="margin-top:30px;">Enemies & Allies:</h2>
+                <div style="display:flex; justify-content:center; gap:60px; text-align:left;">
+                    <div>
+                    <b>Enemies (${enemiesCount} chosen)</b><br>
+                    <ul>${
+                        selectedEnemies.length
+                        ? selectedEnemies.map(id => `<li>${enemyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
+                        : '<li>None selected</li>'
+                    }</ul>
+                    </div>
+                    <div>
+                    <b>Allies (${alliesCount} chosen)</b><br>
+                    <ul>${
+                        selectedAllies.length
+                        ? selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
+                        : '<li>None selected</li>'
+                    }</ul>
+                    </div>
                 </div>
-                <div>
-                <b>Allies (${alliesCount} chosen)</b><br>
-                <ul>${
-                    selectedAllies.length
-                    ? selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
-                    : '<li>None selected</li>'
-                }</ul>
+                `;
+
+                // -------- VILLAIN DECK --------
+                const vdeck = selectedData.villainDeck || {};
+
+                const vd_mights = typeof vdeck.mights === 'number' ? vdeck.mights : 0;
+
+                const vd_bys_count = Number(vdeck.bystanders?.count)||0;
+                const vd_bys_types = Array.isArray(vdeck.bystanders?.byType) ? vdeck.bystanders.byType : [];
+
+                const vd_scenarios = Array.isArray(vdeck.scenarios) ? vdeck.scenarios.map(String) : [];
+                const scenMap = new Map(scenarios.map(s => [String(s.id), s]));
+
+                const vd_hench_list = Array.isArray(vdeck.henchmen) ? vdeck.henchmen : [];
+                const henchMap = new Map(henchmen.map(h=>[String(h.id), h]));
+
+                const vd_villain_ids = Array.isArray(vdeck.villains) ? vdeck.villains.map(String) : [];
+                const villainMap = new Map(villains.map(v=>[String(v.id), v]));
+
+                const byBreakHTML = vd_bys_types.length
+                ? ('<ul style="margin:0;padding-left:18px;">'+vd_bys_types.filter(x=>x.count>0).map(x=>`<li>${x.count}× ${x.name || ('Type '+x.id)}</li>`).join('')+'</ul>')
+                : '<i>No bystanders</i>';
+
+                const scenariosHTML = vd_scenarios.length
+                ? ('<ul style="margin:0;padding-left:18px;">'+vd_scenarios.map(id=>`<li>${scenMap.get(id)?.name || ('Unknown '+id)}</li>`).join('')+'</ul>')
+                : '<i>None selected</i>';
+
+                const henchHTML = vd_hench_list.length
+                ? ('<ul style="margin:0;padding-left:18px;">'
+                    + vd_hench_list.filter(x=>Number(x.count)>0).map(x=>{
+                        const h = henchMap.get(String(x.id));
+                        return `<li>${x.count}× ${h?.name || ('Hench '+x.id)}</li>`;
+                        }).join('')
+                    +'</ul>')
+                : '<i>None selected</i>';
+
+                const vilsHTML = vd_villain_ids.length
+                ? ('<ul style="margin:0;padding-left:18px;">'+vd_villain_ids.map(id=>{
+                        const v = villainMap.get(id);
+                        return `<li>${v?.name || ('Villain '+id)}${v?` — ${v.hp} HP • ${v.damage} DMG`:''}</li>`;
+                    }).join('')+'</ul>')
+                : '<i>None selected</i>';
+
+                container.innerHTML += `
+                <h2 style="margin-top:30px;">Villain Deck</h2>
+                <div style="display:grid;grid-template-columns: 1fr 1fr; gap:24px; max-width:900px; margin:0 auto; text-align:left;">
+                    <div>
+                    <b>Mights:</b> ${vd_mights}
+                    <br><br>
+                    <b>Bystanders:</b> ${vd_bys_count}
+                    <div style="margin-top:6px;">${byBreakHTML}</div>
+                    <br>
+                    <b>Scenarios (${vd_scenarios.length}):</b>
+                    <div style="margin-top:6px;">${scenariosHTML}</div>
+                    </div>
+                    <div>
+                    <b>Henchmen:</b>
+                    <div style="margin-top:6px;">${henchHTML}</div>
+                    <br>
+                    <b>Villains (${vd_villain_ids.length}):</b>
+                    <div style="margin-top:6px;">${vilsHTML}</div>
+                    </div>
                 </div>
-            </div>
-            `;
+                `;
 
-            // -------- VILLAIN DECK --------
-            const vdeck = selectedData.villainDeck || {};
-
-            const vd_mights = typeof vdeck.mights === 'number' ? vdeck.mights : 0;
-
-            const vd_bys_count = Number(vdeck.bystanders?.count)||0;
-            const vd_bys_types = Array.isArray(vdeck.bystanders?.byType) ? vdeck.bystanders.byType : [];
-
-            const vd_scenarios = Array.isArray(vdeck.scenarios) ? vdeck.scenarios.map(String) : [];
-            const scenMap = new Map(scenarios.map(s => [String(s.id), s]));
-
-            const vd_hench_list = Array.isArray(vdeck.henchmen) ? vdeck.henchmen : [];
-            const henchMap = new Map(henchmen.map(h=>[String(h.id), h]));
-
-            const vd_villain_ids = Array.isArray(vdeck.villains) ? vdeck.villains.map(String) : [];
-            const villainMap = new Map(villains.map(v=>[String(v.id), v]));
-
-            const byBreakHTML = vd_bys_types.length
-            ? ('<ul style="margin:0;padding-left:18px;">'+vd_bys_types.filter(x=>x.count>0).map(x=>`<li>${x.count}× ${x.name || ('Type '+x.id)}</li>`).join('')+'</ul>')
-            : '<i>No bystanders</i>';
-
-            const scenariosHTML = vd_scenarios.length
-            ? ('<ul style="margin:0;padding-left:18px;">'+vd_scenarios.map(id=>`<li>${scenMap.get(id)?.name || ('Unknown '+id)}</li>`).join('')+'</ul>')
-            : '<i>None selected</i>';
-
-            const henchHTML = vd_hench_list.length
-            ? ('<ul style="margin:0;padding-left:18px;">'
-                + vd_hench_list.filter(x=>Number(x.count)>0).map(x=>{
-                    const h = henchMap.get(String(x.id));
-                    return `<li>${x.count}× ${h?.name || ('Hench '+x.id)}</li>`;
-                    }).join('')
-                +'</ul>')
-            : '<i>None selected</i>';
-
-            const vilsHTML = vd_villain_ids.length
-            ? ('<ul style="margin:0;padding-left:18px;">'+vd_villain_ids.map(id=>{
-                    const v = villainMap.get(id);
-                    return `<li>${v?.name || ('Villain '+id)}${v?` — ${v.hp} HP • ${v.damage} DMG`:''}</li>`;
-                }).join('')+'</ul>')
-            : '<i>None selected</i>';
-
-            container.innerHTML += `
-            <h2 style="margin-top:30px;">Villain Deck</h2>
-            <div style="display:grid;grid-template-columns: 1fr 1fr; gap:24px; max-width:900px; margin:0 auto; text-align:left;">
-                <div>
-                <b>Mights:</b> ${vd_mights}
-                <br><br>
-                <b>Bystanders:</b> ${vd_bys_count}
-                <div style="margin-top:6px;">${byBreakHTML}</div>
-                <br>
-                <b>Scenarios (${vd_scenarios.length}):</b>
-                <div style="margin-top:6px;">${scenariosHTML}</div>
-                </div>
-                <div>
-                <b>Henchmen:</b>
-                <div style="margin-top:6px;">${henchHTML}</div>
-                <br>
-                <b>Villains (${vd_villain_ids.length}):</b>
-                <div style="margin-top:6px;">${vilsHTML}</div>
-                </div>
-            </div>
-            `;
-
-            //document.querySelector('.container').appendChild(container);
-        } catch (e) {
-            console.error('Failed to decrypt data:', e);
-            document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">Invalid or corrupted data.</p>');
-        }
+                //document.querySelector('.container').appendChild(container);
+            } catch (e) {
+                console.error('Failed to decrypt data:', e);
+                document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">Invalid or corrupted data.</p>');
+            }
         })();
 
         function resizeBoardToViewport() {
             const board = document.getElementById("game-board");
             const container = document.getElementById("game-board-container");
 
-            // Use visualViewport when available (mobile browsers)
             const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
             const vw = window.visualViewport ? window.visualViewport.width  : window.innerWidth;
 
-            // Apply new max sizes with small padding for border
             board.style.maxHeight = (vh - 16) + "px";
             board.style.maxWidth  = (vw - 16) + "px";
 
@@ -279,16 +274,12 @@
             container.style.maxWidth  = vw + "px";
         }
 
-        // Initial run
         resizeBoardToViewport();
 
-        // Re-run whenever viewport changes (scroll, top bar hides/shows, rotation)
         if (window.visualViewport) {
             visualViewport.addEventListener("resize", resizeBoardToViewport);
             visualViewport.addEventListener("scroll", resizeBoardToViewport);
         }
-
-        // Fallback
         window.addEventListener("resize", resizeBoardToViewport);
     </script>
 </body>
