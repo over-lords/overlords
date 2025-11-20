@@ -13,5 +13,7 @@ export const keywords = {
     "Clash": "When engaged with this Henchman or Villain, you do not continue to move across the board.",
     "Eject": "When damaged by this Henchman or Villain, your Hero is sent back to Headquarters.",
     "Block": "Prevent a Hero, specified by the effect, from taking Damage one time.",
-    "Freeze": "The Henchman or Villain cannot move for a specified amount of time.",
+    "Freeze": "The Henchman or Villain cannot move for a specified amount of time (permanent if not specified).",
+    "Curse": "Reduce a Henchman or Villain's Damage by a set amount for a set time (permanent if not specified).",
+    "Withdraw": "Retreat without taking Damage, no Retreat Roll is made.",
 }

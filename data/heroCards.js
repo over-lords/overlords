@@ -12,7 +12,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards.`
+        text: `Draw 2.`
       }
     ],
     abilitiesNamePrint: [
@@ -60,7 +60,7 @@ export const heroCards = [
     damage: "4",
     abilitiesText: [
       {
-        text: `CHOOSE: This card deals 8 Damage and Superman cannot deal Damage on his next turn. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw a card.`
+        text: `CHOOSE: This card deals 8 Damage and Superman cannot deal Damage on his next turn. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -108,7 +108,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Increase this card's Damage by 3 if Superman is at, or below, 5 HP.`
+        text: `If Superman is at, or below, 5 HP: Increase this card's Damage by 3.`
       }
     ],
     abilitiesNamePrint: [
@@ -132,7 +132,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `[ICON:Bat] : Draw 2 cards. <span class="line-gap"></span> [ICON:Wonder] : Increase this card’s Damage by 2. <span class="line-gap"></span> [ICON:Bat] + [ICON:Wonder] : You may draw from the Enemies and Allies Pile.`
+        text: `[ICON:Bat]: Draw 2. <span class="line-gap"></span> [ICON:Wonder]: Increase this card’s Damage by 2. <span class="line-gap"></span> [ICON:Bat] + [ICON:Wonder]: OPTIONAL : Draw from E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -180,7 +180,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Gain a Sidekick. <span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span> [ICON:Super]: Draw a card.`
+        text: `Gain a Sidekick. <span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span> [ICON:Super]: Draw 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -204,7 +204,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `A Henchman or Villain Damaged by this card cannot move until the end of Superman’s next turn.`
+        text: `Freeze the Henchman or Villain damaged by this card until the end of Superman's next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -228,7 +228,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `All other active Heroes draw a card.`
+        text: `All other active Heroes draw 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -276,7 +276,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards.`
+        text: `Draw 2.`
       }
     ],
     abilitiesNamePrint: [
@@ -396,7 +396,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Draw 2 cards, then Discard 1.`
+        text: `Draw 2, then Discard 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -420,7 +420,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Draw a card. <span class="line-gap"></span> You may also draw from the Enemies and Allies Pile.`
+        text: `Draw 1. <span class="line-gap"></span> You may also draw from the Enemies and Allies Pile.`
       }
     ],
     abilitiesNamePrint: [
@@ -444,7 +444,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Increase this card's Damage by 1 for every active [ICON:Justice] Hero.`
+        text: `Increase this card's Damage by 1 for every other active [ICON:Justice] Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -588,7 +588,7 @@ export const heroCards = [
     damage: "4",
     abilitiesText: [
       {
-        text: `After taking this card's Damage, Henchmen and Villains are shoved as far right as possible. <span class="line-gap"></span> CHOOSE: Wonder Woman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+        text: `After taking this card's Damage, shove Wonder Woman's engaged foe 5 spaces right. <span class="line-gap"></span> CHOOSE: Wonder Woman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
       }
     ],
     abilitiesNamePrint: [
@@ -684,7 +684,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `A Henchman or Villain Damaged by this card cannot move until the end of Wonder Woman's next turn.`
+        text: `Freeze the Henchman or Villain damaged by this card until the end of Wonder Woman's next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -708,7 +708,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `CHOOSE: Increase this card's Damage by 1 for every active [ICON:Wonder] Hero. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw a card for every KO'd [ICON:Wonder] Hero.`
+        text: `CHOOSE: Increase this card's Damage by 1 for every other active [ICON:Wonder] Hero. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 1 for every KO'd [ICON:Wonder] Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -732,7 +732,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `If Wonder Woman is at 5 or less HP, deal 5 damage to the Overlord. <span class="line-gap"></span> Otherwise, draw a card.`
+        text: `If Wonder Woman is at 5, or less, HP: Deal 5 damage to the Overlord. <span class="line-gap"></span> Otherwise: Draw 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -756,7 +756,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reduce Wonder Woman's engaged Henchman or Villain's Damage by 1.`
+        text: `Wonder Woman's engaged foe gains Curse 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -780,7 +780,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards. <span class="line-gap"></span> Wonder Woman can Retreat without taking Damage this turn.`
+        text: `Draw 2. <span class="line-gap"></span> Wonder Woman can Withdraw once this turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -804,7 +804,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `CHOOSE: Draw a card. <span class="line-gap"></span> OR <span class="line-gap"></span> Rescue all captured Bystanders.`
+        text: `CHOOSE: Draw 1. <span class="line-gap"></span> OR <span class="line-gap"></span> Rescue all captured Bystanders.`
       }
     ],
     abilitiesNamePrint: [
@@ -924,7 +924,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `OPTIONAL: This card deals no Damage, and next turn all of Flash's cards gain +1 Damage.`
+        text: `OPTIONAL : This card deals no Damage, and next turn all of Flash's cards gain +1 Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -948,7 +948,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Retrieve up to 2 cards from Flash's discard pile.`
+        text: `Retrieve up to 2 from Flash's discard pile.`
       }
     ],
     abilitiesNamePrint: [
@@ -972,7 +972,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Draw a card. <span class="line-gap"></span><span class="line-gap"></span> Each time Flash KO's a Henchman or Villain this turn, he can rescue a Bystander.`
+        text: `Draw 1. <span class="line-gap"></span><span class="line-gap"></span> Each time Flash KO's a Henchman or Villain this turn, he can Rescue a Bystander.`
       }
     ],
     abilitiesNamePrint: [
@@ -1068,7 +1068,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw a card and rescue a Bystander.`
+        text: `Draw 1 and Rescue a Bystander.`
       }
     ],
     abilitiesNamePrint: [
@@ -1092,7 +1092,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards. Flash can only use them against Henchmen and Villains that other Heroes are engaged against. He does not need to Travel to do so.`
+        text: `Draw 2. Flash can only use them against Henchmen and Villains that other Heroes are engaged against. He does not need to Travel to do so.`
       }
     ],
     abilitiesNamePrint: [
@@ -1116,7 +1116,7 @@ export const heroCards = [
     damage: "5",
     abilitiesText: [
       {
-        text: `Draw 2 cards. <span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span> OPTIONAL: Discard X Cards.`
+        text: `Draw 2. <span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span> OPTIONAL : Discard X.`
       }
     ],
     abilitiesNamePrint: [
@@ -1188,7 +1188,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Draw 2 cards, then discard a card. <span class="line-gap"></span><span class="line-gap"></span> If Discarded: Deal 2 damage to the Overlord.`
+        text: `Draw 2, then Discard 1. <span class="line-gap"></span><span class="line-gap"></span> If Discarded: Deal 2 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1212,7 +1212,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `OPTIONAL: Discard 1 and Batman regains 2 HP. <span class="line-gap"></span> If Discarded: Draw 2.`
+        text: `OPTIONAL : Discard 1 and Batman regains 2 HP. <span class="line-gap"></span> If Discarded: Draw 2.`
       }
     ],
     abilitiesNamePrint: [
@@ -1236,7 +1236,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `CHOOSE: Increase this card's Damage by 1 for every active [ICON:Bat] Hero. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw a card for every active [ICON:Bat] Hero.`
+        text: `CHOOSE: Increase this card's Damage by 1 for every other active [ICON:Bat] Hero. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 1 for every other active [ICON:Bat] Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -1260,7 +1260,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `A Henchman or Villain Damaged by this card cannot move until the end of Batman's next turn.`
+        text: `Freeze the Henchman or Villain damaged by this card until the end of Batman's next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1284,7 +1284,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards. <span class="line-gap"></span> OPTIONAL: Discard X Cards. <span class="line-gap"></span> Increase this card's Damage by 1 for every card Batman discarded this turn.`
+        text: `Draw 2. <span class="line-gap"></span> OPTIONAL : Discard X. <span class="line-gap"></span> Increase this card's Damage by 1 for every card Batman discarded this turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1308,7 +1308,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `You may draw from the Enemies and Allies Pile. <span class="line-gap"></span> If Discarded: Scan 3 from the Enemies and Allies Pile. <span class="line-gap"></span> CHOOSE: Activate. <span class="line-gap"></span> OR <span class="line-gap"></span> KO your choice of the revealed cards.`
+        text: `OPTIONAL : Draw from E&A. <span class="line-gap"></span> If Discarded: Scan 3 from E&A. <span class="line-gap"></span> CHOOSE: Activate. <span class="line-gap"></span> OR <span class="line-gap"></span> KO your choice of the revealed cards.`
       }
     ],
     abilitiesNamePrint: [
@@ -1332,7 +1332,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw a card. <span class="line-gap"></span><span class="line-gap"></span> Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the revealed card.`
+        text: `Draw 1. <span class="line-gap"></span><span class="line-gap"></span> Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -1356,7 +1356,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw a card and gain a Sidekick. <span class="line-gap"></span><span class="line-gap"></span> Increase this card's Damage by 1 for every active [ICON:Bat] and [ICON:Justice] Hero.`
+        text: `Draw 1 and Gain a Sidekick. <span class="line-gap"></span><span class="line-gap"></span> Increase this card's Damage by 1 for every other active [ICON:Bat] and [ICON:Justice] Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -1380,7 +1380,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards, then discard a card. <span class="line-gap"></span><span class="line-gap"></span> OPTIONAL: Deal 2 Damage to a Henchman or Villain in Gotham.`
+        text: `Draw 2, then Discard 1. <span class="line-gap"></span><span class="line-gap"></span> OPTIONAL : Deal 2 Damage to a Henchman or Villain in Gotham.`
       }
     ],
     abilitiesNamePrint: [
@@ -1500,7 +1500,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the top card of the Villain Deck.`
+        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -1524,7 +1524,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Scan 3 from Cyborg's deck. <span class="line-gap"></span> OPTIONAL: Draw 2 and KO the third.`
+        text: `Scan 3 from Cyborg's deck. <span class="line-gap"></span> OPTIONAL : Draw 2 and KO the third.`
       }
     ],
     abilitiesNamePrint: [
@@ -1644,7 +1644,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw a card and increase Cyborg's Damage Threshold by 1 until the start of his next turn.`
+        text: `Draw 1 and increase Cyborg's Damage Threshold by 1 until the start of his next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1860,7 +1860,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the revealed card.`
+        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -1884,7 +1884,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Gain a Sidekick. <span class="line-gap"></span> Increase this card's Damage by 1 for every active [ICON:Titans] Hero.`
+        text: `Gain a Sidekick. <span class="line-gap"></span> Increase this card's Damage by 1 for every other active [ICON:Titans] Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -1908,7 +1908,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw a card. <span class="line-gap"></span> Increase this card's Damage by 1 for every KO'd Hero.`
+        text: `Draw 1. <span class="line-gap"></span> Increase this card's Damage by 1 for every KO'd Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -1932,7 +1932,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `CHOOSE: Draw a card and rescue a Bystander. <span class="line-gap"></span> OR <span class="line-gap"></span> KO a Henchman or Villain that has a captured Bystander.`
+        text: `CHOOSE: Draw 1 and Rescue a Bystander. <span class="line-gap"></span> OR <span class="line-gap"></span> KO a Henchman or Villain that has a captured Bystander.`
       }
     ],
     abilitiesNamePrint: [
@@ -1980,7 +1980,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `You may draw from the Enemies and Allies Pile. <span class="line-gap"></span> [ICON:Flash]: OPTIONAL: Discard a card and increase this card's Damage by 2.`
+        text: `You may draw from the Enemies and Allies Pile. <span class="line-gap"></span> [ICON:Flash]: OPTIONAL : Discard a card and increase this card's Damage by 2.`
       }
     ],
     abilitiesNamePrint: [

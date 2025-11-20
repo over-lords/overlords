@@ -1001,7 +1001,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Once per turn, permanently Freeze a Henchman or Villain. <span class="line-gap"></span> 2/Game: Once per turn, double the Damage of one of Wonder Woman's cards, and if you do, negate its additional effects.`
+        text: `2/Game: Once per turn, Freeze a Henchman or Villain. <span class="line-gap"></span> 1/Game: Once per turn, double the Damage of one of Wonder Woman's cards, and if you do, negate its additional effects.`
       }
     ],
     abilitiesNamePrint: [
@@ -1023,7 +1023,7 @@ export const heroes = [
       {
         type: `quick`,
         condition: `useDamageCard`,
-        uses: `2`,
+        uses: `1`,
         shared: `no`,
         effect: `ignoreTextDoubleDamage`
       }
@@ -1978,12 +1978,12 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 2/Game: Once per turn, Batman can succeed a failed Retreat Roll.`
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 1/Game: Batman can Withdraw.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Declare Retreat Successful`
+        text: `Retreat and take no Damage`
       },
       {
         text: `Double Damage In Gotham`
@@ -1994,11 +1994,11 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: `failedRetreat()`,
-        uses: `2`,
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
         shared: `no`,
-        effect: `retreatFree`
+        effect: `withdrawHero(current)`
       },
       {
         type: `passive`,
