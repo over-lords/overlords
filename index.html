@@ -105,7 +105,7 @@
 
         <div class="profilePicBox" id="profilePicBox">
             <div class="profilePicTitle" id="profilePicTitle"
-                style="font-size: 1.1rem; text-align: center; color: white; font-weight: bold; font-family: 'Poppins', sans-serif; font-style: italic; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">
+                style="font-size: 1.1rem; text-align: center; color: white; font-weight: bold; font-family: 'Poppins', sans-serif; font-style: italic; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; cursor: pointer;">
             </div>
             <div class="profilePicConfirm" id="profilePicConfirm"
                 style="font-size: 0.85rem; 
@@ -174,8 +174,13 @@
         const currentDisplay = document.getElementById("profilePicCurrent");
         const confirmBtn = document.getElementById("profilePicConfirm");
 
+        document.getElementById("profilePicTitle").addEventListener("click", toggleProfileDisplay);
+
         let githubImages = [];
         let selectedFilename = null;
+
+        let showWinrate = false;
+        let cachedUserStats = null;
 
         async function loadGitHubImages() {
             const res = await fetch(
@@ -225,7 +230,7 @@
 
             const { data: user, error } = await supabase
                 .from("users")
-                .select("username, profile_picture")
+                .select("username, profile_picture, wins, games_played")
                 .eq("id", uid)
                 .single();
 
@@ -234,22 +239,23 @@
                 return;
             }
 
+            cachedUserStats = {
+                username: user.username,
+                wins: user.wins ?? 0,
+                games_played: user.games_played ?? 0
+            };
+
             const titleBox = document.getElementById("profilePicTitle");
             titleBox.textContent = `Welcome, ${user.username}!`;
 
             const normalized = user.profile_picture?.trim()?.toLowerCase();
 
-            const match = githubImages.find(
-                img => img.filename.toLowerCase() === normalized
-            );
+            const match = githubImages.find(img => img.filename.toLowerCase() === normalized);
 
-            if (!match) {
-                console.warn("No match for saved image:", normalized);
-                return;
+            if (match) {
+                currentDisplay.style.backgroundImage = `url('${match.url}')`;
+                selectedFilename = match.filename;
             }
-
-            currentDisplay.style.backgroundImage = `url('${match.url}')`;
-            selectedFilename = match.filename;
         }
 
         async function saveSelectedPicture() {
@@ -278,6 +284,27 @@
         }
 
         initProfilePictures();
+
+        async function toggleProfileDisplay() {
+            const titleBox = document.getElementById("profilePicTitle");
+
+            if (!cachedUserStats) return; // safety
+
+            if (!showWinrate) {
+                const { wins, games_played } = cachedUserStats;
+
+                let winrate = 0;
+                if (games_played > 0) {
+                    winrate = Math.round((wins / games_played) * 100);
+                }
+
+                titleBox.textContent = `${winrate}% Winrate (${games_played} Games Played)`;
+            } else {
+                titleBox.textContent = `Welcome, ${cachedUserStats.username}!`;
+            }
+
+            showWinrate = !showWinrate;
+        }
     </script>
 </body>
 </html>
