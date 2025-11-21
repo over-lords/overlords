@@ -62,6 +62,16 @@
         .tab-content.active {
             display: block;
         }
+        .profilePicCurrent.flash-border {
+            outline: 3px solid gold;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.9);
+            transition: outline 0.15s ease, box-shadow 0.15s ease;
+        }
+        .profilePicCurrent.flash-fail {
+            outline: 3px solid red;
+            box-shadow: 0 0 12px rgba(255, 0, 0, 0.9);
+            transition: outline 0.15s ease, box-shadow 0.15s ease;
+        }
     </style>
 </head>
 <body style="background-color:white;">
@@ -269,10 +279,19 @@
 
             if (error) {
                 //alert("Error saving profile picture: " + error.message);
+                currentDisplay.classList.add("flash-fail");
+                setTimeout(() => {
+                    currentDisplay.classList.remove("flash-fail");
+                }, 1000);
                 return;
             }
 
             //alert("Profile picture updated!");
+            currentDisplay.classList.add("flash-border");
+
+            setTimeout(() => {
+                currentDisplay.classList.remove("flash-border");
+            }, 1000);
         }
 
         confirmBtn.addEventListener("click", saveSelectedPicture);
