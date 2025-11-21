@@ -8,6 +8,44 @@
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <title>Overlords</title>
+    <style>
+        .toggle-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .toggle-slider {
+            width: 120px;
+            height: 46px;
+            background: linear-gradient(to right, #3a8bff 50%, #e44444 50%);
+            background-size: 200% 100%;
+            background-position: left;
+            border-radius: 40px;
+            position: relative;
+            transition: background-position 0.35s ease;
+            box-shadow: 0 0 8px rgba(0,0,0,0.4);
+        }
+
+        .toggle-knob {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            transition: left 0.35s ease;
+            box-shadow: 0 0 6px rgba(0,0,0,0.5);
+        }
+
+        .toggle-text {
+            font-size: 1.6rem;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body style="background-color:white;">
     <div class="bg-image" alt="" style="opaCity: 35%;"></div>
@@ -17,24 +55,39 @@
 
         <div id="close-box" onclick="location.href='multi.html'">X</div>
 
-        <div style="margin-top:20px; text-align:center;">
-            <label style="font-weight:bold;">Private?</label><br>
-            <input id="privacy-toggle" type="checkbox" checked>
-            <span id="privacy-label">Private</span>
+        <br><br>
+        <br><br><br><br>
+        <div style="text-align:center;">
+            <div style="display:flex; justify-content:center; align-items:center; gap:20px;">
+                <label style="font-weight:bold; font-size: 1.4rem; margin:0;">
+                    Private or Public Game?
+                </label>
+
+                <div id="privacy-switch" class="toggle-wrapper">
+                    <div class="toggle-slider">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <span id="privacy-label" class="toggle-text">Private</span>
+                    <input id="privacy-toggle" type="checkbox" checked hidden>
+                </div>
+            </div>
+
 
             <br><br>
 
-            <label style="font-weight:bold;">Difficulty:</label><br>
-            <select id="difficulty-select" style="padding:6px; width:150px;">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
-                <option value="knightmare">Knightmare</option>
-            </select>
+            <div style="display:flex; justify-content:center; align-items:center; gap:20px;">
+                <label style="font-weight:bold; font-size: 1.4rem;">Difficulty:</label><br>
+                <select id="difficulty-select" style="padding:6px; width:150px;">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                    <option value="knightmare">Knightmare</option>
+                </select>
+            </div>
 
             <br><br>
 
-            <div class="deck-box" id="create-lobby-btn" style="cursor:pointer; margin-top:10px;">
+            <div class="deck-box" id="create-lobby-btn" style="cursor:pointer; margin-top:90px;">
                 <h1 class="menu-text" style="margin-top:0px; pointer-events:none;">Create Lobby</h1>
             </div>
         </div>
@@ -452,6 +505,33 @@
         privacyToggle.addEventListener("change", e => {
             privacyLabel.textContent = e.target.checked ? "Private" : "Public";
         });
+
+        // Clicking the new slider toggles the hidden checkbox
+        document.getElementById("privacy-switch").addEventListener("click", () => {
+            privacyToggle.checked = !privacyToggle.checked;
+
+            // Move knob + background
+            const slider = document.querySelector(".toggle-slider");
+            const knob   = document.querySelector(".toggle-knob");
+
+            if (privacyToggle.checked) {
+                // Private (red)
+                slider.style.backgroundPosition = "right";
+                knob.style.left = "75px";
+            } else {
+                // Public (blue)
+                slider.style.backgroundPosition = "left";
+                knob.style.left = "1px";
+            }
+
+            // Update text like before
+            privacyLabel.textContent = privacyToggle.checked ? "Private" : "Public";
+        });
+
+        // Initialize defaults
+        document.querySelector(".toggle-knob").style.left = "75px";
+        document.querySelector(".toggle-slider").style.backgroundPosition = "right";
+
 
         function recalcDeck() {
             const diff = difficultySelect.value;

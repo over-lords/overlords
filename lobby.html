@@ -15,13 +15,12 @@
         <div class="title-box" id="title-box"></div>
         <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
-        <div class="back-box" id="back-box" onclick="location.href='multi.html'" style="cursor: pointer; margin-top: -30px; height: 30px; background-color: #5d5d5d; border: 5px solid #000;">
-            <h1 class="menu-text" style="font-size: 1.8rem; margin-top: 0px; pointer-events: none;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Back</h1>
-        </div>
+        <div id="close-box" onclick="location.href='multi.html'">X</div>
 
-        <div class="deck-box" id="deck-box" onclick="location.href='game.html'" style="cursor: pointer; margin-top: -10px;">
+        <div class="deck-box" id="launch-btn" style="cursor: pointer; margin-top: -60px;">
             <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Launch!</h1>
         </div>
+        <br><br><br><br><br><br><br><br>
     </div>
 
     <script type="module">
@@ -198,6 +197,38 @@
             `;
 
             document.querySelector(".container").appendChild(area);
+
+            // --- Send data to game.html (same method as single.html) ---
+            async function encryptData(data, secretKey) {
+                const enc = new TextEncoder();
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+
+                const keyMaterial = await crypto.subtle.digest("SHA-256", enc.encode(secretKey));
+                const key = await crypto.subtle.importKey("raw", keyMaterial, { name: "AES-GCM" }, false, ["encrypt"]);
+
+                const encoded = enc.encode(JSON.stringify(data));
+                const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+
+                const combined = new Uint8Array(iv.length + encrypted.byteLength);
+                combined.set(iv);
+                combined.set(new Uint8Array(encrypted), iv.length);
+
+                return btoa(String.fromCharCode(...combined));
+            }
+
+            document.getElementById("launch-btn").addEventListener("click", async () => {
+                const SECRET = "GeimonHeroKey42";
+
+                // Use EXACT SAME payload that was decrypted from create.html
+                // 'data' already contains the entire loadout.
+                const encrypted = await encryptData(data, SECRET);
+
+                const url = new URL("./game.html", window.location.href);
+                url.searchParams.set("data", encrypted);
+
+                // Open in NEW TAB
+                window.open(url.toString(), "_blank");
+            });
         })();
     </script>
 </body>
