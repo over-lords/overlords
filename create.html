@@ -365,7 +365,6 @@
                 if (current < 10) {
                     counts.set(id, current + 1);
                 } else {
-                    // Already at cap — redo this draw
                     i--;
                 }
             }
@@ -385,7 +384,7 @@
             } else if (difficulty === "medium") {
                 minV = 30; maxV = 39; hpCap = 20;
             } else if (difficulty === "hard") {
-                minV = 34; maxV = 53; hpCap = null; // no restriction
+                minV = 34; maxV = 53; hpCap = null;
             } else {
                 // knightmare
                 minV = 45; maxV = 70; hpCap = null;
@@ -443,8 +442,6 @@
             };
         }
 
-        // ---------- Wire up UI ----------
-
         const privacyToggle = document.getElementById("privacy-toggle");
         const privacyLabel  = document.getElementById("privacy-label");
         const difficultySelect = document.getElementById("difficulty-select");
@@ -459,14 +456,9 @@
         function recalcDeck() {
             const diff = difficultySelect.value;
             currentDeckData = buildLoadoutForDifficulty(diff);
-            // If you ever want debug text here, you can append a small summary
-            // to the page, but right now we just keep it in memory.
         }
 
-        // Recalculate whenever difficulty changes
         difficultySelect.addEventListener("change", recalcDeck);
-
-        // Initial calculation for default difficulty (Medium)
         recalcDeck();
 
         createBtn.addEventListener("click", async () => {
@@ -481,7 +473,6 @@
                 privacy: isPrivate ? "private" : "public",
                 key: isPrivate ? generatePrivateKey() : null,
                 difficulty,
-                // auto-generated contents
                 overlords: currentDeckData.overlords,
                 tactics: currentDeckData.tactics,
                 enemies: currentDeckData.enemies,
