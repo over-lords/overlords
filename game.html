@@ -481,8 +481,9 @@
             const board = document.getElementById("game-board");
             const container = document.getElementById("game-board-container");
 
-            const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            const vw = window.visualViewport ? window.visualViewport.width  : window.innerWidth;
+            // REAL visible height (ignores mobile browser lies)
+            const vh = document.documentElement.clientHeight;
+            const vw = document.documentElement.clientWidth;
 
             board.style.maxHeight = (vh - 16) + "px";
             board.style.maxWidth  = (vw - 16) + "px";
