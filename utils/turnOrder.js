@@ -11,16 +11,17 @@ VILLAIN DRAW
             suppress overlord might and other rules
             add new rule(s)
     else if draw = countdown
-        destroy city 1
+        shove prior countdown, if any
+        destroy landing city
             villain? ko villain
             hero? deal 10 damage to hero and knock to headquarters
     else if draw = bystander
-        rightmost villain captures
-            if no henchmen or villains active
-                if scenario active
-                    scenario captures bystander
-                else
-                    overlord KOs bystander immediately
+        if hench/villain on map
+            rightmost hench/villain captures
+        else if scenario active
+            scenario captures bystander
+        else
+            overlord KOs bystander immediately
     else if draw = henchman || villain
         if draw has teleport
             roll a d6
@@ -36,13 +37,34 @@ VILLAIN DRAW
                         no? then charge to completion
         else if draw has glide
             does city 1 have a glider inside
-                yes, push glider to city 2 - new draw enters city 1
+                yes
+                    is glider frozen?
+                        yes
+                            do not draw, just reveal top card
+                        no
+                            push glider to city 2 - new draw enters city 1
                 no, enter city 1
         else
             is city 1 occupied?
                 is city 1 frozen?
                     yes, do not draw, but reveal the top card for everyone to see
                     no, draw and enter city 1
+
+        if draw shoves a hench or villain off-board
+            has bystanders?
+                KO them
+            has takeover?
+                yes
+                    takeover level equal or higher than overlord level
+                        Read remaining overlord HP
+                        KO current Overlord, they've been usurped
+                        take Overlord remaining HP for self
+                        Become new Overlord
+                    else takeover level less than overlord level
+                        failed takeover, increase Overlord HP by remaining HP like they didn't even have takeover
+                no
+                    increase Overlord HP by remaining HP
+
 
 HERO STARTING TRAVEL
     if (hero not in city)
@@ -52,7 +74,12 @@ HERO STARTING TRAVEL
         skip to next phase
 
 HERO DRAW
-    Reveal top 3 cards from your hero's deck, select 1, other 2 are returned and shuffled back into deck
+    if deck = 2 or less cards
+        shuffle discard pile and place beneath existing deck
+            Reveal top 3 cards from your hero's deck, select 1, other 2 are returned and shuffled back into deck
+
+    MODIFY IF HERO WOULD CHECK 4 OR 5 or whatever...
+
 
 HERO TURN
     use 'standard speed' cards if against a foe
@@ -74,6 +101,8 @@ HERO TURN
                     travel to X
                 occupied red
                     travel to X and shove Y out of the city?
+                        entering hero takes foe damage immediately
+                        shoved hero returns to headquarters and takes no damage
         cards remaining - no
             change highlights on screen to 'Retreat' or 'End Turn'
 
