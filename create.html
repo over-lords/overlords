@@ -17,9 +17,484 @@
 
         <div id="close-box" onclick="location.href='multi.html'">X</div>
 
-        <div class="deck-box" id="deck-box" onclick="location.href='lobby.html'" style="cursor: pointer; margin-top: -50px;">
-            <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Launch!</h1>
+        <div style="margin-top:20px; text-align:center;">
+            <label style="font-weight:bold;">Private?</label><br>
+            <input id="privacy-toggle" type="checkbox" checked>
+            <span id="privacy-label">Private</span>
+
+            <br><br>
+
+            <label style="font-weight:bold;">Difficulty:</label><br>
+            <select id="difficulty-select" style="padding:6px; width:150px;">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+                <option value="knightmare">Knightmare</option>
+            </select>
+
+            <br><br>
+
+            <div class="deck-box" id="create-lobby-btn" style="cursor:pointer; margin-top:10px;">
+                <h1 class="menu-text" style="margin-top:0px; pointer-events:none;">Create Lobby</h1>
+            </div>
         </div>
     </div>
+
+    <script type="module">
+        import { overlords } from './data/overlords.js';
+        import { tactics } from './data/tactics.js';
+        import { enemies } from './data/enemies.js';
+        import { allies } from './data/allies.js';
+        import { bystanders } from './data/bystanders.js';
+        import { scenarios } from './data/scenarios.js';
+        import { henchmen } from './data/henchmen.js';
+        import { villains } from './data/villains.js';
+
+        const SECRET = "GeimonHeroKey42";
+
+        // ---------- Helpers ----------
+
+        function generatePrivateKey() {
+            return Math.floor(10000000 + Math.random() * 90000000).toString();
+        }
+
+        const randInt = (min, max) =>
+            Math.floor(Math.random() * (max - min + 1)) + min;
+
+        function sampleWithoutReplacement(pool, count) {
+            const copy = [...pool];
+            const out = [];
+            const limit = Math.min(count, copy.length);
+            while (out.length < limit && copy.length > 0) {
+                const idx = Math.floor(Math.random() * copy.length);
+                out.push(copy.splice(idx, 1)[0]);
+            }
+            return out;
+        }
+
+        // AES-GCM encrypt; matches single.html / game.html format
+        async function encrypt(obj, secret) {
+            const enc = new TextEncoder();
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+
+            const keyMaterial = await crypto.subtle.digest("SHA-256", enc.encode(secret));
+            const key = await crypto.subtle.importKey(
+                "raw",
+                keyMaterial,
+                { name: "AES-GCM" },
+                false,
+                ["encrypt"]
+            );
+
+            const data = enc.encode(JSON.stringify(obj));
+            const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data);
+
+            const combo = new Uint8Array(iv.length + encrypted.byteLength);
+            combo.set(iv);
+            combo.set(new Uint8Array(encrypted), iv.length);
+
+            // NOTE: spread, not the broken "[.combo]" placeholder
+            return btoa(String.fromCharCode(...combo));
+        }
+
+        // ---------- Random Generators Per Difficulty ----------
+
+        function pickOverlords(difficulty) {
+            const available = overlords.filter(
+                o => o.type === "Overlord" &&
+                    String(o.doNotShow).toLowerCase() !== "true"
+            );
+
+            const byLevel = (lvl) =>
+                available.filter(o => Number(o.level) === Number(lvl));
+
+            const level1 = byLevel(1);
+            const level2 = byLevel(2);
+            const level3 = byLevel(3);
+
+            const ids = [];
+
+            if (difficulty === "easy") {
+                // Difficulty 1 Overlord
+                const pool = level1.length ? level1 : available;
+                const pick = sampleWithoutReplacement(pool, 1);
+                pick.forEach(o => ids.push(String(o.id)));
+            } else if (difficulty === "medium") {
+                // Difficulty 2 Overlord
+                const pool = level2.length ? level2 : available;
+                const pick = sampleWithoutReplacement(pool, 1);
+                pick.forEach(o => ids.push(String(o.id)));
+            } else if (difficulty === "hard") {
+                // 15% chance Difficulty 1 Overlord + guaranteed Difficulty 3 Overlord
+                if (Math.random() < 0.15 && (level1.length || available.length)) {
+                    const pool1 = level1.length ? level1 : available;
+                    const pick1 = sampleWithoutReplacement(pool1, 1);
+                    pick1.forEach(o => ids.push(String(o.id)));
+                }
+                const pool3 = level3.length ? level3 : available;
+                const pick3 = sampleWithoutReplacement(pool3, 1);
+                pick3.forEach(o => {
+                    const sid = String(o.id);
+                    if (!ids.includes(sid)) ids.push(sid);
+                });
+            } else if (difficulty === "knightmare") {
+                // 1 each Difficulty 1–3
+                const pools = [
+                    level1.length ? level1 : available,
+                    level2.length ? level2 : available,
+                    level3.length ? level3 : available
+                ];
+                pools.forEach(pool => {
+                    if (!pool.length) return;
+                    const pick = sampleWithoutReplacement(pool, 1)[0];
+                    if (pick) {
+                        const sid = String(pick.id);
+                        if (!ids.includes(sid)) ids.push(sid);
+                    }
+                });
+            }
+
+            return ids;
+        }
+
+        function pickTactics(difficulty) {
+            // "No requirements" = limitEaA "no", multiTacticReq "no", multiOverlordReq "no"
+            const basicTactics = tactics.filter(t => {
+                if (t.type !== "Tactic") return false;
+                if (String(t.doNotShow).toLowerCase() === "true") return false;
+
+                const le = t.limitEaA;
+                const limitIsNo =
+                    (Array.isArray(le) && le[0] === "no") ||
+                    le === "no" ||
+                    le === undefined;
+
+                return limitIsNo &&
+                    t.multiTacticReq === "no" &&
+                    t.multiOverlordReq === "no";
+            });
+
+            const anyTactics = tactics.filter(t =>
+                t.type === "Tactic" &&
+                String(t.doNotShow).toLowerCase() !== "true"
+            );
+
+            let pool;
+            let minT = 1;
+            let maxT = 1;
+
+            if (difficulty === "easy" || difficulty === "medium") {
+                // "Just one tactic (no restrictions)" -> from basicTactics
+                pool = basicTactics;
+                minT = maxT = 1;
+            } else {
+                // Hard / Knightmare: "1–2 tactics (any)"
+                pool = anyTactics;
+                minT = 1;
+                maxT = 2;
+            }
+
+            if (!pool.length) return [];
+
+            const count = randInt(minT, maxT);
+            const pick = sampleWithoutReplacement(pool, count);
+
+            return pick.map(t => String(t.id));
+        }
+
+        function pickEnemiesAndAllies(difficulty) {
+            const enemyPool = enemies.filter(
+                e => e.type === "Enemy" &&
+                    String(e.doNotShow).toLowerCase() !== "true"
+            );
+            const allyPool = allies.filter(
+                a => a.type === "Ally" &&
+                    String(a.doNotShow).toLowerCase() !== "true"
+            );
+
+            let alliesCount, enemiesCount;
+
+            if (difficulty === "easy") {
+                // 25–35 allies, 10 fewer enemies
+                alliesCount = randInt(25, 35);
+                enemiesCount = Math.max(0, alliesCount - 10);
+            } else if (difficulty === "medium") {
+                // Equal allies and enemies (25–35)
+                alliesCount = randInt(25, 35);
+                enemiesCount = alliesCount;
+            } else if (difficulty === "hard") {
+                // 30–40 enemies, 10 fewer allies
+                enemiesCount = randInt(30, 40);
+                alliesCount = Math.max(0, enemiesCount - 10);
+            } else {
+                // knightmare: 40–50 enemies, 15 fewer allies
+                enemiesCount = randInt(40, 50);
+                alliesCount = Math.max(0, enemiesCount - 15);
+            }
+
+            const enemyPick = sampleWithoutReplacement(enemyPool, enemiesCount)
+                .map(e => String(e.id));
+            const allyPick = sampleWithoutReplacement(allyPool, alliesCount)
+                .map(a => String(a.id));
+
+            return {
+                enemies: {
+                    count: enemyPick.length,
+                    ids: enemyPick
+                },
+                allies: {
+                    count: allyPick.length,
+                    ids: allyPick
+                }
+            };
+        }
+
+        function pickMights(difficulty) {
+            if (difficulty === "easy")   return randInt(3, 7);
+            if (difficulty === "medium") return randInt(5, 9);
+            if (difficulty === "hard")   return randInt(6, 10);
+            // knightmare
+            return randInt(7, 10);
+        }
+
+        function pickBystanders(difficulty) {
+            let totalMin, totalMax;
+            if (difficulty === "easy") {
+                totalMin = 8; totalMax = 15;
+            } else if (difficulty === "medium") {
+                totalMin = 7; totalMax = 13;
+            } else if (difficulty === "hard") {
+                totalMin = 7; totalMax = 11;
+            } else {
+                // knightmare
+                totalMin = 7; totalMax = 10;
+            }
+
+            const total = randInt(totalMin, totalMax);
+
+            const pool = bystanders.filter(b => b.type === "Bystander");
+            const byTypeMap = new Map(); // id -> {id, name, count}
+
+            for (let i = 0; i < total; i++) {
+                const b = pool[Math.floor(Math.random() * pool.length)];
+                const id = String(b.id);
+                if (!byTypeMap.has(id)) {
+                    byTypeMap.set(id, { id, name: b.name, count: 0 });
+                }
+                byTypeMap.get(id).count += 1;
+            }
+
+            return {
+                count: total,
+                byType: Array.from(byTypeMap.values())
+            };
+        }
+
+        function pickScenarios(difficulty) {
+            const pool = scenarios.filter(
+                s => String(s.doNotShow).toLowerCase() !== "true"
+            );
+
+            let minS, maxS;
+            if (difficulty === "easy") {
+                minS = 0; maxS = 1;
+            } else if (difficulty === "medium") {
+                minS = 0; maxS = 2;
+            } else if (difficulty === "hard") {
+                minS = 1; maxS = 3;
+            } else {
+                // knightmare
+                minS = 3; maxS = 5;
+            }
+
+            const count = pool.length ? randInt(minS, maxS) : 0;
+            const pick = sampleWithoutReplacement(pool, count);
+            return pick.map(s => String(s.id));
+        }
+
+        function pickHenchmen(difficulty, totalMin, totalMax) {
+            const pool = henchmen.filter(
+                h => h.type === "Henchman" &&
+                    String(h.doNotShow).toLowerCase() !== "true"
+            );
+
+            const hp1 = pool.filter(h => Number(h.hp) === 1);
+            const hp2 = pool.filter(h => Number(h.hp) === 2);
+            const hp3 = pool.filter(h => Number(h.hp) === 3);
+
+            let weights;
+            if (difficulty === "easy") {
+                // skew to hp 1
+                weights = { 1: 3, 2: 1, 3: 1 };
+            } else if (difficulty === "medium") {
+                // skew to hp 2
+                weights = { 1: 1, 2: 3, 3: 1 };
+            } else {
+                // hard / knightmare skew to hp 3
+                weights = { 1: 1, 2: 1, 3: 3 };
+            }
+
+            const total = randInt(totalMin, totalMax);
+            const counts = new Map(); // id -> qty
+
+            function pickFromGroup(list) {
+                return list[Math.floor(Math.random() * list.length)];
+            }
+
+            for (let i = 0; i < total; i++) {
+                const groups = [];
+                if (hp1.length) groups.push({ hp: 1, w: weights[1], list: hp1 });
+                if (hp2.length) groups.push({ hp: 2, w: weights[2], list: hp2 });
+                if (hp3.length) groups.push({ hp: 3, w: weights[3], list: hp3 });
+
+                if (!groups.length) break;
+
+                const weightSum = groups.reduce((sum, g) => sum + g.w, 0);
+                let r = Math.random() * weightSum;
+                let chosenGroup = groups[0];
+                for (const g of groups) {
+                    if (r < g.w) { chosenGroup = g; break; }
+                    r -= g.w;
+                }
+
+                const card = pickFromGroup(chosenGroup.list);
+                const id = String(card.id);
+
+                const current = counts.get(id) || 0;
+
+                if (current < 10) {
+                    counts.set(id, current + 1);
+                } else {
+                    // Already at cap — redo this draw
+                    i--;
+                }
+            }
+
+            return Array.from(counts.entries()).map(([id, count]) => ({ id, count }));
+        }
+
+        function pickVillains(difficulty) {
+            const basePool = villains.filter(
+                v => v.type === "Villain" &&
+                    String(v.doNotShow).toLowerCase() !== "true"
+            );
+
+            let minV, maxV, hpCap = null;
+            if (difficulty === "easy") {
+                minV = 27; maxV = 35; hpCap = 17;
+            } else if (difficulty === "medium") {
+                minV = 30; maxV = 39; hpCap = 20;
+            } else if (difficulty === "hard") {
+                minV = 34; maxV = 53; hpCap = null; // no restriction
+            } else {
+                // knightmare
+                minV = 45; maxV = 70; hpCap = null;
+            }
+
+            let pool = basePool;
+            if (hpCap != null) {
+                const limited = basePool.filter(v => {
+                    const hpNum = Number(v.hp);
+                    return Number.isFinite(hpNum) && hpNum <= hpCap;
+                });
+                if (limited.length) pool = limited;
+            }
+
+            if (!pool.length) pool = basePool;
+
+            const want = randInt(minV, maxV);
+            const picked = sampleWithoutReplacement(pool, want);
+            return picked.map(v => String(v.id));
+        }
+
+        function buildLoadoutForDifficulty(difficulty) {
+            const overlordIds = pickOverlords(difficulty);
+            const tacticIds = pickTactics(difficulty);
+
+            const ea = pickEnemiesAndAllies(difficulty);
+            const mightsCount = pickMights(difficulty);
+            const bys = pickBystanders(difficulty);
+            const scenariosIds = pickScenarios(difficulty);
+
+            let henchMin, henchMax;
+            if (difficulty === "easy" || difficulty === "medium") {
+                henchMin = 20; henchMax = 30;
+            } else if (difficulty === "hard") {
+                henchMin = 22; henchMax = 30;
+            } else {
+                // knightmare
+                henchMin = 32; henchMax = 40;
+            }
+            const henchmenArr = pickHenchmen(difficulty, henchMin, henchMax);
+            const villainIds = pickVillains(difficulty);
+
+            return {
+                overlords: overlordIds,
+                tactics: tacticIds,
+                enemies: ea.enemies,
+                allies: ea.allies,
+                villainDeck: {
+                    mights: mightsCount,
+                    bystanders: bys,
+                    scenarios: scenariosIds,
+                    henchmen: henchmenArr,
+                    villains: villainIds
+                }
+            };
+        }
+
+        // ---------- Wire up UI ----------
+
+        const privacyToggle = document.getElementById("privacy-toggle");
+        const privacyLabel  = document.getElementById("privacy-label");
+        const difficultySelect = document.getElementById("difficulty-select");
+        const createBtn = document.getElementById("create-lobby-btn");
+
+        let currentDeckData = null;
+
+        privacyToggle.addEventListener("change", e => {
+            privacyLabel.textContent = e.target.checked ? "Private" : "Public";
+        });
+
+        function recalcDeck() {
+            const diff = difficultySelect.value;
+            currentDeckData = buildLoadoutForDifficulty(diff);
+            // If you ever want debug text here, you can append a small summary
+            // to the page, but right now we just keep it in memory.
+        }
+
+        // Recalculate whenever difficulty changes
+        difficultySelect.addEventListener("change", recalcDeck);
+
+        // Initial calculation for default difficulty (Medium)
+        recalcDeck();
+
+        createBtn.addEventListener("click", async () => {
+            const isPrivate = privacyToggle.checked;
+            const difficulty = difficultySelect.value;
+
+            if (!currentDeckData) {
+                currentDeckData = buildLoadoutForDifficulty(difficulty);
+            }
+
+            const payload = {
+                privacy: isPrivate ? "private" : "public",
+                key: isPrivate ? generatePrivateKey() : null,
+                difficulty,
+                // auto-generated contents
+                overlords: currentDeckData.overlords,
+                tactics: currentDeckData.tactics,
+                enemies: currentDeckData.enemies,
+                allies: currentDeckData.allies,
+                villainDeck: currentDeckData.villainDeck
+            };
+
+            const encrypted = await encrypt(payload, SECRET);
+
+            const url = new URL("./lobby.html", window.location.href);
+            url.searchParams.set("data", encrypted);
+            location.href = url.toString();
+        });
+    </script>
 </body>
 </html>

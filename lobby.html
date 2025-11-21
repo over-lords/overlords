@@ -23,5 +23,182 @@
             <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Launch!</h1>
         </div>
     </div>
+
+    <script type="module">
+        import { overlords } from './data/overlords.js';
+        import { tactics } from './data/tactics.js';
+        import { enemies } from './data/enemies.js';
+        import { allies } from './data/allies.js';
+        import { bystanders } from './data/bystanders.js';
+        import { scenarios } from './data/scenarios.js';
+        import { henchmen } from './data/henchmen.js';
+        import { villains } from './data/villains.js';
+
+        async function decrypt(cipherText, secretKey) {
+            const data = atob(cipherText);
+            const bytes = new Uint8Array([...data].map(c => c.charCodeAt(0)));
+            const iv = bytes.slice(0, 12);
+            const cipher = bytes.slice(12);
+
+            const keyMaterial = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secretKey));
+            const key = await crypto.subtle.importKey("raw", keyMaterial, { name:"AES-GCM" }, false, ["decrypt"]);
+
+            const decrypted = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, key, cipher);
+            return JSON.parse(new TextDecoder().decode(decrypted));
+        }
+
+        (async () => {
+            const params = new URLSearchParams(window.location.search);
+            const encrypted = params.get("data");
+            const SECRET = "GeimonHeroKey42";
+
+            if (!encrypted) {
+                document.body.insertAdjacentHTML("beforeend","<p style='color:red'>No lobby data found.</p>");
+                return;
+            }
+
+            let data;
+            try {
+                data = await decrypt(encrypted, SECRET);
+            } catch (e) {
+                console.error(e);
+                document.body.insertAdjacentHTML("beforeend","<p style='color:red'>Failed to decrypt lobby data.</p>");
+                return;
+            }
+
+            // ---------- Build readable lists ----------
+
+            const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
+            const tacticMap   = new Map(tactics.map(t => [String(t.id), t]));
+            const enemyMap    = new Map(enemies.map(e => [String(e.id), e]));
+            const allyMap     = new Map(allies.map(a => [String(a.id), a]));
+            const bystanderMap= new Map(bystanders.map(b => [String(b.id), b]));
+            const scenarioMap = new Map(scenarios.map(s => [String(s.id), s]));
+            const henchMap    = new Map(henchmen.map(h => [String(h.id), h]));
+            const villainMap  = new Map(villains.map(v => [String(v.id), v]));
+
+            const overlordList = (data.overlords || [])
+                .map(id => overlordMap.get(String(id)) || { name:`Unknown (ID ${id})`, hp:'?', level:'?' })
+                .sort((a,b) => (Number(a.level) || 0) - (Number(b.level) || 0) || (Number(a.hp) || 0) - (Number(b.hp) || 0));
+
+            const tacticList = (data.tactics || []).map(id => {
+                const t = tacticMap.get(String(id));
+                if (!t) return { name:`Unknown (ID ${id})`, abilitiesText:[{ text:'?' }] };
+                return t;
+            });
+
+            const enemiesData = data.enemies || {};
+            const enemiesIds  = Array.isArray(enemiesData.ids) ? enemiesData.ids : [];
+            const enemiesList = enemiesIds.map(id => enemyMap.get(String(id)) || { name:`Unknown (ID ${id})` });
+
+            const alliesData = data.allies || {};
+            const alliesIds  = Array.isArray(alliesData.ids) ? alliesData.ids : [];
+            const alliesList = alliesIds.map(id => allyMap.get(String(id)) || { name:`Unknown (ID ${id})` });
+
+            const villainDeck = data.villainDeck || {};
+            const mightsCount = Number(villainDeck.mights) || 0;
+
+            const bysData  = villainDeck.bystanders || { count:0, byType:[] };
+            const bysTotal = Number(bysData.count) || 0;
+            const bysBreakdown = Array.isArray(bysData.byType) ? bysData.byType : [];
+
+            const scenariosIds = Array.isArray(villainDeck.scenarios) ? villainDeck.scenarios : [];
+            const scenariosList = scenariosIds.map(id => scenarioMap.get(String(id)) || { name:`Unknown (ID ${id})` });
+
+            const henchArr = Array.isArray(villainDeck.henchmen) ? villainDeck.henchmen : [];
+            const henchList = henchArr.map(hc => {
+                const card = henchMap.get(String(hc.id)) || { name:`Unknown (ID ${hc.id})`, hp:'?', damage:'?' };
+                return { ...card, qty: hc.count };
+            });
+
+            const villainIds = Array.isArray(villainDeck.villains) ? villainDeck.villains : [];
+            const villainList = villainIds.map(id => villainMap.get(String(id)) || { name:`Unknown (ID ${id})`, hp:'?' });
+
+            // ---------- Build HTML ----------
+
+            const area = document.createElement("div");
+            area.style.color = "black";
+            area.style.marginTop = "40px";
+            area.style.textAlign = "center";
+
+            const privacyBlock = data.privacy === "private"
+                ? `<p><b>Join Key:</b> ${data.key}</p>`
+                : `<p>This lobby is public, no join key required.</p>`;
+
+            area.innerHTML = `
+                <h2>Lobby Created</h2>
+                <p><b>Privacy:</b> ${data.privacy}</p>
+                ${privacyBlock}
+                <p><b>Difficulty:</b> ${data.difficulty}</p>
+
+                <h3 style="margin-top:30px;">Overlords</h3>
+                <ol style="display:inline-block; text-align:left;">
+                    ${overlordList.map(o => `
+                        <li>${o.name} — ${o.hp} HP (Difficulty ${o.level})</li>
+                    `).join('')}
+                </ol>
+
+                <h3 style="margin-top:30px;">Tactics</h3>
+                <ol style="display:inline-block; text-align:left; max-width:700px;">
+                    ${tacticList.map(t => `
+                        <li style="margin-bottom:10px;">
+                            <b>${t.name}</b><br>
+                            ${(t.abilitiesText || []).map(a => a.text).join('<br>')}
+                        </li>
+                    `).join('')}
+                </ol>
+
+                <h3 style="margin-top:30px;">Enemies & Allies</h3>
+                <p>Enemies: ${enemiesIds.length} &nbsp; | &nbsp; Allies: ${alliesIds.length}</p>
+                <div style="display:flex; justify-content:center; gap:40px; flex-wrap:wrap; text-align:left;">
+                    <div>
+                        <b>Enemies:</b>
+                        <ol>
+                            ${enemiesList.map(e => `<li>${e.name}</li>`).join('')}
+                        </ol>
+                    </div>
+                    <div>
+                        <b>Allies:</b>
+                        <ol>
+                            ${alliesList.map(a => `<li>${a.name}</li>`).join('')}
+                        </ol>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:30px;">Villain Deck</h3>
+                <p><b>Mights:</b> ${mightsCount}</p>
+
+                <h4>Bystanders (${bysTotal})</h4>
+                <ul style="display:inline-block; text-align:left;">
+                    ${bysBreakdown.map(b => `
+                        <li>${(b.name || bystanderMap.get(String(b.id))?.name || 'Unknown')} — ${b.count}</li>
+                    `).join('')}
+                </ul>
+
+                <h4 style="margin-top:20px;">Scenarios (${scenariosIds.length})</h4>
+                <ol style="display:inline-block; text-align:left;">
+                    ${scenariosList.map(s => `<li>${s.name}</li>`).join('')}
+                </ol>
+
+                <h4 style="margin-top:20px;">Henchmen</h4>
+                <p>Total cards: ${henchList.reduce((sum, h) => sum + (Number(h.qty)||0), 0)}</p>
+                <ol style="display:inline-block; text-align:left;">
+                    ${henchList.map(h => `
+                        <li>${h.name} — ${h.hp}/${h.damage} × ${h.qty}</li>
+                    `).join('')}
+                </ol>
+
+                <h4 style="margin-top:20px;">Villains (${villainIds.length})</h4>
+                <ol style="display:inline-block; text-align:left;">
+                    ${villainList.map(v => `<li>${v.name} — ${v.hp} HP</li>`).join('')}
+                </ol>
+
+                <br>
+                <button onclick="location.href='game.html'">Start Game</button>
+            `;
+
+            document.querySelector(".container").appendChild(area);
+        })();
+    </script>
 </body>
 </html>
