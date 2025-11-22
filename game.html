@@ -13,17 +13,19 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            height: 100%;
+            height: auto;
         }
 
         .container {
-            position: relative;
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100vw;
-            height: auto;
-            min-height: 100vh;
+            height: 100svh;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
         }
 
         #game-board-container {
@@ -485,8 +487,8 @@
             const vh = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
             const vw = window.visualViewport?.width  || window.innerWidth  || document.documentElement.clientWidth;
                     
-            container.style.height = vh + "px";
-            container.style.width  = vw + "px";
+            //container.style.height = vh + "px";
+            //container.style.width  = vw + "px";
 
             const padding = 16;
             board.style.maxHeight = (vh - padding) + "px";
