@@ -185,13 +185,53 @@
         </div>
     <div id="dropdown-close">▲</div>
 
+    <div id="gameMenu-box">≡</div>
+
+    <div id="sideMenu">
+        <h2 id="menuHeader">Menu</h2>
+        <div id="menuContent">
+            <!-- Default menu -->
+            <div id="menuMain">
+            <div class="menu-button" id="menuVolumeBtn">Volume</div>
+            <div class="menu-button" id="menuHelpBtn">Help</div>
+            <div class="menu-button" id="menuQuitBtn">Quit</div>
+            </div>
+
+            <!-- Volume submenu -->
+            <div id="menuVolume" style="display:none;">
+                <div class="volume-row">
+                    <label>Sound Effects</label>
+                    <input type="range" min="0" max="100" value="50" id="volSFX">
+                </div>
+                <div class="volume-row">
+                    <label>Music</label>
+                    <input type="range" min="0" max="100" value="50" id="volMusic">
+                </div>
+            </div>
+
+            <!-- Help submenu -->
+            <div id="menuHelp" style="display:none;">
+            <input id="helpSearch" type="text" placeholder="Search keywords...">
+
+            <div id="helpList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quit confirmation popup -->
+    <div id="quitPopup">
+    <h2>Are you sure?</h2>
+    <button id="quitYes">Yes</button>
+    <button id="quitNo">No</button>
+    </div>
+
     <div class="bg-image" alt="" style="opacity: 35%;"></div>
     <div class="container">
         <div id="game-board-container">
-        <img id="game-board"
-            alt="Overlords Board"
-            style="opacity: 75%;"
-            src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/BoardReduced.jpg">
+            <img id="game-board"
+                alt="Overlords Board"
+                style="opacity: 75%;"
+                src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/BoardReduced.jpg">
 
             <div id="city-grid-wrapper">
                 <div id="city-grid">
@@ -551,6 +591,132 @@
                 dropdownTab.style.display = "flex";
             }, 450);
         });
+
+        /* === NEW MENU SYSTEM ======================================= */
+
+        import { keywords } from './data/keywords.js';
+
+        const menuBtn = document.getElementById("gameMenu-box");
+        const sideMenu = document.getElementById("sideMenu");
+        const menuHeader = document.getElementById("menuHeader");
+
+        const menuMain = document.getElementById("menuMain");
+        const menuVolume = document.getElementById("menuVolume");
+        const menuHelp = document.getElementById("menuHelp");
+
+        const volSFX = document.getElementById("volSFX");
+        const volMusic = document.getElementById("volMusic");
+
+        const helpSearch = document.getElementById("helpSearch");
+        const helpList = document.getElementById("helpList");
+
+        const popup = document.getElementById("quitPopup");
+        const quitYes = document.getElementById("quitYes");
+        const quitNo = document.getElementById("quitNo");
+
+        let menuOpen = false;
+        let submenu = null; // null | 'volume' | 'help'
+
+        // Populate help list (alphabetically)
+        function loadKeywords() {
+        helpList.innerHTML = "";
+        const entries = Object.entries(keywords).sort((a,b)=>a[0].localeCompare(b[0]));
+        for (let [name, text] of entries) {
+            const div = document.createElement("div");
+            div.className = "keyword-entry";
+            div.innerHTML = `<b>${name}</b><br>${text}`;
+            helpList.appendChild(div);
+        }
+        }
+        loadKeywords();
+
+        // Live search
+        helpSearch.addEventListener("input", () => {
+        const query = helpSearch.value.toLowerCase();
+        const entries = Object.entries(keywords).sort((a,b)=>a[0].localeCompare(b[0]));
+
+        helpList.innerHTML = "";
+
+        for (let [name, text] of entries) {
+            if (
+            name.toLowerCase().includes(query) ||
+            text.toLowerCase().includes(query)
+            ) {
+            const div = document.createElement("div");
+            div.className = "keyword-entry";
+            div.innerHTML = `<b>${name}</b><br>${text}`;
+            helpList.appendChild(div);
+            }
+        }
+        });
+
+        // Open/close menu
+        menuBtn.addEventListener("click", () => {
+        if (!menuOpen) {
+            // OPEN
+            sideMenu.classList.add("open");
+            menuBtn.style.backgroundColor = "red";
+            menuBtn.textContent = "X";
+            menuOpen = true;
+        } else if (submenu === null) {
+            // CLOSE from main menu
+            sideMenu.classList.remove("open");
+            menuBtn.style.backgroundColor = "rgb(79,196,255)";
+            menuBtn.textContent = "≡";
+            menuOpen = false;
+        } else {
+            // BACK from submenu
+            submenu = null;
+            menuHeader.textContent = "Menu";
+
+            menuMain.style.display = "block";
+            menuVolume.style.display = "none";
+            menuHelp.style.display = "none";
+
+            menuBtn.textContent = "X"; // stay red X while menu open
+        }
+        });
+
+        // Go to Volume submenu
+        document.getElementById("menuVolumeBtn").addEventListener("click", () => {
+        submenu = "volume";
+        menuHeader.textContent = "Volume";
+
+        menuMain.style.display = "none";
+        menuVolume.style.display = "block";
+        menuHelp.style.display = "none";
+
+        menuBtn.textContent = "←";
+        });
+
+        // Go to Help submenu
+        document.getElementById("menuHelpBtn").addEventListener("click", () => {
+        submenu = "help";
+        menuHeader.textContent = "Help: Rules Dictionary";
+
+        menuMain.style.display = "none";
+        menuVolume.style.display = "none";
+        menuHelp.style.display = "block";
+
+        menuBtn.textContent = "←";
+        });
+
+        // Quit
+        document.getElementById("menuQuitBtn").addEventListener("click", () => {
+        popup.style.display = "block";
+        });
+
+        // Quit popup buttons
+        quitNo.addEventListener("click", () => {
+        popup.style.display = "none";
+        });
+        quitYes.addEventListener("click", () => {
+        window.location.href = "index.html";
+        });
+
+        // Dummy slider handlers
+        volSFX.addEventListener("input", ()=>{});
+        volMusic.addEventListener("input", ()=>{});
     </script>
 </body>
 </html>

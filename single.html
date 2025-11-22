@@ -877,7 +877,7 @@ img {
               const encrypted = await encryptData(payload, SECRET);
               const url = new URL("./game.html", window.location.href);
               url.searchParams.set("data", encrypted);
-              window.open(url.toString(), "_blank");
+              window.open(url.toString(), "_self");
             });
 
             // --- Randomization and Loadout Management ---

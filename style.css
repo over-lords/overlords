@@ -372,6 +372,132 @@ html, body {
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
 }
 
+#gameMenu-box {
+  position: fixed;
+  top: 15px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  background-color: rgb(79, 196, 255);
+  color: white;
+  font-family: 'Racing Sans One', sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  line-height: auto;
+  border: 4px solid black;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.8);
+  cursor: pointer;
+  z-index: 11000;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+#gameMenu-box:hover {
+  transform: scale(1.08);
+}
+
+#sideMenu {
+  position: fixed;
+  top: 0;
+  right: -40%;
+  width: 40%;
+  height: 100%;
+  background: rgba(79, 196, 255, 0.8);
+  border-left: 5px solid darkblue;
+  z-index: 10000;
+  transition: right 0.35s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+#sideMenu.open {
+  right: 0;
+}
+
+#sideMenu h2 {
+  margin-top: 0;
+  font-family: 'Racing Sans One', sans-serif;
+  font-size: 32px;
+  text-align: left;
+  padding-left: 5px;
+}
+
+/* Menu list buttons */
+.menu-button {
+  font-family: 'Racing Sans One', sans-serif;
+  font-size: 24px;
+  padding: 12px;
+  margin: 10px 0;
+  background: white;
+  border: 3px solid black;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* Volume sliders */
+.volume-row {
+  display: flex;
+  align-items: center;
+  margin: 18px 0;
+}
+.volume-row label {
+  width: 45%;
+  font-size: 22px;
+  font-weight: bold;
+  font-family: 'Racing Sans One', sans-serif;
+}
+.volume-row input[type="range"] {
+  width: 55%;
+}
+
+/* Help search */
+#helpSearch {
+  width: calc(100% - 20px);
+  padding: 8px;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+#helpList {
+  max-height: calc(100vh - 175px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+}
+.keyword-entry {
+  padding: 6px;
+  margin: 4px 0;
+  background: white;
+  border: 2px solid black;
+  border-radius: 6px;
+}
+
+/* Quit popup */
+#quitPopup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75%;
+  background: white;
+  border: 4px solid black;
+  border-radius: 12px;
+  z-index: 12000;
+  padding: 20px;
+  display: none;
+  text-align: center;
+}
+#quitPopup button {
+  margin: 10px;
+  padding: 10px 20px;
+  font-size: 22px;
+  border: 3px solid black;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .backgroundBox {
   background: none; /* transparent, we’re repurposing this container */
   display: flex;

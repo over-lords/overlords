@@ -225,8 +225,7 @@
                 const url = new URL("./game.html", window.location.href);
                 url.searchParams.set("data", encrypted);
 
-                // Open in NEW TAB
-                window.open(url.toString(), "_blank");
+                window.open(url.toString(), "_self");
             });
         })();
     </script>
