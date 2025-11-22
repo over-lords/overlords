@@ -19,7 +19,8 @@
         .container {
             position: relative;
             width: 100vw;
-            height: 100vh;
+            height: auto;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -30,7 +31,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            height: 100%;
+            height: auto;
         }
 
         #game-board {
@@ -481,15 +482,17 @@
             const board = document.getElementById("game-board");
             const container = document.getElementById("game-board-container");
 
-            // REAL visible height (ignores mobile browser lies)
-            const vh = document.documentElement.clientHeight;
-            const vw = document.documentElement.clientWidth;
+            const vh = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
+            const vw = window.visualViewport?.width  || window.innerWidth  || document.documentElement.clientWidth;
+                    
+            container.style.height = vh + "px";
+            container.style.width  = vw + "px";
 
-            board.style.maxHeight = (vh - 16) + "px";
-            board.style.maxWidth  = (vw - 16) + "px";
+            const padding = 16;
+            board.style.maxHeight = (vh - padding) + "px";
+            board.style.maxWidth  = (vw - padding) + "px";
 
-            container.style.maxHeight = vh + "px";
-            container.style.maxWidth  = vw + "px";
+            scaleGridToBoard();
         }
 
         resizeBoardToViewport();
