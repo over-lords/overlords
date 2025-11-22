@@ -588,7 +588,7 @@ export const heroCards = [
     damage: "4",
     abilitiesText: [
       {
-        text: `After taking this card's Damage, shove Wonder Woman's engaged foe 5 spaces right. <span class="line-gap"></span> CHOOSE: Wonder Woman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+        text: `After taking this card's Damage, push Wonder Woman's engaged foe up to 5 spaces right, stopping if they contact another Henchman or Villain. <span class="line-gap"></span> CHOOSE: Wonder Woman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
       }
     ],
     abilitiesNamePrint: [
@@ -852,7 +852,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `After damaging them, shove Flash's engaged Henchman or Villain back one space. <span class="line-gap"></span> CHOOSE: Flash can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+        text: `After damaging them, move Flash's engaged Henchman or Villain right one space. <span class="line-gap"></span> CHOOSE: Flash can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
       }
     ],
     abilitiesNamePrint: [
