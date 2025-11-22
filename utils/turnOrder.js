@@ -55,12 +55,11 @@ VILLAIN DRAW
                 KO them
             has takeover?
                 yes
-                    takeover level equal or higher than overlord level
-                        Read remaining overlord HP
+                    takeover level equal or higher than overlord level && takeover villain has equal or higher HP than the current Overlord
                         KO current Overlord, they've been usurped
                         take Overlord remaining HP for self
                         Become new Overlord
-                    else takeover level less than overlord level
+                    else
                         failed takeover, increase Overlord HP by remaining HP like they didn't even have takeover
                 no
                     increase Overlord HP by remaining HP
