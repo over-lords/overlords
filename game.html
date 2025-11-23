@@ -867,6 +867,9 @@
                 none.textContent = "No Keywords Found";
                 keyBox.appendChild(none);
                 content.appendChild(keyBox);
+                const spacer = document.createElement("div");
+                spacer.style.height = "50px";
+                content.appendChild(spacer);
                 panel.classList.add("open");
                 return;
             }
@@ -886,32 +889,12 @@
 
             content.appendChild(keyBox);
 
+            const spacer = document.createElement("div");
+            spacer.style.height = "50px";
+            content.appendChild(spacer);
+
             panel.classList.add("open");
         }
-
-        function adjustContentForMobileClipping() {
-            const content = document.getElementById("overlord-panel-content");
-            const panel = document.getElementById("overlord-panel");
-
-            // Mobile Safari/Chrome "visual viewport" height
-            const visualH = window.visualViewport?.height || window.innerHeight;
-
-            // Fixed layout viewport height (what the panel used)
-            const layoutH = window.innerHeight;
-
-            // If visual viewport is SIGNIFICANTLY smaller (URL bar expanded)
-            const needsBoost = visualH < layoutH - 20;
-
-            if (needsBoost) {
-                content.classList.add("scroll-boost");
-            } else {
-                content.classList.remove("scroll-boost");
-            }
-        }
-
-        window.addEventListener("resize", adjustContentForMobileClipping);
-        window.addEventListener("orientationchange", adjustContentForMobileClipping);
-        window.addEventListener("DOMContentLoaded", adjustContentForMobileClipping);
     </script>
 </body>
 </html>

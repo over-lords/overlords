@@ -703,10 +703,6 @@ html, body {
     line-height: 1.25;
 }
 
-#overlord-panel-content.scroll-boost {
-    padding-bottom: 80px;
-}
-
 #overlord-panel-content h2 {
     font-size: 16px;
     margin-bottom: 4px;
