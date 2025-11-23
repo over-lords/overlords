@@ -557,7 +557,7 @@ html, body {
   left: -50px;
   width: 275px;     /* matches logout-box */
   height: 30px;
-  background-color: #5d5d5d; 
+  background-color: #5d5d5d;
   border: 5px solid #000;
   cursor: pointer;
 
@@ -579,7 +579,7 @@ html, body {
     position: fixed;
     top: -12px;
     left: -9px;
-    width: 100px;     /* frame size */
+    width: 100px;
     height: 100px;
     z-index: 5000;
     cursor: pointer;
@@ -727,7 +727,7 @@ html, body {
     align-items: flex-start;
     gap: 8px;
     width: 100%;
-    margin-bottom: 12px;
+    margin-bottom: 20px;
 }
 
 .overlord-right-column {
@@ -743,4 +743,22 @@ html, body {
 .overlord-right-column h3,
 .overlord-right-column div {
     margin: 0 0 4px 0;
+}
+
+/* Only show on mobile screens */
+@media (max-width: 900px) {
+    .mobile-only {
+        display: block !important;
+    }
+}
+
+/* Default desktop: hide it */
+.mobile-only {
+    display: none;
+}
+
+#helpList::after {
+    content: "";
+    display: block;
+    height: 50px; /* Extra bottom scroll space */
 }
