@@ -889,6 +889,29 @@
 
             panel.classList.add("open");
         }
+
+        window.addEventListener("DOMContentLoaded", () => {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    initializeOverlordUI();
+                });
+            });
+        });
+
+        function initializeOverlordUI() {
+            // REBIND the click handlers safely after real layout is done.
+            const panel = document.getElementById("overlord-panel");
+            const closeBtn = document.getElementById("overlord-panel-close");
+            const frame = document.getElementById("overlord-frame-box");
+
+            closeBtn.onclick = () => {
+                panel.classList.remove("open");
+            };
+
+            frame.onclick = () => {
+                buildOverlordPanel(currentOverlord);
+            };
+        }
     </script>
 </body>
 </html>
