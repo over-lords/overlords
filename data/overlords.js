@@ -180,7 +180,7 @@ export const overlords = [
   },
   {
     id: "5004",
-    name: "Lex Luthor (Power Armor)",
+    name: "Lex Luthor",
     image: `${cardArtFolder}/Lex Luthor Power Armor.jpg`,
     type: "Overlord",
     level: "2",

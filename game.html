@@ -183,6 +183,21 @@
         </div>
     <div id="dropdown-close">▲</div>
 
+    <div id="overlord-frame-box">
+        <img id="overlord-frame-img" src="https://raw.githubusercontent.com/over-lords/overlords/7774da0ec26845edd8dc6c07756b04e78fafcbff/Public/Images/Site%20Assets/overlordBorder.png">
+        <img id="overlord-cropped" src="">
+
+        <div id="overlord-hp-container">
+            <img id="overlord-heart" src="https://raw.githubusercontent.com/over-lords/overlords/7774da0ec26845edd8dc6c07756b04e78fafcbff/Public/Images/Card%20Assets/Misc/Heart.png">
+            <div id="overlord-hp-text">0</div>
+        </div>
+    </div>
+
+    <div id="overlord-panel" class="hidden">
+        <div id="overlord-panel-close">X</div>
+        <div id="overlord-panel-content"></div>
+    </div>
+
     <div id="gameMenu-box">≡</div>
 
     <div id="sideMenu">
@@ -321,6 +336,9 @@
         import { renderCountdown } from './utils/cardRenderer.js';
         import { keywords } from './data/keywords.js';
 
+        let currentOverlord = null;
+        let currentTactics = [];
+
         async function decryptData(cipherText, secretKey) {
             const data = atob(cipherText);
             const bytes = new Uint8Array([...data].map(c => c.charCodeAt(0)));
@@ -365,12 +383,18 @@
                 .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
                 .sort((a, b) => a.level - b.level || a.hp - b.hp);
 
+                if (overlordList.length > 0) {
+                    setCurrentOverlord(overlordList[0]); // run setCurrentOverlord(newOverlordObject); whenever a takeover happens (from villains or overlord stack)
+                }
+
                 const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
                 const tacticList = selectedTactics.map(id => {
                     const t = tacticMap.get(String(id));
                     if (!t) return { name: `Unknown (ID ${id})`, abilitiesText: [{ text: '?' }] };
                     return t;
                 });
+
+                currentTactics = tacticList;
 
                 const container = document.createElement('div');
                 container.style.marginTop = '0px';
@@ -677,6 +701,194 @@
 
         volSFX.addEventListener("input", ()=>{}); // DUMMY FOR NOW
         volMusic.addEventListener("input", ()=>{});
+
+        function applyOverlordFrame(overlord) {
+            if (!overlord) return;
+
+            const imgEl = document.getElementById("overlord-cropped");
+            const frameEl = document.getElementById("overlord-frame-img");
+
+            // Put the overlord portrait into the cropped square
+            imgEl.src = overlord.image;
+
+            // Apply color mask to frame based on level
+            let tint = "";
+
+            if (overlord.level == 1) {
+                tint = "brightness(1.8) sepia(1) saturate(500%) hue-rotate(10deg)";
+            }
+            if (overlord.level == 2) {
+                tint = "brightness(1.4) sepia(1) saturate(500%) hue-rotate(-3deg)";
+            }
+            if (overlord.level == 3) {
+                tint = "brightness(1.2) sepia(1) saturate(500%) hue-rotate(-30deg)";
+            }
+
+            frameEl.style.filter = tint;
+        }
+
+        function setCurrentOverlord(overlord) {
+            if (!overlord) return;
+            currentOverlord = overlord;
+
+            applyOverlordFrame(overlord);
+
+            const hpText = document.getElementById("overlord-hp-text");
+            overlord.currentHP = overlord.currentHP ?? overlord.hp;
+            hpText.textContent = overlord.currentHP;
+        }
+
+        import { renderAbilityText } from './utils/cardRenderer.js';
+
+        /* === Left Panel Button (the entire overlord frame is clickable) === */
+        document.getElementById("overlord-frame-box").addEventListener("click", () => {
+            buildOverlordPanel(currentOverlord);
+        });
+
+
+        document.getElementById("overlord-panel-close").addEventListener("click", () => {
+            document.getElementById("overlord-panel").classList.add("hidden");
+        });
+
+        function extractKeywordsFromAbilities(abilitiesTextArr) {
+            if (!Array.isArray(abilitiesTextArr)) return [];
+
+            const found = new Set();
+
+            const keywordNames = Object.keys(keywords); // from keywords.js
+
+            abilitiesTextArr.forEach(a => {
+                if (!a || !a.text) return;
+
+                keywordNames.forEach(kw => {
+                    // match whole word, case-insensitive
+                    const regex = new RegExp(`(?<![A-Za-z0-9'])${kw}(?![A-Za-z0-9'])`, "i");
+                    if (regex.test(a.text)) {
+                        found.add(kw);
+                    }
+                });
+            });
+
+            return Array.from(found);
+        }
+
+        /* === Build the entire left panel === */
+        function buildOverlordPanel(overlord) {
+            if (!overlord) return;
+
+            const panel = document.getElementById("overlord-panel");
+            const content = document.getElementById("overlord-panel-content");
+            content.innerHTML = "";
+
+            /* === Set panel color based on overlord.level === */
+            if (overlord.level == 1) {
+                panel.style.backgroundColor = "rgba(255, 255, 0, 0.85)";
+                panel.style.borderRight = "4px solid #997700";
+            } else if (overlord.level == 2) {
+                panel.style.backgroundColor = "rgba(255, 140, 0, 0.85)";
+                panel.style.borderRight = "4px solid #663300";
+            } else {
+                panel.style.backgroundColor = "rgba(255, 0, 0, 0.85)";
+                panel.style.borderRight = "4px solid #550000";
+            }
+
+            /* === Overlord Card === */
+            const cardContainer = document.createElement("div");
+            cardContainer.classList.add("overlord-card-scale");
+            cardContainer.style.margin = "0 auto";
+            const rendered = renderCard(overlord.id, cardContainer);
+            cardContainer.appendChild(rendered);
+
+            /* === Overlord Stats === */
+            const statsBox = document.createElement("div");
+            statsBox.innerHTML = `
+                <h2 style="margin: 4px 0;">${overlord.name}</h2>
+                <div><strong>HP:</strong> ${overlord.currentHP ?? overlord.hp}</div>
+            `;
+
+            /* === Overlord Abilities === */
+            const abilBox = document.createElement("div");
+            abilBox.innerHTML = `<h3>Abilities</h3>`;
+            overlord.abilitiesText.forEach(a => {
+                const line = document.createElement("div");
+                line.innerHTML = renderAbilityText(a.text);
+                abilBox.appendChild(line);
+            });
+
+            const topRow = document.createElement("div");
+            topRow.classList.add("overlord-top-row");
+
+            const rightColumn = document.createElement("div");
+            rightColumn.classList.add("overlord-right-column");
+
+            rightColumn.appendChild(statsBox);
+            rightColumn.appendChild(abilBox);
+
+            topRow.appendChild(cardContainer);
+            topRow.appendChild(rightColumn);
+
+            content.appendChild(topRow);
+
+            /* === Tactics List (alphabetical) === */
+            const tacticNames = currentTactics
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            const tacticBox = document.createElement("div");
+            tacticBox.innerHTML = `<h3>Tactics</h3>`;
+            tacticNames.forEach(t => {
+                const tDiv = document.createElement("div");
+                tDiv.innerHTML = `<strong>${t.name}</strong><br>`;
+                t.abilitiesText.forEach(a => {
+                    const line = document.createElement("div");
+                    line.innerHTML = renderAbilityText(a.text);
+                    tDiv.appendChild(line);
+                });
+                tDiv.style.marginBottom = "8px";
+                tacticBox.appendChild(tDiv);
+            });
+            content.appendChild(tacticBox);
+
+            /* === Keyword Extraction === */
+            const extractedOverlordKeys = extractKeywordsFromAbilities(overlord.abilitiesText);
+            const extractedTacticKeys  = currentTactics.flatMap(t => extractKeywordsFromAbilities(t.abilitiesText));
+
+            const allKeywords = [...extractedOverlordKeys, ...extractedTacticKeys];
+
+            // Unique & alphabetized
+            const deduped = Array.from(new Set(allKeywords)).sort((a, b) => a.localeCompare(b));
+
+            const keyBox = document.createElement("div");
+            keyBox.innerHTML = `<h3>Keywords</h3>`;
+
+            if (deduped.length === 0) {
+                const none = document.createElement("div");
+                none.style.fontStyle = "italic";
+                none.style.color = "#222";
+                none.textContent = "No Keywords Found";
+                keyBox.appendChild(none);
+                content.appendChild(keyBox);
+                panel.classList.remove("hidden");
+                return;
+            }
+
+            deduped.forEach(k => {
+                const line = document.createElement("div");
+                line.style.marginBottom = "6px";
+
+                const definition = keywords[k] || "<i>No definition found.</i>";
+
+                line.innerHTML = `
+                    <div style="font-weight:bold;">${k}</div>
+                    <div style="margin-left:8px;">${definition}</div>
+                `;
+                keyBox.appendChild(line);
+            });
+
+            content.appendChild(keyBox);
+
+            panel.classList.remove("hidden");
+        }
     </script>
 </body>
 </html>
