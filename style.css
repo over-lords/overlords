@@ -745,18 +745,6 @@ html, body {
     margin: 0 0 4px 0;
 }
 
-/* Only show on mobile screens */
-@media (max-width: 900px) {
-    .mobile-only {
-        display: block !important;
-    }
-}
-
-/* Default desktop: hide it */
-.mobile-only {
-    display: none;
-}
-
 #helpList::after {
     content: "";
     display: block;

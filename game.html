@@ -15,9 +15,6 @@
             overflow: hidden;
             height: auto;
         }
-        body {
-            min-height: 200vh;
-        }
 
         .container {
             position: fixed;
@@ -208,7 +205,6 @@
         <div id="menuContent">
 
             <div id="menuMain">
-                <div class="menu-button mobile-only" id="hideUrlBarBtn">Hide URL Bar</div>
                 <div class="menu-button" id="menuVolumeBtn">Volume</div>
                 <div class="menu-button" id="menuHelpBtn">Glossary</div>
                 <div class="menu-button" id="menuQuitBtn">Quit</div>
@@ -898,21 +894,6 @@
             content.appendChild(spacer);
 
             panel.classList.add("open");
-        }
-
-        const hideBtn = document.getElementById("hideUrlBarBtn");
-
-        if (hideBtn) {
-            hideBtn.addEventListener("click", () => {
-                // Tiny delay required on Safari
-                setTimeout(() => {
-                    window.scrollTo({
-                        top: 200,
-                        left: 0,
-                        behavior: "smooth"
-                    });
-                }, 80);
-            });
         }
     </script>
 </body>
