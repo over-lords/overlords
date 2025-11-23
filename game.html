@@ -78,8 +78,8 @@
             gap: 6px;
         }
         .city-slot {
-            width: 200px;      /* >184px shrunk card width */
-            height: 300px;     /* >280px shrunk card height */
+            width: 200px;
+            height: 300px;
             background: rgba(0,0,0,0.25);
             border: 2px solid black;
             border-radius: 8px;
@@ -132,7 +132,6 @@
             z-index: 9999;
         }
 
-        /* ▼ open tab at top */
         #dropdown-tab {
             position: fixed;
             top: 0;
@@ -151,7 +150,6 @@
             z-index: 10000;
         }
 
-        /* ▲ close tab at bottom */
         #dropdown-close {
             position: fixed;
             bottom: 0;
@@ -190,14 +188,13 @@
     <div id="sideMenu">
         <h2 id="menuHeader">Menu</h2>
         <div id="menuContent">
-            <!-- Default menu -->
+
             <div id="menuMain">
-            <div class="menu-button" id="menuVolumeBtn">Volume</div>
-            <div class="menu-button" id="menuHelpBtn">Help</div>
-            <div class="menu-button" id="menuQuitBtn">Quit</div>
+                <div class="menu-button" id="menuVolumeBtn">Volume</div>
+                <div class="menu-button" id="menuHelpBtn">Glossary</div>
+                <div class="menu-button" id="menuQuitBtn">Quit</div>
             </div>
 
-            <!-- Volume submenu -->
             <div id="menuVolume" style="display:none;">
                 <div class="volume-row">
                     <label>Sound Effects</label>
@@ -209,7 +206,6 @@
                 </div>
             </div>
 
-            <!-- Help submenu -->
             <div id="menuHelp" style="display:none;">
             <input id="helpSearch" type="text" placeholder="Search keywords...">
 
@@ -218,14 +214,14 @@
         </div>
     </div>
 
-    <!-- Quit confirmation popup -->
     <div id="quitPopup">
-    <h2>Are you sure?</h2>
-    <button id="quitYes">Yes</button>
-    <button id="quitNo">No</button>
+        <h2>Are you sure?</h2>
+            <button id="quitYes">Yes</button>
+            <button id="quitNo">No</button>
     </div>
 
     <div class="bg-image" alt="" style="opacity: 35%;"></div>
+
     <div class="container">
         <div id="game-board-container">
             <img id="game-board"
@@ -235,7 +231,6 @@
 
             <div id="city-grid-wrapper">
                 <div id="city-grid">
-                    <!-- STAR CITY -->
                     <div class="city-column">
                         <div class="city-slot">
                             <img class="city-image"
@@ -248,7 +243,6 @@
                         </div>
                     </div>
 
-                    <!-- COAST CITY -->
                     <div class="city-column">
                         <div class="city-slot">
                             <img class="city-image"
@@ -261,7 +255,6 @@
                         </div>
                     </div>
 
-                    <!-- KEYSTONE -->
                     <div class="city-column">
                         <div class="city-slot">
                             <img class="city-image"
@@ -274,7 +267,6 @@
                         </div>
                     </div>
 
-                    <!-- CENTRAL CITY -->
                     <div class="city-column">
                         <div class="city-slot">
                             <img class="city-image"
@@ -287,7 +279,6 @@
                         </div>
                     </div>
 
-                    <!-- METROPOLIS -->
                     <div class="city-column">
                         <div class="city-slot">
                             <img class="city-image"
@@ -300,7 +291,6 @@
                         </div>
                     </div>
 
-                    <!-- GOTHAM CITY -->
                     <div class="city-column">
                         <div class="city-slot">
                             <img class="city-image"
@@ -329,6 +319,7 @@
         import { villains } from './data/villains.js';
         import { renderCard } from './utils/cardRenderer.js';
         import { renderCountdown } from './utils/cardRenderer.js';
+        import { keywords } from './data/keywords.js';
 
         async function decryptData(cipherText, secretKey) {
             const data = atob(cipherText);
@@ -353,7 +344,7 @@
         (async () => {
             const params = new URLSearchParams(window.location.search);
             const encrypted = params.get('data');
-            const SECRET = 'GeimonHeroKey42';
+            const SECRET = 'GeimonHeroKey42';  // DO NOT FUCK THIS UP
 
             if (!encrypted) {
                 document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
@@ -366,17 +357,14 @@
                 const selectedOverlords = selectedData.overlords || [];
                 const selectedTactics = selectedData.tactics || [];
 
-                // HEROES
                 const heroMap = new Map(heroes.map(h => [String(h.id), h]));
                 const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
 
-                // OVERLORDS
                 const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
                 const overlordList = selectedOverlords
                 .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
                 .sort((a, b) => a.level - b.level || a.hp - b.hp);
 
-                // TACTICS
                 const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
                 const tacticList = selectedTactics.map(id => {
                     const t = tacticMap.get(String(id));
@@ -384,34 +372,32 @@
                     return t;
                 });
 
-                // Create hero container
                 const container = document.createElement('div');
                 container.style.marginTop = '0px';
                 container.style.textAlign = 'center';
                 container.innerHTML = `
-                <h2>Loaded Heroes (in order selected):</h2>
-                <ol style="display:inline-block; text-align:left;">
-                    ${heroList.map(h => `<li>${h.name}</li>`).join('')}
-                </ol>
-                <h2 style="margin-top:30px;">Loaded Overlords (sorted by difficulty & HP):</h2>
-                <ol style="display:inline-block; text-align:left;">
-                    ${overlordList.map(o => `<li>${o.name} — ${o.hp} HP (Difficulty ${o.level})</li>`).join('')}
-                </ol>
+                    <h2>Loaded Heroes (in order selected):</h2>
+                    <ol style="display:inline-block; text-align:left;">
+                        ${heroList.map(h => `<li>${h.name}</li>`).join('')}
+                    </ol>
+                    <h2 style="margin-top:30px;">Loaded Overlords (sorted by difficulty & HP):</h2>
+                    <ol style="display:inline-block; text-align:left;">
+                        ${overlordList.map(o => `<li>${o.name} — ${o.hp} HP (Difficulty ${o.level})</li>`).join('')}
+                    </ol>
                 `;
 
                 container.innerHTML += `
-                <h2 style="margin-top:30px;">Loaded Tactics:</h2>
-                <ol style="display:inline-block; text-align:left; max-width:700px;">
-                    ${tacticList.map(t => `
-                    <li style="margin-bottom:10px;">
-                        <b>${t.name}</b><br>
-                        ${t.abilitiesText.map(a => a.text).join('<br><br>')}
-                    </li>
-                    `).join('')}
-                </ol>
+                    <h2 style="margin-top:30px;">Loaded Tactics:</h2>
+                    <ol style="display:inline-block; text-align:left; max-width:700px;">
+                        ${tacticList.map(t => `
+                        <li style="margin-bottom:10px;">
+                            <b>${t.name}</b><br>
+                            ${t.abilitiesText.map(a => a.text).join('<br><br>')}
+                        </li>
+                        `).join('')}
+                    </ol>
                 `;
 
-                // Handle enemies and allies safely whether array or object
                 const enemiesData = selectedData.enemies || {};
                 const alliesData = selectedData.allies || {};
 
@@ -419,38 +405,38 @@
                 const selectedAllies = Array.isArray(alliesData.ids) ? alliesData.ids : [];
 
                 const enemiesCount = typeof enemiesData.count === "number"
-                ? enemiesData.count
-                : selectedEnemies.length;
+                    ? enemiesData.count
+                    : selectedEnemies.length;
+
                 const alliesCount = typeof alliesData.count === "number"
-                ? alliesData.count
-                : selectedAllies.length;
+                    ? alliesData.count
+                    : selectedAllies.length;
 
                 const enemyMap = new Map(enemies.map(e => [String(e.id), e.name]));
                 const allyMap = new Map(allies.map(a => [String(a.id), a.name]));
 
                 container.innerHTML += `
-                <h2 style="margin-top:30px;">Enemies & Allies:</h2>
-                <div style="display:flex; justify-content:center; gap:60px; text-align:left;">
-                    <div>
-                    <b>Enemies (${enemiesCount} chosen)</b><br>
-                    <ul>${
-                        selectedEnemies.length
-                        ? selectedEnemies.map(id => `<li>${enemyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
-                        : '<li>None selected</li>'
-                    }</ul>
+                    <h2 style="margin-top:30px;">Enemies & Allies:</h2>
+                    <div style="display:flex; justify-content:center; gap:60px; text-align:left;">
+                        <div>
+                        <b>Enemies (${enemiesCount} chosen)</b><br>
+                        <ul>${
+                            selectedEnemies.length
+                            ? selectedEnemies.map(id => `<li>${enemyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
+                            : '<li>None selected</li>'
+                        }</ul>
+                        </div>
+                        <div>
+                        <b>Allies (${alliesCount} chosen)</b><br>
+                        <ul>${
+                            selectedAllies.length
+                            ? selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
+                            : '<li>None selected</li>'
+                        }</ul>
+                        </div>
                     </div>
-                    <div>
-                    <b>Allies (${alliesCount} chosen)</b><br>
-                    <ul>${
-                        selectedAllies.length
-                        ? selectedAllies.map(id => `<li>${allyMap.get(String(id)) || `Unknown (${id})`}</li>`).join('')
-                        : '<li>None selected</li>'
-                    }</ul>
-                    </div>
-                </div>
                 `;
 
-                // -------- VILLAIN DECK --------
                 const vdeck = selectedData.villainDeck || {};
 
                 const vd_mights = typeof vdeck.mights === 'number' ? vdeck.mights : 0;
@@ -468,49 +454,49 @@
                 const villainMap = new Map(villains.map(v=>[String(v.id), v]));
 
                 const byBreakHTML = vd_bys_types.length
-                ? ('<ul style="margin:0;padding-left:18px;">'+vd_bys_types.filter(x=>x.count>0).map(x=>`<li>${x.count}× ${x.name || ('Type '+x.id)}</li>`).join('')+'</ul>')
-                : '<i>No bystanders</i>';
+                    ? ('<ul style="margin:0;padding-left:18px;">'+vd_bys_types.filter(x=>x.count>0).map(x=>`<li>${x.count}× ${x.name || ('Type '+x.id)}</li>`).join('')+'</ul>')
+                    : '<i>No bystanders</i>';
 
                 const scenariosHTML = vd_scenarios.length
-                ? ('<ul style="margin:0;padding-left:18px;">'+vd_scenarios.map(id=>`<li>${scenMap.get(id)?.name || ('Unknown '+id)}</li>`).join('')+'</ul>')
-                : '<i>None selected</i>';
+                    ? ('<ul style="margin:0;padding-left:18px;">'+vd_scenarios.map(id=>`<li>${scenMap.get(id)?.name || ('Unknown '+id)}</li>`).join('')+'</ul>')
+                    : '<i>None selected</i>';
 
                 const henchHTML = vd_hench_list.length
-                ? ('<ul style="margin:0;padding-left:18px;">'
-                    + vd_hench_list.filter(x=>Number(x.count)>0).map(x=>{
-                        const h = henchMap.get(String(x.id));
-                        return `<li>${x.count}× ${h?.name || ('Hench '+x.id)}</li>`;
-                        }).join('')
-                    +'</ul>')
-                : '<i>None selected</i>';
+                    ? ('<ul style="margin:0;padding-left:18px;">'
+                        + vd_hench_list.filter(x=>Number(x.count)>0).map(x=>{
+                            const h = henchMap.get(String(x.id));
+                            return `<li>${x.count}× ${h?.name || ('Hench '+x.id)}</li>`;
+                            }).join('')
+                        +'</ul>')
+                    : '<i>None selected</i>';
 
                 const vilsHTML = vd_villain_ids.length
-                ? ('<ul style="margin:0;padding-left:18px;">'+vd_villain_ids.map(id=>{
-                        const v = villainMap.get(id);
-                        return `<li>${v?.name || ('Villain '+id)}${v?` — ${v.hp} HP • ${v.damage} DMG`:''}</li>`;
-                    }).join('')+'</ul>')
-                : '<i>None selected</i>';
+                    ? ('<ul style="margin:0;padding-left:18px;">'+vd_villain_ids.map(id=>{
+                            const v = villainMap.get(id);
+                            return `<li>${v?.name || ('Villain '+id)}${v?` — ${v.hp} HP • ${v.damage} DMG`:''}</li>`;
+                        }).join('')+'</ul>')
+                    : '<i>None selected</i>';
 
                 container.innerHTML += `
-                <h2 style="margin-top:30px;">Villain Deck</h2>
-                <div style="display:grid;grid-template-columns: 1fr 1fr; gap:24px; max-width:900px; margin:0 auto; text-align:left;">
-                    <div>
-                    <b>Mights:</b> ${vd_mights}
-                    <br><br>
-                    <b>Bystanders:</b> ${vd_bys_count}
-                    <div style="margin-top:6px;">${byBreakHTML}</div>
-                    <br>
-                    <b>Scenarios (${vd_scenarios.length}):</b>
-                    <div style="margin-top:6px;">${scenariosHTML}</div>
+                    <h2 style="margin-top:30px;">Villain Deck</h2>
+                    <div style="display:grid;grid-template-columns: 1fr 1fr; gap:24px; max-width:900px; margin:0 auto; text-align:left;">
+                        <div>
+                        <b>Mights:</b> ${vd_mights}
+                        <br><br>
+                        <b>Bystanders:</b> ${vd_bys_count}
+                        <div style="margin-top:6px;">${byBreakHTML}</div>
+                        <br>
+                        <b>Scenarios (${vd_scenarios.length}):</b>
+                        <div style="margin-top:6px;">${scenariosHTML}</div>
+                        </div>
+                        <div>
+                        <b>Henchmen:</b>
+                        <div style="margin-top:6px;">${henchHTML}</div>
+                        <br>
+                        <b>Villains (${vd_villain_ids.length}):</b>
+                        <div style="margin-top:6px;">${vilsHTML}</div>
+                        </div>
                     </div>
-                    <div>
-                    <b>Henchmen:</b>
-                    <div style="margin-top:6px;">${henchHTML}</div>
-                    <br>
-                    <b>Villains (${vd_villain_ids.length}):</b>
-                    <div style="margin-top:6px;">${vilsHTML}</div>
-                    </div>
-                </div>
                 `;
 
                 document.getElementById("dropdown-content").appendChild(container);
@@ -526,9 +512,6 @@
 
             const vh = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight;
             const vw = window.visualViewport?.width  || window.innerWidth  || document.documentElement.clientWidth;
-                    
-            //container.style.height = vh + "px";
-            //container.style.width  = vw + "px";
 
             const padding = 16;
             board.style.maxHeight = (vh - padding) + "px";
@@ -550,16 +533,13 @@
             const wrapper = document.getElementById("city-grid-wrapper");
             const grid = document.getElementById("city-grid");
 
-            // Natural grid size
             const gridWidth = grid.scrollWidth;
             const gridHeight = grid.scrollHeight;
 
-            // Visible board box
             const boardRect = board.getBoundingClientRect();
-            const maxW = boardRect.width * 0.90;  // slight padding
-            const maxH = boardRect.height * 0.80; // slight padding
+            const maxW = boardRect.width * 0.90;
+            const maxH = boardRect.height * 0.80;
 
-            // Required scale
             const scale = Math.min(maxW / gridWidth, maxH / gridHeight);
 
             wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
@@ -568,33 +548,25 @@
         window.addEventListener("load", scaleGridToBoard);
         window.addEventListener("resize", scaleGridToBoard);
 
-        // === DROPDOWN TOGGLE LOGIC ===
         const dropdownPanel = document.getElementById("dropdown-panel");
         const dropdownTab   = document.getElementById("dropdown-tab");
         const dropdownClose = document.getElementById("dropdown-close");
 
-        // OPEN ▼ — only visible when closed
         dropdownTab.addEventListener("click", () => {
             dropdownPanel.style.maxHeight = "85vh";
-            dropdownTab.style.display = "none";      // hide open tab
-            dropdownClose.style.display = "flex";    // show close tab at bottom
+            dropdownTab.style.display = "none";
+            dropdownClose.style.display = "flex";
         });
 
-        // CLOSE ▲ — only visible when open
         dropdownClose.addEventListener("click", () => {
             dropdownPanel.style.maxHeight = "0";
 
-            dropdownClose.style.display = "none";  // hide close tab immediately
+            dropdownClose.style.display = "none";
 
-            // Show the open tab AFTER collapse animation
             setTimeout(() => {
                 dropdownTab.style.display = "flex";
             }, 450);
         });
-
-        /* === NEW MENU SYSTEM ======================================= */
-
-        import { keywords } from './data/keywords.js';
 
         const menuBtn = document.getElementById("gameMenu-box");
         const sideMenu = document.getElementById("sideMenu");
@@ -615,108 +587,95 @@
         const quitNo = document.getElementById("quitNo");
 
         let menuOpen = false;
-        let submenu = null; // null | 'volume' | 'help'
+        let submenu = null;
 
-        // Populate help list (alphabetically)
         function loadKeywords() {
-        helpList.innerHTML = "";
-        const entries = Object.entries(keywords).sort((a,b)=>a[0].localeCompare(b[0]));
-        for (let [name, text] of entries) {
-            const div = document.createElement("div");
-            div.className = "keyword-entry";
-            div.innerHTML = `<b>${name}</b><br>${text}`;
-            helpList.appendChild(div);
-        }
+            helpList.innerHTML = "";
+            const entries = Object.entries(keywords).sort((a,b)=>a[0].localeCompare(b[0]));
+            for (let [name, text] of entries) {
+                const div = document.createElement("div");
+                div.className = "keyword-entry";
+                div.innerHTML = `<b>${name}</b><br>${text}`;
+                helpList.appendChild(div);
+            }
         }
         loadKeywords();
 
-        // Live search
         helpSearch.addEventListener("input", () => {
-        const query = helpSearch.value.toLowerCase();
-        const entries = Object.entries(keywords).sort((a,b)=>a[0].localeCompare(b[0]));
+            const query = helpSearch.value.toLowerCase();
+            const entries = Object.entries(keywords).sort((a,b)=>a[0].localeCompare(b[0]));
 
-        helpList.innerHTML = "";
+            helpList.innerHTML = "";
 
-        for (let [name, text] of entries) {
-            if (
-            name.toLowerCase().includes(query) ||
-            text.toLowerCase().includes(query)
-            ) {
-            const div = document.createElement("div");
-            div.className = "keyword-entry";
-            div.innerHTML = `<b>${name}</b><br>${text}`;
-            helpList.appendChild(div);
+            for (let [name, text] of entries) {
+                if ( name.toLowerCase().includes(query) || text.toLowerCase().includes(query) ) {
+                    const div = document.createElement("div");
+                    div.className = "keyword-entry";
+                    div.innerHTML = `<b>${name}</b><br>${text}`;
+                    helpList.appendChild(div);
+                }
             }
-        }
         });
 
-        // Open/close menu
         menuBtn.addEventListener("click", () => {
-        if (!menuOpen) {
-            // OPEN
-            sideMenu.classList.add("open");
-            menuBtn.style.backgroundColor = "red";
-            menuBtn.textContent = "X";
-            menuOpen = true;
-        } else if (submenu === null) {
-            // CLOSE from main menu
-            sideMenu.classList.remove("open");
-            menuBtn.style.backgroundColor = "rgb(79,196,255)";
-            menuBtn.textContent = "≡";
-            menuOpen = false;
-        } else {
-            // BACK from submenu
-            submenu = null;
-            menuHeader.textContent = "Menu";
+            if (!menuOpen) {
+                sideMenu.classList.add("open");
+                menuBtn.style.backgroundColor = "red";
+                menuBtn.textContent = "X";
+                menuOpen = true;
+            } else if (submenu === null) {
+                sideMenu.classList.remove("open");
+                menuBtn.style.backgroundColor = "rgb(79,196,255)";
+                menuBtn.textContent = "≡";
+                menuOpen = false;
+            } else {
+                submenu = null;
+                menuHeader.textContent = "Menu";
 
-            menuMain.style.display = "block";
-            menuVolume.style.display = "none";
+                menuMain.style.display = "block";
+                menuVolume.style.display = "none";
+                menuHelp.style.display = "none";
+
+                menuBtn.textContent = "X";
+            }
+        });
+
+        document.getElementById("menuVolumeBtn").addEventListener("click", () => {
+            submenu = "volume";
+            menuHeader.textContent = "Volume";
+
+            menuMain.style.display = "none";
+            menuVolume.style.display = "block";
             menuHelp.style.display = "none";
 
-            menuBtn.textContent = "X"; // stay red X while menu open
-        }
+            menuBtn.textContent = "←";
         });
 
-        // Go to Volume submenu
-        document.getElementById("menuVolumeBtn").addEventListener("click", () => {
-        submenu = "volume";
-        menuHeader.textContent = "Volume";
-
-        menuMain.style.display = "none";
-        menuVolume.style.display = "block";
-        menuHelp.style.display = "none";
-
-        menuBtn.textContent = "←";
-        });
-
-        // Go to Help submenu
         document.getElementById("menuHelpBtn").addEventListener("click", () => {
-        submenu = "help";
-        menuHeader.textContent = "Help: Glossary";
-        menuHeader.style.fontSize = "28px";
+            submenu = "help";
+            menuHeader.textContent = "Glossary";
+            menuHeader.style.fontSize = "28px";
 
-        menuMain.style.display = "none";
-        menuVolume.style.display = "none";
-        menuHelp.style.display = "block";
+            menuMain.style.display = "none";
+            menuVolume.style.display = "none";
+            menuHelp.style.display = "block";
 
-        menuBtn.textContent = "←";
+            menuBtn.textContent = "←";
         });
 
-        // Quit
         document.getElementById("menuQuitBtn").addEventListener("click", () => {
-        popup.style.display = "block";
+            popup.style.display = "block";
         });
 
-        // Quit popup buttons
         quitNo.addEventListener("click", () => {
-        popup.style.display = "none";
-        });
-        quitYes.addEventListener("click", () => {
-        window.location.href = "index.html";
+            popup.style.display = "none";
         });
 
-        // Dummy slider handlers
-        volSFX.addEventListener("input", ()=>{});
+        quitYes.addEventListener("click", () => {
+            window.location.href = "index.html";
+        });
+
+        volSFX.addEventListener("input", ()=>{}); // DUMMY FOR NOW
         volMusic.addEventListener("input", ()=>{});
     </script>
 </body>
