@@ -649,7 +649,7 @@ html, body {
 #overlord-panel {
     position: fixed;
     top: 0;
-    left: 0;
+    left: -40vw;
     width: 40vw;
     height: 100vh;
     overflow-y: auto;
@@ -665,10 +665,11 @@ html, body {
     box-sizing: border-box;
 
     backdrop-filter: blur(3px);
+    transition: left 0.35s ease;
 }
 
-#overlord-panel.hidden {
-    display: none;
+#overlord-panel.open {
+    left: 0;
 }
 
 #overlord-panel-close {

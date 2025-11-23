@@ -193,7 +193,7 @@
         </div>
     </div>
 
-    <div id="overlord-panel" class="hidden">
+    <div id="overlord-panel">
         <div id="overlord-panel-close">X</div>
         <div id="overlord-panel-content"></div>
     </div>
@@ -747,7 +747,7 @@
 
 
         document.getElementById("overlord-panel-close").addEventListener("click", () => {
-            document.getElementById("overlord-panel").classList.add("hidden");
+            document.getElementById("overlord-panel").classList.remove("open");
         });
 
         function extractKeywordsFromAbilities(abilitiesTextArr) {
@@ -868,7 +868,7 @@
                 none.textContent = "No Keywords Found";
                 keyBox.appendChild(none);
                 content.appendChild(keyBox);
-                panel.classList.remove("hidden");
+                panel.classList.add("open");
                 return;
             }
 
@@ -887,7 +887,7 @@
 
             content.appendChild(keyBox);
 
-            panel.classList.remove("hidden");
+            panel.classList.add("open");
         }
     </script>
 </body>
