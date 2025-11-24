@@ -9,6 +9,11 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderCountdown, renderAbilityText } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
+import { gameStart } from './turnOrder.js';
+import { runGameStartAbilities } from './abilityExecutor.js';
+
+import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
+import { gameState } from "../data/gameState.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -127,7 +132,146 @@ async function decryptData(cipherText, secretKey) {
     return JSON.parse(decoded);
 }
 
+/******************************************************
+ * RESTORE FULL UI FROM SAVED GAME STATE
+ ******************************************************/
+async function restoreUIFromState(state) {
+
+    console.log("Restoring UI from saved state…");
+
+    /******************************************************
+     * HERO RESTORATION
+     ******************************************************/
+    // Build hero map from master hero data
+    heroMap = new Map(heroes.map(h => [String(h.id), h]));
+
+    // Re-hydrate hero objects with dynamic fields saved in state
+    const restoredHeroIds = state.heroes || [];
+
+    restoredHeroIds.forEach(id => {
+        const heroObj = heroMap.get(String(id));
+        if (!heroObj) return;
+
+        const saved = state.heroData?.[id];
+        if (!saved) return;
+
+        // HP
+        if (saved.currentHP != null) {
+            heroObj.currentHP = saved.currentHP;
+        }
+
+        // Ability uses
+        if (saved.currentUses) {
+            heroObj.currentUses = saved.currentUses;
+        }
+
+        // Owner assignment
+        heroObj.owner = saved.owner;
+    });
+
+    // UI row
+    selectedHeroes = restoredHeroIds;
+    buildHeroesRow(restoredHeroIds, heroMap);
+
+    // Attach click events
+    setTimeout(attachHeroClicks, 0);
+
+
+    /******************************************************
+     * OVERLORD RESTORATION
+     ******************************************************/
+    if (state.overlords?.length) {
+        const map = new Map(overlords.map(o => [String(o.id), o]));
+        const first = map.get(String(state.overlords[0]));
+
+        if (first) {
+            // Re-apply saved HP
+            if (state.overlordData?.currentHP != null) {
+                first.currentHP = state.overlordData.currentHP;
+            }
+
+            setCurrentOverlord(first);
+        }
+
+        // tactics
+        const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+        currentTactics = (state.tactics || []).map(id => tacticMap.get(String(id))).filter(Boolean);
+    }
+
+
+    /******************************************************
+     * CITY GRID RESTORATION
+     ******************************************************/
+    // Your DOM already has slots. We re-insert occupants.
+    // Expected state.cities = [ { slotIndex:0, type:'villain', id:'5012', hp:12 }, ... ]
+    if (Array.isArray(state.cities)) {
+
+        // For each city-slot restore an occupant
+        const citySlots = document.querySelectorAll(".city-slot");
+
+        state.cities.forEach(entry => {
+            const slot = citySlots[entry.slotIndex];
+            if (!slot) return;
+
+            slot.innerHTML = ""; // wipe
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "card-wrapper";
+
+            const rendered = renderCard(entry.id, wrapper);
+            wrapper.appendChild(rendered);
+
+            slot.appendChild(wrapper);
+        });
+    }
+
+
+    /******************************************************
+     * VILLAIN DECK / POINTER
+     ******************************************************/
+    if (Array.isArray(state.villainDeck)) {
+        gameState.villainDeck = [...state.villainDeck];
+    }
+
+    if (typeof state.villainDeckPointer === "number") {
+        gameState.villainDeckPointer = state.villainDeckPointer;
+    }
+
+
+    /******************************************************
+     * PLAYER / OWNERSHIP RESTORATION
+     ******************************************************/
+    if (Array.isArray(state.playerUsernames)) {
+
+        const players = state.playerUsernames;
+        const heroesByPlayer = state.heroesByPlayer || [state.heroes];
+
+        heroesByPlayer.forEach((heroList, playerIndex) => {
+            heroList.forEach(heroId => {
+                const h = heroMap.get(String(heroId));
+                if (!h) return;
+                h.owner = players[playerIndex] || "Player";
+            });
+        });
+    }
+
+
+    resizeBoardToViewport();
+    scaleGridToBoard();
+
+    console.log("UI restore complete.");
+}
+
 (async () => {
+    const saved = loadGameState();
+
+    if (saved) {
+        console.log("=== RESUMING SAVED GAME ===");
+        Object.assign(gameState, saved);
+        restoreUIFromState(gameState);    // YOU must implement this hook
+        return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const encrypted = params.get('data');
     const SECRET = 'GeimonHeroKey42';  // DO NOT FUCK THIS UP
@@ -152,24 +296,39 @@ async function decryptData(cipherText, secretKey) {
             const players = selectedData.playerUsernames || ["Player"];
             const heroesByPlayer = selectedData.heroesByPlayer || [ selectedHeroes ];
 
-            console.log("=== PLAYER LIST (1–6 Players) ===");
-            players.forEach((name, index) => {
-                console.log(`Player ${index+1}: ${name}`);
-            });
-
-            console.log("=== ASSIGNING HERO OWNERSHIP ===");
-
             heroesByPlayer.forEach((heroList, playerIndex) => {
                 const ownerName = players[playerIndex] || `Player ${playerIndex+1}`;
                 heroList.forEach(heroId => {
                     const hero = heroMap.get(String(heroId));
                     if (!hero) return;
                     hero.owner = ownerName;
-                    console.log(`Hero ${hero.name} → Owner: ${ownerName}`);
                 });
             });
 
         })();
+
+        //console.log(">>> STARTING SINGLEPLAYER GAME <<<");
+        const startResult = gameStart(selectedData);
+        runGameStartAbilities(selectedData);
+
+        Object.assign(gameState, {
+            heroes: selectedData.heroes,
+            overlords: selectedData.overlords,
+            tactics: selectedData.tactics,
+
+            // villain deck from gameStart()
+            villainDeck: startResult.villainDeck,
+            villainDeckPointer: 0,
+
+            // city grid from gameStart() (empty until you populate cities)
+            cities: startResult.initialCities,
+
+            heroesByPlayer: selectedData.heroesByPlayer,
+            playerUsernames: selectedData.playerUsernames
+        });
+
+
+        saveGameState(gameState);
 
         const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
         const overlordList = selectedOverlords
@@ -489,6 +648,7 @@ quitNo.addEventListener("click", () => {
 });
 
 quitYes.addEventListener("click", () => {
+    clearGameState();
     window.location.href = "index.html";
 });
 
@@ -881,3 +1041,7 @@ function attachHeroClicks() {
 
 const isSinglePlayer = (window.GAME_MODE === "single");
 const isMultiplayer = (window.GAME_MODE === "multi");
+
+setInterval(() => {
+    saveGameState(gameState);
+}, 5000);

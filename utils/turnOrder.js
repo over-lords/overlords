@@ -152,3 +152,71 @@ END HERO TURN
 
 const isSinglePlayer = (window.GAME_MODE === "single");
 const isMultiplayer = (window.GAME_MODE === "multi");
+
+import { findCardInAllSources } from './cardRenderer.js'; // ensure this import exists
+
+export function gameStart(selectedData) {
+
+    const vdeck = selectedData.villainDeck || {};
+
+    // Build a FLAT array of villain deck IDs
+    const idArray = [];
+
+    // Mights (repeat id "MIGHT" X times or use actual id if you store one)
+    for (let i = 0; i < (vdeck.mights || 0); i++) {
+        idArray.push("7001");
+    }
+
+    // Bystanders
+    if (Array.isArray(vdeck.bystanders?.byType)) {
+        vdeck.bystanders.byType.forEach(bt => {
+            for (let i = 0; i < (bt.count || 0); i++) {
+                idArray.push(String(bt.id));
+            }
+        });
+    }
+
+    // Scenarios
+    if (Array.isArray(vdeck.scenarios)) {
+        vdeck.scenarios.forEach(id => idArray.push(String(id)));
+    }
+
+    // Henchmen
+    if (Array.isArray(vdeck.henchmen)) {
+        vdeck.henchmen.forEach(entry => {
+            for (let i = 0; i < (entry.count || 0); i++) {
+                idArray.push(String(entry.id));
+            }
+        });
+    }
+
+    // Villains
+    if (Array.isArray(vdeck.villains)) {
+        vdeck.villains.forEach(id => idArray.push(String(id)));
+    }
+
+    // === SHUFFLE ===
+    for (let i = idArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [idArray[i], idArray[j]] = [idArray[j], idArray[i]];
+    }
+
+    //console.log("=== SHUFFLED VILLAIN DECK IDS ===");
+    //console.log(idArray);
+
+    // === PRINT NAMES ===
+    const names = idArray.map(id => {
+        const c = findCardInAllSources(id);
+        return c ? c.name : `Unknown (${id})`;
+    });
+
+    //console.log("=== SHUFFLED VILLAIN DECK NAMES ===");
+    //console.log(names);
+
+    // continue into actual gameplay setup...
+
+    return {
+        villainDeck: idArray,
+        initialCities: []  // placeholder until you track cities
+    };
+}

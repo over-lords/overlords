@@ -9,7 +9,7 @@ import { scenarios } from '../data/scenarios.js';
 import { tactics } from '../data/tactics.js';
 import { villains } from '../data/villains.js';
 
-function findCardInAllSources(id) {
+export function findCardInAllSources(id) {
   const sources = [
     heroes,
     heroCards,
@@ -25,7 +25,7 @@ function findCardInAllSources(id) {
 
   for (const src of sources) {
     if (!Array.isArray(src)) continue;
-    const card = src.find(c => c.id === id);
+    const card = src.find(c => String(c.id) === String(id));
     if (card) return card;
   }
 
