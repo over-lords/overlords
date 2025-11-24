@@ -580,6 +580,16 @@ window.addEventListener("load", () => {
     });
 });
 
+window.addEventListener("resize", () => {
+    resizeBoardToViewport();
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            scaleGridToBoard();
+        });
+    });
+});
+
 const dropdownPanel = document.getElementById("dropdown-panel");
 const dropdownTab = document.getElementById("dropdown-tab");
 const dropdownClose = document.getElementById("dropdown-close");
