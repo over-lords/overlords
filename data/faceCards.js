@@ -44,7 +44,7 @@ export const heroes = [
     category: "Guardian",
     doNotShow: "true",
     color: "green",
-    teams: ["Green Lantern","Justice"],
+    teams: ["Lantern","Justice"],
     hp: "16",
     damageThreshold: "2",
     retreat: "4",
@@ -282,7 +282,7 @@ export const heroes = [
     category: "Guardian",
     doNotShow: "true",
     color: "red",
-    teams: ["Green Lantern","Justice"],
+    teams: ["Lantern","Justice"],
     hp: "13",
     damageThreshold: "1",
     retreat: "5",
@@ -1034,18 +1034,25 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `If Flash travels, his damaging cards gain +1 per travel for that turn only. <span class="line-gap"></span> 2/Game: At the start of Flash's turn, he can draw 2 random cards instead of selecting one.`
+        text: `If Flash travels, his damaging cards gain +1 per Travel for that turn only. <span class="line-gap"></span> 2/Game: At the start of Flash's turn, he can draw 2 random cards instead of selecting one.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Skip Selection, Draw 2`
+        text: `Damaging cards gain +1 per Travel`
       },
       {
-        text: `Increase 1+ Damage Cards By 1 Per Travel`
-      }
+        text: `Skip Selection, Draw 2`
+      },
     ],
     abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `Travel`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseDamage(1)`
+      },
       {
         type: `quick`,
         condition: `wouldDrawAtStart`,
@@ -1053,13 +1060,6 @@ export const heroes = [
         shared: `no`,
         effect: `skipSelectionDraw2`
       },
-      {
-        type: `passive`,
-        condition: `Travel`,
-        uses: `0`,
-        shared: `no`,
-        effect: `increaseDamage(1)`
-      }
     ]
   },
   {
@@ -1275,7 +1275,7 @@ export const heroes = [
     category: "Striker",
     doNotShow: "true",
     color: "ivory",
-    teams: ["Green Lantern","Justice"],
+    teams: ["Lantern","Justice"],
     hp: "15",
     damageThreshold: "3",
     retreat: "3",
@@ -1918,7 +1918,7 @@ export const heroes = [
     category: "Striker",
     doNotShow: "true",
     color: "yellow",
-    teams: ["Green Lantern","Legion"],
+    teams: ["Lantern","Legion"],
     hp: "14",
     damageThreshold: "2",
     retreat: "4",
@@ -2021,18 +2021,25 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `2/Game: At the start of a turn, prevent the Villain Deck from being drawn from. <span class="line-gap"></span> 1/Game: Without rolling, Cyborg can Retreat and take no Damage.`
+        text: `2/Game: At the start of a turn, prevent the Villain Deck draw. <span class="line-gap"></span> 1/Game: Cyborg can Withdraw.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Retreat without rolling`
+        text: `Prevent Villain Deck draw`
       },
       {
-        text: `Prevent Villain Deck draw`
-      }
+        text: `Withdraw from your City`
+      },
     ],
     abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `villainDeckWouldDraw`,
+        uses: `2`,
+        shared: `no`,
+        effect: `skipVillainDeckDraw`
+      },
       {
         type: `standard`,
         condition: `none`,
@@ -2040,13 +2047,6 @@ export const heroes = [
         shared: `no`,
         effect: `retreatFree`
       },
-      {
-        type: `quick`,
-        condition: `villainDeckWouldDraw`,
-        uses: `2`,
-        shared: `no`,
-        effect: `skipVillainDeckDraw`
-      }
     ]
   },
   {
@@ -2100,7 +2100,7 @@ export const heroes = [
     category: "Tactician",
     doNotShow: "true",
     color: "green",
-    teams: ["Green Lantern","Justice"],
+    teams: ["Lantern","Justice"],
     hp: "14",
     damageThreshold: "3",
     retreat: "4",
