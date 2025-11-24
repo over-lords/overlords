@@ -915,6 +915,12 @@ html, body {
     line-height: 1.25;
 }
 
+#hero-panel-content::after {
+    content: "";
+    display: block;
+    height: 50px;      /* extra bottom padding */
+}
+
 .hero-card-scale {
     transform: scale(0.40);
     transform-origin: top left;
