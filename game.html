@@ -198,6 +198,11 @@
         <div id="overlord-panel-content"></div>
     </div>
 
+    <div id="hero-panel">
+        <div id="hero-panel-close">X</div>
+        <div id="hero-panel-content"></div>
+    </div>
+
     <div id="gameMenu-box">≡</div>
 
     <div id="sideMenu">
@@ -234,6 +239,8 @@
             <button id="quitYes">Yes</button>
             <button id="quitNo">No</button>
     </div>
+
+    <div id="heroes-row"></div>
 
     <div class="bg-image" alt="" style="opacity: 35%;"></div>
 
@@ -339,6 +346,100 @@
         let currentOverlord = null;
         let currentTactics = [];
 
+        let selectedHeroes = [];
+        let heroMap = new Map();
+
+        const HERO_BORDER_URLS = {
+            Striker: "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Site%20Assets/strikerBorder.png",
+            Guardian: "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Site%20Assets/guardianBorder.png",
+            Tactician: "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Site%20Assets/tacticianBorder.png"
+        };
+
+        const EMPTY_HERO_URL = "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Card%20Assets/Misc/emptyHero.png";
+
+        function buildHeroesRow(selectedHeroIds, heroMap) {
+            const row = document.getElementById("heroes-row");
+            if (!row) return;
+
+            row.innerHTML = "";
+
+            const totalSlots = 6;
+            for (let i = 0; i < totalSlots; i++) {
+                const slot = document.createElement("div");
+                slot.className = "hero-slot";
+
+                const id = selectedHeroIds[i];
+                const hero = id != null ? heroMap.get(String(id)) : null;
+
+                const wrapper = document.createElement("div");
+                wrapper.className = "hero-border-wrapper";
+
+                if (hero) {
+                    hero.currentHP = hero.currentHP ?? hero.hp;
+
+                    const hpBox = document.createElement("div");
+                    hpBox.className = "hero-hp-display";
+
+                    hpBox.innerHTML = `
+                        <img class="hero-hp-heart" src="https://raw.githubusercontent.com/over-lords/overlords/7774da0ec26845edd8dc6c07756b04e78fafcbff/Public/Images/Card%20Assets/Misc/Heart.png">
+                        <div class="hero-hp-text">${hero.currentHP}</div>
+                    `;
+
+                    slot.appendChild(hpBox);
+                }
+
+                // Defaults for empty slot
+                let borderImageUrl = HERO_BORDER_URLS.Guardian; // neutral default
+                let borderColor = "transparent";
+                let portraitSrc = EMPTY_HERO_URL;
+                let portraitAlt = "Empty Hero Slot";
+
+                if (hero) {
+                    // Pick frame by category
+                    const category = (hero.category || "").toLowerCase();
+                    if (category === "striker") {
+                        borderImageUrl = HERO_BORDER_URLS.Striker;
+                    } else if (category === "guardian") {
+                        borderImageUrl = HERO_BORDER_URLS.Guardian;
+                    } else if (category === "tactician") {
+                        borderImageUrl = HERO_BORDER_URLS.Tactician;
+                    }
+
+                    // Tint by hero.color, if defined
+                    if (hero.color) {
+                        borderColor = hero.color;
+                    }
+
+                    portraitSrc = hero.image;
+                    portraitAlt = hero.name || "Hero";
+                }
+
+                // Hooks for the CSS mask-based tint
+                wrapper.style.setProperty("--border-image", `url('${borderImageUrl}')`);
+                wrapper.style.setProperty("--border-color", borderColor);
+
+                const img = document.createElement("img");
+                img.className = "hero-portrait";
+                img.src = portraitSrc;
+                img.alt = portraitAlt;
+
+                if (!hero) {
+                    img.style.opacity = "0.9";
+                    if (!hero) wrapper.classList.add("empty-slot");
+                }
+
+                const tint = document.createElement("div");
+                tint.className = "hero-border-tint";
+
+                attachHeroClicks();
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(tint);
+                slot.appendChild(wrapper);
+                row.appendChild(slot);
+            }
+        }
+
         async function decryptData(cipherText, secretKey) {
             const data = atob(cipherText);
             const bytes = new Uint8Array([...data].map(c => c.charCodeAt(0)));
@@ -371,12 +472,14 @@
 
             try {
                 const selectedData = await decryptData(encrypted, SECRET);
-                const selectedHeroes = selectedData.heroes || [];
+                selectedHeroes = selectedData.heroes || [];
                 const selectedOverlords = selectedData.overlords || [];
                 const selectedTactics = selectedData.tactics || [];
 
-                const heroMap = new Map(heroes.map(h => [String(h.id), h]));
+                heroMap = new Map(heroes.map(h => [String(h.id), h]));
                 const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
+
+                buildHeroesRow(selectedHeroes, heroMap);
 
                 const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
                 const overlordList = selectedOverlords
@@ -895,6 +998,200 @@
 
             panel.classList.add("open");
         }
+
+        document.getElementById("hero-panel-close").addEventListener("click", () => {
+            document.getElementById("hero-panel").classList.remove("open");
+        });
+
+        /* Keyword extraction reused for heroes */
+        function extractHeroKeywords(abilitiesTextArr) {
+            if (!Array.isArray(abilitiesTextArr)) return [];
+            const found = new Set();
+            const keywordNames = Object.keys(keywords);
+
+            abilitiesTextArr.forEach(a => {
+                if (!a || !a.text) return;
+                keywordNames.forEach(kw => {
+                    const regex = new RegExp(`(^|[^A-Za-z0-9'])${kw}([^A-Za-z0-9']|$)`, "i");
+                    if (regex.test(a.text)) found.add(kw);
+                });
+            });
+
+            return Array.from(found);
+        }
+
+        function getRGB(color) {
+            const d = document.createElement("div");
+            d.style.color = color;
+            document.body.appendChild(d);
+
+            const rgb = window.getComputedStyle(d).color;
+            document.body.removeChild(d);
+
+            return rgb; // returns "rgb(r, g, b)"
+        }
+
+        function lightenRGB(rgbString, factor = 0.65) {
+            // rgbString is like "rgb(255, 0, 0)"
+            const nums = rgbString.match(/\d+/g).map(Number);
+            const [r, g, b] = nums;
+
+            // Move the color toward white by the given factor
+            const nr = Math.round(r + (255 - r) * factor);
+            const ng = Math.round(g + (255 - g) * factor);
+            const nb = Math.round(b + (255 - b) * factor);
+
+            return `rgb(${nr}, ${ng}, ${nb})`;
+        }
+
+        function buildHeroPanel(hero) {
+            if (!hero) return;
+
+            const panel = document.getElementById("hero-panel");
+            const content = document.getElementById("hero-panel-content");
+            content.innerHTML = "";
+
+            /* HERO PANEL COLORING */
+            const rgb = getRGB(hero.color || "white");
+            const light = lightenRGB(rgb, 0.35);
+            panel.style.backgroundColor = light.replace("rgb", "rgba").replace(")", ", 0.85)");
+            panel.style.borderRight = `4px solid ${hero.color || "black"}`;
+
+            /* CARD */
+            const cardContainer = document.createElement("div");
+            cardContainer.classList.add("hero-card-scale");
+            const rendered = renderCard(hero.id, cardContainer);
+            cardContainer.appendChild(rendered);
+
+            /* STATS */
+            hero.currentHP = hero.currentHP ?? hero.hp;
+
+            const statsBox = document.createElement("div");
+            statsBox.innerHTML = `
+                <h2 style="margin:4px 0;">${hero.name}</h2>
+                <div><strong>HP:</strong> ${hero.currentHP}</div>
+                <div><strong>Damage Threshold:</strong> ${hero.damageThreshold}</div>
+                <div><strong>Travel:</strong> ${hero.travel}</div>
+                <div><strong>Retreat:</strong> ${hero.retreat}</div>
+            `;
+
+            /* ABILITIES */
+            const abilBox = document.createElement("div");
+            abilBox.innerHTML = `<h3 style="margin-bottom:0; padding-bottom:0;">Abilities</h3>`;
+
+            hero.abilitiesText.forEach((a, i) => {
+                const block = document.createElement("div");
+                block.innerHTML = renderAbilityText(a.text);
+                abilBox.appendChild(block);
+            });
+
+            /* Top row: card left, text right */
+            const topRow = document.createElement("div");
+            topRow.classList.add("hero-top-row");
+
+            const rightColumn = document.createElement("div");
+            rightColumn.classList.add("hero-right-column");
+
+            rightColumn.appendChild(statsBox);
+            rightColumn.appendChild(abilBox);
+
+            topRow.appendChild(cardContainer);
+            topRow.appendChild(rightColumn);
+
+            content.appendChild(topRow);
+
+            const usesList = document.createElement("div");
+            usesList.innerHTML = `<h3 style="margin-bottom:4px;">Ability Uses</h3>`;
+
+            // Ensure currentUses exists
+            hero.currentUses = hero.currentUses || {};
+
+            hero.abilitiesNamePrint.forEach((nameObj, i) => {
+                const effect = hero.abilitiesEffects[i] || {};
+                const maxUses = Number(effect.uses || 0);
+
+                // Initialize remaining uses
+                if (hero.currentUses[i] == null) {
+                    hero.currentUses[i] = maxUses;
+                }
+
+                const remaining = hero.currentUses[i];
+
+                const line = document.createElement("div");
+                line.style.display = "flex";
+                line.style.flexDirection = "row";
+                line.style.alignItems = "center";
+                line.style.fontSize = "12px";
+                line.style.margin = "3px 0";
+
+                // Number + "x"
+                const count = document.createElement("div");
+                if (effect.type === "passive") {
+                    count.textContent = "-";
+                } else {
+                    count.textContent = `${remaining}x`;
+                }
+                count.style.fontWeight = "bold";
+                count.style.marginRight = "6px";
+                count.style.width = "24px";  // keeps alignment consistent
+
+                const label = document.createElement("div");
+                label.textContent = nameObj.text;
+
+                line.appendChild(count);
+                line.appendChild(label);
+                usesList.appendChild(line);
+            });
+
+            content.appendChild(usesList);
+
+            /* KEYWORDS */
+            const foundKeys = extractHeroKeywords(hero.abilitiesText).sort((a,b)=>a.localeCompare(b));
+
+            const keyBox = document.createElement("div");
+            keyBox.innerHTML = `<h3>Keywords</h3>`;
+
+            if (foundKeys.length === 0) {
+                const none = document.createElement("div");
+                none.style.fontStyle = "italic";
+                none.textContent = "No Keywords Found";
+                keyBox.appendChild(none);
+            } else {
+                foundKeys.forEach(k => {
+                    const line = document.createElement("div");
+                    line.style.marginBottom = "6px";
+                    line.innerHTML = `
+                        <div style="font-weight:bold;">${k}</div>
+                        <div style="margin-left:8px;">${keywords[k] || "No definition found."}</div>
+                    `;
+                    keyBox.appendChild(line);
+                });
+            }
+
+            content.appendChild(keyBox);
+
+            /* Open panel */
+            panel.classList.add("open");
+        }
+
+        /* === Make Hero Portraits Clickable === */
+        function attachHeroClicks() {
+            const row = document.getElementById("heroes-row");
+            const wrappers = row.querySelectorAll(".hero-border-wrapper");
+
+            wrappers.forEach((wrap, index) => {
+                wrap.style.cursor = "pointer";
+
+                wrap.addEventListener("click", () => {
+                    const id = selectedHeroes[index];
+                    if (!id) return;
+                    const hero = heroMap.get(String(id));
+                    if (!hero) return;
+                    buildHeroPanel(hero);
+                });
+            });
+        }
+
     </script>
 </body>
 </html>

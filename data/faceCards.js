@@ -23,26 +23,16 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Protect Superman`
-      },
-      {
-        text: `Protect another Hero`
+        text: `Block the Damage`
       }
     ],
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `damageSelf`,
+        condition: `damageHero()`,
         uses: `3`,
-        shared: `yes`,
-        effect: `ignoreDamage`
-      },
-      {
-        type: `quick`,
-        condition: `damageOther`,
-        uses: `3`,
-        shared: `yes`,
-        effect: `protectHero`
+        shared: `no`,
+        effect: `blockDamage()`
       }
     ]
   },
@@ -1001,12 +991,12 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `2/Game: Once per turn, Freeze a Henchman or Villain. <span class="line-gap"></span> 1/Game: Once per turn, double the Damage of one of Wonder Woman's cards, and if you do, negate its additional effects.`
+        text: `2/Game: Once per turn, Freeze a Henchman or Villain. <span class="line-gap"></span> 1/Game: Double the Damage of one of Wonder Woman's cards, and if you do, negate its additional effects.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Lock a Henchman or Villain`
+        text: `Freeze a Henchman or Villain`
       },
       {
         text: `Ignore the Text, Double the Damage`
@@ -1983,23 +1973,16 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Retreat and take no Damage`
-      },
-      {
         text: `Double Damage In Gotham`
       },
       {
-        text: `Draw early, and with more choices`
+        text: `Add another card to your draw pool`
+      },
+      {
+        text: `Withdraw from your City`
       }
     ],
     abilitiesEffects: [
-      {
-        type: `standard`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `withdrawHero(current)`
-      },
       {
         type: `passive`,
         condition: `in(Gotham)`,
@@ -2013,7 +1996,14 @@ export const heroes = [
         uses: `2`,
         shared: `no`,
         effect: `extendView(self,4)`
-      }
+      },
+      {
+        type: `standard`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `withdrawHero(current)`
+      },
     ]
   },
   {
