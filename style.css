@@ -954,3 +954,17 @@ html, body {
     margin: 4px 0;
     font-size: 16px;
 }
+
+.city-card-enter {
+    position: relative;
+    animation: cardSlideIn 0.6s ease-out forwards;
+}
+
+@keyframes cardSlideIn {
+    from {
+        transform: translateX(160vw);   /* fully off-screen right */
+    }
+    to {
+        transform: translateX(0);
+    }
+}

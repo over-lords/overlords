@@ -9,8 +9,8 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderCountdown, renderAbilityText } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { gameStart } from './turnOrder.js';
 import { runGameStartAbilities } from './abilityExecutor.js';
+import { gameStart, startHeroTurn } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 import { gameState } from "../data/gameState.js";
@@ -20,6 +20,13 @@ let currentTactics = [];
 
 let selectedHeroes = [];
 let heroMap = new Map();
+
+import {    CITY_EXIT_UPPER,
+            CITY_5_UPPER,
+            CITY_4_UPPER,
+            CITY_3_UPPER,
+            CITY_2_UPPER,
+            CITY_ENTRY_UPPER } from '../data/gameState.js';
 
 const HERO_BORDER_URLS = {
     Striker: "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Site%20Assets/strikerBorder.png",
@@ -210,6 +217,7 @@ async function restoreUIFromState(state) {
         const citySlots = document.querySelectorAll(".city-slot");
 
         state.cities.forEach(entry => {
+            if (!entry || typeof entry.slotIndex !== "number") return;
             const slot = citySlots[entry.slotIndex];
             if (!slot) return;
 
@@ -321,12 +329,13 @@ async function restoreUIFromState(state) {
             villainDeckPointer: 0,
 
             // city grid from gameStart() (empty until you populate cities)
-            cities: startResult.initialCities,
+            cities: new Array(12).fill(null),
 
             heroesByPlayer: selectedData.heroesByPlayer,
             playerUsernames: selectedData.playerUsernames
         });
 
+        startHeroTurn(gameState);
 
         saveGameState(gameState);
 
@@ -1045,3 +1054,47 @@ const isMultiplayer = (window.GAME_MODE === "multi");
 setInterval(() => {
     saveGameState(gameState);
 }, 5000);
+
+export function placeCardIntoCitySlot(cardId, slotIndex) {
+    const citySlots = document.querySelectorAll(".city-slot");
+    const slot = citySlots[slotIndex];
+    if (!slot) return;
+
+    slot.innerHTML = "";
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper";
+
+    const rendered = renderCard(cardId, wrapper);
+    wrapper.appendChild(rendered);
+
+    const isUpperRow = (
+        slotIndex === CITY_EXIT_UPPER ||
+        slotIndex === CITY_5_UPPER ||
+        slotIndex === CITY_4_UPPER ||
+        slotIndex === CITY_3_UPPER ||
+        slotIndex === CITY_2_UPPER ||
+        slotIndex === CITY_ENTRY_UPPER
+    );
+
+    if (isUpperRow) {
+        wrapper.classList.add("city-card-enter");
+
+        // Remove animation class when finished
+        setTimeout(() => {
+            wrapper.classList.remove("city-card-enter");
+        }, 650); // a little longer than 0.6s
+    }
+
+    slot.appendChild(wrapper);
+
+    // Update game state
+    if (!Array.isArray(gameState.cities)) gameState.cities = [];
+    gameState.cities[slotIndex] = {
+        slotIndex,
+        type: "villain",
+        id: String(cardId)
+    };
+
+    saveGameState(gameState);
+}

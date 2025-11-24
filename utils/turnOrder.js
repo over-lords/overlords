@@ -153,7 +153,15 @@ END HERO TURN
 const isSinglePlayer = (window.GAME_MODE === "single");
 const isMultiplayer = (window.GAME_MODE === "multi");
 
-import { findCardInAllSources } from './cardRenderer.js'; // ensure this import exists
+import { findCardInAllSources } from './cardRenderer.js';
+import { placeCardIntoCitySlot } from './pageSetup.js';
+
+import {    CITY_EXIT_UPPER,
+            CITY_5_UPPER,
+            CITY_4_UPPER,
+            CITY_3_UPPER,
+            CITY_2_UPPER,
+            CITY_ENTRY_UPPER } from '../data/gameState.js';
 
 export function gameStart(selectedData) {
 
@@ -219,4 +227,97 @@ export function gameStart(selectedData) {
         villainDeck: idArray,
         initialCities: []  // placeholder until you track cities
     };
+}
+
+const UPPER_ORDER = [
+    CITY_EXIT_UPPER,   // leftmost Star
+    CITY_5_UPPER,
+    CITY_4_UPPER,
+    CITY_3_UPPER,
+    CITY_2_UPPER,
+    CITY_ENTRY_UPPER   // rightmost Gotham
+];
+
+export function drawNextVillainCard(gameState) {
+    const deck = gameState.villainDeck;
+    let ptr = gameState.villainDeckPointer ?? 0;
+
+    if (!Array.isArray(deck) || deck.length === 0) return null;
+    if (ptr >= deck.length) return null;
+
+    const id = deck[ptr];
+    gameState.villainDeckPointer = ptr + 1;
+
+    return id;
+}
+
+export function startHeroTurn(gameState) {
+    // Draw
+    const villainId = drawNextVillainCard(gameState);
+    if (!villainId) return;
+
+    // Place card into Gotham upper (city #1)
+    placeCardIntoCitySlot(villainId, CITY_ENTRY_UPPER);
+
+    // TODO: apply waterfall logic:
+    // might / scenario / countdown / bystander / hench / villain
+}
+
+export async function shoveUpper(newCardId) {
+
+    const citySlots = document.querySelectorAll(".city-slot");
+
+    // Collect which upper slots are filled
+    const slotInfo = UPPER_ORDER.map(idx => ({
+        idx,
+        slot: citySlots[idx],
+        hasCard: citySlots[idx].querySelector(".card-wrapper")
+    }));
+
+    // === STEP 1 — SHIFT EXISTING CARDS LEFT ===
+    for (let i = 0; i < slotInfo.length - 1; i++) {
+        const curr = slotInfo[i];
+        const next = slotInfo[i + 1];
+
+        if (next.hasCard) {
+            const cardNode = next.hasCard;
+
+            // Add animation class
+            cardNode.classList.add("city-card-enter");
+
+            // Move DOM node to the left slot
+            curr.slot.innerHTML = "";
+            curr.slot.appendChild(cardNode);
+
+            // The node has now moved from next→curr, so update the model
+            curr.hasCard = cardNode;
+            next.hasCard = null;
+
+            // allow CSS animation to visibly play
+            await new Promise(r => setTimeout(r, 20));
+            // remove animation class after complete
+            setTimeout(() => cardNode.classList.remove("city-card-enter"), 650);
+        }
+    }
+
+    // The rightmost slot (UPPER_ORDER[last]) is now empty (or emptied by shove).
+    const rightmost = slotInfo[slotInfo.length - 1];
+    rightmost.slot.innerHTML = "";
+
+    // === STEP 2 — WAIT FOR SHIFT ANIMATIONS TO FINISH ===
+    await new Promise(r => setTimeout(r, 600));
+
+    // === STEP 3 — INSERT THE NEW CARD (slide-in from the right) ===
+    const wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper city-card-enter";
+
+    const rendered = renderCard(newCardId, wrapper);
+    wrapper.appendChild(rendered);
+
+    rightmost.slot.appendChild(wrapper);
+
+    // Remove animation class after animation ends
+    setTimeout(() => {
+        wrapper.classList.remove("city-card-enter");
+    }, 650);
 }
