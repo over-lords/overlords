@@ -66,6 +66,8 @@ VILLAIN DRAW
 
 
 HERO STARTING TRAVEL
+    if multiplayer
+        start Hero turn timer
     if (hero not in city)
         Where are they traveling
             -1 travel
@@ -147,3 +149,6 @@ END HERO TURN
     discard remaining cards in hand
 
 */
+
+const isSinglePlayer = (window.GAME_MODE === "single");
+const isMultiplayer = (window.GAME_MODE === "multi");

@@ -701,6 +701,9 @@ img {
             import { henchmen } from './data/henchmen.js';
             import { villains } from './data/villains.js';
             import { renderAbilityText } from './utils/cardRenderer.js';
+            import { supabase } from "./supabaseClient.js";
+
+            window.GAME_MODE = "single";
 
             const collapsible = document.querySelector('.collapsible');
             const content = document.querySelector('.content');
@@ -855,8 +858,25 @@ img {
             startButton.addEventListener("click", async () => {
               if (!startButton.classList.contains("active")) return;
 
+              window.fetchUsername = async function() {
+                const uid = localStorage.getItem("session_user_id");
+                if (!uid) return "Player";
+
+                const { data: user, error } = await supabase
+                    .from("users")
+                    .select("username")
+                    .eq("id", uid)
+                    .single();
+
+                if (error || !user) return "Player";
+                return user.username;
+              }
+              const username = await window.fetchUsername();
+
               const SECRET = "GeimonHeroKey42";
               const payload = {
+                playerUsernames: [username],
+                heroesByPlayer: [ selectedOrder ],
                 heroes: selectedOrder,
                 overlords: selectedOverlords,
                 tactics: selectedTactics,

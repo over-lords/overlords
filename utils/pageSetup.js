@@ -148,6 +148,29 @@ async function decryptData(cipherText, secretKey) {
 
         buildHeroesRow(selectedHeroes, heroMap);
 
+        (function configurePlayers() {
+            const players = selectedData.playerUsernames || ["Player"];
+            const heroesByPlayer = selectedData.heroesByPlayer || [ selectedHeroes ];
+
+            console.log("=== PLAYER LIST (1–6 Players) ===");
+            players.forEach((name, index) => {
+                console.log(`Player ${index+1}: ${name}`);
+            });
+
+            console.log("=== ASSIGNING HERO OWNERSHIP ===");
+
+            heroesByPlayer.forEach((heroList, playerIndex) => {
+                const ownerName = players[playerIndex] || `Player ${playerIndex+1}`;
+                heroList.forEach(heroId => {
+                    const hero = heroMap.get(String(heroId));
+                    if (!hero) return;
+                    hero.owner = ownerName;
+                    console.log(`Hero ${hero.name} → Owner: ${ownerName}`);
+                });
+            });
+
+        })();
+
         const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
         const overlordList = selectedOverlords
             .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
@@ -855,3 +878,6 @@ function attachHeroClicks() {
         });
     });
 }
+
+const isSinglePlayer = (window.GAME_MODE === "single");
+const isMultiplayer = (window.GAME_MODE === "multi");
