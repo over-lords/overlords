@@ -155,6 +155,8 @@ const isMultiplayer = (window.GAME_MODE === "multi");
 
 import { findCardInAllSources } from './cardRenderer.js';
 import { placeCardIntoCitySlot } from './pageSetup.js';
+import { currentTurn } from './abilityExecutor.js';
+import { gameState } from '../data/gameState.js';
 
 import {    CITY_EXIT_UPPER,
             CITY_5_UPPER,
@@ -162,6 +164,10 @@ import {    CITY_EXIT_UPPER,
             CITY_3_UPPER,
             CITY_2_UPPER,
             CITY_ENTRY_UPPER } from '../data/gameState.js';
+
+let heroTurnIndex = 0;
+
+
 
 export function gameStart(selectedData) {
 
@@ -251,16 +257,28 @@ export function drawNextVillainCard(gameState) {
     return id;
 }
 
-export function startHeroTurn(gameState) {
-    // Draw
-    const villainId = drawNextVillainCard(gameState);
-    if (!villainId) return;
+export function startHeroTurn(gameState, { skipVillainDraw = false } = {}) {
 
-    // Place card into Gotham upper (city #1)
-    placeCardIntoCitySlot(villainId, CITY_ENTRY_UPPER);
+    // STEP 1 — VILLAIN DRAW
+    if (!skipVillainDraw && window.VILLAIN_DRAW_ENABLED) {
+        const villainId = drawNextVillainCard(gameState);
+        if (villainId) {
+            placeCardIntoCitySlot(villainId, CITY_ENTRY_UPPER);
+        }
+        gameState.isGameStarted = true;
+    }
 
-    // TODO: apply waterfall logic:
-    // might / scenario / countdown / bystander / hench / villain
+    // STEP 2 — HIGHLIGHT ACTIVE HERO PORTRAIT
+    const heroIds = gameState.heroes || [];
+    if (heroIds.length > 0) {
+        currentTurn(heroTurnIndex, heroIds);
+    }
+
+    // SAVE THE ACTIVE HERO (BEFORE ADVANCING)
+    gameState.heroTurnIndex = heroTurnIndex;
+
+    // STEP 3 — Advance turn counter for NEXT CALL
+    heroTurnIndex = (heroTurnIndex + 1) % (heroIds.length || 1);
 }
 
 export async function shoveUpper(newCardId) {
@@ -286,8 +304,16 @@ export async function shoveUpper(newCardId) {
             cardNode.classList.add("city-card-enter");
 
             // Move DOM node to the left slot
-            curr.slot.innerHTML = "";
-            curr.slot.appendChild(cardNode);
+            const currArea = curr.slot.querySelector(".city-card-area");
+            const nextArea = next.slot.querySelector(".city-card-area");
+
+            if (!currArea || !nextArea) continue;
+
+            // move only the card wrapper
+            currArea.innerHTML = "";
+            currArea.appendChild(cardNode);
+
+            nextArea.innerHTML = "";
 
             // The node has now moved from next→curr, so update the model
             curr.hasCard = cardNode;
@@ -314,7 +340,7 @@ export async function shoveUpper(newCardId) {
     const rendered = renderCard(newCardId, wrapper);
     wrapper.appendChild(rendered);
 
-    rightmost.slot.appendChild(wrapper);
+    rightmost.slot.querySelector(".city-card-area").appendChild(wrapper);
 
     // Remove animation class after animation ends
     setTimeout(() => {

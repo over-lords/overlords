@@ -9,7 +9,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderCountdown, renderAbilityText } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities } from './abilityExecutor.js';
+import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
 import { gameStart, startHeroTurn } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -20,6 +20,8 @@ let currentTactics = [];
 
 let selectedHeroes = [];
 let heroMap = new Map();
+
+window.VILLAIN_DRAW_ENABLED = false;
 
 import {    CITY_EXIT_UPPER,
             CITY_5_UPPER,
@@ -205,12 +207,6 @@ async function restoreUIFromState(state) {
         currentTactics = (state.tactics || []).map(id => tacticMap.get(String(id))).filter(Boolean);
     }
 
-
-    /******************************************************
-     * CITY GRID RESTORATION
-     ******************************************************/
-    // Your DOM already has slots. We re-insert occupants.
-    // Expected state.cities = [ { slotIndex:0, type:'villain', id:'5012', hp:12 }, ... ]
     if (Array.isArray(state.cities)) {
 
         // For each city-slot restore an occupant
@@ -221,7 +217,11 @@ async function restoreUIFromState(state) {
             const slot = citySlots[entry.slotIndex];
             if (!slot) return;
 
-            slot.innerHTML = ""; // wipe
+            const cardArea = slot.querySelector(".city-card-area");
+            if (!cardArea) return;
+
+            // wipe only card area
+            cardArea.innerHTML = "";
 
             const wrapper = document.createElement("div");
             wrapper.className = "card-wrapper";
@@ -229,7 +229,7 @@ async function restoreUIFromState(state) {
             const rendered = renderCard(entry.id, wrapper);
             wrapper.appendChild(rendered);
 
-            slot.appendChild(wrapper);
+            cardArea.appendChild(wrapper);
         });
     }
 
@@ -263,10 +263,6 @@ async function restoreUIFromState(state) {
         });
     }
 
-
-    resizeBoardToViewport();
-    scaleGridToBoard();
-
     console.log("UI restore complete.");
 }
 
@@ -276,7 +272,19 @@ async function restoreUIFromState(state) {
     if (saved) {
         console.log("=== RESUMING SAVED GAME ===");
         Object.assign(gameState, saved);
-        restoreUIFromState(gameState);    // YOU must implement this hook
+        restoreUIFromState(gameState);
+
+        // IMPORTANT: Do NOT auto-start when resuming a game
+        window.VILLAIN_DRAW_ENABLED = true;
+
+        // Restore turn index
+        window.heroTurnIndex = saved.heroTurnIndex ?? 0;
+
+        const heroIds = gameState.heroes || [];
+        if (heroIds.length > 0) {
+            currentTurn(heroTurnIndex, heroIds);
+        }
+
         return;
     }
 
@@ -334,8 +342,6 @@ async function restoreUIFromState(state) {
             heroesByPlayer: selectedData.heroesByPlayer,
             playerUsernames: selectedData.playerUsernames
         });
-
-        startHeroTurn(gameState);
 
         saveGameState(gameState);
 
@@ -505,14 +511,6 @@ function resizeBoardToViewport() {
     scaleGridToBoard();
 }
 
-resizeBoardToViewport();
-
-if (window.visualViewport) {
-    visualViewport.addEventListener("resize", resizeBoardToViewport);
-    visualViewport.addEventListener("scroll", resizeBoardToViewport);
-}
-window.addEventListener("resize", resizeBoardToViewport);
-
 function scaleGridToBoard() {
     const board = document.getElementById("game-board");
     const wrapper = document.getElementById("city-grid-wrapper");
@@ -530,8 +528,15 @@ function scaleGridToBoard() {
     wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 
-window.addEventListener("load", scaleGridToBoard);
-window.addEventListener("resize", scaleGridToBoard);
+window.addEventListener("load", () => {
+    resizeBoardToViewport();
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            scaleGridToBoard();
+        });
+    });
+});
 
 const dropdownPanel = document.getElementById("dropdown-panel");
 const dropdownTab = document.getElementById("dropdown-tab");
@@ -1060,7 +1065,11 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
     const slot = citySlots[slotIndex];
     if (!slot) return;
 
-    slot.innerHTML = "";
+    const cardArea = slot.querySelector(".city-card-area");
+    if (!cardArea) return;
+
+    // Remove previous card
+    cardArea.innerHTML = "";
 
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper";
@@ -1086,7 +1095,7 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
         }, 650); // a little longer than 0.6s
     }
 
-    slot.appendChild(wrapper);
+    cardArea.appendChild(wrapper);
 
     // Update game state
     if (!Array.isArray(gameState.cities)) gameState.cities = [];
@@ -1098,3 +1107,25 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
 
     saveGameState(gameState);
 }
+
+window.addEventListener("load", () => {
+    const btn = document.getElementById("start-game-btn");
+    if (!btn) return;
+
+    // Keep the button invisible
+    btn.style.display = "none";
+
+    btn.addEventListener("click", () => {
+        window.VILLAIN_DRAW_ENABLED = true;
+        startHeroTurn(gameState);
+        gameState.isGameStarted = true;
+        saveGameState(gameState);
+    });
+
+    const saved = loadGameState();
+
+    // Auto start ONLY if new game or saved game never started
+    if (!saved || !saved.isGameStarted) {
+        setTimeout(() => btn.click(), 2000);
+    }
+});

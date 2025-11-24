@@ -170,3 +170,46 @@ export function runGameStartAbilities(selectedData) {
 
     //console.log("%c[AbilityExecutor] Completed gameStart() ability scan.", "color: purple; font-weight:bold;");
 }
+
+export function currentTurn(turnIndex, selectedHeroIds) {
+    try {
+        const row = document.getElementById("heroes-row");
+        if (!row) return;
+
+        const slots = row.querySelectorAll(".hero-slot");
+        if (!slots.length) return;
+
+        // Remove any existing indicator circles
+        row.querySelectorAll(".turn-indicator-circle").forEach(el => el.remove());
+
+        // Validate index
+        if (typeof turnIndex !== "number") return;
+        if (turnIndex < 0 || turnIndex >= slots.length) return;
+
+        const heroId = selectedHeroIds?.[turnIndex];
+        if (!heroId) return;
+
+        // FIND THE HERO OBJECT BY ID
+        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+        if (!heroObj) {
+            console.warn("[currentTurn] No hero found with ID:", heroId);
+            return;
+        }
+
+        // EXTRACT THE COLOR
+        const heroColor = heroObj.color || "white";
+
+        // CREATE THE INDICATOR CIRCLE
+        const circle = document.createElement("div");
+        circle.className = "turn-indicator-circle";
+
+        // APPLY COLOR BORDER
+        circle.style.borderColor = heroColor;
+
+        // INSERT INTO CORRECT SLOT
+        slots[turnIndex].appendChild(circle);
+
+    } catch (err) {
+        console.warn("[currentTurn] Failed:", err);
+    }
+}

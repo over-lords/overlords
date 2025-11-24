@@ -73,6 +73,7 @@
             gap: 6px;
         }
         .city-slot {
+            position: relative;
             width: 200px;
             height: 300px;
             background: rgba(0,0,0,0.25);
@@ -84,7 +85,18 @@
             align-items: center;
             pointer-events: auto;
         }
+        .city-card-area {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;  /* keeps slot clickable */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .city-slot .card-wrapper {
+            pointer-events: auto; /* cards remain interactive */
             transform: scale(0.89) translate(14.5px, 22px);
             transform-origin: top left;
         }
@@ -200,6 +212,8 @@
 
     <div id="gameMenu-box">≡</div>
 
+    <button id="start-game-btn" style="display:none;">START GAME</button>
+
     <div id="sideMenu">
         <h2 id="menuHeader">Menu</h2>
         <div id="menuContent">
@@ -252,11 +266,13 @@
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/starUpper.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                         <div class="city-spacer">Star City</div>
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/starLower.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                     </div>
 
@@ -264,11 +280,13 @@
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/coastUpper.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                         <div class="city-spacer">Coast City</div>
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/coastLower.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                     </div>
 
@@ -276,11 +294,13 @@
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/keystoneUpper.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                         <div class="city-spacer">Keystone City</div>
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/keystoneLower.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                     </div>
 
@@ -288,11 +308,13 @@
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/centralUpper.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                         <div class="city-spacer">Central City</div>
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/centralLower.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                     </div>
 
@@ -300,11 +322,13 @@
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/metropolisUpper.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                         <div class="city-spacer">Metropolis</div>
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/metropolisLower.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                     </div>
 
@@ -312,11 +336,13 @@
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/gothamUpper.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                         <div class="city-spacer">Gotham City</div>
                         <div class="city-slot">
                             <img class="city-image"
                                 src="https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Site%20Assets/gothamLower.jpg">
+                            <div class="city-card-area"></div>
                         </div>
                     </div>
                 </div>
