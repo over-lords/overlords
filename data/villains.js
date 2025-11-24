@@ -247,7 +247,7 @@ export const villains = [
     type: "Villain",
     doNotShow: "false",
     hero: "Superman",
-    hp: "15",
+    hp: "11",
     damage: "1",
     abilitiesText: [
       {
@@ -1027,7 +1027,7 @@ export const villains = [
     type: "Villain",
     doNotShow: "false",
     hero: "Superman",
-    hp: "50",
+    hp: "30",
     damage: "3",
     abilitiesText: [
       {
