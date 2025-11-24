@@ -10,7 +10,7 @@ import { villains } from '../data/villains.js';
 import { renderCard, renderCountdown, renderAbilityText } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
-import { gameStart, startHeroTurn } from "./turnOrder.js";
+import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 import { gameState } from "../data/gameState.js";
@@ -37,6 +37,7 @@ const HERO_BORDER_URLS = {
 };
 
 const EMPTY_HERO_URL = "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Card%20Assets/Misc/emptyHero.png";
+
 
 function buildHeroesRow(selectedHeroIds, heroMap) {
     const row = document.getElementById("heroes-row");
@@ -161,8 +162,31 @@ async function restoreUIFromState(state) {
         const heroObj = heroMap.get(String(id));
         if (!heroObj) return;
 
-        const saved = state.heroData?.[id];
-        if (!saved) return;
+        if (!state.heroData) state.heroData = {};
+        if (!state.heroData[id]) {
+            const heroObj = heroMap.get(String(id));
+            state.heroData[id] = {
+                deck: [],
+                discard: [],
+                hand: [],
+                cityIndex: null,
+                hp: heroObj.hp,
+                travel: heroObj.travel || 0
+            };
+        }
+        const saved = state.heroData[id];
+
+        if (!state.heroData) state.heroData = {};
+        if (!state.heroData[id]) {
+            state.heroData[id] = {
+                deck: [],
+                discard: [],
+                hand: [],
+                cityIndex: null,
+                hp: heroObj.hp,
+                travel: heroObj.travel
+            };
+        }
 
         // HP
         if (saved.currentHP != null) {
@@ -285,6 +309,8 @@ async function restoreUIFromState(state) {
             currentTurn(heroTurnIndex, heroIds);
         }
 
+        initializeTurnUI(gameState);
+
         return;
     }
 
@@ -341,6 +367,22 @@ async function restoreUIFromState(state) {
 
             heroesByPlayer: selectedData.heroesByPlayer,
             playerUsernames: selectedData.playerUsernames
+        });
+
+        gameState.heroData = {};
+
+        selectedData.heroes.forEach(id => {
+            const heroObj = heroMap.get(String(id));
+            if (!heroObj) return;
+
+            gameState.heroData[id] = {
+                deck: [],       // You can populate later when real deck logic is ready
+                discard: [],
+                hand: [],
+                cityIndex: null,
+                hp: heroObj.hp,
+                travel: heroObj.travel || 0
+            };
         });
 
         saveGameState(gameState);
@@ -864,6 +906,85 @@ document.getElementById("hero-panel-close").addEventListener("click", () => {
     document.getElementById("hero-panel").classList.remove("open");
 });
 
+document.getElementById("villain-panel-close").addEventListener("click", () => {
+        document.getElementById("villain-panel").classList.remove("open");
+});
+
+export function buildVillainPanel(villainCard) {
+    if (!villainCard) return;
+
+    const panel = document.getElementById("villain-panel");
+    const content = document.getElementById("villain-panel-content");
+    content.innerHTML = "";
+
+    // Left-side rendered card
+    const leftCol = document.createElement("div");
+    leftCol.className = "villain-card-scale";
+    leftCol.appendChild(renderCard(villainCard.id, leftCol));
+
+    // Right-side stats/text
+    const rightCol = document.createElement("div");
+    rightCol.className = "villain-right-column";
+
+    rightCol.innerHTML = `
+        <h2>${villainCard.name}</h2>
+        <div><strong>${villainCard.type}</strong></div>
+        <div><strong>HP:</strong> ${villainCard.hp}</div>
+        <div><strong>Damage:</strong> ${villainCard.damage}</div>
+        <h3>Abilities</h3>
+    `;
+
+    if (villainCard.abilitiesText?.length) {
+        villainCard.abilitiesText.forEach(a => {
+            const line = document.createElement("div");
+            line.innerHTML = renderAbilityText(a.text);
+            rightCol.appendChild(line);
+        });
+    }
+
+    // Final assembly
+    const topRow = document.createElement("div");
+    topRow.className = "villain-top-row";
+    topRow.appendChild(leftCol);
+    topRow.appendChild(rightCol);
+
+    content.appendChild(topRow);
+
+    const captured = document.createElement("div");
+    captured.innerHTML = `
+        <h3>Captured Bystanders</h3>
+        <div>${villainCard.capturedBystanders || 0}</div>
+    `;
+    content.appendChild(captured);
+
+    const foundKeys = extractKeywordsFromAbilities(villainCard.abilitiesText).sort((a, b) => a.localeCompare(b));
+
+    const keyBox = document.createElement("div");
+    keyBox.innerHTML = `<h3>Keywords</h3>`;
+
+    if (foundKeys.length === 0) {
+        const none = document.createElement("div");
+        none.style.fontStyle = "italic";
+        none.textContent = "No Keywords Found";
+        keyBox.appendChild(none);
+    } else {
+        foundKeys.forEach(k => {
+            const line = document.createElement("div");
+            line.style.marginBottom = "6px";
+            line.innerHTML = `
+                <div style="font-weight:bold;">${k}</div>
+                <div style="margin-left:8px;">${keywords[k] || "No definition found."}</div>
+            `;
+            keyBox.appendChild(line);
+        });
+    }
+
+    content.appendChild(keyBox);
+
+    // Slide panel open
+    panel.classList.add("open");
+}
+
 /* Keyword extraction reused for heroes */
 function extractHeroKeywords(abilitiesTextArr) {
     if (!Array.isArray(abilitiesTextArr)) return [];
@@ -1077,6 +1198,44 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
     const rendered = renderCard(cardId, wrapper);
     wrapper.appendChild(rendered);
 
+    // Attach click AFTER animation settles
+    setTimeout(() => {
+        const finalWrapper = slot.querySelector(".card-wrapper");
+        if (!finalWrapper) {
+            console.warn("No finalWrapper found after animation for slot", slotIndex);
+            return;
+        }
+
+        const cardData =
+            henchmen.find(h => h.id === cardId) ||
+            villains.find(v => v.id === cardId);
+
+        console.log("Detected card placed into slot:", {
+            slotIndex,
+            cardId,
+            cardData,
+            finalWrapper
+        });
+
+        if (cardData) {
+            finalWrapper.style.cursor = "pointer";
+            finalWrapper.addEventListener("click", (e) => {
+                e.stopPropagation();
+                console.log("Villain/Henchmen card clicked:", {
+                    slotIndex,
+                    cardId,
+                    cardName: cardData.name,
+                    wrapper: finalWrapper
+                });
+
+                buildVillainPanel(cardData);
+            });
+        } else {
+            console.warn("cardData NOT FOUND for id:", cardId);
+        }
+    }, 650); // matches your card-enter animation duration
+
+
     const isUpperRow = (
         slotIndex === CITY_EXIT_UPPER ||
         slotIndex === CITY_5_UPPER ||
@@ -1128,4 +1287,17 @@ window.addEventListener("load", () => {
     if (!saved || !saved.isGameStarted) {
         setTimeout(() => btn.click(), 2000);
     }
+});
+
+window.addEventListener("DOMContentLoaded", () => {
+    const btn = document.getElementById("end-turn-button");
+    if (!btn) {
+        console.error("End turn button not found at DOMContentLoaded");
+        return;
+    }
+
+    btn.addEventListener("click", () => {
+        console.log("End turn clicked.");
+        endCurrentHeroTurn(gameState);
+    });
 });

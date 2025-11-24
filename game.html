@@ -58,7 +58,7 @@
             left: 50%;
             transform-origin: center center;
             z-index: 10;
-            pointer-events: none;
+            pointer-events: auto;
         }
         #city-grid {
             display: flex;
@@ -89,7 +89,7 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            pointer-events: none;  /* keeps slot clickable */
+            pointer-events: auto;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -99,7 +99,9 @@
             pointer-events: auto; /* cards remain interactive */
             transform: scale(0.89) translate(14.5px, 22px);
             transform-origin: top left;
+            cursor: pointer;
         }
+
         .city-spacer {
             width: 200px;
             height: 32px;
@@ -210,9 +212,15 @@
         <div id="hero-panel-content"></div>
     </div>
 
+    <div id="villain-panel">
+        <div id="villain-panel-close">X</div>
+        <div id="villain-panel-content"></div>
+    </div>
+
     <div id="gameMenu-box">≡</div>
 
     <button id="start-game-btn" style="display:none;">START GAME</button>
+    <button id="end-turn-button" style="display:none;">End Turn</button>
 
     <div id="sideMenu">
         <h2 id="menuHeader">Menu</h2>

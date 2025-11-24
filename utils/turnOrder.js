@@ -153,10 +153,15 @@ END HERO TURN
 const isSinglePlayer = (window.GAME_MODE === "single");
 const isMultiplayer = (window.GAME_MODE === "multi");
 
-import { findCardInAllSources } from './cardRenderer.js';
-import { placeCardIntoCitySlot } from './pageSetup.js';
+import { heroes } from '../data/faceCards.js';
+import { henchmen } from '../data/henchmen.js';
+import { villains } from '../data/villains.js';
+import { renderCard, findCardInAllSources } from './cardRenderer.js';
+import { placeCardIntoCitySlot, buildVillainPanel } from './pageSetup.js';
 import { currentTurn } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
+import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
+
 
 import {    CITY_EXIT_UPPER,
             CITY_5_UPPER,
@@ -257,28 +262,24 @@ export function drawNextVillainCard(gameState) {
     return id;
 }
 
-export function startHeroTurn(gameState, { skipVillainDraw = false } = {}) {
+export async function startHeroTurn(gameState, { skipVillainDraw = false } = {}) {
 
-    // STEP 1 — VILLAIN DRAW
     if (!skipVillainDraw && window.VILLAIN_DRAW_ENABLED) {
         const villainId = drawNextVillainCard(gameState);
         if (villainId) {
-            placeCardIntoCitySlot(villainId, CITY_ENTRY_UPPER);
+            await shoveUpper(villainId);
         }
         gameState.isGameStarted = true;
     }
 
-    // STEP 2 — HIGHLIGHT ACTIVE HERO PORTRAIT
     const heroIds = gameState.heroes || [];
     if (heroIds.length > 0) {
         currentTurn(heroTurnIndex, heroIds);
     }
 
-    // SAVE THE ACTIVE HERO (BEFORE ADVANCING)
     gameState.heroTurnIndex = heroTurnIndex;
 
-    // STEP 3 — Advance turn counter for NEXT CALL
-    heroTurnIndex = (heroTurnIndex + 1) % (heroIds.length || 1);
+    initializeTurnUI(gameState);
 }
 
 export async function shoveUpper(newCardId) {
@@ -328,7 +329,8 @@ export async function shoveUpper(newCardId) {
 
     // The rightmost slot (UPPER_ORDER[last]) is now empty (or emptied by shove).
     const rightmost = slotInfo[slotInfo.length - 1];
-    rightmost.slot.innerHTML = "";
+    const rightmostArea = rightmost.slot.querySelector(".city-card-area");
+    rightmostArea.innerHTML = "";
 
     // === STEP 2 — WAIT FOR SHIFT ANIMATIONS TO FINISH ===
     await new Promise(r => setTimeout(r, 600));
@@ -342,8 +344,122 @@ export async function shoveUpper(newCardId) {
 
     rightmost.slot.querySelector(".city-card-area").appendChild(wrapper);
 
+    const cardData =
+    henchmen.find(h => h.id === newCardId) ||
+    villains.find(v => v.id === newCardId);
+
+    if (cardData) {
+        wrapper.style.cursor = "pointer";
+        wrapper.addEventListener("click", (e) => {
+            e.stopPropagation();
+            console.log("Villain/Henchmen card clicked (from shoveUpper):", {
+                newCardId,
+                cardName: cardData.name
+            });
+            buildVillainPanel(cardData);
+        });
+    } else {
+        console.warn("No cardData found for newCardId:", newCardId);
+    }
+
     // Remove animation class after animation ends
     setTimeout(() => {
         wrapper.classList.remove("city-card-enter");
     }, 650);
+}
+
+export function initializeTurnUI(gameState) {
+    const btn = document.getElementById("end-turn-button");
+    if (!btn) return;
+
+    // 1. Who has the indicator?
+    const indicator = document.querySelector(".turn-indicator-circle");
+    if (!indicator) {
+        btn.style.display = "none";
+        return;
+    }
+
+    // 2. Find its index in the heroes-row
+    const slots = [...document.querySelectorAll("#heroes-row .hero-slot")];
+    const slotIndex = slots.findIndex(slot => slot.contains(indicator));
+    if (slotIndex === -1) {
+        btn.style.display = "none";
+        return;
+    }
+
+    // 3. That slotIndex is the active hero index
+    const heroId = gameState.heroes?.[slotIndex];
+    if (!heroId) {
+        btn.style.display = "none";
+        return;
+    }
+
+    // 4. You are single-player → ALWAYS show the button
+    btn.style.display = "block";
+}
+
+
+export function endCurrentHeroTurn(gameState) {
+
+    const heroIds = gameState.heroes || [];
+    const currentIdx = gameState.heroTurnIndex ?? 0;
+    const heroId = heroIds[currentIdx];
+    if (!heroId) return;
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        console.error("No heroState for heroId", heroId, gameState.heroData);
+        return;
+    }
+
+    if (!heroState.deck || heroState.deck.length === 0) {
+        if (heroState.discard && heroState.discard.length > 0) {
+            heroState.deck = shuffle([...heroState.discard]);
+            heroState.discard = [];
+        }
+    }
+
+    if (typeof heroState.cityIndex === "number") {
+        const slot = gameState.cities?.[heroState.cityIndex];
+        if (slot && slot.foe) {
+            const foe = slot.foe;
+            const dmg = foe.attack || 1;
+            heroState.hp -= dmg;
+            if (heroState.hp < 0) heroState.hp = 0;
+        }
+    }
+    if (Array.isArray(heroState.hand) && heroState.hand.length > 0) {
+        heroState.discard = heroState.discard || [];
+        heroState.discard.push(...heroState.hand);
+        heroState.hand = [];
+    }
+
+    // -------------------------------------------
+    // STEP 4 — Advance to next hero
+    // -------------------------------------------
+    const heroCount = heroIds.length || 1;
+    const nextIdx = (currentIdx + 1) % heroCount;
+
+    gameState.heroTurnIndex = nextIdx;
+    heroTurnIndex = nextIdx; // maintain your existing variable
+
+    saveGameState(gameState);
+
+    // -------------------------------------------
+    // STEP 5 — Start next hero turn
+    // -------------------------------------------
+    startHeroTurn(gameState);
+
+    // -------------------------------------------
+    // STEP 6 — Reinitialize End-Turn button
+    // -------------------------------------------
+    initializeTurnUI(gameState);
+}
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
 }
