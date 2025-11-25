@@ -570,6 +570,10 @@ export function renderCard(cardId, container) {
     return wrapper;
   } else if (cardData.type === "Henchman" || cardData.type === "Villain") {
 
+    const isBoardRender = !!(
+      container?.classList?.contains("card-wrapper")
+    );
+
     const card = document.createElement("div");
     card.classList.add("card");
     card.style.position = "relative";
@@ -625,7 +629,7 @@ export function renderCard(cardId, container) {
     bottom.style.color = "white";
     bottom.style.display = "flex";
     bottom.style.alignItems = "center";
-    bottom.style.justifyContent = "space-between";
+    bottom.style.justifyContent = isBoardRender ? "space-evenly" : "space-between";
     bottom.style.padding = "8px 10px";
     card.appendChild(bottom);
 
@@ -634,28 +638,27 @@ export function renderCard(cardId, container) {
     // ============================
     const dmgContainer = document.createElement("div");
     dmgContainer.style.position = "relative";
-    dmgContainer.style.width = "45px";
-    dmgContainer.style.height = "45px";
-    dmgContainer.style.flexShrink = "0";
+    dmgContainer.style.width = isBoardRender ? "75px" : "45px";
+    dmgContainer.style.height = isBoardRender ? "75px" : "45px";
 
     const dmgImg = document.createElement("img");
     dmgImg.src =
       "https://raw.githubusercontent.com/over-lords/overlords/a61d7fb50e273106d490476bd3c621f3a6f45047/Public/Images/Card%20Assets/Misc/Damage.png";
     dmgImg.alt = "Damage";
     dmgImg.style.position = "absolute";
-    dmgImg.style.left = "-8px";
-    dmgImg.style.width = "85%";
-    dmgImg.style.height = "85%";
+    dmgImg.style.left = isBoardRender ? "-24px" : "-12px";
+    dmgImg.style.width = isBoardRender ? "100%" : "75%";
+    dmgImg.style.height = isBoardRender ? "100%" : "75%";
     dmgImg.style.objectFit = "contain";
     dmgContainer.appendChild(dmgImg);
 
     const dmgNum = document.createElement("div");
     dmgNum.textContent = cardData.damage ?? "0";
     dmgNum.style.position = "absolute";
-    dmgNum.style.top = "48%";
-    dmgNum.style.left = "calc(50% - 12px)";
+    dmgNum.style.top = isBoardRender ? "53%" : "45%";
+    dmgNum.style.left = isBoardRender ? "calc(50% - 24px)" : "calc(50% - 18px)";
     dmgNum.style.transform = "translate(-50%, -50%)";
-    dmgNum.style.fontSize = "20px";
+    dmgNum.style.fontSize = isBoardRender ? "36px" : "20px";
     dmgNum.style.fontWeight = "bold";
     dmgNum.style.color = "white";
     dmgNum.style.textShadow = "2px 2px 4px black";
@@ -663,36 +666,34 @@ export function renderCard(cardId, container) {
 
     bottom.appendChild(dmgContainer);
 
-    // ============================
-    // CENTER ABILITIES TEXT
-    // ============================
-    const textBox = document.createElement("div");
-    textBox.style.flex = "1";
-    textBox.style.margin = "0 5px 0 -14px";
-    textBox.style.textAlign = "left";
-    textBox.style.fontSize = "11.5px";
-    textBox.style.lineHeight = "1.2em";
-    textBox.style.overflow = "hidden";
+    if (!isBoardRender) {
+      const textBox = document.createElement("div");
+      textBox.style.flex = "1";
+      textBox.style.margin = "0 5px 0 -14px";
+      textBox.style.textAlign = "left";
+      textBox.style.fontSize = "11.5px";
+      textBox.style.lineHeight = "1.2em";
+      textBox.style.overflow = "hidden";
 
-    if (Array.isArray(cardData.abilitiesText)) {
-        cardData.abilitiesText.forEach(a => {
-            const line = document.createElement("div");
-            line.innerHTML = renderAbilityText(a.text);
-            textBox.appendChild(line);
-        });
+      if (Array.isArray(cardData.abilitiesText)) {
+          cardData.abilitiesText.forEach(a => {
+              const line = document.createElement("div");
+              line.innerHTML = renderAbilityText(a.text);
+              textBox.appendChild(line);
+          });
+      }
+
+      bottom.appendChild(textBox);
+      requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
     }
-
-    bottom.appendChild(textBox);
-    requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
 
     // ============================
     // RIGHT SIDE HP (heart + number)
     // ============================
     const hpContainer = document.createElement("div");
     hpContainer.style.position = "relative";
-    hpContainer.style.width = "45px";
-    hpContainer.style.height = "45px";
-    hpContainer.style.flexShrink = "0";
+    hpContainer.style.width = isBoardRender ? "75px" : "45px";
+    hpContainer.style.height = isBoardRender ? "75px" : "45px";
 
     const heartImg = document.createElement("img");
     heartImg.src =
@@ -700,19 +701,19 @@ export function renderCard(cardId, container) {
     heartImg.alt = "HP";
     heartImg.style.position = "absolute";
     heartImg.style.left = "-6px";
-    heartImg.style.marginTop = "4px";
-    heartImg.style.width = "75%";
-    heartImg.style.height = "75%";
+    heartImg.style.marginTop = isBoardRender ? "4px" : "1px";
+    heartImg.style.width = isBoardRender ? "100%" : "85%";
+    heartImg.style.height = isBoardRender ? "100%" : "85%";
     heartImg.style.objectFit = "contain";
     hpContainer.appendChild(heartImg);
 
     const hpNum = document.createElement("div");
     hpNum.textContent = cardData.hp ?? "0";
     hpNum.style.position = "absolute";
-    hpNum.style.top = "45%";
-    hpNum.style.left = "calc(50% - 12px)";
+    hpNum.style.top = isBoardRender ? "50%" : "43%";
+    hpNum.style.left = isBoardRender ? "calc(50% - 7px)" : "calc(50% - 10px)";
     hpNum.style.transform = "translate(-50%, -50%)";
-    hpNum.style.fontSize = "20px";
+    hpNum.style.fontSize = isBoardRender ? "36px" : "20px";
     hpNum.style.fontWeight = "bold";
     hpNum.style.color = "white";
     hpNum.style.textShadow = "2px 2px 4px black";
