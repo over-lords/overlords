@@ -710,7 +710,7 @@ export function renderCard(cardId, container) {
     const hpNum = document.createElement("div");
     hpNum.textContent = cardData.hp ?? "0";
     hpNum.style.position = "absolute";
-    hpNum.style.top = isBoardRender ? "50%" : "43%";
+    hpNum.style.top = isBoardRender ? "50%" : "41%";
     hpNum.style.left = isBoardRender ? "calc(50% - 7px)" : "calc(50% - 12px)";
     hpNum.style.transform = "translate(-50%, -50%)";
     hpNum.style.fontSize = isBoardRender ? "36px" : "20px";
