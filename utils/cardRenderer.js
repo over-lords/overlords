@@ -646,9 +646,9 @@ export function renderCard(cardId, container) {
       "https://raw.githubusercontent.com/over-lords/overlords/a61d7fb50e273106d490476bd3c621f3a6f45047/Public/Images/Card%20Assets/Misc/Damage.png";
     dmgImg.alt = "Damage";
     dmgImg.style.position = "absolute";
-    dmgImg.style.left = isBoardRender ? "-24px" : "-12px";
-    dmgImg.style.width = isBoardRender ? "100%" : "75%";
-    dmgImg.style.height = isBoardRender ? "100%" : "75%";
+    dmgImg.style.left = isBoardRender ? "-24px" : "-8px";
+    dmgImg.style.width = isBoardRender ? "100%" : "85%";
+    dmgImg.style.height = isBoardRender ? "100%" : "85%";
     dmgImg.style.objectFit = "contain";
     dmgContainer.appendChild(dmgImg);
 
@@ -656,7 +656,7 @@ export function renderCard(cardId, container) {
     dmgNum.textContent = cardData.damage ?? "0";
     dmgNum.style.position = "absolute";
     dmgNum.style.top = isBoardRender ? "53%" : "45%";
-    dmgNum.style.left = isBoardRender ? "calc(50% - 24px)" : "calc(50% - 18px)";
+    dmgNum.style.left = isBoardRender ? "calc(50% - 24px)" : "calc(50% - 11px)";
     dmgNum.style.transform = "translate(-50%, -50%)";
     dmgNum.style.fontSize = isBoardRender ? "36px" : "20px";
     dmgNum.style.fontWeight = "bold";
@@ -700,7 +700,7 @@ export function renderCard(cardId, container) {
       "https://raw.githubusercontent.com/over-lords/overlords/d4d722dd9c416015b0aac29883ba241deea3f8d7/Public/Images/Card%20Assets/Misc/Heart.png";
     heartImg.alt = "HP";
     heartImg.style.position = "absolute";
-    heartImg.style.left = "-6px";
+    heartImg.style.left = isBoardRender ? "-6px" : "-8px";
     heartImg.style.marginTop = isBoardRender ? "4px" : "1px";
     heartImg.style.width = isBoardRender ? "100%" : "85%";
     heartImg.style.height = isBoardRender ? "100%" : "85%";
@@ -711,7 +711,7 @@ export function renderCard(cardId, container) {
     hpNum.textContent = cardData.hp ?? "0";
     hpNum.style.position = "absolute";
     hpNum.style.top = isBoardRender ? "50%" : "43%";
-    hpNum.style.left = isBoardRender ? "calc(50% - 7px)" : "calc(50% - 10px)";
+    hpNum.style.left = isBoardRender ? "calc(50% - 7px)" : "calc(50% - 12px)";
     hpNum.style.transform = "translate(-50%, -50%)";
     hpNum.style.fontSize = isBoardRender ? "36px" : "20px";
     hpNum.style.fontWeight = "bold";
