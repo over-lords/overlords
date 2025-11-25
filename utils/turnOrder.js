@@ -272,6 +272,9 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
         gameState.isGameStarted = true;
     }
 
+    if (typeof gameState.turnCounter !== "number") gameState.turnCounter = 0;
+    gameState.turnCounter++;
+
     const heroIds = gameState.heroes || [];
     if (heroIds.length > 0) {
         currentTurn(heroTurnIndex, heroIds);
@@ -279,6 +282,7 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
 
     gameState.heroTurnIndex = heroTurnIndex;
 
+    saveGameState(gameState);
     initializeTurnUI(gameState);
 }
 
@@ -286,14 +290,19 @@ export async function shoveUpper(newCardId) {
 
     const citySlots = document.querySelectorAll(".city-slot");
 
-    // Collect which upper slots are filled
+    // Ensure cities array exists and has room
+    if (!Array.isArray(gameState.cities)) {
+        gameState.cities = new Array(12).fill(null);
+    }
+
+    // Collect which upper slots are filled (DOM)
     const slotInfo = UPPER_ORDER.map(idx => ({
         idx,
         slot: citySlots[idx],
         hasCard: citySlots[idx].querySelector(".card-wrapper")
     }));
 
-    // === STEP 1 — SHIFT EXISTING CARDS LEFT ===
+    // === STEP 1 — SHIFT EXISTING CARDS LEFT (DOM + MODEL) ===
     for (let i = 0; i < slotInfo.length - 1; i++) {
         const curr = slotInfo[i];
         const next = slotInfo[i + 1];
@@ -310,19 +319,27 @@ export async function shoveUpper(newCardId) {
 
             if (!currArea || !nextArea) continue;
 
-            // move only the card wrapper
             currArea.innerHTML = "";
             currArea.appendChild(cardNode);
 
             nextArea.innerHTML = "";
 
-            // The node has now moved from next→curr, so update the model
+            // The node has now moved from next→curr, so update DOM bookkeeping
             curr.hasCard = cardNode;
             next.hasCard = null;
 
+            // === UPDATE MODEL to match shift ===
+            const fromIdx = next.idx;
+            const toIdx   = curr.idx;
+
+            gameState.cities[toIdx] = gameState.cities[fromIdx] || null;
+            if (gameState.cities[toIdx]) {
+                gameState.cities[toIdx].slotIndex = toIdx;
+            }
+            gameState.cities[fromIdx] = null;
+
             // allow CSS animation to visibly play
             await new Promise(r => setTimeout(r, 20));
-            // remove animation class after complete
             setTimeout(() => cardNode.classList.remove("city-card-enter"), 650);
         }
     }
@@ -345,8 +362,8 @@ export async function shoveUpper(newCardId) {
     rightmost.slot.querySelector(".city-card-area").appendChild(wrapper);
 
     const cardData =
-    henchmen.find(h => h.id === newCardId) ||
-    villains.find(v => v.id === newCardId);
+        henchmen.find(h => h.id === newCardId) ||
+        villains.find(v => v.id === newCardId);
 
     if (cardData) {
         wrapper.style.cursor = "pointer";
@@ -361,6 +378,16 @@ export async function shoveUpper(newCardId) {
     } else {
         console.warn("No cardData found for newCardId:", newCardId);
     }
+
+    // === UPDATE MODEL for the newly entered card ===
+    gameState.cities[rightmost.idx] = {
+        slotIndex: rightmost.idx,
+        type: "villain",
+        id: String(newCardId)
+    };
+
+    // Persist everything (including cities + deck pointer + turnCounter etc.)
+    saveGameState(gameState);
 
     // Remove animation class after animation ends
     setTimeout(() => {

@@ -10,9 +10,8 @@ export const gameState = {
     turn: 1,
     phase: "start",
     rngSeed: null,
-
-    // add anything your gameplay mutates:
-    // hero HP, overlord HP, scenario stack, countdown timers, villain positions, etc.
+    turnCounter: 0,   // total turns elapsed since start
+    heroTurnIndex: 0, // whose turn it is
 };
 
 export const CITY_EXIT_UPPER = 0; // Star

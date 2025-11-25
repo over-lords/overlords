@@ -233,34 +233,44 @@ async function restoreUIFromState(state) {
 
     if (Array.isArray(state.cities)) {
 
-        // For each city-slot restore an occupant
         const citySlots = document.querySelectorAll(".city-slot");
 
         state.cities.forEach(entry => {
             if (!entry || typeof entry.slotIndex !== "number") return;
+
             const slot = citySlots[entry.slotIndex];
             if (!slot) return;
 
             const cardArea = slot.querySelector(".city-card-area");
             if (!cardArea) return;
 
-            // wipe only card area
             cardArea.innerHTML = "";
+
+            if (!entry.id) return;   // empty slot stays empty
 
             const wrapper = document.createElement("div");
             wrapper.className = "card-wrapper";
 
             const rendered = renderCard(entry.id, wrapper);
             wrapper.appendChild(rendered);
-
             cardArea.appendChild(wrapper);
+
+            // Restore clickability for villains & henchmen
+            const cardData =
+                henchmen.find(h => h.id === entry.id) ||
+                villains.find(v => v.id === entry.id);
+
+            if (cardData) {
+                wrapper.style.cursor = "pointer";
+                wrapper.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    buildVillainPanel(cardData);
+                });
+            }
         });
     }
 
-
-    /******************************************************
-     * VILLAIN DECK / POINTER
-     ******************************************************/
+    // VILLAIN DECK
     if (Array.isArray(state.villainDeck)) {
         gameState.villainDeck = [...state.villainDeck];
     }
@@ -303,6 +313,13 @@ async function restoreUIFromState(state) {
 
         // Restore turn index
         window.heroTurnIndex = saved.heroTurnIndex ?? 0;
+        gameState.heroTurnIndex = saved.heroTurnIndex ?? 0;
+
+        if (typeof saved.turnCounter === "number") {
+            gameState.turnCounter = saved.turnCounter;
+        } else {
+            gameState.turnCounter = 0;
+        }
 
         const heroIds = gameState.heroes || [];
         if (heroIds.length > 0) {
@@ -310,7 +327,6 @@ async function restoreUIFromState(state) {
         }
 
         initializeTurnUI(gameState);
-
         return;
     }
 
