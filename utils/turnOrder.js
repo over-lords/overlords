@@ -717,24 +717,25 @@ function resetTurnTimerForHero() {
         if (turnTimerInterval) clearInterval(turnTimerInterval);
         return;
     }
+    else if (isMultiplayer) {
+        timerBox.style.display = "block";
 
-    timerBox.style.display = "block";
-
-    let remaining = 180; // 3 minutes in seconds
-    timerBox.textContent = formatTimer(remaining);
-
-    if (turnTimerInterval) clearInterval(turnTimerInterval);
-
-    turnTimerInterval = setInterval(() => {
-        remaining--;
-        if (remaining <= 0) {
-            clearInterval(turnTimerInterval);
-            timerBox.textContent = "00:00";
-            autoEndTurnDueToTimeout();
-            return;
-        }
+        let remaining = 180; // 3 minutes in seconds
         timerBox.textContent = formatTimer(remaining);
-    }, 1000);
+
+        if (turnTimerInterval) clearInterval(turnTimerInterval);
+
+        turnTimerInterval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) {
+                clearInterval(turnTimerInterval);
+                timerBox.textContent = "00:00";
+                autoEndTurnDueToTimeout();
+                return;
+            }
+            timerBox.textContent = formatTimer(remaining);
+        }, 1000);
+    }
 }
 
 function formatTimer(sec) {
