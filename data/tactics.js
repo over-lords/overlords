@@ -722,7 +722,7 @@ export const tactics = [
       {
         type: `quick`,
         condition: `kodHenchman()`,
-        uses: `0`,
+        uses: `999`,
         shared: `no`,
         effect: `ignoreRewardDamageOverlord(henchmanDamage())`
       }
@@ -767,7 +767,7 @@ export const tactics = [
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `OPTIONAL: When you rescue a Bystander, you can instead choose to KO them (doing so means you do not gain their benefits). <span class="line-gap"></span>
+        text: `OPTIONAL: When you rescue a Bystander, KO them (doing so means you do not gain their benefits). <span class="line-gap"></span>
               Bonus Heroes Win Condition: You win when 10 Bystanders have been KO'd.`
       }
     ],
@@ -780,7 +780,7 @@ export const tactics = [
       {
         type: `quick`,
         condition: `rescueBystander()`,
-        uses: `0`,
+        uses: `999`,
         shared: `no`,
         effect: `koRescuedBystander()`
       }
@@ -811,6 +811,145 @@ export const tactics = [
         uses: `1`,
         shared: `no`,
         effect: `heroWins`
+      }
+    ]
+  },
+  {
+    id: "5414",
+    name: "A League of our Own",
+    image: `${cardArtFolder}/Tactic.jpg`,
+    type: "Tactic",
+    doNotShow: "true",
+    limitEaA: ["no"],
+    multiTacticReq: "no",
+    multiOverlordReq: "no",
+    abilitiesText: [
+      {
+        text: `When you rescue a Bystander, deal 1 Damage to a Henchman, Villain, or the Overlord. When a Bystander is KO'd, all Heroes take 2 Damage. <span class="line-gap"></span>
+              Might of the Overlord: Draw 3 from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `One for All! All for One!`
+      },
+      {
+        text: `One for All! All for One!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `bystanderRescued()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `damageAnyBaddie(1)`
+      },
+      {
+        type: `quick`,
+        condition: `bystanderKod()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `damageHero(all,2)`
+      },
+    ],
+    mightNamePrint: [
+      {
+        text: `There's So Many!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`enemyDraw(3)`]
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `none`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5415",
+    name: "Down Low, Too Slow",
+    image: `${cardArtFolder}/Tactic.jpg`,
+    type: "Tactic",
+    doNotShow: "true",
+    limitVillainDeck: ["hench(10)","villain(20)","bystander(5)","might(6)","scenario(3)"],
+    limitEaA: ["no"],
+    multiTacticReq: "yes",
+    multiOverlordReq: "yes",
+    abilitiesText: [
+      {
+        text: `Required: A maximum of 10 Henchmen, 20 Villains, 5 Bystanders, 6 Mights of the Overlord, and 3 Scenarios. <span class="line-gap"></span>
+                Double the Damage of all Villains. <span class="line-gap"></span>
+                  All Heroes gain a 1/Game Icon Ability: On their turn, KO a Henchman or Villain. <span class="line-gap"></span>
+                    Might of the Overlord: KO a Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Hit them Fast and Hard!`
+      },
+      {
+        text: `Supercharged!`
+      },
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `villainDrawn()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `doubleVillainDamage()`
+      },
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `1`,
+        shared: `no`,
+        effect: `grantInstantKOToAll()`
+      }
+    ],
+    mightNamePrint: [
+      {
+        text: `One by One.`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`koHero(1)`]
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `none`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
       }
     ]
   },
