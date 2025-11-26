@@ -4,6 +4,48 @@ const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/4c
 
 export const tactics = [
   {
+    id: "8001",
+    name: "Countdown - 1",
+    doNotShow: "true",
+    type: "Countdown",
+    number: 1,
+  },
+  {
+    id: "8002",
+    name: "Countdown - 2",
+    doNotShow: "true",
+    type: "Countdown",
+    number: 2,
+  },
+  {
+    id: "8003",
+    name: "Countdown - 3",
+    doNotShow: "true",
+    type: "Countdown",
+    number: 3,
+  },
+  {
+    id: "8004",
+    name: "Countdown - 4",
+    doNotShow: "true",
+    type: "Countdown",
+    number: 4,
+  },
+  {
+    id: "8005",
+    name: "Countdown - 5",
+    doNotShow: "true",
+    type: "Countdown",
+    number: 5,
+  },
+  {
+    id: "8006",
+    name: "Countdown - 6",
+    doNotShow: "true",
+    type: "Countdown",
+    number: 6,
+  },
+  {
     id: "7001",
     name: "Might of the Overlord",
     image: `${cardArtFolder}/Might of the Overlord.jpg`,

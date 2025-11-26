@@ -1067,6 +1067,54 @@ export function renderCard(cardId, container) {
     wrapper.classList.add('card-wrapper');
     wrapper.appendChild(card);
     return wrapper;
+  } else if (cardData.type === "Countdown") {
+    // Ensure valid range 1–6
+    const num = Math.max(1, Math.min(6, parseInt(cardData.number)));
+
+    // Base card
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.position = 'relative';
+    card.style.width = '230px';   // 2.3w ratio
+    card.style.height = '350px';  // 3.5h ratio
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '8px';
+    card.style.border = '2px solid black';
+    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = '#000';
+
+    // Large centered number
+    const numEl = document.createElement('div');
+    numEl.textContent = num;
+    numEl.style.position = 'absolute';
+    numEl.style.top = '50%';
+    numEl.style.left = '50%';
+    numEl.style.transform = 'translate(-50%, -50%)';
+
+    // big red number, padded 10% from card edges
+    numEl.style.width = '90%';
+    numEl.style.height = '90%';
+
+    numEl.style.display = 'flex';
+    numEl.style.alignItems = 'center';
+    numEl.style.justifyContent = 'center';
+
+    numEl.style.color = 'red';
+    numEl.style.textShadow = '4px 4px 8px black';
+    numEl.style.fontWeight = 'bold';
+
+    // giant font (scaled using viewport of its container)
+    numEl.style.fontSize = '16rem';
+
+    card.appendChild(numEl);
+
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+
+    if (container) container.appendChild(wrapper);
+    return wrapper;
   }
 
   // If card not found, display card type name
@@ -1213,55 +1261,4 @@ export function getTeamIcon(teamName) {
   };
 
   return map[teamName] || null;
-}
-
-// === COUNTDOWN CARD RENDERER ===
-export function renderCountdown(count, container) {
-    // Ensure valid range 1–6
-    const num = Math.max(1, Math.min(6, parseInt(count)));
-
-    // Base card
-    const card = document.createElement('div');
-    card.classList.add('card');
-    card.style.position = 'relative';
-    card.style.width = '230px';   // 2.3w ratio
-    card.style.height = '350px';  // 3.5h ratio
-    card.style.overflow = 'hidden';
-    card.style.borderRadius = '8px';
-    card.style.border = '2px solid black';
-    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
-    card.style.fontFamily = "'Racing Sans One', sans-serif";
-    card.style.backgroundColor = '#000';
-
-    // Large centered number
-    const numEl = document.createElement('div');
-    numEl.textContent = num;
-    numEl.style.position = 'absolute';
-    numEl.style.top = '50%';
-    numEl.style.left = '50%';
-    numEl.style.transform = 'translate(-50%, -50%)';
-
-    // big red number, padded 10% from card edges
-    numEl.style.width = '90%';
-    numEl.style.height = '90%';
-
-    numEl.style.display = 'flex';
-    numEl.style.alignItems = 'center';
-    numEl.style.justifyContent = 'center';
-
-    numEl.style.color = 'red';
-    numEl.style.textShadow = '4px 4px 8px black';
-    numEl.style.fontWeight = 'bold';
-
-    // giant font (scaled using viewport of its container)
-    numEl.style.fontSize = 'calc(90% - 10px)';
-
-    card.appendChild(numEl);
-
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('card-wrapper');
-    wrapper.appendChild(card);
-
-    if (container) container.appendChild(wrapper);
-    return wrapper;
 }

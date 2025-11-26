@@ -7,7 +7,7 @@ import { bystanders } from '../data/bystanders.js';
 import { scenarios } from '../data/scenarios.js';
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
-import { renderCard, renderCountdown, renderAbilityText } from './cardRenderer.js';
+import { renderCard, renderAbilityText } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI } from "./turnOrder.js";
