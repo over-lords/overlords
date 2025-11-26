@@ -307,13 +307,15 @@ export async function shoveUpper(newCardId) {
         const curr = slotInfo[i];
         const next = slotInfo[i + 1];
 
-        if (next.hasCard) {
+        if (next.hasCard) {if (next.hasCard) {
             const cardNode = next.hasCard;
 
-            // Add animation class
-            cardNode.classList.add("city-card-enter");
+            // 1. REMOVE any "enter-from-right" animation for existing cards
+            cardNode.classList.remove("city-card-enter");
 
-            // Move DOM node to the left slot
+            // 2. Add a SLIDE-LEFT animation class instead
+            cardNode.classList.add("city-card-slide-left");
+
             const currArea = curr.slot.querySelector(".city-card-area");
             const nextArea = next.slot.querySelector(".city-card-area");
 
@@ -324,24 +326,21 @@ export async function shoveUpper(newCardId) {
 
             nextArea.innerHTML = "";
 
-            // The node has now moved from next→curr, so update DOM bookkeeping
+            // Update bookkeeping
             curr.hasCard = cardNode;
             next.hasCard = null;
 
-            // === UPDATE MODEL to match shift ===
-            const fromIdx = next.idx;
-            const toIdx   = curr.idx;
-
-            gameState.cities[toIdx] = gameState.cities[fromIdx] || null;
-            if (gameState.cities[toIdx]) {
-                gameState.cities[toIdx].slotIndex = toIdx;
+            gameState.cities[curr.idx] = gameState.cities[next.idx] || null;
+            if (gameState.cities[curr.idx]) {
+                gameState.cities[curr.idx].slotIndex = curr.idx;
             }
-            gameState.cities[fromIdx] = null;
+            gameState.cities[next.idx] = null;
 
-            // allow CSS animation to visibly play
+            // Let animation play
             await new Promise(r => setTimeout(r, 20));
-            setTimeout(() => cardNode.classList.remove("city-card-enter"), 650);
+            setTimeout(() => cardNode.classList.remove("city-card-slide-left"), 650);
         }
+    }
     }
 
     // The rightmost slot (UPPER_ORDER[last]) is now empty (or emptied by shove).

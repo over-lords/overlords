@@ -1131,3 +1131,17 @@ html, body {
     display: block;
     height: 50px;
 }
+
+.city-card-slide-left {
+    animation: citySlideLeft 0.6s ease forwards;
+    z-index: 50; /* keep above city art */
+}
+
+@keyframes citySlideLeft {
+    from {
+        transform: translateX(220px) scale(0.89);
+    }
+    to {
+        transform: translateX(-0px) scale(0.89); /* ~one city’s width */
+    }
+}
