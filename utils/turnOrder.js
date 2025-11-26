@@ -220,6 +220,9 @@ export function gameStart(selectedData) {
         [idArray[i], idArray[j]] = [idArray[j], idArray[i]];
     }
 
+    const countdown = ["8006", "8005", "8004", "8003", "8002", "8001"];
+    idArray.push(...countdown);
+
     //console.log("=== SHUFFLED VILLAIN DECK IDS ===");
     //console.log(idArray);
 
