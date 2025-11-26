@@ -3,7 +3,7 @@ const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/fc
 // ids 5001-5200
 
 export const overlords = [
-    {
+  {
     id: "5001",
     name: "Darkseid",
     image: `${cardArtFolder}/Darkseid.jpg`,
@@ -471,6 +471,65 @@ export const overlords = [
         uses: `0`,
         shared: `no`,
         effect: `disableVillainDeckKO()`
+      }
+    ]
+  },
+  {
+    id: "5009",
+    name: "Ultraman",
+    image: `${cardArtFolder}/Ultraman.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "100",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `At the end of a Hero's turn, if they engaged Ultraman, they take 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span>
+               Might of the Overlord: Ultraman enters the map as a 20 HP, 3 Damage Villain with Charge 1 and Glide. If he is reduced to 0 HP, he is sent 
+               back to the Overlord space and his HP is reduced by 20. If he is not reduced to 0 HP before he reaches the end of the board, all Heroes take 3 Damage. <span class="line-gap"></span>
+               Bonus Feature: If Ultraman KO's a Hero: He Gains 10 HP. `
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Let Me Enlighten You`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndWasAttacked`,
+        uses: `999`,
+        shared: `no`,
+        effect: `damageAttacker(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Don't Make Me Come Down There!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `enterMapAs(5638)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Take What's Yours!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `overlordKoHero()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `healOverlord(10)`
       }
     ]
   },

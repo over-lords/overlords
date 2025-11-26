@@ -1459,4 +1459,65 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5638",
+    name: "Ultraman",
+    image: `${cardArtFolder}/../Overlords/ultraman.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Justice League",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1, Glide <span class="line-gap"></span> 
+               Reward: Deal 20 Damage to the Overlord. <span class="line-gap"></span> 
+               If Ultraman Escapes: Deal 3 Damage to all Heroes.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Glide`
+      },
+      {
+        text: `Reward!`
+      },
+      {
+        text: `Got Away!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `onEntry`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `hasGlide()`
+      },
+      {
+        type: `uponDefeat`,
+        condition: `none`,
+        uses: `1`,
+        shared: `no`,
+        effect: `damageOverlord(20)`
+      },
+      {
+        type: `quick`,
+        condition: `escaped()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `damageHero(all,3)`
+      }
+    ]
+  },
 ]
