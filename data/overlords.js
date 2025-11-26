@@ -706,4 +706,885 @@ export const overlords = [
       }
     ]
   },
+  {
+    id: "5013",
+    name: "Vandal Savage",
+    image: `${cardArtFolder}/vandalSavage.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "60",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Vandal Savage cannot be reduced to 0 HP before every Player has rescued at least 1 Bystander and KO'd at least 1 Henchman or Villain. <span class="line-gap"></span> 
+               Might of the Overlord: Draw 2 cards from the Villain Deck and 1 from the E&A.<span class="line-gap"></span> 
+               Bonus Feature: After the first Hero is KO'd: If a Henchman or Villain is reduced to 1 HP and then left unengaged at the end of a Hero's turn, they regain 5 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You're Not Done Yet.`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `trackPlayersBystandersVillains()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `overlordCannotDie()`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Millenia's Old Empire`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`enemyDraw(1)`,`villainDraw(2)`]
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Loyalty Rewarded`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `heroRetreatsFromFoeWithXorLess(1)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healAbandonedFoe(5)`
+      }
+    ]
+  },
+  {
+    id: "5014",
+    name: "Sinestro",
+    image: `${cardArtFolder}/sinestro.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "70",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Decrease [ICON:Lantern] Heroes' Damage Thresholds by 1 (to a minimum of 1). <span class="line-gap"></span>
+               Might of the Overlord: All Villains gain 5 HP. <span class="line-gap"></span>
+               Bonus Feature: If a [ICON:Lantern] Hero is KO'd, Sinestro regains 10 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Be Afraid!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `1`,
+        shared: `no`,
+        effect: `lowerDT(Lantern,1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Welcome to the Sinestro Corps!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `villainGainLife(all,5)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `That Felt Great!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `heroKod(Lantern)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healOverlord(10)`
+      }
+    ]
+  },
+  {
+    id: "5015",
+    name: "Professor Zoom",
+    image: `${cardArtFolder}/professorZoom.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "70",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Decrease [ICON:Flash] Heroes' Damage Thresholds by 1 (to a minimum of 1). <span class="line-gap"></span>
+               Might of the Overlord: All Henchmen and Villains Charge 2. <span class="line-gap"></span>
+               Bonus Feature: If a [ICON:Flash] Hero is KO'd, the Hero with the most remaining HP takes 2 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Slow You Down!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `1`,
+        shared: `no`,
+        effect: `lowerDT(Flash,1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Let Loose the Lightning!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `advanceFoe(all,2)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Time to Celebrate!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `heroKod(Flash)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `damageHealthiestHero(2)`
+      }
+    ]
+  },
+  {
+    id: "5016",
+    name: "Gorilla Grodd",
+    image: `${cardArtFolder}/gorillaGrodd.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "65",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `No Heroes can Scan. <span class="line-gap"></span>
+               Might of the Overlord: Of the next 5 cards in the Villain Deck, play all of the Henchmen. <span class="line-gap"></span>
+               Bonus Evil Wins Condition: Evil Wins when 15 Bystanders have been KO'd.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Telepathic Oversight`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `gameStart()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `disableScan()`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `General Grodd!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `playNextHenchmen(5)`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `Evil Wins!`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `evilWins`,
+        condition: `bystandersKOD(15)`,
+        uses: `1`,
+        shared: `no`,
+        effect: `evilWins`
+      }
+    ]
+  },
+  {
+    id: "5017",
+    name: "Alexander Luthor",
+    image: `${cardArtFolder}/alexanderLuthor.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "90",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `All Villains with Charge advance an extra space when entering the board. <span class="line-gap"></span>
+               Might of the Overlord: Reduce all Henchmen and Villains' HP by half and double their Damage. <span class="line-gap"></span>
+               Bonus Feature: The first time Alexander Luthor would be reduced to 0 HP, he is instead reduced to only 1. Then, end the turn of the Hero who damaged him and deal 5 Damage to all Heroes.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Behold, my Made Men!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `chargeVillainDrawn()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `extraCharge(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Get In There!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `reduceAllFoesByHalfDoubleDamage()`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `I Will Not End Like This!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `wouldBeKod()`,
+        uses: `1`,
+        shared: `no`,
+        effect: [`surviveAt(1)`,`endHeroTurn()`,`damageHero(all,5)`]
+      }
+    ]
+  },
+  {
+    id: "5018",
+    name: "Batman",
+    image: `${cardArtFolder}/batman.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "80",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Heroes cannot Retreat. <span class="line-gap"></span>
+               Might of the Overlord: Subtract 1 random Icon Ability use from each Hero. <span class="line-gap"></span>
+               Bonus Feature: After the first Hero Blocks, future uses of Block come with the requirement that the Blocking Hero must KO the top 2 cards of their deck in order to use the effect.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Nowhere to Run!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `gameStart()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `disableRetreat(all)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Contingency Plans`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `reduceIconEffectUseBy(all,random,1)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Observe and Adapt`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `heroBlocks()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `appendKO2CardsToBlock()`
+      }
+    ]
+  },
+  {
+    id: "5019",
+    name: "Ultimate Amazo",
+    image: `${cardArtFolder}/ultimateAmazo.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "120",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `The first time each turn, before a Hero damages Ultimate Amazo, he regains 5 HP. <span class="line-gap"></span>
+               Might of the Overlord: Increase all Villains' Damages by 1 and deal 1 Damage to all Heroes. <span class="line-gap"></span>
+               Bonus Feature: When a Hero is KO'd, Amazo regains 20 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Ever-Evolving!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `firstTimePerTurnIsAttacked()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healOverlord(5)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `I've Studied You Long Enough`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`powerVillain(all,1)`,`damageHero(all,1)`]
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Observe and Adapt`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `heroKod()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healOverlord(20)`
+      }
+    ]
+  },
+  {
+    id: "5020",
+    name: "Starro",
+    image: `${cardArtFolder}/starro.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "85",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Starro regains 5 HP for every Bystander he KO's. <span class="line-gap"></span>
+               Might of the Overlord: KO all captured Bystanders. <span class="line-gap"></span>
+               Bonus Evil Wins Condition: Evil Wins when 15 Bystanders have been KO'd.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `More of Myself`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `overlordKosBystander()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healOverlord(5)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Rapid Expansion!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `koCapturedBystander(all)`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `Evil Wins!`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `evilWins`,
+        condition: `bystandersKOD(15)`,
+        uses: `1`,
+        shared: `no`,
+        effect: `evilWins`
+      }
+    ]
+  },
+  {
+    id: "5021",
+    name: "Ares",
+    image: `${cardArtFolder}/ares.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "70",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Ares starts the game with an extra 5 HP per Hero. <span class="line-gap"></span>
+               Might of the Overlord: Draw 5 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect). Double the HP of all Villains played by this effect. <span class="line-gap"></span>
+               Bonus Feature: After the first Hero is KO'd: Draw an extra card from the E&A whenever it is drawn from. `
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Lord of War!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `1`,
+        shared: `no`,
+        effect: `overlordGainLife(5*countActiveHeroes())`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Dogs of War!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`drawVillainIgnoreMights(5)`,`doubleDrawnVillainsHP()`]
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Bonus Round!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `heroKOd()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `drawExtraEaA()`
+      }
+    ]
+  },
+  {
+    id: "5022",
+    name: "The Batman Who Laughs",
+    image: `${cardArtFolder}/batmanWhoLaughs.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "75",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Heroes cannot Retreat. <span class="line-gap"></span>
+               Might of the Overlord: Subtract 1 random Icon Ability use from each Hero. <span class="line-gap"></span>
+               Bonus Feature: After the first Hero Blocks, future uses of Block come with the requirement that the Blocking Hero must KO the top 2 cards of their deck in order to use the effect.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Nowhere to Run!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `gameStart()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `disableRetreat(all)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Contingency Plans`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `reduceIconEffectUseBy(all,random,1)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Observe and Adapt`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `heroBlocks()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `appendKO2CardsToBlock()`
+      }
+    ]
+  },
+  {
+    id: "5023",
+    name: "Brother Eye",
+    image: `${cardArtFolder}/brotherEye.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "90",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `KO'd Heroes are brought back as Villains. <span class="line-gap"></span>
+               Might of the Overlord: Draw 3 from the Villain Deck. <span class="line-gap"></span>
+               Bonus Feature: When a Villain-Turned Hero is KO'd, they are permanently KO'd.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Eye Am Reborn!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `heroKOd()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `returnHeroAsVillain()`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Send in the Next Wave`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `villainDraw(3)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Complete Subjugation`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `villainousHeroKOd()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `permanentlyKOhero()`
+      }
+    ]
+  },
+  {
+    id: "5024",
+    name: "Brainiac",
+    image: `${cardArtFolder}/brainiac.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "80",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `All Villains gain Teleport. <span class="line-gap"></span>
+               When Brainiac is reduced to 60/40/20 HP: Restore a Destroyed City. <span class="line-gap"></span>
+               Might of the Overlord: Destroy the Rightmost City. <span class="line-gap"></span>
+               Bonus Feature: When a City is Destroyed, Brainiac regains 10 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Teleporters Online!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `villainDrawn()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `villainTeleports()`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Welcome to the Sinestro Corps!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `destroyCity(rightmost)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `No! Give that back!`
+      },
+      {
+        text: `For the Collection!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `overlordReducedByXFromMax(20)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `restoreCity(1)`
+      },
+      {
+        type: `quick`,
+        condition: `cityDestroyed()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healOverlord(10)`
+      }
+    ]
+  },
+  {
+    id: "5025",
+    name: "Nekron",
+    image: `${cardArtFolder}/nekron.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "110",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `KO'd Heroes are brought back as Villains. <span class="line-gap"></span>
+               Might of the Overlord: Play KO'd Henchmen and Villains equal to the number of active Heroes. <span class="line-gap"></span>
+               Bonus Feature: KO'd Bystanders enter the board as 1 HP, 1 Damage Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Rise!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `heroKOd()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `returnHeroAsVillain()`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Welcome to the Black Lantern Corps!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `resurrectKOdHenchVillains(countActiveHeroes())`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `The Living Are Dead Yet To Soar!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `bystanderKOd()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `spawnBystanderZombie()`
+      }
+    ]
+  },
+  {
+    id: "5026",
+    name: "Anti-Monitor",
+    image: `${cardArtFolder}/antiMonitor.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "150",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `The game begins with Gotham already destroyed. <span class="line-gap"></span>
+               Might of the Overlord: Of the top 5 cards of the E&A, KO the Allies and play the Enemies. <span class="line-gap"></span>
+               Bonus Feature: Cities cannot be restored.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Explosive Introduction!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `1`,
+        shared: `no`,
+        effect: `destroyCity()`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `The Worst of the Multiverse!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `drawFromEnemyKoAllies(5)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `I Am Finality!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `gameStart()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `disableRestoration()`
+      }
+    ]
+  },
+  {
+    id: "5027",
+    name: "Trigon",
+    image: `${cardArtFolder}/trigon.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "95",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `If a Bystander is drawn on an empty board, they enter the map as a 1 HP, 1 Damage Henchman. KO'ing them with 2 or less Damage is the only way to rescue them. <span class="line-gap"></span>
+               Might of the Overlord: Reverse the positions of all cards on the board. <span class="line-gap"></span>
+               Bonus Evil Wins Condition: Evil Wins when 10 Bystanders have been KO'd. `
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Seduction of the Innocent`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `bystanderDrawnOnEmpty()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `spawnBystanderHenchman()`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Time for a Change!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `reverseBoardPositions()`
+      }
+    ],
+    evilWinsNamePrint: [
+      {
+        text: `Evil Wins!`
+      }
+    ],
+    evilWinsEffects: [
+      {
+        type: `evilWins`,
+        condition: `bystandersKOD(10)`,
+        uses: `1`,
+        shared: `no`,
+        effect: `evilWins`
+      }
+    ]
+  },
 ]

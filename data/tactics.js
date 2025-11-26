@@ -421,7 +421,7 @@ export const tactics = [
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `Might of the Overlord: Draw 5 times from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect).`
+        text: `Might of the Overlord: Draw 5 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect).`
       }
     ],
     abilitiesNamePrint: [
@@ -537,7 +537,7 @@ export const tactics = [
     abilitiesText: [
       {
         text: `All Villains gain Glide. <span class="line-gap"></span>
-                Might of the Overlord: Draw 3 times from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect).`
+                Might of the Overlord: Draw 3 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect).`
       }
     ],
     abilitiesNamePrint: [
