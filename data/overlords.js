@@ -85,10 +85,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `startGame`,
+        condition: `gameStart()`,
         uses: `1`,
         shared: `no`,
-        effect: `gainLife(3*bat)`
+        effect: `gainLife(3*count(Bat))`
       }
     ],
     mightNamePrint: [
@@ -287,6 +287,190 @@ export const overlords = [
         uses: `1`,
         shared: `no`,
         effect: `addNextOverlord(5004)`
+      }
+    ]
+  },
+  {
+    id: "5006",
+    name: "Ra's Al Ghul",
+    image: `${cardArtFolder}/rasAlGhul.jpg`,
+    type: "Overlord",
+    level: "1",
+    hp: "25",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `1/Game: Resurrect Ra's Al Ghul to full HP after he is KO'd. <span class="line-gap"></span>
+               Might of the Overlord: All Villains regain up to 5 HP. <span class="line-gap"></span>
+               Bonus Feature: After being resurrected: Whenever a Henchman or Villain escapes, add their Maximum HP to Ra's when they escape.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Lazarus Rebirth!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `overlordReducedToHP(0)`,
+        uses: `1`,
+        shared: `no`,
+        effect: `healOverlord(25)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Rejoice!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healVillain(all,5)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `I Need Your Life Force!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: [`used_abilitiesEffects(1)`,`foeEscapes()`],
+        uses: `999`,
+        shared: `no`,
+        effect: `gainMaxHP()`
+      }
+    ]
+  },
+  {
+    id: "5007",
+    name: "Ocean Master",
+    image: `${cardArtFolder}/oceanMaster.jpg`,
+    type: "Overlord",
+    level: "1",
+    hp: "50",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `[ICON:Aqua] Heroes start the game with 1 less HP. <span class="line-gap"></span>
+               Might of the Overlord: Deal 3 Damage to all Heroes in Coastal Cities. If there are none, Destroy the Rightmost City. <span class="line-gap"></span>
+               Bonus Feature: After Gotham is destroyed, all Heroes' Retreat Requirements increase by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Royal Birthright!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `1`,
+        shared: `no`,
+        effect: `damageHero(aqua,1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Our World Crashing Down Upon Theirs!`
+      },
+      {
+          text: `Our World Crashing Down Upon Theirs!`
+      },
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `cityOccupied(coastal)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `damageHero(coastal,3)`
+      },
+      {
+        type: `might`,
+        condition: `cityEmpty(coastal)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `destroyNextCity()`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Nowhere to Run!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `gothamDestroyed()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `increaseRetreat(all,1)`
+      }
+    ]
+  },
+  {
+    id: "5008",
+    name: "Kadabra",
+    image: `${cardArtFolder}/kadabra.jpg`,
+    type: "Overlord",
+    level: "1",
+    hp: "45",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `At the start of the game, Kadabra's Hit Points are increased by 3 for every active [ICON:Titans] Hero. <span class="line-gap"></span>
+               Might of the Overlord: All Henchmen and Villains Charge 2. <span class="line-gap"></span>
+               Bonus Feature: If there are 3, or more, [ICON:Titans] Heroes at the start of the game: Cards cannot be KO'd from the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Renewed Vigor!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `gameStart()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `gainLife(3*count(Titans))`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Abra Kadabra!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `advanceFoe(all,2)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Play Fair!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `passive`,
+        condition: `3TitansGameStart()`,
+        uses: `0`,
+        shared: `no`,
+        effect: `disableVillainDeckKO()`
       }
     ]
   },
