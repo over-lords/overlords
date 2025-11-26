@@ -533,4 +533,177 @@ export const overlords = [
       }
     ]
   },
+  {
+    id: "5010",
+    name: "Enchantress",
+    image: `${cardArtFolder}/enchantress.jpg`,
+    type: "Overlord",
+    level: "3",
+    hp: "70",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `If Enchantress KO's a Bystander: She gains 5 HP. <span class="line-gap"></span>
+               Might of the Overlord: The Leftmost Villain escapes (Takeover is ignored). <span class="line-gap"></span>
+               Bonus Feature: Once per turn, if a Hero damages Enchantress, they gain 1 Corruption Counter. If a Hero reaches 3 counters: KO the top card of their deck and reset their counters.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `That Hit The Spot...`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `overlordKoBystander()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `gainLife(5)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `To Me!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `instantEscape(leftmost)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Bittersweet Corruption!`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `firstTimePerTurnIsAttacked()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `attackerGainCorruptionCounter(1)`
+      }
+    ]
+  },
+  {
+    id: "5011",
+    name: "Huge Strange",
+    image: `${cardArtFolder}/hugoStrange.jpg`,
+    type: "Overlord",
+    level: "1",
+    hp: "35",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `The first time each turn Hugo Strange is damaged, draw 1 from the Villain Deck. <span class="line-gap"></span>
+               Might of the Overlord: Double the current HP and Damage of the Leftmost Henchman.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I am in control.`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `firstTimePerTurnIsAttacked()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `villainDraw(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Monster Men, Rise!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `doubleDouble(leftmost,henchman)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `none`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `none`,
+        condition: `none`,
+        uses: `0`,
+        shared: `no`,
+        effect: `none`
+      }
+    ]
+  },
+  {
+    id: "5012",
+    name: "Amanda Waller",
+    image: `${cardArtFolder}/amandaWaller.jpg`,
+    type: "Overlord",
+    level: "2",
+    hp: "50",
+    doNotShow: "true",
+    abilitiesText: [
+      {
+        text: `Each time a Villain is KO'd by a Hero, there is a 1 in 6 chance that Hero takes 5 Damage, and a 1 in 6 chance that Hero regains up to 5 HP. <span class="line-gap"></span> 
+               Might of the Overlord: Play the first 3 KO'd Henchmen.<span class="line-gap"></span> 
+               Bonus Feature: Once per turn, if a [ICON:Squad] Hero damages Amanda Waller, there is a 1 in 6 chance they take 10 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Was that one of ours?`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `kodVillain()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `healOrHurt(current,5)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Endless Operatives.`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: `resurrectHenchmen(3)`
+      }
+    ],
+    bonusNamePrint: [
+      {
+        text: `Remember, Convict.`
+      }
+    ],
+    bonusEffects: [
+      {
+        type: `quick`,
+        condition: `OPTisDamagedBy(Squad)`,
+        uses: `999`,
+        shared: `no`,
+        effect: `possibleDamageAttacker(10)`
+      }
+    ]
+  },
 ]
