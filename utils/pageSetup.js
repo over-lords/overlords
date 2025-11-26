@@ -1052,7 +1052,7 @@ function lightenRGB(rgbString, factor = 0.65) {
     return `rgb(${nr}, ${ng}, ${nb})`;
 }
 
-function buildHeroPanel(hero) {
+export function buildHeroPanel(hero) {
     if (!hero) return;
 
     const panel = document.getElementById("hero-panel");

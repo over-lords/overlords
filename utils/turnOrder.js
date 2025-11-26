@@ -67,12 +67,13 @@ VILLAIN DRAW
 
 HERO STARTING TRAVEL
     if multiplayer
-        start Hero turn timer
+        start Hero turn timer (3 minutes)
+
     if (hero not in city)
         Where are they traveling
             -1 travel
-    else
-        skip to next phase
+    else if hero in a city
+        skip to next phase (hero draw)
 
 HERO DRAW
     if deck = 2 or less cards
@@ -157,7 +158,7 @@ import { heroes } from '../data/faceCards.js';
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
-import { placeCardIntoCitySlot, buildVillainPanel } from './pageSetup.js';
+import { placeCardIntoCitySlot, buildVillainPanel, buildHeroPanel } from './pageSetup.js';
 import { currentTurn } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -285,6 +286,7 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
 
     gameState.heroTurnIndex = heroTurnIndex;
 
+    resetTurnTimerForHero();
     saveGameState(gameState);
     initializeTurnUI(gameState);
 }
@@ -342,6 +344,64 @@ export async function shoveUpper(newCardId) {
             // Let animation play
             await new Promise(r => setTimeout(r, 20));
             setTimeout(() => cardNode.classList.remove("city-card-slide-left"), 650);
+
+            // -----------------------------
+            // MOVE HEROES WHO WERE IN NEXT → CURR (with animation)
+            // -----------------------------
+            const lowerMap = {
+                10: 8,   // Gotham Upper → Metropolis Lower moves lower(11→9)
+                8: 6,    // Metropolis Upper → Central Lower moves lower(9→7)
+                6: 4,    // Central → Keystone
+                4: 2,    // Keystone → Coast
+                2: 0,    // Coast → Star
+            };
+
+            if (lowerMap.hasOwnProperty(next.idx)) {
+
+                const fromLower = next.idx + 1;
+                const toLower   = curr.idx + 1;
+
+                const heroIds = gameState.heroes || [];
+
+                heroIds.forEach(hid => {
+                    const hState = gameState.heroData?.[hid];
+                    if (!hState) return;
+
+                    if (hState.cityIndex === fromLower) {
+                        
+                        // Move model immediately
+                        hState.cityIndex = toLower;
+
+                        // DOM nodes
+                        const citySlots = document.querySelectorAll(".city-slot");
+                        const fromSlot  = citySlots[fromLower];
+                        const toSlot    = citySlots[toLower];
+                        if (!fromSlot || !toSlot) return;
+
+                        const heroNode = fromSlot.querySelector(".card-wrapper");
+                        if (!heroNode) return;
+
+                        // Add the same slide-left animation as villains
+                        heroNode.classList.remove("city-card-enter");
+                        heroNode.classList.remove("city-card-slide-left");
+                        heroNode.classList.add("hero-card-slide-left");
+
+                        // After animation completes, physically move hero DOM into new city
+                        setTimeout(() => {
+                            const fromArea = fromSlot.querySelector(".city-card-area");
+                            const toArea   = toSlot.querySelector(".city-card-area");
+
+                            if (fromArea && toArea) {
+                                fromArea.innerHTML = "";
+                                toArea.innerHTML = "";
+                                toArea.appendChild(heroNode);
+                            }
+
+                            heroNode.classList.remove("hero-card-slide-left");
+                        }, 650); // same timing as villain slide
+                    }
+                });
+            }
         }
     }
     }
@@ -423,6 +483,8 @@ export function initializeTurnUI(gameState) {
         return;
     }
 
+    setupStartingTravelOptions(gameState, heroId);
+
     // 4. You are single-player → ALWAYS show the button
     btn.style.display = "block";
 }
@@ -430,6 +492,7 @@ export function initializeTurnUI(gameState) {
 
 export function endCurrentHeroTurn(gameState) {
 
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
     const heroIds = gameState.heroes || [];
     const currentIdx = gameState.heroTurnIndex ?? 0;
     const heroId = heroIds[currentIdx];
@@ -491,4 +554,242 @@ function shuffle(arr) {
         [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
+}
+
+function setupStartingTravelOptions(gameState, heroId) {
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) return;
+
+    // Clear any previous glow
+    clearCityHighlights();
+
+    // Only if hero is NOT in a city
+    if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
+        return; // Already on map → skip to hero draw normally
+    }
+
+    // Hero is at HQ
+    const citySlots = document.querySelectorAll(".city-slot");
+    const upperIndices = [0, 2, 4, 6, 8, 10];
+    const lowerIndices = [1, 3, 5, 7, 9, 11];
+
+    const legalTargets = [];
+
+    for (let i = 0; i < 6; i++) {
+        const upperSlot = citySlots[upperIndices[i]];
+        const lowerSlot = citySlots[lowerIndices[i]];
+
+        const foePresent = !!upperSlot.querySelector(".card-wrapper");
+
+        // NEW: is any hero already in this lower city?
+        const heroAlreadyHere = (gameState.heroes || []).some(hid => {
+            const hState = gameState.heroData?.[hid];
+            return hState && hState.cityIndex === lowerIndices[i];
+        });
+
+        // Only highlight if foe exists AND no hero is there already
+        if (foePresent && !heroAlreadyHere) {
+            legalTargets.push({ lowerSlot, lowerIndex: lowerIndices[i] });
+        }
+    }
+
+    // Highlight and activate yellow travel cities
+    legalTargets.forEach(target => {
+        target.lowerSlot.style.outline = "4px solid yellow";
+        target.lowerSlot.style.cursor = "pointer";
+        target.lowerSlot.addEventListener("click", () => {
+            showTravelPopup(gameState, heroId, target.lowerIndex);
+        });
+    });
+}
+
+function clearCityHighlights() {
+    const citySlots = document.querySelectorAll(".city-slot");
+    citySlots.forEach(slot => {
+        slot.style.outline = "";
+        slot.style.cursor = "default";
+    });
+}
+
+function performHeroStartingTravel(gameState, heroId, cityIndex) {
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) return;
+
+    // Spend 1 travel
+    if (heroState.travel > 0) {
+        heroState.travel -= 1;
+    }
+
+    // Remember where they were before this travel (if anywhere)
+    const previousIndex = heroState.cityIndex ?? null;
+
+    // Record hero location in the model
+    heroState.cityIndex = cityIndex;
+
+    // === CLEAN UP ANY EXISTING COPIES OF THIS HERO ON THE BOARD ===
+    const citySlots = document.querySelectorAll(".city-slot");
+
+    // 1) Clear the old city slot (if they were in one)
+    if (previousIndex !== null && citySlots[previousIndex]) {
+        const prevArea = citySlots[previousIndex].querySelector(".city-card-area");
+        if (prevArea) {
+            prevArea.innerHTML = "";
+        }
+    }
+
+    // 2) Brute-force remove any wrapper in any city whose card id matches this hero
+    const allWrappers = document.querySelectorAll(".city-slot .card-wrapper");
+
+    allWrappers.forEach(wrapper => {
+        // try on the wrapper first
+        const wrapperId =
+            wrapper.getAttribute("data-card-id") ||
+            wrapper.dataset.cardId ||
+            wrapper.getAttribute("data-id") ||
+            wrapper.dataset.id;
+
+        // then look inside for a .card element in case renderCard attached it there
+        const innerCard = wrapper.querySelector(".card");
+        const innerId = innerCard
+            ? (
+                innerCard.getAttribute("data-card-id") ||
+                innerCard.dataset.cardId ||
+                innerCard.getAttribute("data-id") ||
+                innerCard.dataset.id
+              )
+            : null;
+
+        const foundId = wrapperId || innerId;
+
+        if (foundId === String(heroId)) {
+            wrapper.remove();
+        }
+    });
+
+    // === RENDER HERO FACE CARD INTO THE NEW CITY ===
+    const slot = citySlots[cityIndex];
+    if (!slot) return;
+
+    const area = slot.querySelector(".city-card-area");
+    if (!area) return;
+
+    // Remove anything already inside this destination (just in case)
+    area.innerHTML = "";
+
+    // Build wrapper for hero card
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("card-wrapper");
+    wrapper.style.cursor = "pointer";
+
+    // Render hero
+    const rendered = renderCard(heroId, wrapper);
+    wrapper.appendChild(rendered);
+
+    // Optionally set the id on the wrapper, so future cleanup is trivial
+    wrapper.setAttribute("data-card-id", String(heroId));
+
+    // Insert into DOM
+    area.appendChild(wrapper);
+
+    // Optional: hero click = open hero panel (matches villain behavior)
+    const heroData = heroes.find(h => h.id === heroId);
+    if (heroData) {
+        wrapper.addEventListener("click", (e) => {
+            e.stopPropagation();
+            buildHeroPanel(heroData);
+        });
+    }
+
+    saveGameState(gameState);
+
+    clearCityHighlights();
+    initializeTurnUI(gameState);
+}
+
+let turnTimerInterval = null;
+
+function resetTurnTimerForHero() {
+    const timerBox = document.getElementById("bottom-turn-timer");
+    if (!timerBox) return;
+
+    if (isSinglePlayer) {
+        timerBox.style.display = "none";
+        if (turnTimerInterval) clearInterval(turnTimerInterval);
+        return;
+    }
+
+    timerBox.style.display = "block";
+
+    let remaining = 180; // 3 minutes in seconds
+    timerBox.textContent = formatTimer(remaining);
+
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+
+    turnTimerInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(turnTimerInterval);
+            timerBox.textContent = "00:00";
+            autoEndTurnDueToTimeout();
+            return;
+        }
+        timerBox.textContent = formatTimer(remaining);
+    }, 1000);
+}
+
+function formatTimer(sec) {
+    const m = Math.floor(sec / 60).toString().padStart(2, "0");
+    const s = (sec % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+}
+
+function autoEndTurnDueToTimeout() {
+    const gs = window.gameState;
+    endCurrentHeroTurn(gs);
+}
+
+function showTravelPopup(gameState, heroId, cityIndex) {
+    const overlay = document.getElementById("travel-popup-overlay");
+    const text = document.getElementById("travel-popup-text");
+    const yesBtn = document.getElementById("travel-popup-yes");
+    const noBtn = document.getElementById("travel-popup-no");
+
+    const cityName = getCityNameFromIndex(cityIndex);
+
+    text.textContent = `Travel to ${cityName}?`;
+
+    overlay.style.display = "flex";
+
+    // Replace old YES listener
+    const newYes = yesBtn.cloneNode(true);
+    yesBtn.parentNode.replaceChild(newYes, yesBtn);
+
+    newYes.addEventListener("click", () => {
+        overlay.style.display = "none";
+        performHeroStartingTravel(gameState, heroId, cityIndex);
+    });
+
+    // Replace old NO listener
+    const newNo = noBtn.cloneNode(true);
+    noBtn.parentNode.replaceChild(newNo, noBtn);
+
+    // Simply close the popup — cancel travel
+    newNo.addEventListener("click", () => {
+        overlay.style.display = "none";
+
+        // Do NOT travel — do NOT clear highlights
+        // Player may click another city or proceed normally
+    });
+}
+
+function getCityNameFromIndex(idx) {
+    switch (idx) {
+        case 1: return "Star City";
+        case 3: return "Coast City";
+        case 5: return "Keystone City";
+        case 7: return "Central City";
+        case 9: return "Metropolis";
+        case 11: return "Gotham City";
+        default: return "Unknown City";
+    }
 }

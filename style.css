@@ -1145,3 +1145,41 @@ html, body {
         transform: translateX(-0px) scale(0.89); /* ~one city’s width */
     }
 }
+
+#bottom-turn-timer {
+  position: fixed;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 40px;
+
+  background-color: #000;      /* internal color: black */
+  border: 3px solid gray;      /* border color: gray */
+
+  /* Trapezoid with shorter top edge */
+  clip-path: polygon(10% 0, 90% 0, 100% 100%, 0% 100%);
+
+  z-index: 550;
+
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+  border-radius: 4px;          /* softens the corners a bit */
+
+  pointer-events: none;        /* won't block clicks; change to auto if needed */
+}
+
+.hero-card-slide-left {
+    animation: heroCitySlideLeft 0.6s ease forwards;
+    z-index: 75; /* same layer as villains or slightly above */
+}
+
+@keyframes heroCitySlideLeft {
+    from {
+        /* start 220px further right than villains */
+        transform: translateX(0px) scale(0.89);
+    }
+    to {
+        /* end 220px further right than villain animation */
+        transform: translateX(-220px) scale(0.89);
+    }
+}

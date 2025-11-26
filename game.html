@@ -223,6 +223,59 @@
     <button id="start-game-btn" style="display:none;">START GAME</button>
     <button id="end-turn-button" style="display:none;">End Turn</button>
 
+    <div id="bottom-turn-timer" style="display:none;"></div>
+
+    <div id="travel-popup-overlay" style="
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100vw; height:100vh;
+        background:rgba(0,0,0,0.6);
+        z-index:999999;
+        justify-content:center;
+        align-items:center;
+    ">
+        <div id="travel-popup-box" style="
+            width:80%;
+            max-width:360px;
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            font-family:'Racing Sans One', sans-serif;
+            text-align:center;
+            box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        ">
+            <div id="travel-popup-text" style="
+                font-size:22px; 
+                margin-bottom:20px;
+            "></div>
+
+            <button id="travel-popup-yes" style="
+                width:100%;
+                padding:14px;
+                font-size:20px;
+                border:none;
+                border-radius:10px;
+                background:#26a626;
+                color:white;
+                cursor:pointer;
+                margin-bottom:12px;
+            ">Yes</button>
+
+            <button id="travel-popup-no" style="
+                width:100%;
+                padding:14px;
+                font-size:20px;
+                border:none;
+                border-radius:10px;
+                background:#a62626;
+                color:white;
+                cursor:pointer;
+            ">No</button>
+
+        </div>
+    </div>
+
     <div id="sideMenu">
         <h2 id="menuHeader">Menu</h2>
         <div id="menuContent">
