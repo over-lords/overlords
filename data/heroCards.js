@@ -132,7 +132,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `[ICON:Bat]: Draw 2. <span class="line-gap"></span> [ICON:Wonder]: Increase this card’s Damage by 2. <span class="line-gap"></span> [ICON:Bat] + [ICON:Wonder]: OPTIONAL : Draw from E&A.`
+        text: `[ICON:Bat]: Draw 2. <span class="line-gap"></span> [ICON:Wonder]: Increase this card’s Damage by 2. <span class="line-gap"></span> [ICON:Bat] + [ICON:Wonder]: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -1308,7 +1308,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `OPTIONAL : Draw from E&A. <span class="line-gap"></span> If Discarded: Scan 3 from E&A. <span class="line-gap"></span> CHOOSE: Activate. <span class="line-gap"></span> OR <span class="line-gap"></span> KO your choice of the revealed cards.`
+        text: `OPTIONAL : Draw from the E&A. <span class="line-gap"></span> If Discarded: Scan 3 from E&A. <span class="line-gap"></span> CHOOSE: Activate. <span class="line-gap"></span> OR <span class="line-gap"></span> KO your choice of the revealed cards.`
       }
     ],
     abilitiesNamePrint: [

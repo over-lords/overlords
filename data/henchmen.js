@@ -110,7 +110,7 @@ export const henchmen = [
       {
         text: `Teleport <span class="line-gap"></span>
                If your Hero is KO'd by a Brainiac Drone: Next turn do not draw from the Villain Deck, your Hero enters as a Villain. <span class="line-gap"></span>
-               Reward: You may draw from the Enemies and Allies Pile.`
+               Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -158,7 +158,7 @@ export const henchmen = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: You may draw from the Enemies and Allies Pile.`
+        text: `Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -187,7 +187,7 @@ export const henchmen = [
     abilitiesText: [
       {
         text: `Teleport <span class="line-gap"></span>
-               Reward: You may return an active Henchman or Villain to the Villain Deck.`
+               Reward: OPTIONAL: Knockback.`
       }
     ],
     abilitiesNamePrint: [

@@ -16,4 +16,6 @@ export const keywords = {
     "Freeze": "The Henchman or Villain cannot move for a specified amount of time (permanent if not specified).",
     "Curse": "Reduce a Henchman or Villain's Damage by a set amount for a set time (permanent if not specified).",
     "Withdraw": "Retreat without taking Damage, no Retreat Roll is made.",
+    "Knockback": "Return an active Henchman or Villain to the top of the Villain Deck.",
+    "E&A": "The Enemies and Allies Deck",
 }

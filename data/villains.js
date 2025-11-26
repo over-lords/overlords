@@ -56,7 +56,7 @@ export const villains = [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
                Might of the Overlord: KO 2 Bystanders. <span class="line-gap"></span> 
-               Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+               Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -134,7 +134,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -212,7 +212,9 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Takeover 1 <span class="line-gap"></span> Might of the Overlord: Draw 2 cards from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the top card of the Villain Deck.`
+        text: `Takeover 1 <span class="line-gap"></span> 
+                Might of the Overlord: Draw 2 cards from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
+                  Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -329,7 +331,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -368,7 +370,8 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Heroes engaged with Hector Hammond cannot use their Icon Abilities. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `Heroes engaged with Hector Hammond cannot use their Icon Abilities. <span class="line-gap"></span> 
+                Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -407,7 +410,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `Glide <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -446,7 +449,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1 <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `Charge 1 <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -524,7 +527,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1, Glide <span class="line-gap"></span> Reward: Increase your Hero's Travel Budget by 1.`
+        text: `Charge 1, Glide <span class="line-gap"></span> Reward: Your Hero's Travel Budget increases by 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -563,7 +566,9 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Takeover 1 <span class="line-gap"></span> Might of the Overlord: Play the Henchmen and Villains amongst the next 5 cards in the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> Reward: KO all Henchmen.`
+        text: `Takeover 1 <span class="line-gap"></span> 
+                Might of the Overlord: Play the Henchmen and Villains amongst the next 5 cards in the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
+                  Reward: KO all Henchmen.`
       }
     ],
     abilitiesNamePrint: [
@@ -602,7 +607,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw a card and increase your Hero's Travel Budget by 1 for this turn only.`
+        text: `Glide <span class="line-gap"></span> Reward: Draw a card, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -715,11 +720,11 @@ export const villains = [
     type: "Villain",
     doNotShow: "false",
     hero: "Flash",
-    hp: "10",
+    hp: "8",
     damage: "1",
     abilitiesText: [
       {
-        text: `Teleport <span class="line-gap"></span> Reward: Lock a Henchman or Villain until the end of your Hero's next turn.`
+        text: `Teleport <span class="line-gap"></span> Reward: Freeze a Henchman or Villain until the end of your Hero's next turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -875,7 +880,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1 <span class="line-gap"></span> Reward: CHOOSE: Draw a card. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw from the Enemies and Allies Pile.`
+        text: `Charge 1 <span class="line-gap"></span> Reward: CHOOSE: Draw a card. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -914,7 +919,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Teleport <span class="line-gap"></span> Reward: Lock a Henchman or Villain in their City.`
+        text: `Teleport <span class="line-gap"></span> Reward: Freeze a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -953,7 +958,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1 <span class="line-gap"></span> If Giganta makes it to Keystone City, double her remaining HP. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `Charge 1 <span class="line-gap"></span> If Giganta makes it to Keystone City: Double her remaining HP. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -992,7 +997,9 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Takeover 2 <span class="line-gap"></span> Might of the Overlord: KO all captured Bystanders. <span class="line-gap"></span> Reward: Deal 1 Damage to all Henchmen and Villains.`
+        text: `Takeover 2 <span class="line-gap"></span> 
+                Might of the Overlord: KO all captured Bystanders. <span class="line-gap"></span> 
+                  Reward: Deal 2 Damage to all Henchmen and Villains.`
       }
     ],
     abilitiesNamePrint: [
@@ -1070,7 +1077,10 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Takeover 1 <span class="line-gap"></span> Might of the Overlord: KO the top card of every Hero's discard pile. <span class="line-gap"></span><span class="line-gap"></span> Charge 1 <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+        text: `Takeover 1 <span class="line-gap"></span> 
+                Might of the Overlord: KO the top card of every Hero's discard pile. <span class="line-gap"></span><span class="line-gap"></span> 
+                  Charge 1 <span class="line-gap"></span> 
+                    Reward: Deal 3 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1109,7 +1119,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Clash <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `Clash <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -1148,7 +1158,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Eject <span class="line-gap"></span> Reward: Draw a card, your Hero can Travel an extra time this turn.`
+        text: `Eject <span class="line-gap"></span> Reward: Draw a card, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1187,7 +1197,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw a card, your Hero can Travel an extra time this turn.`
+        text: `Glide <span class="line-gap"></span> Reward: Draw a card, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1226,7 +1236,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw 2 cards, your Hero can Travel an extra time this turn.`
+        text: `Glide <span class="line-gap"></span> Reward: Draw 2 cards, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1265,7 +1275,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1 <span class="line-gap"></span> Reward: CHOOSE: Restore a Destroyed City or Deal 5 Damage to the Overlord.`
+        text: `Charge 1 <span class="line-gap"></span><span class="line-gap"></span> Reward: CHOOSE: Restore a Destroyed City. <span class="line-gap"></span> OR <span class="line-gap"></span> Deal 5 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1382,7 +1392,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Takeover 2 <span class="line-gap"></span> Might of the Overlord: Play the next 2 Enemies from the Enemies and Allies Pile. <span class="line-gap"></span><span class="line-gap"></span> Teleport <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+        text: `Takeover 2 <span class="line-gap"></span> Might of the Overlord: Play the next 2 Enemies from the E&A. <span class="line-gap"></span><span class="line-gap"></span> Teleport <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1421,7 +1431,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the Enemies and Allies Pile.`
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
