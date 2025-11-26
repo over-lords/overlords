@@ -11,23 +11,23 @@ export const scenarios = [
         doNotShow: "false",
         hp: "10",
         abilitiesText: [
-        {
-            text: `All [ICON:Justice] Heroes deal half damage.`
-        }
+            {
+                text: `All [ICON:Justice] Heroes deal half damage.`
+            }
         ],
         abilitiesNamePrint: [
             {
                 text: `I Hate Magic.`
             }
-            ],
+        ],
         abilitiesEffects: [
-        {
-            type: `passive`,
-            condition: `is(Justice)`,
-            uses: `0`,
-            shared: `no`,
-            effect: `halfDamage(Justice)`
-        }
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `halfDamage(Justice)`
+            }
         ]
     },
     {
@@ -38,23 +38,293 @@ export const scenarios = [
         doNotShow: "true",
         hp: "10",
         abilitiesText: [
-        {
-            text: `Heroes cannot Scan.`
-        }
+            {
+                text: `Heroes cannot Scan.`
+            }
         ],
         abilitiesNamePrint: [
             {
                 text: `Stop Cheating!`
             }
-            ],
+        ],
         abilitiesEffects: [
-        {
-            type: `passive`,
-            condition: `none`,
-            uses: `0`,
-            shared: `no`,
-            effect: `disableScan()`
-        }
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `disableScan()`
+            }
+        ]
+    },
+    {
+        id: "5203",
+        name: "Knightfall",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Bat] Heroes take 1 Damage at the end of their turns.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `You Will Break!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `teamHeroEndTurn(Bat)`,
+                uses: `0`,
+                shared: `no`,
+                effect: `damageHero(current,1)`
+            }
+        ]
+    },
+    {
+        id: "5204",
+        name: "Flashpoint",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Flash] Heroes have their Damage Thresholds reduced to 1.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `You Can't Save Everyone!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `reduceTeamDTtoX(flash,1)`
+            }
+        ]
+    },
+    {
+        id: "5205",
+        name: "Public Enemies",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `Draw from the E&A once at the start of every turn.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Raise the bounty!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `quick`,
+                condition: `turnStart()`,
+                uses: `999`,
+                shared: `no`,
+                effect: `drawEaA(1)`
+            }
+        ]
+    },
+    {
+        id: "5206",
+        name: "Brainiac Attacks",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "20",
+        abilitiesText: [
+            {
+                text: `At the end of every turn, KO a Bystander.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Bottle them, one by one.`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `quick`,
+                condition: `turnEnd()`,
+                uses: `999`,
+                shared: `no`,
+                effect: `koBystander(1)`
+            }
+        ]
+    },
+    {
+        id: "5207",
+        name: "Kryptonite Meteor",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Super] Heroes deal half Damage.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Time's Nearly Up!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `halfDamage(Super)`
+            }
+        ]
+    },
+    {
+        id: "5208",
+        name: "Boiling Oceans",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Aqua] Heroes gain no benefits from being in Coastal Cities.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `The Water's On Fire.`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `disableCoastalBonus(Aqua)`
+            }
+        ]
+    },
+    {
+        id: "5209",
+        name: "Broken Trust",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Wonder] Heroes cannot be Blocked.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Stabbed in the Back.`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `disableProtectOn(Wonder)`
+            }
+        ]
+    },
+    {
+        id: "5210",
+        name: "Judas Contract",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Titans] Heroes gain no benefits from teammates.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Who Can We Trust?`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `disableTeamBonus(Titans)`
+            }
+        ]
+    },
+    {
+        id: "5211",
+        name: "Sinestro Corps War",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Lantern] Heroes take double Damage.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Beware your fears made into light!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: `doubleDamageAgainst(Lantern)`
+            }
+        ]
+    },
+    {
+        id: "5212",
+        name: "League of Killers",
+        image: `${cardArtFolder}/Scenario.jpg`,
+        type: "Scenario",
+        doNotShow: "true",
+        hp: "10",
+        abilitiesText: [
+            {
+                text: `[ICON:Squad] and [ICON:Legion] Heroes take double Damage.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `They've gone Mad!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                type: `passive`,
+                condition: `none`,
+                uses: `0`,
+                shared: `no`,
+                effect: [`doubleDamageAgainst(Squad)`,`doubleDamageAgainst(Legion)`]
+            }
         ]
     },
 ]
