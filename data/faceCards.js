@@ -174,10 +174,10 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `damagedVillain(2)`,
+        condition: `checkDamagedVillainRemaining(2)`,
         uses: `3`,
         shared: `no`,
-        effect: `koDamagedVillain`
+        effect: `koDamagedVillain()`
       },
       {
         type: `passive`,
@@ -1012,10 +1012,10 @@ export const heroes = [
       },
       {
         type: `quick`,
-        condition: `useDamageCard`,
+        condition: `wouldUseDamageCard()`,
         uses: `1`,
         shared: `no`,
-        effect: `ignoreTextDoubleDamage`
+        effect: `ignoreTextDoubleDamage()`
       }
     ]
   },
@@ -1985,17 +1985,17 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `in(Gotham)`,
+        condition: `checkDamageTargetCity(Gotham)`,
         uses: `0`,
         shared: `no`,
-        effect: `doubleDamage`
+        effect: `doubleDamage()`
       },
       {
         type: `quick`,
-        condition: `afterVillainBeforeTravel`,
+        condition: `beforeDraw()`,
         uses: `2`,
         shared: `no`,
-        effect: `extendView(self,4)`
+        effect: `extendDrawView(self,4)`
       },
       {
         type: `standard`,
@@ -2719,24 +2719,34 @@ export const heroes = [
               or Villain that he possessed, and they were not KO'd from the 
               damage, they then slide to the closest city to the left and 
               resume their evil acts. If his villanous host was KO’d, 
-              then he gains their Upon Defeat effect.
+              then he gains their Reward effect.
               <span class="line-gap"></span>
-              Deadman cannot win games, if he is the last Hero, 
+              Deadman cannot win games. If he is the last Hero, 
               then Evil Wins.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `fukt`
-      }
+        text: `Borrow a Foe's Body`
+      },
+      {
+        text: `Borrow a Hero's Body`
+      },
     ],
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `beforeTravel`,
+        condition: `beforeTravel()`,
         uses: `999`,
         shared: `no`,
-        effect: `deadman`
+        effect: `deadmanBorrowVillain()`
+      },
+      {
+        type: `quick`,
+        condition: `beforeTravel()`,
+        uses: `999`,
+        shared: `no`,
+        effect: `deadmanBorrowHero()`
       }
     ]
   },

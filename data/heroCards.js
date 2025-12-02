@@ -41,12 +41,13 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Boost card damage`
+        text: `Increase card's damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `boostCardDamage(findKOdHeroes())`
+        type: `quick`,
+        effect: `increaseCardDamage(findKOdHeroes())`
       }
     ]
   },
@@ -65,12 +66,26 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `Increase Damage to 8`
+      },
+      {
+        text: `Draw 1`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`setCardDamageTo(8)`,`disableHeroDamage(next)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: `draw(1)`
       }
     ]
   },
@@ -84,17 +99,31 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `CHOOSE: KO a Henchman or Villain, and if you do, this card deals no Damage and you take the KO'd Henchman or Villain's Damage (ignoring Superman's Damage Threshold). <span class="line-gap"></span> OR <span class="line-gap"></span> After using this card, Superman can Travel an additional time this turn.`
+        text: `CHOOSE: KO a Henchman or Villain, and if you do, this card deals no Damage and you take the KO'd Henchman or Villain's Damage (ignoring Superman's Damage Threshold). <span class="line-gap"></span> OR <span class="line-gap"></span> After using this card, Superman's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `KO Henchman or Villain`
+      },
+      {
+        text: `Increase Travel Budget`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`setCardDamageTo(0)`,`koAnyFoe()`,`takeSelectedFoeDamage()`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: `increaseTravel(current,1)`
       }
     ]
   },
@@ -113,13 +142,15 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Increase Card Damage by 3`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        condition: `atXorLessHP(5)`,
+        effect: [`increaseCardDamageBy(3)`]
+      },
     ]
   },
   {
@@ -137,13 +168,31 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Draw 2`
+      },
+      {
+        text: `Increase Card Damage by 2`
+      },
+      {
+        text: `Draw from the Enemies and Allies Deck`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        condition: `activeHero(Bat)`,
+        effect: [`draw(2)`]
+      },
+      {
+        type: `quick`,
+        condition: `activeHero(Wonder)`,
+        effect: [`increaseCardDamageBy(3)`]
+      },
+      {
+        type: `quick`,
+        condition: [`activeHero(Bat)`,`activeHero(Wonder)`],
+        effect: [`enemyDraw(1,optional)`]
+      },
     ]
   },
   {
@@ -348,7 +397,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `You must draw from the Enemies and Allies Pile. <span class="line-gap"></span> If Discarded: Deal 3 Damage to the Overlord.`
+        text: `Draw from the E&A. <span class="line-gap"></span> If Discarded: Deal 3 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -420,7 +469,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Draw 1. <span class="line-gap"></span> You may also draw from the Enemies and Allies Pile.`
+        text: `Draw 1. <span class="line-gap"></span> OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -876,7 +925,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `You may draw from the Enemies and Allies Pile.`
+        text: `OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -1572,7 +1621,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Play the next Ally from the Enemies and Allies Pile.`
+        text: `Play the next Ally from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -1980,7 +2029,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `You may draw from the Enemies and Allies Pile. <span class="line-gap"></span> [ICON:Flash]: OPTIONAL : Discard a card and increase this card's Damage by 2.`
+        text: `OPTIONAL : Draw from the E&A. <span class="line-gap"></span> [ICON:Flash]: OPTIONAL : Discard a card and increase this card's Damage by 2.`
       }
     ],
     abilitiesNamePrint: [
