@@ -1686,6 +1686,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
+        condition: [`confirmActiveTeammates()`],
         effect: `giveTeammateExtraTurn()`
       },
       {
