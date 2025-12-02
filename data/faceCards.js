@@ -1008,7 +1008,7 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `lockVillain(999)`
+        effect: `lockVillain(any,999)`
       },
       {
         type: `quick`,

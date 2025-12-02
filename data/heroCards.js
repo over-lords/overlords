@@ -210,12 +210,14 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Use against an adjacent foe`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        condition: [`checkAdjacentCities()`],
+        effect: [`useAgainstAdjacent()`]
       }
     ]
   },
@@ -234,13 +236,23 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Gain a Sidekick`
+      },
+      {
+        text: `Draw 1`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        condition: [`none`],
+        effect: [`gainSidekick()`]
+      },
+      {
+        type: `quick`,
+        condition: [`activeHero(Super)`],
+        effect: [`draw(1)`]
+      },
     ]
   },
   {
@@ -258,12 +270,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Freeze Damaged Foe`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `lockVillain(damagedVillain(),endCurrentNext())`
       }
     ]
   },
@@ -282,12 +294,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Everyone Else Draws`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `otherHeroDraw(all,1)`
       }
     ]
   },
@@ -306,12 +318,26 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `Rescue a Bystander`
+      },
+      {
+        text: `KO a foe with a Bystander`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`rescueBystander(1)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`koVillainWithBystander(1)`]
       }
     ]
   },
@@ -330,12 +356,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 2`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `draw(2)`
       }
     ]
   },
@@ -618,12 +644,26 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `Deal 3 Damage to the Overlord`
+      },
+      {
+        text: `KO all Henchmen`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`damageOverlord(3)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`koHenchman(all)`]
       }
     ]
   },
@@ -642,12 +682,32 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Shove Foe Back`
+      },
+      {
+        text: `Choose`
+      },
+      {
+        text: `Followed Shoved Foe`
+      },
+      {
+        text: `Retreat to Headquarters`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `shoveDamaged(5)`
+      },
+      {
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`travelTo(lastShovedVillain())`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`withdraw()`]
       }
     ]
   },
@@ -666,13 +726,15 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Damage Attacker`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        condition: `damagedAtTurnEnd()`,
+        effect: [`damageVillain(current,2)`]
+      },
     ]
   },
   {
@@ -690,12 +752,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Increase this card's Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `increaseCardDamage(getTravelUsed())`
       }
     ]
   },
@@ -714,12 +776,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Increase this card's Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `increaseCardDamage(getHeroDamage(current))`
       }
     ]
   },
@@ -738,12 +800,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Freeze Damaged Foe`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `lockVillain(damagedVillain(),endCurrentNext())`
       }
     ]
   },
@@ -762,12 +824,26 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `Increase this card's Damage`
+      },
+      {
+        text: `Draw card(s)`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`increaseCardDamage(getActiveTeamCount(Wonder))`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(getKOdTeamCount(Wonder))`]
       }
     ]
   },
@@ -781,17 +857,24 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `If Wonder Woman is at 5, or less, HP: Deal 5 damage to the Overlord. <span class="line-gap"></span> Otherwise: Draw 1.`
+        text: `If Wonder Woman is at, or below, 5 HP: Deal 5 damage to the Overlord. <span class="line-gap"></span> Otherwise: Draw 1.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Deal 5 Damage or Draw 1`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        condition: `atXorLessHP(5)`,
+        effect: `damageOverlord(5)`
+      },
+      {
+        type: `quick`,
+        condition: `atXorGreaterHP(6)`,
+        effect: `draw(1)`
       }
     ]
   },
@@ -810,12 +893,13 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Give Foe Curse 1`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        effect: `giveVillainPassive(current,Curse(1))`
       }
     ]
   },
@@ -834,13 +918,21 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 2`
+      },
+      {
+        text: `Withdraw`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `draw(1)`
+      },
+      {
+        type: `quick`,
+        effect: `giveHeroPassiveTemp(Withdraw(1))`
+      },
     ]
   },
   {
@@ -858,12 +950,26 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `Draw 1`
+      },
+      {
+        text: `Rescue all captured Bystanders`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`draw(1)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`rescueCapturedBystander(all)`]
       }
     ]
   },
@@ -1170,13 +1276,21 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 2`
+      },
+      {
+        text: `Discard any number of cards`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `draw(2)`
+      },
+      {
+        type: `quick`,
+        effect: `giveHeroPassiveTemp(discardCardsAtWill())`
+      },
     ]
   },
   {
@@ -1194,13 +1308,22 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Return to Gotham`
+      },
+      {
+        text: `If Discarded`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `giveHeroPassiveTemp(atWillTravelTo(Gotham))`
+      },
+      {
+        type: `quick`,
+        condition: `ifDiscarded()`,
+        effect: `koFoeIn(Gotham)`
+      },
     ]
   },
   {
@@ -1218,13 +1341,22 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Increase card's damage`
+      },
+      {
+        text: `If Discarded`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `increaseCardDamage(findKOdHeroes())`
+      },
+      {
+        type: `quick`,
+        condition: `ifDiscarded()`,
+        effect: `damageOverlord(3)`
+      },
     ]
   },
   {
@@ -1242,12 +1374,21 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Draw 2, Discard 1`
+      },
+      {
+        text: `If Discarded`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        effect: [`draw(2)`,`discard(1)`]
+      },
+      {
+        type: `quick`,
+        condition: `ifDiscarded()`,
+        effect: `damageOverlord(2)`
       }
     ]
   },
@@ -1266,12 +1407,21 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Discard 1 to regain 2 HP`
+      },
+      {
+        text: `If Discarded`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `optional`,
+        effect: [`discard(1)`,`healHero(2)`]
+      },
+      {
+        type: `quick`,
+        condition: `ifDiscarded()`,
+        effect: `draw(2)`
       }
     ]
   },
@@ -1290,12 +1440,26 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `Increase this card's Damage`
+      },
+      {
+        text: `Draw card(s)`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption()`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`increaseCardDamage(getActiveTeamCount(Bat))`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(getActiveTeamCount(Bat))`]
       }
     ]
   },
@@ -1314,12 +1478,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Freeze Damaged Foe`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `lockVillain(damagedVillain(),endCurrentNext())`
       }
     ]
   },
@@ -1338,13 +1502,28 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 2`
+      },
+      {
+        text: `Discard any number of cards`
+      },
+      {
+        text: `Increase this card's Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `draw(2)`
+      },
+      {
+        type: `quick`,
+        effect: `giveHeroPassiveTemp(discardCardsAtWill())`
+      },
+      {
+        type: `quick`,
+        effect: `increaseCardDamage(getCardsDiscarded())`
+      },
     ]
   },
   {
@@ -1362,13 +1541,22 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Draw from the Enemies and Allies Deck`
+      },
+      {
+        text: `If Discarded`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: [`enemyDraw(1,optional)`]
+      },
+      {
+        type: `quick`,
+        condition: `ifDiscarded()`,
+        effect: [`scanDeck(enemy,3)`,`applyActivateKoCancel(scanned(enemy))`]
+      },
     ]
   },
   {
@@ -1386,13 +1574,21 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1`
+      },
+      {
+        text: `Scan 1 from the Villain Deck`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `draw(1)`
+      },
+      {
+        type: `quick`,
+        effect: [`scanDeck(villain,3)`,`applyKoCancel(scanned(villain))`]
+      },
     ]
   },
   {
@@ -1410,13 +1606,28 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1 and Gain a Sidekick`
+      },
+      {
+        text: `Increase this card's Damage`
+      },
+      {
+        text: `Increase this card's Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: [`draw(1)`,`gainSidekick(1)`]
+      },
+      {
+        type: `quick`,
+        effect: [`increaseCardDamage(getActiveTeamCount(Bat))`]
+      },
+      {
+        type: `quick`,
+        effect: [`increaseCardDamage(getActiveTeamCount(Justice))`]
+      },
     ]
   },
   {
@@ -1434,12 +1645,20 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 2, Discard 1`
+      },
+      {
+        text: `Damage a Henchman or Villain in Gotham`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        effect: [`draw(2)`,`discard(1)`]
+      },
+      {
+        type: `optional`,
+        effect: `damageFoeIn(Gotham,2)`
       }
     ]
   },
@@ -1458,13 +1677,22 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Give another Hero an extra turn`
+      },
+      {
+        text: `No Teammates? Draw 2`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `giveTeammateExtraTurn()`
+      },
+      {
+        type: `quick`,
+        condition: [`confirmNoActiveTeammates()`],
+        effect: `draw(2)`
+      },
     ]
   },
   {
