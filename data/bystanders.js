@@ -16,12 +16,12 @@ export const bystanders = [
         type: "Bystander",
         abilitiesText: [
             {
-                text: `Draw a card.`
+                text: `Draw 1.`
             }
         ],
         abilitiesNamePrint: [
             {
-                text: `Draw a card.`
+                text: `Draw 1`
             }
         ],
         abilitiesEffects: [
@@ -41,12 +41,12 @@ export const bystanders = [
         type: "Bystander",
         abilitiesText: [
             {
-                text: `You may draw from the Enemies and Allies Pile.`
+                text: `OPTIONAL : Draw from the E&A.`
             }
         ],
         abilitiesNamePrint: [
             {
-                text: `You may draw from the Enemies and Allies Pile.`
+                text: `Friend or Foe?!`
             }
         ],
         abilitiesEffects: [
@@ -55,7 +55,7 @@ export const bystanders = [
                 condition: `none`,
                 uses: `1`,
                 shared: `no`,
-                effect: `drawEaA(1)`
+                effect: `enemyDraw(1)`
             }
         ]
     },
@@ -71,7 +71,7 @@ export const bystanders = [
         ],
         abilitiesNamePrint: [
             {
-                text: `Regain 2 HP.`
+                text: `Regain 2 HP`
             }
         ],
         abilitiesEffects: [
@@ -80,7 +80,7 @@ export const bystanders = [
                 condition: `none`,
                 uses: `1`,
                 shared: `no`,
-                effect: `gainLife(2)`
+                effect: `healHero(2)`
             }
         ]
     },
@@ -96,7 +96,7 @@ export const bystanders = [
         ],
         abilitiesNamePrint: [
             {
-                text: `Gain a Sidekick.`
+                text: `Gain a Sidekick`
             }
         ],
         abilitiesEffects: [

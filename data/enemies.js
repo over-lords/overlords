@@ -16,16 +16,12 @@ export const enemies = [
         ],
         abilitiesNamePrint: [
             {
-                text: `Slowdown!`
+                text: `I Have No Rival!`
             }
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `dtToXForX(1,1)`
+                effect: `setHeroDTtoXforX(1,1)`
             }
         ]
     },
@@ -47,11 +43,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `whoTakesDoubleFor(wonder,1)`
+                effect: `doubleDamageAgainst(wonder,1)`
             }
         ]
     },
@@ -73,10 +65,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `loseIconUse(1,random)`
             }
         ]
@@ -99,10 +87,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `lowerMaxHP(1,all)`
             }
         ]
@@ -125,11 +109,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageHeroes(all,2)`
+                effect: `damageHero(all,2)`
             }
         ]
     },
@@ -151,11 +131,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `buffOverlord(25,hp)`
+                effect: `overlordGainLife(25)`
             }
         ]
     },
@@ -177,10 +153,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `protect(henchmen,["Star","Coast"])`
             }
         ]
@@ -193,7 +165,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `You must KO one card from your Hero's hand or discard pile.`
+                text: `KO one card from your Hero's hand or discard pile.`
             }
         ],
         abilitiesNamePrint: [
@@ -203,10 +175,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `koCards(1,["hand","discard"])`
             }
         ]
@@ -219,7 +187,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `The leftmost actively engaged Hero takes 1 Damage.`
+                text: `The leftmost engaged Hero takes 1 Damage.`
             }
         ],
         abilitiesNamePrint: [
@@ -229,11 +197,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageHeroes(leftmost,1)`
+                effect: `damageHero(leftmost,1)`
             }
         ]
     },
@@ -245,7 +209,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Draw 3 cards from the Villain Deck.`
+                text: `Draw 3 from the Villain Deck.`
             }
         ],
         abilitiesNamePrint: [
@@ -255,11 +219,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `drawVillainDeck(3)`
+                effect: `villainDraw(3)`
             }
         ]
     },
@@ -281,10 +241,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `moveUnengaged(1)`
             }
         ]
@@ -307,10 +263,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `disableRetreat(current,1)`
             }
         ]
@@ -333,10 +285,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `halveDamage(current,1)`
             }
         ]
@@ -359,10 +307,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `disableExtraDraw(current,1)`
             }
         ]
@@ -385,11 +329,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageHeroes(current,3)`
+                effect: `damageHero(current,3)`
             }
         ]
     },
@@ -411,11 +351,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageHeroes(coastal,1)`
+                effect: `damageHero(coastal,1)`
             }
         ]
     },
@@ -437,10 +373,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `disableExtraTraval(all,1)`
             }
         ]
@@ -463,11 +395,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `disableFaceAbilities(all,1)`
+                effect: `disableIconAbilities(all,1)`
             }
         ]
     },
@@ -489,10 +417,6 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `halfDamage(Super,1)`
             }
         ]
@@ -515,11 +439,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `shuffleDecks(allHeroes)`
+                effect: `shuffleHeroDeck(all)`
             }
         ]
     },

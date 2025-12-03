@@ -94,7 +94,7 @@ export const henchmen = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `draw(1)`
+        effect: ["travelPlus(1)"]
       }
     ]
   },
@@ -468,7 +468,7 @@ export const henchmen = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `drawPlusTravel(2,1)`
+        effect: ["draw(2)","travelPlus(1)"]
       }
     ]
   },
@@ -580,7 +580,7 @@ export const henchmen = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `drawPlusTravel(1,1)`
+        effect: ["draw(1)","travelPlus(1)"]
       }
     ]
   },

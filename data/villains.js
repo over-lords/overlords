@@ -80,7 +80,7 @@ export const villains = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `enaDraw(1,0)`
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -235,10 +235,7 @@ export const villains = [
       },
       {
         type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        effect: [`scanDeck(villain,1)`,`applyKoCancel(scanned(villain))`]
       }
     ]
   },

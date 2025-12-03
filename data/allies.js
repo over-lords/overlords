@@ -21,10 +21,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `damageOverlord(10)`
             }
         ]
@@ -37,21 +33,17 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `The next time this Hero would take Damage, it is ignored.`
+                text: `Block the next Damage your Hero would take.`
             }
         ],
         abilitiesNamePrint: [
             {
-                text: `Unbreakable!`
+                text: `In His Image!`
             }
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `protectHero(current,next)`
+                effect: `protectHero(current,1)`
             }
         ]
     },
@@ -63,7 +55,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `The next time this Hero would take Damage, it is ignored.`
+                text: `Block the next Damage your Hero would take.`
             }
         ],
         abilitiesNamePrint: [
@@ -73,11 +65,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `protectHero(current,next)`
+                effect: `protectHero(current,1)`
             }
         ]
     },
@@ -94,37 +82,27 @@ export const allies = [
         ],
         abilitiesNamePrint: [
             {
-                text: `CHOOSE!`
+                text: `Choose`
             },
             {
-                text: `KO One.`
+                text: `KO a Henchman or Villain`
             },
             {
-                text: `Damage Overlord.`
-            },
+                text: `Damage the Overlord`
+            }
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `choose()`
+                type: `chooseOption()`
             },
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `koVillain(star)`
+                type: `chooseOption(1)`,
+                effect: [`koVillain(Star)`]
             },
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageOverlord(3)`
-            },
+                type: `chooseOption(2)`,
+                effect: [`damageOverlord(3)`]
+            }
         ]
     },
     {
@@ -145,11 +123,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `doubleDamage(current,1)`
+                effect: `doubleHeroDamage(current,1)`
             }
         ]
     },
@@ -161,7 +135,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Draw a card, your Hero can travel an extra time this turn.`
+                text: `Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
             }
         ],
         abilitiesNamePrint: [
@@ -171,10 +145,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: ["draw(1)","travelPlus(1)"]
             }
         ]
@@ -197,10 +167,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `disableVillainDraw(1)`
             }
         ]
@@ -223,11 +189,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageVillains(all,1)`
+                effect: `damageVillain(all,1)`
             }
         ]
     },
@@ -249,11 +211,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `increaseDT(bat,1,1)`
+                effect: `increaseHeroDT(bat,1,1)`
             }
         ]
     },
@@ -275,11 +233,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `allRetrieve(1)`
+                effect: `heroRetrieveFromDiscard(all,1)`
             }
         ]
     },
@@ -301,11 +255,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `doubleDamageVs(overlord,1)`
+                effect: `doubleDamageAgainst(overlord,1)`
             }
         ]
     },
@@ -327,11 +277,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `koVillains(all)`
+                effect: `koVillain(all)`
             }
         ]
     },
@@ -353,10 +299,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `damageOverlord(5)`
             }
         ]
@@ -379,11 +321,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `increaseTravel(all,1,1)`
+                effect: `gainTravel(all,1,1)`
             }
         ]
     },
@@ -405,10 +343,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `drawExtraAtStart(all,1)`
             }
         ]
@@ -431,10 +365,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `add(any,1)`
             }
         ]
@@ -457,10 +387,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `reduceTo(any,1,1)`
             }
         ]
@@ -478,37 +404,27 @@ export const allies = [
         ],
         abilitiesNamePrint: [
             {
-                text: `CHOOSE!`
+                text: `Choose!`
             },
             {
-                text: `Damage Overlord.`
+                text: `Damage the Overlord`
             },
             {
-                text: `Lock One.`
+                text: `Freeze one`
             },
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `choose()`
+                type: `chooseOption()`
             },
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageOverlord(3)`
+                type: `chooseOption(1)`,
+                effect: [`damageOverlord(3)`]
             },
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `lockVillain(any,1)`
-            },
+                type: `chooseOption(2)`,
+                effect: [`lockVillain(any,999)`]
+            }
         ]
     },
     {
@@ -529,10 +445,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `restoreKOdHeroCards(all)`
             }
         ]
@@ -555,10 +467,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `heroRegainHP(all,1)`
             }
         ]
@@ -571,7 +479,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Shove all unengaged Henchmen and Villains as far right as possible.`
+                text: `Push all unengaged Henchmen and Villains as far right as possible.`
             }
         ],
         abilitiesNamePrint: [
@@ -581,10 +489,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `shoveVillains(all,-99)`
             }
         ]
@@ -607,10 +511,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `disableVillain(any,1)`
             }
         ]
@@ -623,7 +523,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Draw a card, your Hero can travel an extra time this turn.`
+                text: `Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
             }
         ],
         abilitiesNamePrint: [
@@ -633,11 +533,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `drawAndTravel(1,1)`
+                effect: ["draw(1)","travelPlus(1)"]
             }
         ]
     },
@@ -649,7 +545,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Draw a card, your Hero regains 1 HP.`
+                text: `Draw 1, and your Hero regains 1 HP.`
             }
         ],
         abilitiesNamePrint: [
@@ -659,11 +555,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `drawAndRegainHP(1,1)`
+                effect: ["draw(1)","regainLife(1)"]
             }
         ]
     },
@@ -685,10 +577,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `doubleNextCardDamage()`
             }
         ]
@@ -711,11 +599,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `revealAndKONextVillain()`
+                effect: [`scanDeck(villain,1)`,`applyKoCancel(scanned(villain))`]
             }
         ]
     },
@@ -737,11 +621,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `rescueBystanders(2)`
+                effect: `rescueBystander(2)`
             }
         ]
     },
@@ -763,11 +643,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `damageVillains(any,10)`
+                effect: `damageVillain(any,10)`
             }
         ]
     },
@@ -789,10 +665,6 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `succeedNextFailedRetreat()`
             }
         ]
@@ -815,11 +687,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
-                effect: `reduceVillainsTo1(all)`
+                effect: `reduceVillainHPto(all,1)`
             }
         ]
     },
