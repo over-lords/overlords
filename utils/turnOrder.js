@@ -172,7 +172,252 @@ import {    CITY_EXIT_UPPER,
 
 let heroTurnIndex = 0;
 
+const COUNTDOWN_IDS = new Set(["8001", "8002", "8003", "8004", "8005", "8006"]);
 
+function isCountdownId(id) {
+    return COUNTDOWN_IDS.has(String(id));
+}
+
+/**
+ * Track destroyed cities by their UPPER index.
+ * gameState.destroyedCities is a simple { [upperIdx]: true } map.
+ */
+function markCityDestroyed(upperIdx, gameState) {
+    if (!gameState.destroyedCities) {
+        gameState.destroyedCities = {};
+    }
+    if (gameState.destroyedCities[upperIdx]) {
+        // already marked destroyed
+        return;
+    }
+    gameState.destroyedCities[upperIdx] = true;
+
+    const citySlots = document.querySelectorAll(".city-slot");
+    const upperSlot = citySlots[upperIdx];
+    const lowerSlot = citySlots[upperIdx + 1];
+
+    [upperSlot, lowerSlot].forEach(slot => {
+        if (!slot) return;
+
+        // Kill any existing background art
+        const area = slot.querySelector(".city-card-area");
+        if (area) {
+            area.style.backgroundColor = "black";
+            area.style.backgroundImage = "none";
+        }
+
+        // Add a big red X overlay
+        if (getComputedStyle(slot).position === "static") {
+            slot.style.position = "relative";
+        }
+
+        let overlay = slot.querySelector(".destroyed-city-overlay");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.className = "destroyed-city-overlay";
+            overlay.style.position = "absolute";
+            overlay.style.top = "0";
+            overlay.style.left = "0";
+            overlay.style.right = "0";
+            overlay.style.bottom = "0";
+            overlay.style.pointerEvents = "none";
+            overlay.style.display = "flex";
+            overlay.style.alignItems = "center";
+            overlay.style.justifyContent = "center";
+            overlay.style.fontSize = "64px";
+            overlay.style.fontWeight = "bold";
+            overlay.style.color = "red";
+            overlay.style.textShadow = "0 0 8px black";
+            overlay.textContent = "X";
+            slot.appendChild(overlay);
+        }
+    });
+}
+
+/**
+ * Apply the landing effects of a COUNTDOWN card entering a specific UPPER slot:
+ *  - KO henchmen/villains there (log in an index),
+ *  - deal 10 to any hero in the corresponding lower city and send them back to HQ,
+ *  - mark the city destroyed visually and in gameState.
+ */
+function applyCountdownLandingEffects(upperIdx, gameState) {
+    const citySlots = document.querySelectorAll(".city-slot");
+    const upperSlot = citySlots[upperIdx];
+    const lowerIdx  = upperIdx + 1;
+    const lowerSlot = citySlots[lowerIdx];
+
+    // 1) KO henchmen/villains in the upper city
+    const upperEntry = Array.isArray(gameState.cities) ? gameState.cities[upperIdx] : null;
+
+    if (upperEntry && upperEntry.id) {
+        const idStr = String(upperEntry.id);
+        const isHench = henchmen.some(h => String(h.id) === idStr);
+        const isVill  = villains.some(v => String(v.id) === idStr);
+
+        if (isHench || isVill) {
+            if (!Array.isArray(gameState.koVillainsAndHenchmen)) {
+                gameState.koVillainsAndHenchmen = [];
+            }
+
+            gameState.koVillainsAndHenchmen.push({
+                id: idStr,
+                uniqueId: upperEntry.uniqueId ?? null,
+                slotIndex: upperIdx,
+                reason: "countdown"
+            });
+
+            console.log(`[COUNTDOWN] KO'ing ${isHench ? "Henchman" : "Villain"} ID ${idStr} at upper slot ${upperIdx}.`);
+        }
+
+        // Clear the DOM for the upper city
+        if (upperSlot) {
+            const area = upperSlot.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";
+            }
+        }
+
+        if (Array.isArray(gameState.cities)) {
+            gameState.cities[upperIdx] = null;
+        }
+    }
+
+    // 2) Damage hero in the lower city and send them to HQ
+    const heroIds = gameState.heroes || [];
+    let heroWasHit = false;
+
+    heroIds.forEach(hid => {
+        const hState = gameState.heroData?.[hid];
+        if (!hState) return;
+
+        if (hState.cityIndex === lowerIdx) {
+            // Deal 10 damage
+            if (typeof hState.hp === "number") {
+                hState.hp -= 10;
+                if (hState.hp < 0) hState.hp = 0;
+            }
+
+            // Move hero back to HQ (cityIndex = null)
+            hState.cityIndex = null;
+            heroWasHit = true;
+
+            const heroObj = heroes.find(h => String(h.id) === String(hid));
+            const heroName = heroObj?.name || `Hero ${hid}`;
+            console.log(`[COUNTDOWN] ${heroName} takes 10 damage in city index ${lowerIdx} and is forced back to HQ.`);
+        }
+    });
+
+    // Clear hero DOM from lower city if someone was there
+    if (heroWasHit && lowerSlot) {
+        const area = lowerSlot.querySelector(".city-card-area");
+        if (area) {
+            area.innerHTML = "";
+        }
+    }
+
+    // 3) Mark the city as destroyed (upper + lower)
+    markCityDestroyed(upperIdx, gameState);
+}
+
+/**
+ * Move a single countdown card one step LEFT along UPPER_ORDER,
+ * applying landing effects at the destination.
+ */
+function advanceSingleCountdown(upperIdx, gameState) {
+    const pos = UPPER_ORDER.indexOf(upperIdx);
+    if (pos <= 0) {
+        // Already at EXIT; for now, nothing beyond this (game loss logic later)
+        console.log("[COUNTDOWN] Countdown reached the leftmost city; additional loss logic can plug in here.");
+        return;
+    }
+
+    const destIdx = UPPER_ORDER[pos - 1];
+
+    // Landing effects at destination city
+    applyCountdownLandingEffects(destIdx, gameState);
+
+    // Move the countdown card DOM + model
+    const citySlots = document.querySelectorAll(".city-slot");
+    const fromSlot  = citySlots[upperIdx];
+    const toSlot    = citySlots[destIdx];
+
+    if (!fromSlot || !toSlot) return;
+
+    const fromArea = fromSlot.querySelector(".city-card-area");
+    const toArea   = toSlot.querySelector(".city-card-area");
+    if (!fromArea || !toArea) return;
+
+    const node = fromArea.querySelector(".card-wrapper");
+    if (!node) return;
+
+    node.classList.remove("city-card-enter");
+    node.classList.remove("city-card-slide-left");
+    node.classList.add("city-card-slide-left");
+
+    toArea.innerHTML = "";
+    toArea.appendChild(node);
+    fromArea.innerHTML = "";
+
+    setTimeout(() => {
+        node.classList.remove("city-card-slide-left");
+    }, 650);
+
+    if (!Array.isArray(gameState.cities)) {
+        gameState.cities = new Array(12).fill(null);
+    }
+
+    const entry = gameState.cities[upperIdx];
+    gameState.cities[destIdx] = entry || null;
+    if (gameState.cities[destIdx]) {
+        gameState.cities[destIdx].slotIndex = destIdx;
+    }
+    gameState.cities[upperIdx] = null;
+}
+
+/**
+ * Find the existing countdown (if any) in the UPPER row and shove it left one city.
+ * Only countdowns are moved; other villains/henchmen are not shoved by this.
+ */
+function shovePriorCountdownIfAny(gameState) {
+    if (!Array.isArray(gameState.cities)) return;
+
+    // We expect at most one, but search in UPPER_ORDER, rightmost-first
+    let existingUpperIdx = null;
+    for (let i = 0; i < UPPER_ORDER.length; i++) {
+        const idx   = UPPER_ORDER[i];
+        const entry = gameState.cities[idx];
+        if (entry && isCountdownId(entry.id)) {
+            existingUpperIdx = idx;
+            break;
+        }
+    }
+
+    if (existingUpperIdx === null) return;
+
+    console.log("[COUNTDOWN] Shoving prior countdown from", existingUpperIdx);
+    advanceSingleCountdown(existingUpperIdx, gameState);
+}
+
+/**
+ * Full handler when a COUNTDOWN card is drawn from the villain deck.
+ * - Shove prior countdown (if any),
+ * - Destroy the landing city at CITY_ENTRY_UPPER,
+ *   KO'ing henchmen/villains and hitting any hero for 10 + HQ,
+ * - Then place the new countdown card into CITY_ENTRY_UPPER.
+ */
+function handleCountdownDraw(villainId, gameState) {
+    // 1) Shove prior countdown, if any
+    shovePriorCountdownIfAny(gameState);
+
+    // 2) Destroy the landing city where this countdown will enter
+    const entryUpperIdx = CITY_ENTRY_UPPER;
+    applyCountdownLandingEffects(entryUpperIdx, gameState);
+
+    // 3) Place this countdown card into the entry city's upper slot
+    placeVillainInUpperCity(entryUpperIdx, villainId, gameState);
+
+    // NOTE: placeVillainInUpperCity will tag this as type "countdown" (see below type tweak)
+}
 
 export function gameStart(selectedData) {
 
@@ -272,101 +517,106 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
         if (villainId) {
             const data = findCardInAllSources(villainId);
 
-            const hasTeleport = data?.abilitiesEffects?.some(e => {
-                if (!e) return false;
-                // must be an onEntry effect
-                if (e.condition && e.condition !== "onEntry") return false;
+            if (isCountdownId(villainId)) {
+                console.log("[COUNTDOWN] Drawing countdown card", villainId);
+                handleCountdownDraw(villainId, gameState);
+            } else {
+                const hasTeleport = data?.abilitiesEffects?.some(e => {
+                    if (!e) return false;
+                    // must be an onEntry effect
+                    if (e.condition && e.condition !== "onEntry") return false;
 
-                const eff = e.effect;
-                if (!eff) return false;
-
-                // Single string
-                if (typeof eff === "string") {
-                    const s = eff.trim();
-                    return s === "teleport" || s === "teleport()";
-                }
-
-                // Array of effects
-                if (Array.isArray(eff)) {
-                    return eff.some(x => {
-                        if (typeof x !== "string") return false;
-                        const s = x.trim();
-                        return s === "teleport" || s === "teleport()";
-                    });
-                }
-
-                return false;
-            });
-
-            const hasCharge = data?.abilitiesEffects?.some(e => {
-                const eff = e.effect;
-
-                if (!eff) return false;
-
-                // Single string
-                if (typeof eff === "string") {
-                    return eff.trim().startsWith("charge(");
-                }
-
-                // Array of effects
-                if (Array.isArray(eff)) {
-                    return eff.some(x =>
-                        typeof x === "string" &&
-                        x.trim().startsWith("charge(")
-                    );
-                }
-
-                return false;
-            });
-
-            if (hasTeleport) {
-                // Gather all unoccupied UPPER city indices
-                const openSlots = UPPER_ORDER.filter(idx => !gameState.cities[idx]);
-
-                if (openSlots.length === 0) {
-                    console.warn(
-                        `[TELEPORT BLOCKED] Cannot place '${data?.name}' (ID ${villainId}) — all upper cities are occupied. ` +
-                        `Teleporting henchman/villain will remain on top of the villain deck until a city becomes empty.`
-                    );
-                    // No unoccupied cities: DO NOT DRAW.
-                    // Rewind the deck pointer so this card stays on top.
-                    const ptr = gameState.villainDeckPointer ?? 0;
-                    if (ptr > 0) {
-                        gameState.villainDeckPointer = ptr - 1;
-                    }
-                    // Reveal top card of the villain deck
-                    gameState.revealedTopVillain = true;
-                    // Nothing enters the map this villain phase.
-                } else {
-                    const randomIndex = Math.floor(Math.random() * openSlots.length);
-                    const targetIdx = openSlots[randomIndex];
-
-                    gameState.revealedTopVillain = false;
-                    placeVillainInUpperCity(targetIdx, villainId, gameState);
-                }
-            } else if (hasCharge) {
-                // Find the *first* charge(N) to extract N
-                let dist = 1;
-
-                for (const e of data.abilitiesEffects) {
                     const eff = e.effect;
-                    if (typeof eff === "string" && eff.startsWith("charge(")) {
-                        dist = Number(eff.match(/\((\d+)\)/)?.[1] ?? 1);
-                        break;
+                    if (!eff) return false;
+
+                    // Single string
+                    if (typeof eff === "string") {
+                        const s = eff.trim();
+                        return s === "teleport" || s === "teleport()";
                     }
+
+                    // Array of effects
                     if (Array.isArray(eff)) {
-                        const found = eff.find(x => typeof x === "string" && x.startsWith("charge("));
-                        if (found) {
-                            dist = Number(found.match(/\((\d+)\)/)?.[1] ?? 1);
+                        return eff.some(x => {
+                            if (typeof x !== "string") return false;
+                            const s = x.trim();
+                            return s === "teleport" || s === "teleport()";
+                        });
+                    }
+
+                    return false;
+                });
+
+                const hasCharge = data?.abilitiesEffects?.some(e => {
+                    const eff = e.effect;
+
+                    if (!eff) return false;
+
+                    // Single string
+                    if (typeof eff === "string") {
+                        return eff.trim().startsWith("charge(");
+                    }
+
+                    // Array of effects
+                    if (Array.isArray(eff)) {
+                        return eff.some(x =>
+                            typeof x === "string" &&
+                            x.trim().startsWith("charge(")
+                        );
+                    }
+
+                    return false;
+                });
+
+                if (hasTeleport) {
+                    // Gather all unoccupied UPPER city indices
+                    const openSlots = UPPER_ORDER.filter(idx => !gameState.cities[idx]);
+
+                    if (openSlots.length === 0) {
+                        console.warn(
+                            `[TELEPORT BLOCKED] Cannot place '${data?.name}' (ID ${villainId}) — all upper cities are occupied. ` +
+                            `Teleporting henchman/villain will remain on top of the villain deck until a city becomes empty.`
+                        );
+                        // No unoccupied cities: DO NOT DRAW.
+                        // Rewind the deck pointer so this card stays on top.
+                        const ptr = gameState.villainDeckPointer ?? 0;
+                        if (ptr > 0) {
+                            gameState.villainDeckPointer = ptr - 1;
+                        }
+                        // Reveal top card of the villain deck
+                        gameState.revealedTopVillain = true;
+                        // Nothing enters the map this villain phase.
+                    } else {
+                        const randomIndex = Math.floor(Math.random() * openSlots.length);
+                        const targetIdx = openSlots[randomIndex];
+
+                        gameState.revealedTopVillain = false;
+                        placeVillainInUpperCity(targetIdx, villainId, gameState);
+                    }
+                } else if (hasCharge) {
+                    // Find the *first* charge(N) to extract N
+                    let dist = 1;
+
+                    for (const e of data.abilitiesEffects) {
+                        const eff = e.effect;
+                        if (typeof eff === "string" && eff.startsWith("charge(")) {
+                            dist = Number(eff.match(/\((\d+)\)/)?.[1] ?? 1);
                             break;
                         }
+                        if (Array.isArray(eff)) {
+                            const found = eff.find(x => typeof x === "string" && x.startsWith("charge("));
+                            if (found) {
+                                dist = Number(found.match(/\((\d+)\)/)?.[1] ?? 1);
+                                break;
+                            }
+                        }
                     }
-                }
 
-                // Run through the ability engine
-                executeEffectSafely(`charge(${dist})`, data, {});
-            } else {
-                await shoveUpper(villainId);
+                    // Run through the ability engine
+                    executeEffectSafely(`charge(${dist})`, data, {});
+                } else {
+                    await shoveUpper(villainId);
+                }
             }
         }
         gameState.isGameStarted = true;
@@ -432,10 +682,10 @@ function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
         console.warn("No cardData found for newCardId (teleport):", newCardId);
     }
 
-    // Update model for the teleported card
+    const entryType = isCountdownId(newCardId) ? "countdown" : "villain";
     gameState.cities[slotIndex] = {
         slotIndex,
-        type: "villain",
+        type: entryType,
         id: String(newCardId)
     };
 
@@ -715,10 +965,10 @@ export async function shoveUpper(newCardId) {
         console.warn("No cardData found for newCardId:", newCardId);
     }
 
-    // === UPDATE MODEL for the newly entered card ===
+    const entryType = isCountdownId(newCardId) ? "countdown" : "villain";
     gameState.cities[rightmost.idx] = {
         slotIndex: rightmost.idx,
-        type: "villain",
+        type: entryType,
         id: String(newCardId)
     };
 

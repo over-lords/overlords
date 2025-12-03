@@ -1032,6 +1032,7 @@ export function buildVillainPanel(villainCard) {
     // Slide panel open
     panel.classList.add("open");
 }
+window.buildVillainPanel = buildVillainPanel;
 
 /* Keyword extraction reused for heroes */
 function extractHeroKeywords(abilitiesTextArr) {

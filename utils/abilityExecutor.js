@@ -295,7 +295,10 @@ function addChargeRushLines(slotIndex) {
 function placeCardIntoUpperSlot(slotIndex, cardId) {
     const citySlots = document.querySelectorAll(".city-slot");
     const slot = citySlots[slotIndex];
+    if (!slot) return;
+
     const area = slot.querySelector(".city-card-area");
+    if (!area) return;
 
     // Clear old content
     area.innerHTML = "";
@@ -305,6 +308,33 @@ function placeCardIntoUpperSlot(slotIndex, cardId) {
     wrapper.className = "card-wrapper city-card-enter";
     wrapper.appendChild(renderCard(cardId, wrapper));
     area.appendChild(wrapper);
+
+    const cardData =
+        henchmen.find(h => String(h.id) === String(cardId)) ||
+        villains.find(v => String(v.id) === String(cardId));
+
+    if (cardData) {
+        wrapper.style.cursor = "pointer";
+        wrapper.addEventListener("click", (e) => {
+            e.stopPropagation();
+            console.log("Villain/Henchmen card clicked (from Charge):", {
+                cardId,
+                cardName: cardData.name
+            });
+
+            // Prefer global buildVillainPanel, which you exposed in pageSetup.js
+            if (typeof window !== "undefined" &&
+                typeof window.buildVillainPanel === "function") {
+                window.buildVillainPanel(cardData);
+            } else {
+                console.warn("[Charge] buildVillainPanel not available on window.");
+            }
+        });
+    }
+
+    if (!Array.isArray(gameState.cities)) {
+        gameState.cities = new Array(12).fill(null);
+    }
 
     // Update gameState
     gameState.cities[slotIndex] = {
