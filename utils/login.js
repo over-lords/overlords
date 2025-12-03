@@ -1,5 +1,6 @@
 // login.js
 import { supabase } from "../supabaseClient.js";
+import { setSessionUserId } from "./session.js";
 import bcrypt from "https://cdn.jsdelivr.net/npm/bcryptjs/+esm";
 
 // Grab elements once DOM is ready
@@ -41,7 +42,7 @@ window.addEventListener("DOMContentLoaded", () => {
         }
 
         // Save session token
-        localStorage.setItem("session_user_id", user.id);
+        setSessionUserId(user.id);
 
         window.location = "index.html";
     });

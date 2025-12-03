@@ -73,15 +73,17 @@
             transition: outline 0.15s ease, box-shadow 0.15s ease;
         }
     </style>
-</head>
-<body style="background-color:white;">
+    <link rel="manifest" href="manifest.json">
     <script>
-        // redirect if not logged in
-        const uid = localStorage.getItem("session_user_id");
-        if (!uid) {
-            window.location = "login.html";
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("/service-worker.js")
+                    .catch(err => console.error("SW registration failed:", err));
+            });
         }
     </script>
+</head>
+<body style="background-color:white;">
 
     <div class="main-content">
     <div class="bg-image" alt="" style="opacity: 55%;"></div>
@@ -102,6 +104,10 @@
 
     <div class="logout-box" id="logout-box" onclick="logoutUser()" style="cursor: pointer;">
         <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Logout</h1>
+    </div>
+
+    <div class="install-box" id="install-box" style="cursor: pointer; display:none;">
+        <h1 class="small-menu-text" style="margin-top: 0px; pointer-events: none;">Install Overlords</h1>
     </div>
 
         <div id="infoBox">
@@ -139,14 +145,19 @@
 
     <script src="./data/news.js"></script>
     <script src="./data/issues.js"></script>
-    <script>
-        function logoutUser() {
-            // Clear session
-            localStorage.removeItem("session_user_id");
 
-            // Redirect to login
+    <script type="module">
+        import { getSessionUserId, clearSessionUserId } from "./utils/session.js";
+        const uid = getSessionUserId();
+        if (!uid) {
             window.location = "login.html";
         }
+
+        function logoutUser() {
+            clearSessionUserId();
+            window.location = "login.html";
+        }
+        window.logoutUser = logoutUser;
 
         function populateInfo() {
             const newsDiv = document.getElementById('news');
@@ -325,5 +336,37 @@
             showWinrate = !showWinrate;
         }
     </script>
+
+    <script>
+        let deferredPrompt = null;
+        const installBox = document.getElementById("install-box");
+
+        function isRunningStandalone() {
+            return window.matchMedia("(display-mode: standalone)").matches ||
+                window.navigator.standalone === true;
+        }
+
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            if (!isRunningStandalone()) {
+                installBox.style.display = "block";
+            }
+        });
+
+        installBox.addEventListener("click", async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            installBox.style.display = "none";
+            deferredPrompt = null;
+        });
+
+        if (isRunningStandalone()) {
+            installBox.style.display = "none";
+        }
+    </script>
+
 </body>
 </html>
