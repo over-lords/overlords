@@ -1133,6 +1133,14 @@ function setupStartingTravelOptions(gameState, heroId) {
     });
 }
 
+window.recalculateHeroTravel = function () {
+    try {
+        initializeTurnUI(gameState);
+    } catch (err) {
+        console.warn("[recalculateHeroTravel] failed to recompute travel UI:", err);
+    }
+};
+
 function clearCityHighlights() {
     const citySlots = document.querySelectorAll(".city-slot");
     citySlots.forEach(slot => {

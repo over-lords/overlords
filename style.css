@@ -1297,6 +1297,10 @@ html, body {
     margin-bottom: 4px;
 }
 
+#top-villain-panel-content h4 {
+    margin-bottom: -40px;
+}
+
 #top-villain-panel-content::after {
     content: "";
     display: block;

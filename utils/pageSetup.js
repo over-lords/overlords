@@ -1378,9 +1378,11 @@ function buildTopVillainPanelFromDeckTop() {
 
     content.innerHTML = "";
 
-    // Use the same layout as the left villain panel:
-    // card image (left) + (name, type, HP, Damage, abilities) (right)
-    // then Captured Bystanders, then Keywords with definitions.
+    const rightPanelTitle = document.createElement("div");
+    rightPanelTitle.innerHTML = `
+        <h4>Revealed Top Card of Villain Deck</h4>
+    `;
+    content.appendChild(rightPanelTitle);
 
     // Left-side rendered card
     const leftCol = document.createElement("div");

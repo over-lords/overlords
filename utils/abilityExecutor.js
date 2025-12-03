@@ -256,10 +256,8 @@ function runCharge(cardId, distance) {
 
     // STEP 3 — After a short delay, visually "charge" left
     setTimeout(() => {
-        // Rush-line visual on City 1 to emphasize the forward motion
         addChargeRushLines(entryIndex);
 
-        // Same charge movement logic you already had
         let fromPos = UPPER_ORDER.indexOf(entryIndex);
 
         for (let step = 0; step < distance; step++) {
@@ -268,6 +266,14 @@ function runCharge(cardId, distance) {
         }
 
         saveGameState(gameState);
+
+        // === NEW: FIX TRAVEL OFFSET AFTER CHARGE ===
+        // Force hero travel UI to recalculate AFTER all villain movement is done.
+        setTimeout(() => {
+            if (typeof window.recalculateHeroTravel === "function") {
+                window.recalculateHeroTravel();
+            }
+        }, distance * 700);
     }, 1500);
 }
 
