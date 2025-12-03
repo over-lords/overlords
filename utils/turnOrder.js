@@ -334,11 +334,14 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
                     if (ptr > 0) {
                         gameState.villainDeckPointer = ptr - 1;
                     }
+                    // Reveal top card of the villain deck
+                    gameState.revealedTopVillain = true;
                     // Nothing enters the map this villain phase.
                 } else {
                     const randomIndex = Math.floor(Math.random() * openSlots.length);
                     const targetIdx = openSlots[randomIndex];
 
+                    gameState.revealedTopVillain = false;
                     placeVillainInUpperCity(targetIdx, villainId, gameState);
                 }
             } else if (hasCharge) {
@@ -732,6 +735,11 @@ export async function shoveUpper(newCardId) {
 export function initializeTurnUI(gameState) {
     const btn = document.getElementById("end-turn-button");
     if (!btn) return;
+
+    const topVillainBtn = document.getElementById("top-villain-button");
+    if (topVillainBtn) {
+        topVillainBtn.style.display = gameState.revealedTopVillain ? "flex" : "none";
+    }
 
     // 1. Who has the indicator?
     const indicator = document.querySelector(".turn-indicator-circle");

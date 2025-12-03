@@ -374,6 +374,8 @@ async function restoreUIFromState(state) {
             overlords: selectedData.overlords,
             tactics: selectedData.tactics,
 
+            revealedTopVillain: false,
+
             // villain deck from gameStart()
             villainDeck: startResult.villainDeck,
             villainDeckPointer: 0,
@@ -646,6 +648,26 @@ const quitNo = document.getElementById("quitNo");
 
 let menuOpen = false;
 let submenu = null;
+
+const topVillainBtn = document.getElementById("top-villain-button");
+const topVillainPanel = document.getElementById("top-villain-panel");
+const topVillainPanelClose = document.getElementById("top-villain-panel-close");
+
+if (topVillainBtn) {
+    topVillainBtn.addEventListener("click", () => {
+        if (!gameState.revealedTopVillain) {
+            // If for some reason the flag cleared but the button did not, just bail.
+            return;
+        }
+        buildTopVillainPanelFromDeckTop();
+    });
+}
+
+if (topVillainPanelClose) {
+    topVillainPanelClose.addEventListener("click", () => {
+        topVillainPanel.classList.remove("open");
+    });
+}
 
 function loadKeywords() {
     helpList.innerHTML = "";
@@ -1327,3 +1349,99 @@ window.addEventListener("DOMContentLoaded", () => {
         endCurrentHeroTurn(gameState);
     });
 });
+
+function buildTopVillainPanelFromDeckTop() {
+    const panel = document.getElementById("top-villain-panel");
+    const content = document.getElementById("top-villain-panel-content");
+
+    if (!panel || !content) return;
+    if (!gameState.revealedTopVillain) return;
+
+    const deck = gameState.villainDeck || [];
+    let ptr = gameState.villainDeckPointer ?? 0;
+
+    if (!Array.isArray(deck) || deck.length === 0) return;
+    if (ptr >= deck.length) {
+        ptr = deck.length - 1;
+    }
+
+    const topId = deck[ptr];
+    const cardData =
+        henchmen.find(h => String(h.id) === String(topId)) ||
+        villains.find(v => String(v.id) === String(topId));
+
+    if (!cardData) {
+        console.warn("[TOP VILLAIN PANEL] No card data for deck top id:", topId);
+        return;
+    }
+
+    content.innerHTML = "";
+
+    // Use the same layout as the left villain panel:
+    // card image (left) + (name, type, HP, Damage, abilities) (right)
+    // then Captured Bystanders, then Keywords with definitions.
+
+    // Left-side rendered card
+    const leftCol = document.createElement("div");
+    leftCol.className = "villain-card-scale";
+    leftCol.appendChild(renderCard(cardData.id, leftCol));
+
+    // Right-side stats/text
+    const rightCol = document.createElement("div");
+    rightCol.className = "villain-right-column";
+
+    rightCol.innerHTML = `
+        <h2>${cardData.name}</h2>
+        <div><strong>${cardData.type}</strong></div>
+        <div><strong>HP:</strong> ${cardData.hp}</div>
+        <div><strong>Damage:</strong> ${cardData.damage}</div>
+        <h3>Abilities</h3>
+    `;
+
+    if (cardData.abilitiesText?.length) {
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement("div");
+            // IMPORTANT: pass the text string into renderAbilityText,
+            // same as the left villain panel, so html.replace works.
+            line.innerHTML = renderAbilityText(a.text);
+            rightCol.appendChild(line);
+        });
+    }
+
+    // Top row: card + stats/abilities
+    const topRow = document.createElement("div");
+    topRow.className = "villain-top-row";
+    topRow.appendChild(leftCol);
+    topRow.appendChild(rightCol);
+
+    content.appendChild(topRow);
+
+    // Keyword definitions (mirrors left panel)
+    const foundKeys = extractKeywordsFromAbilities(cardData.abilitiesText)
+        .sort((a, b) => a.localeCompare(b));
+
+    const keyBox = document.createElement("div");
+    keyBox.innerHTML = `<h3>Keywords</h3>`;
+
+    if (foundKeys.length === 0) {
+        const none = document.createElement("div");
+        none.style.fontStyle = "italic";
+        none.textContent = "No Keywords Found";
+        keyBox.appendChild(none);
+    } else {
+        foundKeys.forEach(k => {
+            const line = document.createElement("div");
+            line.style.marginBottom = "6px";
+            line.innerHTML = `
+                <div style="font-weight:bold;">${k}</div>
+                <div style="margin-left:8px;">${keywords[k] || "No definition found."}</div>
+            `;
+            keyBox.appendChild(line);
+        });
+    }
+
+    content.appendChild(keyBox);
+
+    // Slide panel open
+    panel.classList.add("open");
+}

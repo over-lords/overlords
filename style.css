@@ -389,7 +389,7 @@ html, body {
   border-radius: 10px;
   box-shadow: 0 0 12px rgba(0,0,0,0.8);
   cursor: pointer;
-  z-index: 11000;
+  z-index: 1000;
   transition: transform 0.1s ease, background-color 0.1s ease;
 }
 #gameMenu-box:hover {
@@ -404,7 +404,7 @@ html, body {
   height: 100%;
   background: rgba(79, 196, 255, 0.8);
   border-left: 5px solid darkblue;
-  z-index: 10000;
+  z-index: 995;
   transition: right 0.35s ease;
   display: flex;
   flex-direction: column;
@@ -1082,17 +1082,6 @@ html, body {
     z-index: 10000;
 }
 
-#villain-panel-content {
-    margin-top: -30px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    font-family: 'Racing Sans One', sans-serif;
-    color: black;
-    font-size: 12px;
-    line-height: 1;
-}
-
 .villain-top-row {
     display: flex;
     flex-direction: row;
@@ -1116,6 +1105,17 @@ html, body {
     gap: 8px;
     flex: 1;
     margin-left: -135px;
+}
+
+#villain-panel-content {
+    margin-top: -30px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    font-family: 'Racing Sans One', sans-serif;
+    color: black;
+    font-size: 12px;
+    line-height: 1;
 }
 
 #villain-panel-content h2 {
@@ -1207,4 +1207,98 @@ html, body {
     0%   { opacity: 0; transform: translateX(40px); }
     20%  { opacity: 1; }
     100% { opacity: 0; transform: translateX(-40px); }
+}
+
+#top-villain-button {
+  position: fixed;
+  top: 15px;
+  /* place it just to the left of the menu box */
+  right: 57px;
+  width: 30px;
+  height: 30px;
+  background-color: #cc0000;
+  color: white;
+  font-family: 'Racing Sans One', sans-serif;
+  font-size: 35px;
+  font-weight: bold;
+  text-align: center;
+  justify-content: center;
+  line-height: 30px;
+  border: 4px solid black;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.8);
+  cursor: pointer;
+  z-index: 995;
+  display: none; /* only shown when revealedTopVillain is true */
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+#top-villain-button:hover {
+  transform: scale(1.08);
+  background-color: #ff3333;
+}
+
+/* Right-side revealed-top-villain panel */
+#top-villain-panel {
+  position: fixed;
+  top: 0;
+  right: -40vw;           /* slide in from the right */
+  width: 40vw;
+  max-width: 520px;
+  height: 100vh;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.92);
+  border-left: 4px solid #de0000;
+  box-shadow: -4px 0 12px rgba(0,0,0,0.8);
+  z-index: 1005;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+  transition: right 0.35s ease;
+  color: white;
+  font-family: 'Racing Sans One', sans-serif;
+}
+
+#top-villain-panel.open {
+  right: 0;
+}
+
+#top-villain-panel-close {
+  align-self: flex-end;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 2px 10px;
+  border-radius: 6px;
+  border: 2px solid #fff;
+  z-index: 110000;
+}
+
+#top-villain-panel-content {
+    margin-top: -30px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    font-family: 'Racing Sans One', sans-serif;
+    color: rgb(255, 255, 255);
+    font-size: 12px;
+    line-height: 1;
+    flex: 1 1 auto;
+    overflow-y: visible;
+}
+
+#top-villain-panel-content h2 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+#top-villain-panel-content h3 {
+    margin-bottom: 4px;
+}
+
+#top-villain-panel-content::after {
+    content: "";
+    display: block;
+    height: 50px;
 }
