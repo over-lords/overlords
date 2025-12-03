@@ -1184,3 +1184,27 @@ html, body {
         transform: translateX(-220px) scale(0.89);
     }
 }
+
+.charge-rush-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 140px;  /* Adjust to width of city slot */
+    height: 200px; /* Adjust to slot height */
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 10px,
+        rgba(255,255,255,0.35) 15px,
+        rgba(255,255,255,0) 20px
+    );
+    opacity: 0;
+    animation: rush-lines-left 0.20s ease-out forwards;
+}
+
+@keyframes rush-lines-left {
+    0%   { opacity: 0; transform: translateX(40px); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-40px); }
+}

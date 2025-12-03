@@ -13,9 +13,37 @@ const isMultiplayer = (window.GAME_MODE === "multi");
 import { heroes } from '../data/faceCards.js';
 import { overlords } from '../data/overlords.js';
 import { tactics } from '../data/tactics.js';
-import { findCardInAllSources } from './cardRenderer.js';
+import { henchmen } from "../data/henchmen.js";
+import { villains } from "../data/villains.js";
+
+import { findCardInAllSources, renderCard } from './cardRenderer.js';
+import { gameState } from "../data/gameState.js";
+import { saveGameState } from "./stateManager.js";
+
+import {
+    CITY_EXIT_UPPER,
+    CITY_5_UPPER,
+    CITY_4_UPPER,
+    CITY_3_UPPER,
+    CITY_2_UPPER,
+    CITY_ENTRY_UPPER
+} from '../data/gameState.js';
+
+const UPPER_ORDER = [
+    CITY_EXIT_UPPER,
+    CITY_5_UPPER,
+    CITY_4_UPPER,
+    CITY_3_UPPER,
+    CITY_2_UPPER,
+    CITY_ENTRY_UPPER
+];
 
 const EFFECT_HANDLERS = {};
+
+EFFECT_HANDLERS.charge = function (args, card, selectedData) {
+    const distance = Number(args[0]) || 1;
+    runCharge(card.id, distance);
+};
 
 EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {
 
@@ -212,4 +240,163 @@ export function currentTurn(turnIndex, selectedHeroIds) {
     } catch (err) {
         console.warn("[currentTurn] Failed:", err);
     }
+}
+
+function runCharge(cardId, distance) {
+
+    const entryIndex = CITY_ENTRY_UPPER;
+
+    // STEP 1 — Simulate a blank shove (shift all villains left one)
+    // (exactly what you had before)
+    pushChain(entryIndex);
+
+    // STEP 2 — Now place the new villain into City 1 AFTER pushing
+    // (exactly what you had before)
+    placeCardIntoUpperSlot(entryIndex, cardId);
+
+    // STEP 3 — After a short delay, visually "charge" left
+    setTimeout(() => {
+        // Rush-line visual on City 1 to emphasize the forward motion
+        addChargeRushLines(entryIndex);
+
+        // Same charge movement logic you already had
+        let fromPos = UPPER_ORDER.indexOf(entryIndex);
+
+        for (let step = 0; step < distance; step++) {
+            if (!attemptSingleLeftShift(fromPos)) break;
+            fromPos -= 1;
+        }
+
+        saveGameState(gameState);
+    }, 1500);
+}
+
+function addChargeRushLines(slotIndex) {
+    const citySlots = document.querySelectorAll(".city-slot");
+    const slot = citySlots[slotIndex];
+    if (!slot) return;
+
+    // Ensure the slot can host an absolutely-positioned overlay
+    if (getComputedStyle(slot).position === "static") {
+        slot.style.position = "relative";
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "charge-rush-lines";
+
+    slot.appendChild(overlay);
+
+    // Clean up after the animation
+    setTimeout(() => {
+        overlay.remove();
+    }, 250);
+}
+
+function placeCardIntoUpperSlot(slotIndex, cardId) {
+    const citySlots = document.querySelectorAll(".city-slot");
+    const slot = citySlots[slotIndex];
+    const area = slot.querySelector(".city-card-area");
+
+    // Clear old content
+    area.innerHTML = "";
+
+    // Render the new card
+    const wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper city-card-enter";
+    wrapper.appendChild(renderCard(cardId, wrapper));
+    area.appendChild(wrapper);
+
+    // Update gameState
+    gameState.cities[slotIndex] = {
+        slotIndex,
+        type: "villain",
+        id: String(cardId)
+    };
+
+    // Remove animation afterwards
+    setTimeout(() => wrapper.classList.remove("city-card-enter"), 650);
+}
+
+function attemptSingleLeftShift(fromPos) {
+
+    if (fromPos <= 0) return false;
+
+    const fromIndex = UPPER_ORDER[fromPos];
+    const toIndex   = UPPER_ORDER[fromPos - 1];
+
+    // frozen check
+    const leftEntry = gameState.cities[toIndex];
+    if (leftEntry && isFrozen(leftEntry.id)) {
+        return false;
+    }
+
+    pushChain(toIndex);
+    moveCardModelAndDOM(fromIndex, toIndex);
+
+    return true;
+}
+
+function pushChain(targetIndex) {
+
+    const pos = UPPER_ORDER.indexOf(targetIndex);
+    if (pos <= 0) {
+        // Off-board push occurs here
+        const exiting = gameState.cities[targetIndex];
+        if (!exiting) return;
+        resolveExitForVillain(exiting);
+        gameState.cities[targetIndex] = null;
+        return;
+    }
+
+    const nextLeft = UPPER_ORDER[pos - 1];
+
+    // If occupied, push that one further left (recursively)
+    if (gameState.cities[targetIndex]) {
+        pushChain(nextLeft);
+        moveCardModelAndDOM(targetIndex, nextLeft);
+    }
+}
+
+function moveCardModelAndDOM(fromIndex, toIndex) {
+
+    const citySlots = document.querySelectorAll(".city-slot");
+
+    // DOM
+    const fromSlot = citySlots[fromIndex];
+    const toSlot = citySlots[toIndex];
+    const fromArea = fromSlot.querySelector(".city-card-area");
+    const toArea = toSlot.querySelector(".city-card-area");
+
+    const node = fromArea.querySelector(".card-wrapper");
+    if (!node) return;
+
+    node.classList.add("city-card-slide-left");
+
+    toArea.innerHTML = "";
+    toArea.appendChild(node);
+    fromArea.innerHTML = "";
+
+    setTimeout(() => node.classList.remove("city-card-slide-left"), 650);
+
+    // MODEL
+    gameState.cities[toIndex] = gameState.cities[fromIndex];
+    if (gameState.cities[toIndex]) {
+        gameState.cities[toIndex].slotIndex = toIndex;
+    }
+    gameState.cities[fromIndex] = null;
+}
+
+function isFrozen(cardId) {
+    // Expand this if your freeze rules differ
+    const data =
+        henchmen.find(h => h.id === cardId) ||
+        villains.find(v => v.id === cardId);
+
+    return data?.isFrozen === true;
+}
+
+function resolveExitForVillain(entry) {
+    // Your existing shoveUpper exit logic applies:
+    // KO villains, handle bystanders, takeover rules, etc.
+    console.warn("Villain exited via Charge push:", entry);
 }

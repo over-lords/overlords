@@ -159,7 +159,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
 import { placeCardIntoCitySlot, buildVillainPanel, buildHeroPanel } from './pageSetup.js';
-import { currentTurn } from './abilityExecutor.js';
+import { currentTurn, executeEffectSafely } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -271,7 +271,52 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
     if (!skipVillainDraw && window.VILLAIN_DRAW_ENABLED) {
         const villainId = drawNextVillainCard(gameState);
         if (villainId) {
-            await shoveUpper(villainId);
+            const data = findCardInAllSources(villainId);
+            const hasCharge = data?.abilitiesEffects?.some(e => {
+                const eff = e.effect;
+
+                if (!eff) return false;
+
+                // Single string
+                if (typeof eff === "string") {
+                    return eff.trim().startsWith("charge(");
+                }
+
+                // Array of effects
+                if (Array.isArray(eff)) {
+                    return eff.some(x =>
+                        typeof x === "string" &&
+                        x.trim().startsWith("charge(")
+                    );
+                }
+
+                return false;
+            });
+            if (hasCharge) {
+                // Find the *first* charge(N) to extract N
+                let dist = 1;
+
+                for (const e of data.abilitiesEffects) {
+                    const eff = e.effect;
+                    if (typeof eff === "string" && eff.startsWith("charge(")) {
+                        dist = Number(eff.match(/\((\d+)\)/)?.[1] ?? 1);
+                        break;
+                    }
+                    if (Array.isArray(eff)) {
+                        const found = eff.find(x => typeof x === "string" && x.startsWith("charge("));
+                        if (found) {
+                            dist = Number(found.match(/\((\d+)\)/)?.[1] ?? 1);
+                            break;
+                        }
+                    }
+                }
+
+                // Run through the ability engine
+                executeEffectSafely(`charge(${dist})`, data, {});
+            }
+            else {
+                await shoveUpper(villainId);
+            }
         }
         gameState.isGameStarted = true;
     }
@@ -307,12 +352,25 @@ export async function shoveUpper(newCardId) {
         hasCard: citySlots[idx].querySelector(".card-wrapper")
     }));
 
-    // === STEP 1 — SHIFT EXISTING CARDS LEFT (DOM + MODEL) ===
-    for (let i = 0; i < slotInfo.length - 1; i++) {
-        const curr = slotInfo[i];
-        const next = slotInfo[i + 1];
+    // Find FIRST empty city in the upper row (left → right in UPPER_ORDER)
+    let firstEmptyPos = -1;
+    for (let i = 0; i < slotInfo.length; i++) {
+        if (!slotInfo[i].hasCard) {
+            firstEmptyPos = i;
+            break;
+        }
+    }
 
-        if (next.hasCard) {if (next.hasCard) {
+    // === STEP 1 — SHIFT EXISTING CARDS LEFT (DOM + MODEL), GAP-AWARE ===
+
+    // CASE A: NO EMPTY CITY — perform the original full shove
+    if (firstEmptyPos === -1) {
+        for (let i = 0; i < slotInfo.length - 1; i++) {
+            const curr = slotInfo[i];
+            const next = slotInfo[i + 1];
+
+            if (!next.hasCard) continue;
+
             const cardNode = next.hasCard;
 
             // 1. REMOVE any "enter-from-right" animation for existing cards
@@ -368,7 +426,7 @@ export async function shoveUpper(newCardId) {
                     if (!hState) return;
 
                     if (hState.cityIndex === fromLower) {
-                        
+
                         // Move model immediately
                         hState.cityIndex = toLower;
 
@@ -404,9 +462,114 @@ export async function shoveUpper(newCardId) {
             }
         }
     }
-    }
 
-    // The rightmost slot (UPPER_ORDER[last]) is now empty (or emptied by shove).
+    // CASE B: AT LEAST ONE EMPTY CITY AND THE GAP IS NOT AT THE RIGHTMOST SLOT
+    // (i.e., there is a gap somewhere between Exit and City 2)
+    else if (firstEmptyPos < slotInfo.length - 1) {
+
+        // Slide only cards to the RIGHT of the first empty slot into the gap
+        for (let i = firstEmptyPos + 1; i < slotInfo.length; i++) {
+
+            const next = slotInfo[i];      // slot to the right
+            const curr = slotInfo[i - 1];  // empty or earlier slot
+
+            if (!next.hasCard) continue;
+
+            const cardNode = next.hasCard;
+
+            // 1. REMOVE any "enter-from-right" animation for existing cards
+            cardNode.classList.remove("city-card-enter");
+
+            // 2. Add a SLIDE-LEFT animation class instead
+            cardNode.classList.add("city-card-slide-left");
+
+            const currArea = curr.slot.querySelector(".city-card-area");
+            const nextArea = next.slot.querySelector(".city-card-area");
+
+            if (!currArea || !nextArea) continue;
+
+            currArea.innerHTML = "";
+            currArea.appendChild(cardNode);
+
+            nextArea.innerHTML = "";
+
+            // Update bookkeeping
+            curr.hasCard = cardNode;
+            next.hasCard = null;
+
+            gameState.cities[curr.idx] = gameState.cities[next.idx] || null;
+            if (gameState.cities[curr.idx]) {
+                gameState.cities[curr.idx].slotIndex = curr.idx;
+            }
+            gameState.cities[next.idx] = null;
+
+            // Let animation play
+            await new Promise(r => setTimeout(r, 20));
+            setTimeout(() => cardNode.classList.remove("city-card-slide-left"), 650);
+
+            // -----------------------------
+            // MOVE HEROES WHO WERE IN NEXT → CURR (with animation)
+            // -----------------------------
+            const lowerMap = {
+                10: 8,   // Gotham Upper → Metropolis Lower moves lower(11→9)
+                8: 6,    // Metropolis Upper → Central Lower moves lower(9→7)
+                6: 4,    // Central → Keystone
+                4: 2,    // Keystone → Coast
+                2: 0,    // Coast → Star
+            };
+
+            if (lowerMap.hasOwnProperty(next.idx)) {
+
+                const fromLower = next.idx + 1;
+                const toLower   = curr.idx + 1;
+
+                const heroIds = gameState.heroes || [];
+
+                heroIds.forEach(hid => {
+                    const hState = gameState.heroData?.[hid];
+                    if (!hState) return;
+
+                    if (hState.cityIndex === fromLower) {
+
+                        // Move model immediately
+                        hState.cityIndex = toLower;
+
+                        // DOM nodes
+                        const citySlots = document.querySelectorAll(".city-slot");
+                        const fromSlot  = citySlots[fromLower];
+                        const toSlot    = citySlots[toLower];
+                        if (!fromSlot || !toSlot) return;
+
+                        const heroNode = fromSlot.querySelector(".card-wrapper");
+                        if (!heroNode) return;
+
+                        // Add the same slide-left animation as villains
+                        heroNode.classList.remove("city-card-enter");
+                        heroNode.classList.remove("city-card-slide-left");
+                        heroNode.classList.add("hero-card-slide-left");
+
+                        // After animation completes, physically move hero DOM into new city
+                        setTimeout(() => {
+                            const fromArea = fromSlot.querySelector(".city-card-area");
+                            const toArea   = toSlot.querySelector(".city-card-area");
+
+                            if (fromArea && toArea) {
+                                fromArea.innerHTML = "";
+                                toArea.innerHTML = "";
+                                toArea.appendChild(heroNode);
+                            }
+
+                            heroNode.classList.remove("hero-card-slide-left");
+                        }, 650); // same timing as villain slide
+                    }
+                });
+            }
+        }
+    }
+    // CASE C: firstEmptyPos === slotInfo.length - 1
+    // Gap is at rightmost city (City 1) → do not shift anything
+
+    // The rightmost slot (UPPER_ORDER[last]) is now empty (or already was).
     const rightmost = slotInfo[slotInfo.length - 1];
     const rightmostArea = rightmost.slot.querySelector(".city-card-area");
     rightmostArea.innerHTML = "";
@@ -456,6 +619,7 @@ export async function shoveUpper(newCardId) {
         wrapper.classList.remove("city-card-enter");
     }, 650);
 }
+
 
 export function initializeTurnUI(gameState) {
     const btn = document.getElementById("end-turn-button");
