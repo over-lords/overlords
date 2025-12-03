@@ -24,11 +24,10 @@ VILLAIN DRAW
             overlord KOs bystander immediately
     else if draw = henchman || villain
         if draw has teleport
-            roll a d6
-                if unoccupied, teleport to city
-                else, teleport to next unoccupied
-                    if would immediately escape, teleport to any unoccupied city
-                    if all are occupied, remain on top of villain deck
+            place all unoccupied cities within an array
+                choose one randomly and rather than pushing upper row, just place the teleporting villain into the city rolled
+            if no unoccupied cities
+                do not draw
         else if draw has charge
             is city 1 frozen?
                 enter city 1, attempt charge
@@ -272,6 +271,33 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
         const villainId = drawNextVillainCard(gameState);
         if (villainId) {
             const data = findCardInAllSources(villainId);
+
+            const hasTeleport = data?.abilitiesEffects?.some(e => {
+                if (!e) return false;
+                // must be an onEntry effect
+                if (e.condition && e.condition !== "onEntry") return false;
+
+                const eff = e.effect;
+                if (!eff) return false;
+
+                // Single string
+                if (typeof eff === "string") {
+                    const s = eff.trim();
+                    return s === "teleport" || s === "teleport()";
+                }
+
+                // Array of effects
+                if (Array.isArray(eff)) {
+                    return eff.some(x => {
+                        if (typeof x !== "string") return false;
+                        const s = x.trim();
+                        return s === "teleport" || s === "teleport()";
+                    });
+                }
+
+                return false;
+            });
+
             const hasCharge = data?.abilitiesEffects?.some(e => {
                 const eff = e.effect;
 
@@ -292,7 +318,30 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
 
                 return false;
             });
-            if (hasCharge) {
+
+            if (hasTeleport) {
+                // Gather all unoccupied UPPER city indices
+                const openSlots = UPPER_ORDER.filter(idx => !gameState.cities[idx]);
+
+                if (openSlots.length === 0) {
+                    console.warn(
+                        `[TELEPORT BLOCKED] Cannot place '${data?.name}' (ID ${villainId}) — all upper cities are occupied. ` +
+                        `Teleporting henchman/villain will remain on top of the villain deck until a city becomes empty.`
+                    );
+                    // No unoccupied cities: DO NOT DRAW.
+                    // Rewind the deck pointer so this card stays on top.
+                    const ptr = gameState.villainDeckPointer ?? 0;
+                    if (ptr > 0) {
+                        gameState.villainDeckPointer = ptr - 1;
+                    }
+                    // Nothing enters the map this villain phase.
+                } else {
+                    const randomIndex = Math.floor(Math.random() * openSlots.length);
+                    const targetIdx = openSlots[randomIndex];
+
+                    placeVillainInUpperCity(targetIdx, villainId, gameState);
+                }
+            } else if (hasCharge) {
                 // Find the *first* charge(N) to extract N
                 let dist = 1;
 
@@ -313,8 +362,7 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
 
                 // Run through the ability engine
                 executeEffectSafely(`charge(${dist})`, data, {});
-            }
-            else {
+            } else {
                 await shoveUpper(villainId);
             }
         }
@@ -334,6 +382,66 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
     resetTurnTimerForHero();
     saveGameState(gameState);
     initializeTurnUI(gameState);
+}
+
+function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
+
+    const citySlots = document.querySelectorAll(".city-slot");
+
+    if (!Array.isArray(gameState.cities)) {
+        gameState.cities = new Array(12).fill(null);
+    }
+
+    const slot = citySlots[slotIndex];
+    if (!slot) return;
+
+    const area = slot.querySelector(".city-card-area");
+    if (!area) return;
+
+    // Clear existing content in that upper city
+    area.innerHTML = "";
+
+    // Build wrapper for the villain
+    const wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper city-card-enter";
+
+    const rendered = renderCard(newCardId, wrapper);
+    wrapper.appendChild(rendered);
+
+    area.appendChild(wrapper);
+
+    // Hook up panel click behavior (same as shoveUpper)
+    const cardData =
+        henchmen.find(h => h.id === newCardId) ||
+        villains.find(v => v.id === newCardId);
+
+    if (cardData) {
+        wrapper.style.cursor = "pointer";
+        wrapper.addEventListener("click", (e) => {
+            e.stopPropagation();
+            console.log("Villain/Henchmen card clicked (from teleport):", {
+                newCardId,
+                cardName: cardData.name
+            });
+            buildVillainPanel(cardData);
+        });
+    } else {
+        console.warn("No cardData found for newCardId (teleport):", newCardId);
+    }
+
+    // Update model for the teleported card
+    gameState.cities[slotIndex] = {
+        slotIndex,
+        type: "villain",
+        id: String(newCardId)
+    };
+
+    saveGameState(gameState);
+
+    // Remove entry animation class after it finishes
+    setTimeout(() => {
+        wrapper.classList.remove("city-card-enter");
+    }, 650);
 }
 
 export async function shoveUpper(newCardId) {

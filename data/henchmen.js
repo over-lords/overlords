@@ -87,7 +87,7 @@ export const henchmen = [
         condition: `onEntry`,
         uses: `1`,
         shared: `no`,
-        effect: `teleport(random)`
+        effect: `teleport`
       },
       {
         type: `quick`,
@@ -130,7 +130,7 @@ export const henchmen = [
         condition: `onEntry`,
         uses: `1`,
         shared: `no`,
-        effect: `teleport(random)`
+        effect: `teleport`
       },
       {
         type: `quick`,
@@ -204,7 +204,7 @@ export const henchmen = [
         condition: `onEntry`,
         uses: `1`,
         shared: `no`,
-        effect: `teleport(random)`
+        effect: `teleport`
       },
       {
         type: `optional`,
@@ -310,7 +310,7 @@ export const henchmen = [
         condition: `onEntry()`,
         uses: `0`,
         shared: `no`,
-        effect: `teleport(random)`
+        effect: `teleport`
       },
       {
         type: `quick`,

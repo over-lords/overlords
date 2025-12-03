@@ -697,7 +697,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `onEntry`,
-        effect: `teleport(random)`
+        effect: `teleport`
       },
       {
         type: `quick`,
@@ -893,7 +893,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `onEntry`,
-        effect: `teleport(random)`
+        effect: `teleport`
       },
       {
         type: `quick`,
@@ -1395,7 +1395,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `onEntry`,
-        effect: `teleport(random)`
+        effect: `teleport`
       },
       {
         type: `quick`,
