@@ -23,8 +23,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `rescueBystander(1,random)`
@@ -51,8 +51,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `draw(1)`
@@ -90,8 +90,8 @@ export const henchmen = [
         effect: `teleport(random)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: ["travelPlus(1)"]
@@ -140,11 +140,11 @@ export const henchmen = [
         effect: `returnHeroAsVillain`
       },
       {
-        type: `uponDefeat`,
-        condition: `optional()`,
+        type: `optional`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
-        effect: `enaDraw(1,0)`
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -168,11 +168,11 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `optional()`,
+        type: `optional`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
-        effect: `enaDraw(1,0)`
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -207,8 +207,8 @@ export const henchmen = [
         effect: `teleport(random)`
       },
       {
-        type: `uponDefeat`,
-        condition: `optional()`,
+        type: `optional`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `returnHenchOrVillain(1)`
@@ -246,8 +246,8 @@ export const henchmen = [
         effect: `disableRetreat()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `regainLife(1)`
@@ -274,8 +274,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `damageOverlord(1)`
@@ -310,11 +310,11 @@ export const henchmen = [
         condition: `onEntry()`,
         uses: `0`,
         shared: `no`,
-        effect: `teleport()`
+        effect: `teleport(random)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `koFromKO(1)`
@@ -341,8 +341,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `regainLife(1)`
@@ -369,8 +369,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `damageOverlord(2)`
@@ -397,8 +397,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `draw(2)`
@@ -425,11 +425,11 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `optional()`,
+        type: `optional`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
-        effect: `enaDraw(1,0)`
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -464,8 +464,8 @@ export const henchmen = [
         effect: `returnHeroAsVillain`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: ["draw(2)","travelPlus(1)"]
@@ -492,8 +492,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `drawUseOverlord(1)`
@@ -520,8 +520,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `revealAndStopVillainDraw(1)`
@@ -548,8 +548,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: `scanKoMights(3)`
@@ -576,8 +576,8 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
         effect: ["draw(1)","travelPlus(1)"]
@@ -604,11 +604,11 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
-        effect: `rescueBystander(2,random)`
+        effect: `rescueBystander(2)`
       }
     ]
   },
@@ -632,11 +632,11 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `uponDefeat`,
-        condition: `optional()`,
+        type: `optional`,
+        condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
-        effect: `koTopCardDamageOverlord(1,5)`
+        effect: `koTopHeroCardDamageOverlord(1,5)`
       }
     ]
   },

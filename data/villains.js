@@ -28,17 +28,13 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `onEntry`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
+        type: `quick`,
+        condition: `onEntry`,
         effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
+        type: `quick`,
+        condition: `uponDefeat`,
         effect: `damageOverlord(2)`
       }
     ]
@@ -56,12 +52,12 @@ export const villains = [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
                Might of the Overlord: KO 2 Bystanders. <span class="line-gap"></span> 
-               Reward: OPTIONAL: Draw from the E&A.`
+               Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Move Over!`
       },
       {
         text: `Reward!`
@@ -69,20 +65,30 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
+        type: `optional`,
+        condition: `uponDefeat`,
         effect: `enemyDraw(1)`
       }
-    ]
+    ],
+    mightNamePrint: [
+      {
+          text: `Neo-Gotham is Mine!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`koBystander(2)`]
+      }
+    ],
   },
   {
     id: "5603",
@@ -95,31 +101,32 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: CHOOSE: Draw a card. <span class="line-gap"></span> OR <span class="line-gap"></span> Deal 2 Damage to a Henchman or Villain.`
+        text: `Reward: CHOOSE: Draw 1. <span class="line-gap"></span> OR <span class="line-gap"></span> Deal 2 Damage to a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+          text: `Choose Reward!`
       },
       {
-        text: `Reward!`
+          text: `Draw 1`
+      },
+      {
+          text: `Damage a Henchman or Villain`
       }
-    ],
-    abilitiesEffects: [
+  ],
+  abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+          type: `chooseOption()`,
+          condition: `uponDefeat`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+          type: `chooseOption(1)`,
+          effect: [`draw(1)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`damageVillain(any,2)`]
       }
     ]
   },
@@ -134,31 +141,19 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: OPTIONAL: Draw from the E&A.`
+        text: `Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
-      {
-        text: `none`
-      },
       {
         text: `Reward!`
       }
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
-      },
-      {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `enaDraw(1,0)`
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -178,7 +173,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Kryptonite Heart`
       },
       {
         text: `Reward!`
@@ -186,18 +181,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `halveIncomingDamageFrom(Super)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
       }
     ]
   },
@@ -214,12 +205,12 @@ export const villains = [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
                 Might of the Overlord: Draw 2 cards from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
-                  Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL: KO the top card of the Villain Deck.`
+                  Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Behold My Monkey Brain!`
       },
       {
         text: `Reward!`
@@ -227,17 +218,29 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
       },
       {
         type: `uponDefeat`,
         effect: [`scanDeck(villain,1)`,`applyKoCancel(scanned(villain))`]
       }
-    ]
+    ],
+    mightNamePrint: [
+      {
+          text: `Society of Super Villains, Attack!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`villainDraw(2)`]
+      }
+    ],
   },
   {
     id: "5607",
@@ -255,7 +258,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `That Felt Good...`
       },
       {
         text: `Reward!`
@@ -263,18 +266,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `turnEndWasDamaged()`,
+        effect: `increaseVillainDamage(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageVillain(any,3)`,`damageVillain(any,3)`]
       }
     ]
   },
@@ -294,7 +293,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Glide`
       },
       {
         text: `Reward!`
@@ -302,18 +301,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
       }
     ]
   },
@@ -328,31 +323,19 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: OPTIONAL: Draw from the E&A.`
+        text: `Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
-      {
-        text: `none`
-      },
       {
         text: `Reward!`
       }
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
-      },
-      {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -368,12 +351,12 @@ export const villains = [
     abilitiesText: [
       {
         text: `Heroes engaged with Hector Hammond cannot use their Icon Abilities. <span class="line-gap"></span> 
-                Reward: OPTIONAL: Draw from the E&A.`
+                Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Calculated for that`
       },
       {
         text: `Reward!`
@@ -381,18 +364,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `disableIconAbilitiesAgainst()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -407,12 +386,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
+        text: `Glide <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Glide`
       },
       {
         text: `Reward!`
@@ -420,18 +399,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -446,12 +421,12 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1 <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
+        text: `Charge 1 <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
       },
       {
         text: `Reward!`
@@ -459,18 +434,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -490,26 +461,14 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
-      },
-      {
         text: `Reward!`
       }
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
-      },
-      {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
       }
     ]
   },
@@ -529,7 +488,10 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
+      },
+      {
+        text: `Glide`
       },
       {
         text: `Reward!`
@@ -537,18 +499,19 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
+        type: `passive`,
         condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `travelPlus(1,permanent)`
       }
     ]
   },
@@ -570,7 +533,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `I'm In Charge Now!`
       },
       {
         text: `Reward!`
@@ -578,20 +541,30 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `koVillain(henchman,all)`
       }
-    ]
+    ],
+    mightNamePrint: [
+      {
+          text: `Get 'em Boys!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`drawOnlyHenchVillains(5)`]
+      }
+    ],
   },
   {
     id: "5616",
@@ -604,12 +577,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw a card, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Glide <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Glide`
       },
       {
         text: `Reward!`
@@ -617,18 +590,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
       },
       {
         type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        condition: `uponDefeat`,
+        effect: ["draw(1)","travelPlus(1)"]
       }
     ]
   },
@@ -648,7 +617,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Bang!`
       },
       {
         text: `Reward!`
@@ -656,18 +625,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(random,2)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
       }
     ]
   },
@@ -687,7 +652,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `I Learn`
       },
       {
         text: `Reward!`
@@ -695,18 +660,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `passive`,
+        condition: `damaged`,
+        effect: `logDamageCheckDamage`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(4)`
       }
     ]
   },
@@ -726,7 +687,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Mirrors Everywhere`
       },
       {
         text: `Reward!`
@@ -734,18 +695,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `teleport(random)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `lockVillain(any,1)`
       }
     ]
   },
@@ -765,7 +722,10 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Glide`
+      },
+      {
+        text: `Zap!`
       },
       {
         text: `Reward!`
@@ -773,18 +733,19 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(random,2)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
       }
     ]
   },
@@ -804,7 +765,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
       },
       {
         text: `Reward!`
@@ -812,18 +773,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
       }
     ]
   },
@@ -843,7 +800,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
       },
       {
         text: `Reward!`
@@ -851,18 +808,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
       }
     ]
   },
@@ -882,26 +835,35 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
       },
       {
-        text: `Reward!`
+        text: `Choose Reward!`
+      },
+      {
+          text: `Draw 1`
+      },
+      {
+          text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+          type: `chooseOption()`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`draw(1)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`enemyDraw(1)`]
       }
     ]
   },
@@ -921,7 +883,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `In Your Dreams!`
       },
       {
         text: `Reward!`
@@ -929,18 +891,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `teleport(random)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `lockVillain(any,999)`
       }
     ]
   },
@@ -955,12 +913,15 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1 <span class="line-gap"></span> If Giganta makes it to Keystone City: Double her remaining HP. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
+        text: `Charge 1 <span class="line-gap"></span> If Giganta makes it to Keystone City: Double her remaining HP. <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
+      },
+      {
+        text: `Time to Grow!`
       },
       {
         text: `Reward!`
@@ -968,18 +929,20 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
+        type: `quick`,
+        condition: `travelsTo(Keystone)`,
         uses: `1`,
-        shared: `no`,
-        effect: `none`
+        effect: `doubleVillainLife()`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -1001,7 +964,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Born to Rule!`
       },
       {
         text: `Reward!`
@@ -1009,20 +972,30 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageVillain(all,2)`
       }
-    ]
+    ],
+    mightNamePrint: [
+      {
+          text: `Get Angry!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`koCapturedBystander(all)`]
+      }
+    ],
   },
   {
     id: "5627",
@@ -1040,7 +1013,10 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
+      },
+      {
+        text: `Clash!`
       },
       {
         text: `Reward!`
@@ -1048,18 +1024,19 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
+        type: `passive`,
         condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasClash()`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(5)`
       }
     ]
   },
@@ -1082,7 +1059,10 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `I Am Your Downfall!`
+      },
+      {
+        text: `Charge!`
       },
       {
         text: `Reward!`
@@ -1090,20 +1070,35 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
       }
-    ]
+    ],
+    mightNamePrint: [
+      {
+          text: `I Will Break You!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`koTopHeroDiscard(all)`]
+      }
+    ],
   },
   {
     id: "5629",
@@ -1116,12 +1111,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Clash <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
+        text: `Clash <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Clash!`
       },
       {
         text: `Reward!`
@@ -1129,18 +1124,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasClash()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -1155,12 +1146,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Eject <span class="line-gap"></span> Reward: Draw a card, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Eject <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Get Out!`
       },
       {
         text: `Reward!`
@@ -1168,18 +1159,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasEject()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: ["draw(1)","travelPlus(1)"]
       }
     ]
   },
@@ -1194,12 +1181,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw a card, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Glide <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Glide`
       },
       {
         text: `Reward!`
@@ -1207,18 +1194,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: ["draw(1)","travelPlus(1)"]
       }
     ]
   },
@@ -1233,12 +1216,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw 2 cards, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Glide <span class="line-gap"></span> Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Glide`
       },
       {
         text: `Reward!`
@@ -1246,18 +1229,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
       }
     ]
   },
@@ -1277,26 +1256,35 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Charge!`
       },
       {
-        text: `Reward!`
+        text: `Choose Reward!`
+      },
+      {
+          text: `Restore a City`
+      },
+      {
+          text: `Damage the Overlord`
       }
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+          type: `chooseOption()`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`restoreCity()`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`damageOverlord(5)`]
       }
     ]
   },
@@ -1311,12 +1299,15 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL: Draw 3 cards and Travel to engage the Overlord.`
+        text: `Glide <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL : Draw 3, and Travel to engage the Overlord.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Glide`
+      },
+      {
+        text: `Caught Off-Guard!`
       },
       {
         text: `Reward!`
@@ -1324,18 +1315,19 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `hasGlide()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `passive`,
+        condition: `firstAttackPerTurn()`,
+        effect: `damageAttacker(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: ["draw(3)","travelTo(Overlord)"]
       }
     ]
   },
@@ -1355,7 +1347,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Magnetic Repulsion`
       },
       {
         text: `Reward!`
@@ -1363,18 +1355,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: [`halfDamage(Bat)`,`halfDamage(Arrow)`,`halfDamage(Hawk)`]
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2*getOverlordLevel())`
       }
     ]
   },
@@ -1394,7 +1382,10 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Where Did She Go?`
+      },
+      {
+        text: `My Reign Begins!`
       },
       {
         text: `Reward!`
@@ -1402,20 +1393,35 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `teleport(random)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
       }
-    ]
+    ],
+    mightNamePrint: [
+      {
+          text: `You're Mine Now!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`drawEnemy(2)`]
+      }
+    ],
   },
   {
     id: "5637",
@@ -1428,12 +1434,12 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL: Draw from the E&A.`
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `none`
+        text: `Got You!`
       },
       {
         text: `Reward!`
@@ -1441,18 +1447,14 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(random,1)`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `none`
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
       }
     ]
   },
@@ -1490,29 +1492,22 @@ export const villains = [
       {
         type: `onEntry`,
         condition: `none`,
-        uses: `1`,
-        shared: `no`,
         effect: `charge(1)`
       },
       {
         type: `passive`,
         condition: `none`,
-        uses: `0`,
-        shared: `no`,
         effect: `hasGlide()`
       },
       {
-        type: `uponDefeat`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
+        type: `quick`,
+        condition: `uponDefeat`,
         effect: `damageOverlord(20)`
       },
       {
         type: `quick`,
-        condition: `escaped()`,
+        condition: `onEscape`,
         uses: `999`,
-        shared: `no`,
         effect: `damageHero(all,3)`
       }
     ]
