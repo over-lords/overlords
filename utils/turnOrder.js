@@ -1067,14 +1067,48 @@ export function endCurrentHeroTurn(gameState) {
     }
 
     if (typeof heroState.cityIndex === "number") {
-        const slot = gameState.cities?.[heroState.cityIndex];
-        if (slot && slot.foe) {
-            const foe = slot.foe;
-            const dmg = foe.attack || 1;
-            heroState.hp -= dmg;
-            if (heroState.hp < 0) heroState.hp = 0;
+
+        // Heroes are in LOWER slots; villains are in the UPPER slot above
+        const heroIdx = heroState.cityIndex;
+        const foeIdx = heroIdx - 1;
+
+        const slotEntry = gameState.cities?.[foeIdx];
+
+        if (slotEntry && slotEntry.id) {
+            const foeId = String(slotEntry.id);
+
+            // Look this foe up in your data
+            const foe =
+                henchmen.find(h => String(h.id) === foeId) ||
+                villains.find(v => String(v.id) === foeId);
+
+            if (foe) {
+                const foeDamage = Number(foe.damage || 0);
+
+                // HERO DAMAGE THRESHOLD
+                const heroObj = heroes.find(h => String(h.id) === String(heroId));
+                const dt = Number(heroObj?.damageThreshold || 0);
+
+                // Only deal damage if foeDamage >= DT
+                if (foeDamage >= dt) {
+                    heroState.hp -= foeDamage;
+                    if (heroState.hp < 0) heroState.hp = 0;
+                    updateHeroHPDisplays(heroId);
+
+                    console.log(
+                        `[END TURN] ${heroObj?.name} takes ${foeDamage} damage from ${foe.name} in city ${heroState.cityIndex}.`
+                        + ` (DT=${dt})`
+                    );
+                } else {
+                    console.log(
+                        `[END TURN] ${heroObj?.name} ignores ${foe.name}'s damage `
+                        + `(foeDamage=${foeDamage} < DT=${dt}).`
+                    );
+                }
+            }
         }
     }
+
     if (Array.isArray(heroState.hand) && heroState.hand.length > 0) {
         heroState.discard = heroState.discard || [];
         heroState.discard.push(...heroState.hand);
@@ -1356,4 +1390,55 @@ function getCityNameFromIndex(idx) {
         case 11: return "Gotham City";
         default: return "Unknown City";
     }
+}
+
+function updateHeroHPDisplays(heroId) {
+    const hState = gameState.heroData?.[heroId];
+    if (!hState) return;
+
+    // Ensure HP isn't negative
+    const hp = Math.max(0, hState.hp);
+
+    /**********************************************
+     * 1. UPDATE HEROES ROW ("heroes-row")
+     **********************************************/
+    const heroIds = gameState.heroes || [];
+    const rowIndex = heroIds.indexOf(heroId);
+
+    if (rowIndex !== -1) {
+        const row = document.getElementById("heroes-row");
+        const slots = row?.querySelectorAll(".hero-slot") || [];
+        const slot = slots[rowIndex];
+        const hpText = slot?.querySelector(".hero-hp-text");
+        if (hpText) hpText.textContent = hp;
+    }
+
+    /**********************************************
+     * 2. UPDATE HERO PANEL (if open)
+     **********************************************/
+    const heroPanel = document.getElementById("hero-panel-content");
+    if (heroPanel && heroPanel.dataset?.heroId === String(heroId)) {
+        const panelHP = heroPanel.querySelector(".hero-panel-hp-value");
+        if (panelHP) panelHP.textContent = hp;
+    }
+
+    /**********************************************
+     * 3. UPDATE HERO CARD ON BOARD (if in city)
+     **********************************************/
+    if (typeof hState.cityIndex === "number") {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const slot = citySlots[hState.cityIndex];
+        if (slot) {
+            const wrapper = slot.querySelector(".card-wrapper");
+            if (wrapper) {
+                const hpBadge = wrapper.querySelector(".hero-card-hp");
+                if (hpBadge) hpBadge.textContent = hp;
+            }
+        }
+    }
+
+    /**********************************************
+     * 4. SAVE STATE
+     **********************************************/
+    saveGameState(gameState);
 }

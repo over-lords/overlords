@@ -9,6 +9,8 @@ import { scenarios } from '../data/scenarios.js';
 import { tactics } from '../data/tactics.js';
 import { villains } from '../data/villains.js';
 
+import { gameState } from "../data/gameState.js";
+
 export function findCardInAllSources(id) {
   const sources = [
     heroes,
@@ -387,8 +389,13 @@ export function renderCard(cardId, container) {
       })
     );
 
+    const liveHP =
+      (gameState.heroData?.[cardData.id]?.hp) ??
+      cardData.currentHP ??
+      cardData.hp;
+
     leftBottom.appendChild(
-      statBlock(`${assets}/Heart.png`, cardData.hp, {
+      statBlock(`${assets}/Heart.png`, liveHP, {
         iconSize: 32,
         iconMargin: "0px 0 0 0px",
         textMargin: "-5px 0 0 -26px",

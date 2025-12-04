@@ -24,5 +24,19 @@ export function loadGameState() {
 
 // Wipe save
 export function clearGameState() {
-    localStorage.removeItem(STORAGE_KEY);
+
+    const keysToClear = [
+        STORAGE_KEY,              // main saved blob
+        "villainDeck",
+        "villainDeckPointer",
+        "heroTurnIndex",
+        "turnCounter",
+        "revealedTopVillain",
+        "cities",
+        "heroData",
+        "heroesByPlayer",
+        "playerUsernames"
+    ];
+
+    keysToClear.forEach(k => localStorage.removeItem(k));
 }

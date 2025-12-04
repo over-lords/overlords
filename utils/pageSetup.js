@@ -57,14 +57,14 @@ function buildHeroesRow(selectedHeroIds, heroMap) {
         wrapper.className = "hero-border-wrapper";
 
         if (hero) {
-            hero.currentHP = hero.currentHP ?? hero.hp;
+            const currentHP = gameState.heroData?.[hero.id]?.hp ?? hero.currentHP ?? hero.hp;
 
             const hpBox = document.createElement("div");
             hpBox.className = "hero-hp-display";
 
             hpBox.innerHTML = `
                 <img class="hero-hp-heart" src="https://raw.githubusercontent.com/over-lords/overlords/7774da0ec26845edd8dc6c07756b04e78fafcbff/Public/Images/Card%20Assets/Misc/Heart.png">
-                <div class="hero-hp-text">${hero.currentHP}</div>
+                <div class="hero-hp-text" data-hero-id="${hero.id}">${currentHP}</div>
             `;
 
             slot.appendChild(hpBox);
@@ -1140,12 +1140,21 @@ export function buildHeroPanel(hero) {
     cardContainer.appendChild(rendered);
 
     /* STATS */
-    hero.currentHP = hero.currentHP ?? hero.hp;
+    const liveHP =
+        (gameState.heroData?.[hero.id]?.hp) ??
+        hero.currentHP ??
+        hero.hp;
+
+    hero.currentHP = liveHP ?? hero.hp;
 
     const statsBox = document.createElement("div");
     statsBox.innerHTML = `
         <h2 style="margin:4px 0;">${hero.name}</h2>
-        <div><strong>HP:</strong> ${hero.currentHP}</div>
+        <div><strong>HP:</strong> ${
+            (hero.currentHP === hero.hp)
+                ? hero.hp                      // show only HP if full
+                : `${hero.currentHP} / ${hero.hp}`  // otherwise show current/max
+        }</div>
         <div><strong>Damage Threshold:</strong> ${hero.damageThreshold}</div>
         <div><strong>Travel Budget:</strong> ${hero.travel}</div>
         <div><strong>Retreat Requirement:</strong> ${hero.retreat}</div>
