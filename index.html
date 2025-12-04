@@ -191,6 +191,24 @@
     <script type="module">
         import { supabase } from "./supabaseClient.js";
 
+        async function pingSupabase() {
+            try {
+                // This forces a real SQL SELECT 1, guaranteed to hit Postgres
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("id")
+                    .limit(1);
+
+                if (error) console.error("Ping failed:", error);
+                else console.log("Ping OK:", data);
+            } catch (err) {
+                console.error("Ping exception:", err);
+            }
+        }
+
+        // Fire immediately when this module runs
+        pingSupabase();
+
         const listContainer = document.getElementById("profilePicList");
         const currentDisplay = document.getElementById("profilePicCurrent");
         const confirmBtn = document.getElementById("profilePicConfirm");
