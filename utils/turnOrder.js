@@ -164,7 +164,7 @@ import { tactics } from '../data/tactics.js';
 import { scenarios } from '../data/scenarios.js';
 
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
-import { placeCardIntoCitySlot, buildVillainPanel, buildHeroPanel, playMightSwipeAnimation, showMightBanner } from './pageSetup.js';
+import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord } from './pageSetup.js';
 import { currentTurn, executeEffectSafely } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -182,6 +182,12 @@ const COUNTDOWN_IDS = new Set(["8001", "8002", "8003", "8004", "8005", "8006"]);
 
 function isCountdownId(id) {
     return COUNTDOWN_IDS.has(String(id));
+}
+
+function isScenarioActive(state) {
+    const stack = state.scenarioStack;
+    if (!Array.isArray(stack)) return false;
+    return stack.length > 0;
 }
 
 async function executeMightEffectSafe(effectString) {
@@ -556,58 +562,70 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
                 // 2. Main title banner
                 await showMightBanner("Might of the Overlord!", 2000);
 
-                // Get current overlord object
-                const overlordObj = (function() {
-                    const ovId = gameState.overlords?.[0];
-                    return overlords.find(o => String(o.id) === String(ovId));
-                })();
+                const scenarioCurrentlyActive = isScenarioActive(gameState);
 
-                if (overlordObj) {
-                    // 3a. Overlord name banners
-                    if (Array.isArray(overlordObj.mightNamePrint)) {
-                        for (const line of overlordObj.mightNamePrint) {
-                            await showMightBanner(line.text, 2000);
-                        }
-                    }
+                if (villainId === "7001") {
+                    const overlordObj = (function () {
+                        const ovId = gameState.overlords?.[0];
+                        return overlords.find(o => String(o.id) === String(ovId));
+                    })();
 
-                    // 3b. Overlord effects
-                    if (Array.isArray(overlordObj.mightEffects)) {
-                        for (const eff of overlordObj.mightEffects) {
-                            const effString = eff.effect;
-                            if (typeof effString === "string") {
-                                await executeMightEffectSafe(effString);
-                            } else if (Array.isArray(effString)) {
-                                for (const sub of effString) {
-                                    await executeMightEffectSafe(sub);
+                    if (overlordObj) {
+                        if (!scenarioCurrentlyActive) {
+                            // 3a. Overlord name banners
+                            if (Array.isArray(overlordObj.mightNamePrint)) {
+                                for (const line of overlordObj.mightNamePrint) {
+                                    await showMightBanner(line.text, 2000);
                                 }
                             }
+
+                            // 3b. Overlord effects
+                            if (Array.isArray(overlordObj.mightEffects)) {
+                                for (const eff of overlordObj.mightEffects) {
+                                    const effString = eff.effect;
+                                    if (typeof effString === "string") {
+                                        await executeMightEffectSafe(effString);
+                                    } else if (Array.isArray(effString)) {
+                                        for (const sub of effString) {
+                                            await executeMightEffectSafe(sub);
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            console.log("[MIGHT] Overlord Might suppressed because a Scenario is active.");
                         }
                     }
                 }
 
-                // 4. Active Tactics
-                const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
-                const currentTacticsArr = (gameState.tactics || [])
-                    .map(id => tacticMap.get(String(id)))
-                    .filter(Boolean);
+                // 4. Tactic Might – NEVER masked by Scenario
+                if (Array.isArray(gameState.tactics) && gameState.tactics.length > 0) {
 
-                for (const t of currentTacticsArr) {
-                    // name prints
-                    if (Array.isArray(t.mightNamePrint)) {
-                        for (const line of t.mightNamePrint) {
-                            await showMightBanner(line.text, 2000);
+                    const tacticMap = new Map(
+                        tactics.map(t => [String(t.id), t])
+                    );
+                    const currentTacticsArr = (gameState.tactics || [])
+                        .map(id => tacticMap.get(String(id)))
+                        .filter(Boolean);
+
+                    for (const t of currentTacticsArr) {
+                        // name prints
+                        if (Array.isArray(t.mightNamePrint)) {
+                            for (const line of t.mightNamePrint) {
+                                await showMightBanner(line.text, 2000);
+                            }
                         }
-                    }
 
-                    // effects
-                    if (Array.isArray(t.mightEffects)) {
-                        for (const eff of t.mightEffects) {
-                            const effString = eff.effect;
-                            if (typeof effString === "string") {
-                                await executeMightEffectSafe(effString);
-                            } else if (Array.isArray(effString)) {
-                                for (const sub of effString) {
-                                    await executeMightEffectSafe(sub);
+                        // effects
+                        if (Array.isArray(t.mightEffects)) {
+                            for (const eff of t.mightEffects) {
+                                const effString = eff.effect;
+                                if (typeof effString === "string") {
+                                    await executeMightEffectSafe(effString);
+                                } else if (Array.isArray(effString)) {
+                                    for (const sub of effString) {
+                                        await executeMightEffectSafe(sub);
+                                    }
                                 }
                             }
                         }
@@ -628,6 +646,77 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
                 saveGameState(gameState);
                 initializeTurnUI(gameState);
                 return;
+            } else if (data?.type === "Scenario") {
+
+                console.log("[SCENARIO] Drawn Scenario card:", villainId, data?.name);
+
+                // Ensure Scenario state containers exist
+                if (!Array.isArray(gameState.scenarioStack)) {
+                    gameState.scenarioStack = [];
+                }
+                if (!gameState.scenarioHP) {
+                    gameState.scenarioHP = {};
+                }
+
+                const scenarioId = String(data.id);
+                const baseHP = Number(data.hp) || 0;
+
+                // Track Scenario HP in gameState so it persists and can be modified by damage logic
+                if (typeof gameState.scenarioHP[scenarioId] !== "number") {
+                    gameState.scenarioHP[scenarioId] = baseHP;
+                }
+                data.currentHP = gameState.scenarioHP[scenarioId];
+
+                // Mark this as the active Scenario, on top of the stack
+                if (!gameState.scenarioStack.includes(scenarioId)) {
+                    gameState.scenarioStack.push(scenarioId);
+                }
+                gameState.activeScenarioId = scenarioId;
+
+                // Scenario "overtakes" Overlord UI: reuse overlord frame/panel, but with Scenario data
+                setCurrentOverlord(data);
+                buildOverlordPanel(data);
+
+                // Announce its name and abilitiesNamePrint
+                await showMightBanner(data.name, 2000);
+                if (Array.isArray(data.abilitiesNamePrint)) {
+                    for (const line of data.abilitiesNamePrint) {
+                        await showMightBanner(line.text, 2000);
+                    }
+                }
+
+                // Execute passive abilitiesEffects safely (usually condition: 'none')
+                if (Array.isArray(data.abilitiesEffects)) {
+                    for (const eff of data.abilitiesEffects) {
+                        if (!eff) continue;
+                        if (eff.type === "passive" && eff.effect && eff.condition === "none") {
+                            try {
+                                await executeEffectSafely(eff.effect, data, { source: "scenario" });
+                            } catch (err) {
+                                console.warn("[SCENARIO] Passive effect failed:", err);
+                            }
+                        }
+                    }
+                }
+
+                // IMPORTANT: do NOT place a villain on the board, do NOT shove the upper row.
+                // This behaves like Might — the draw is "consumed", but no city movement occurs.
+
+                if (typeof gameState.turnCounter !== "number") gameState.turnCounter = 0;
+                gameState.turnCounter++;
+
+                const heroIds = gameState.heroes || [];
+                if (heroIds.length > 0) {
+                    currentTurn(heroTurnIndex, heroIds);
+                }
+
+                gameState.heroTurnIndex = heroTurnIndex;
+
+                resetTurnTimerForHero();
+                saveGameState(gameState);
+                initializeTurnUI(gameState);
+                return;
+
             } else {
                 const hasTeleport = data?.abilitiesEffects?.some(e => {
                     if (!e) return false;

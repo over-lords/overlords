@@ -807,13 +807,20 @@ volMusic.addEventListener("input", () => { });
 function applyOverlordFrame(overlord) {
     if (!overlord) return;
 
-    const imgEl = document.getElementById("overlord-cropped");
+    const imgEl   = document.getElementById("overlord-cropped");
     const frameEl = document.getElementById("overlord-frame-img");
+    if (!imgEl || !frameEl) return;
 
-    // Put the overlord portrait into the cropped square
+    // Put the overlord/scenario portrait into the cropped square
     imgEl.src = overlord.image;
 
-    // Apply color mask to frame based on level
+    // Scenarios: use neutral frame (no difficulty tint)
+    if (overlord.type === "Scenario") {
+        frameEl.style.filter = "";
+        return;
+    }
+
+    // Apply color mask to frame based on level (Overlords only)
     let tint = "";
 
     if (overlord.level == 1) {
@@ -829,15 +836,51 @@ function applyOverlordFrame(overlord) {
     frameEl.style.filter = tint;
 }
 
-function setCurrentOverlord(overlord) {
+export function setCurrentOverlord(overlord) {
     if (!overlord) return;
     currentOverlord = overlord;
 
     applyOverlordFrame(overlord);
 
     const hpText = document.getElementById("overlord-hp-text");
-    overlord.currentHP = overlord.currentHP ?? overlord.hp;
-    hpText.textContent = overlord.currentHP;
+    if (!hpText) return;
+
+    const maxHP = Number(overlord.hp) || 0;
+    const idStr = String(overlord.id);
+
+    // Resolve current HP:
+    // prefer overlord.currentHP, then gameState containers, then printed hp
+    let currentHP = overlord.currentHP;
+
+    if (currentHP == null) {
+        if (overlord.type === "Scenario" && gameState.scenarioHP && gameState.scenarioHP[idStr] != null) {
+            currentHP = Number(gameState.scenarioHP[idStr]);
+        } else if (overlord.type !== "Scenario" && gameState.overlordData && gameState.overlordData.currentHP != null) {
+            currentHP = Number(gameState.overlordData.currentHP);
+        } else {
+            currentHP = maxHP;
+        }
+    }
+
+    // Sync object + gameState
+    overlord.currentHP = currentHP;
+
+    if (overlord.type === "Scenario") {
+        if (!gameState.scenarioHP) gameState.scenarioHP = {};
+        gameState.scenarioHP[idStr] = currentHP;
+        gameState.activeScenarioId = idStr;
+    } else {
+        if (!gameState.overlordData) gameState.overlordData = {};
+        gameState.overlordData.currentHP = currentHP;
+    }
+
+    // Display: full = "10", damaged = "6 / 10"
+    const hpDisplay =
+        maxHP && currentHP < maxHP
+            ? `${currentHP} / ${maxHP}`
+            : `${maxHP}`;
+
+    hpText.textContent = hpDisplay;
 }
 
 /* === Left Panel Button (the entire overlord frame is clickable) === */
@@ -871,7 +914,7 @@ function extractKeywordsFromAbilities(abilitiesTextArr) {
 }
 
 /* === Build the entire left panel === */
-function buildOverlordPanel(overlord) {
+export function buildOverlordPanel(overlord) {
     if (!overlord) return;
 
     const panel = document.getElementById("overlord-panel");
@@ -899,10 +942,50 @@ function buildOverlordPanel(overlord) {
 
     /* === Overlord Stats === */
     const statsBox = document.createElement("div");
+
+    // Resolve max HP
+    const maxHP = Number(overlord.hp) || 0;
+
+    // Resolve current HP with preference order:
+    // 1) overlord.currentHP if already set
+    // 2) gameState.scenarioHP[id] for Scenarios
+    // 3) gameState.overlordData.currentHP for Overlords
+    // 4) fall back to printed hp
+    let currentHP = overlord.currentHP;
+    const idStr = String(overlord.id);
+
+    if (currentHP == null) {
+        if (overlord.type === "Scenario" && gameState.scenarioHP && gameState.scenarioHP[idStr] != null) {
+            currentHP = Number(gameState.scenarioHP[idStr]);
+        } else if (overlord.type !== "Scenario" && gameState.overlordData && gameState.overlordData.currentHP != null) {
+            currentHP = Number(gameState.overlordData.currentHP);
+        } else {
+            currentHP = maxHP;
+        }
+    }
+
+    // Keep object + gameState in sync
+    overlord.currentHP = currentHP;
+
+    if (overlord.type === "Scenario") {
+        if (!gameState.scenarioHP) gameState.scenarioHP = {};
+        gameState.scenarioHP[idStr] = currentHP;
+    } else {
+        if (!gameState.overlordData) gameState.overlordData = {};
+        gameState.overlordData.currentHP = currentHP;
+    }
+
+    // Display: full = "10", damaged = "6 / 10"
+    const hpDisplay =
+        maxHP && currentHP < maxHP
+            ? `${currentHP} / ${maxHP}`
+            : `${maxHP}`;
+
     statsBox.innerHTML = `
         <h2 style="margin: 4px 0;">${overlord.name}</h2>
-        <div><strong>HP:</strong> ${overlord.currentHP ?? overlord.hp}</div>
+        <div><strong>HP:</strong> ${hpDisplay}</div>
     `;
+
 
     /* === Overlord Abilities === */
     const abilBox = document.createElement("div");
