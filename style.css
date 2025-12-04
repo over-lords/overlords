@@ -1335,3 +1335,16 @@ html, body {
 .might-banner.fade-out {
     opacity: 0;
 }
+
+#damage-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    background: rgba(255, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+    z-index: 999999; /* above everything */
+}

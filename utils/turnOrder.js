@@ -1447,6 +1447,8 @@ export function endCurrentHeroTurn(gameState) {
                 // Only deal damage if foeDamage >= DT
                 if (foeDamage >= dt) {
                     heroState.hp -= foeDamage;
+                    flashScreenRed();
+                    
                     if (heroState.hp < 0) heroState.hp = 0;
                     updateHeroHPDisplays(heroId);
                     updateBoardHeroHP(heroId);
@@ -1844,4 +1846,15 @@ function handleVillainEscape(entry, state) {
         `[ESCAPE] Villain escaped with ${total} bystanders → All KO’d.`,
         captured
     );
+}
+
+export function flashScreenRed() {
+    const flash = document.getElementById("damage-flash");
+    if (!flash) return;
+
+    flash.style.opacity = "1";
+
+    setTimeout(() => {
+        flash.style.opacity = "0";
+    }, 120); // quick pulse
 }
