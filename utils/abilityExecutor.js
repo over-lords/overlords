@@ -412,6 +412,44 @@ function pushChain(targetIndex) {
         // Off-board push occurs here
         const exiting = gameState.cities[targetIndex];
         if (!exiting) return;
+
+        //
+        // --- NEW: HANDLE BYSTANDER KO ON ESCAPE ---
+        //
+        if (Array.isArray(exiting.capturedBystanders) &&
+            exiting.capturedBystanders.length > 0) {
+
+            // Ensure KO pile exists
+            if (!Array.isArray(gameState.koCards)) {
+                gameState.koCards = [];
+            }
+
+            const victims = exiting.capturedBystanders;
+            victims.forEach(b => {
+                gameState.koCards.push({
+                    id: b.id,
+                    name: b.name,
+                    type: "Bystander",
+                    source: "escape"
+                });
+            });
+
+            const count = victims.length;
+            const message =
+                count === 1
+                    ? `1 Bystander KO'd`
+                    : `${count} Bystanders KO'd`;
+
+            // Use your banner system
+            if (typeof showMightBanner === "function") {
+                showMightBanner(message, 2000);
+            }
+
+            console.log(`[ESCAPE] Villain escaped with ${count} bystanders → ALL KO’d.`, victims);
+        }
+        // --- END NEW CODE ---
+
+        // Continue normal exit handling
         resolveExitForVillain(exiting);
         gameState.cities[targetIndex] = null;
         return;

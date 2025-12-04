@@ -542,6 +542,160 @@ export function drawNextVillainCard(gameState) {
     return id;
 }
 
+// --- BYSTANDER HELPERS -----------------------------------------------------
+
+function ensureKoCards(state) {
+    if (!Array.isArray(state.koCards)) {
+        state.koCards = [];
+    }
+}
+
+function getRightmostCapturingEnemyIndex(state) {
+    if (!Array.isArray(state.cities)) return null;
+
+    let chosen = null;
+
+    // iterate from RIGHT to LEFT (highest index → lowest index)
+    for (let i = state.cities.length - 1; i >= 0; i--) {
+        const entry = state.cities[i];
+        if (!entry || !entry.id) continue;
+
+        const idStr = String(entry.id);
+
+        const isHench = henchmen.some(h => String(h.id) === idStr);
+        const isVill  = villains.some(v => String(v.id) === idStr);
+
+        if (!isHench && !isVill) continue;
+
+        chosen = i;
+        break;   // first match from the right
+    }
+
+    return chosen;
+}
+
+/**
+ * Handle a BYSTANDER draw from the villain deck.
+ * - If any hench/villain on map → rightmost captures.
+ * - Else if scenario active      → scenario captures.
+ * - Else                         → Overlord immediately KOs the bystander.
+ *
+ * This does NOT place anything into the upper row and does NOT shove.
+ */
+async function handleBystanderDraw(bystanderId, cardData, state) {
+    // Ensure we have card data
+    if (!cardData) {
+        cardData = findCardInAllSources(bystanderId);
+    }
+
+    const byName = cardData?.name || "Bystander";
+
+    // 1) If any hench/villain is on the map, the rightmost captures
+    const enemyIdx = getRightmostCapturingEnemyIndex(state);
+
+    if (enemyIdx !== null) {
+        if (!Array.isArray(state.cities)) {
+            state.cities = new Array(12).fill(null);
+        }
+
+        const entry = state.cities[enemyIdx];
+        if (!entry) {
+            console.warn("[BYSTANDER] Expected foe at", enemyIdx, "but none found.");
+        } else {
+            // Attach to city entry
+            if (!Array.isArray(entry.capturedBystanders)) {
+                entry.capturedBystanders = [];
+            }
+            entry.capturedBystanders.push({
+                id: String(bystanderId),
+                name: byName
+            });
+
+            // Also attach to the static card data for villain-panel display
+            const foeId = String(entry.id);
+            const foeCard =
+                henchmen.find(h => String(h.id) === foeId) ||
+                villains.find(v => String(v.id) === foeId);
+
+            if (foeCard) {
+                if (!Array.isArray(foeCard.capturedBystanders)) {
+                    foeCard.capturedBystanders = [];
+                }
+                foeCard.capturedBystanders.push({
+                    id: String(bystanderId),
+                    name: byName
+                });
+            }
+
+            try {
+                await showMightBanner("Bystander Captured!", 2000);
+            } catch (err) {
+                console.warn("[BYSTANDER] Failed to show capture banner:", err);
+            }
+
+            console.log(
+                `[BYSTANDER] ${byName} captured by foe in city index ${enemyIdx}.`,
+                { entry, foeCard }
+            );
+        }
+
+        // Draw is consumed, nothing goes to the board, no shove.
+        return;
+    }
+
+    // 2) No hench/villain but a Scenario is active → Scenario captures
+    if (isScenarioActive(state)) {
+        const scenarioId = String(state.activeScenarioId || "");
+        if (!scenarioId) {
+            console.warn("[BYSTANDER] Scenario flagged active but no activeScenarioId in state.");
+        }
+
+        if (!state.scenarioCapturedBystanders) {
+            state.scenarioCapturedBystanders = {};
+        }
+        if (!Array.isArray(state.scenarioCapturedBystanders[scenarioId])) {
+            state.scenarioCapturedBystanders[scenarioId] = [];
+        }
+
+        state.scenarioCapturedBystanders[scenarioId].push({
+            id: String(bystanderId),
+            name: byName
+        });
+
+        console.log(
+            `[BYSTANDER] ${byName} captured by active Scenario ${scenarioId}.`,
+            state.scenarioCapturedBystanders[scenarioId]
+        );
+
+        return;
+    }
+
+    // 3) No foes and no Scenario → Overlord immediately KOs the bystander
+    ensureKoCards(state);
+
+    state.koCards.push({
+        id: String(bystanderId),
+        name: byName,
+        type: "Bystander",
+        source: "villainDeck"
+    });
+
+    // Count total KO'd bystanders for messaging
+    const totalKOd = state.koCards.filter(c => c.type === "Bystander").length;
+    const text = totalKOd === 1 ? "1 Bystander KO'd" : `${totalKOd} Bystanders KO'd`;
+
+    // Use the existing Might banner for the announcement
+    try {
+        await showMightBanner(text, 2000);
+    } catch (err) {
+        console.warn("[BYSTANDER] Failed to show KO banner:", err);
+    }
+
+    console.log(
+        `[BYSTANDER] ${byName} KO'd by Overlord. Total KO'd bystanders: ${totalKOd}.`
+    );
+}
+
 export async function startHeroTurn(gameState, { skipVillainDraw = false } = {}) {
 
     if (!skipVillainDraw && window.VILLAIN_DRAW_ENABLED) {
@@ -717,6 +871,8 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
                 initializeTurnUI(gameState);
                 return;
 
+            } else if (data?.type === "Bystander") {
+                await handleBystanderDraw(villainId, data, gameState);
             } else {
                 const hasTeleport = data?.abilitiesEffects?.some(e => {
                     if (!e) return false;
@@ -783,6 +939,12 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
                         // Reveal top card of the villain deck
                         gameState.revealedTopVillain = true;
                         // Nothing enters the map this villain phase.
+
+                        try {
+                            await showMightBanner("Top Card Revealed", 2000);
+                        } catch (err) {
+                            console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
+                        }
                     } else {
                         const randomIndex = Math.floor(Math.random() * openSlots.length);
                         const targetIdx = openSlots[randomIndex];
@@ -1647,4 +1809,39 @@ export function updateBoardHeroHP(heroId) {
             const num = el.querySelector("div") || el; // depending on structure
             num.textContent = hp;
         });
+}
+
+function handleVillainEscape(entry, state) {
+    if (!entry) return;
+
+    const captured = Array.isArray(entry.capturedBystanders)
+        ? entry.capturedBystanders
+        : [];
+
+    if (captured.length === 0) return;
+
+    if (!Array.isArray(state.koCards)) {
+        state.koCards = [];
+    }
+
+    for (const b of captured) {
+        state.koCards.push({
+            id: b.id,
+            name: b.name,
+            type: "Bystander",
+            source: "escape"
+        });
+    }
+
+    const total = captured.length;
+    const message = total === 1
+        ? "1 Bystander KO'd"
+        : `${total} Bystanders KO'd`;
+
+    showMightBanner(message, 2000);
+
+    console.log(
+        `[ESCAPE] Villain escaped with ${total} bystanders → All KO’d.`,
+        captured
+    );
 }

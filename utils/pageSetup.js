@@ -12,7 +12,7 @@ import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI } from "./turnOrder.js";
 
-import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
+import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { gameState } from "../data/gameState.js";
 
 let currentOverlord = null;
@@ -343,6 +343,7 @@ async function restoreUIFromState(state) {
         console.log("=== RESUMING SAVED GAME ===");
         Object.assign(gameState, saved);
         restoreUIFromState(gameState);
+        restoreCapturedBystandersIntoCardData(saved);
 
         // IMPORTANT: Do NOT auto-start when resuming a game
         window.VILLAIN_DRAW_ENABLED = true;
@@ -1127,11 +1128,38 @@ export function buildVillainPanel(villainCard) {
     content.appendChild(topRow);
 
     const captured = document.createElement("div");
+
+    const capturedList = Array.isArray(villainCard.capturedBystanders)
+        ? villainCard.capturedBystanders
+        : [];
+
+    const capturedCount =
+        capturedList.length ||
+        Number(villainCard.capturedBystanders) ||
+        0;
+
     captured.innerHTML = `
         <h3>Captured Bystanders</h3>
-        <div>${villainCard.capturedBystanders || 0}</div>
+        ${
+            capturedList.length
+                ? (() => {
+                    const counts = capturedList.reduce((map, b) => {
+                        const key = b.name || "Unknown";
+                        map[key] = (map[key] || 0) + 1;
+                        return map;
+                    }, {});
+
+                    const lines = Object.entries(counts)
+                        .map(([name, count]) => `${count}x ${name}`)
+                        .join("<br>");
+
+                    return `<div style="margin-top:4px; font-size:0.9em;">${lines}</div>`;
+                })()
+                : ""
+        }
     `;
     content.appendChild(captured);
+
 
     const foundKeys = extractKeywordsFromAbilities(villainCard.abilitiesText).sort((a, b) => a.localeCompare(b));
 
@@ -1641,3 +1669,4 @@ export function showMightBanner(text, duration = 1400) {
         }, duration);
     });
 }
+
