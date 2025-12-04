@@ -244,7 +244,7 @@ export const overlords = [
     doNotShow: "false",
     abilitiesText: [
       {
-        text: `Might of the Overlord: Play the next Enemy from the Enemies and Allies Pile.`
+        text: `Might of the Overlord: Play the next Enemy from the E&A.`
       }
     ],
     abilitiesNamePrint: [
