@@ -394,14 +394,18 @@ export function renderCard(cardId, container) {
       cardData.currentHP ??
       cardData.hp;
 
-    leftBottom.appendChild(
-      statBlock(`${assets}/Heart.png`, liveHP, {
+    const hpBox = statBlock(`${assets}/Heart.png`, liveHP, {
         iconSize: 32,
         iconMargin: "0px 0 0 0px",
         textMargin: "-5px 0 0 -26px",
         className: "heartBlock"
-      })
-    );
+    });
+
+    // ADD THESE TWO LINES
+    hpBox.classList.add("hero-board-hp");
+    hpBox.dataset.heroId = cardData.id;
+
+    leftBottom.appendChild(hpBox);
 
     rightTop.appendChild(
       statBlock(`${assets}/Travel.png`, cardData.travel, {

@@ -1094,6 +1094,7 @@ export function endCurrentHeroTurn(gameState) {
                     heroState.hp -= foeDamage;
                     if (heroState.hp < 0) heroState.hp = 0;
                     updateHeroHPDisplays(heroId);
+                    updateBoardHeroHP(heroId);
 
                     console.log(
                         `[END TURN] ${heroObj?.name} takes ${foeDamage} damage from ${foe.name} in city ${heroState.cityIndex}.`
@@ -1441,4 +1442,16 @@ function updateHeroHPDisplays(heroId) {
      * 4. SAVE STATE
      **********************************************/
     saveGameState(gameState);
+}
+
+export function updateBoardHeroHP(heroId) {
+    const hp = gameState.heroData?.[heroId]?.hp;
+    if (hp == null) return;
+
+    // Update every HP node on board with matching heroId
+    document.querySelectorAll(`.hero-board-hp[data-hero-id="${heroId}"]`)
+        .forEach(el => {
+            const num = el.querySelector("div") || el; // depending on structure
+            num.textContent = hp;
+        });
 }
