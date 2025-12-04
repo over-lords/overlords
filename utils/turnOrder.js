@@ -155,10 +155,16 @@ const isMultiplayer = (window.GAME_MODE === "multi");
 
 import { heroes } from '../data/faceCards.js';
 import { heroCards } from '../data/heroCards.js';
+
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
+import { overlords } from '../data/overlords.js';
+
+import { tactics } from '../data/tactics.js';
+import { scenarios } from '../data/scenarios.js';
+
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
-import { placeCardIntoCitySlot, buildVillainPanel, buildHeroPanel } from './pageSetup.js';
+import { placeCardIntoCitySlot, buildVillainPanel, buildHeroPanel, playMightSwipeAnimation, showMightBanner } from './pageSetup.js';
 import { currentTurn, executeEffectSafely } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -176,6 +182,22 @@ const COUNTDOWN_IDS = new Set(["8001", "8002", "8003", "8004", "8005", "8006"]);
 
 function isCountdownId(id) {
     return COUNTDOWN_IDS.has(String(id));
+}
+
+async function executeMightEffectSafe(effectString) {
+    try {
+        const { executeEffectSafely } = await import("./abilityExecutor.js");
+
+        if (typeof executeEffectSafely !== "function") {
+            console.warn("[MIGHT] executeEffectSafely missing in abilityExecutor.");
+            return;
+        }
+
+        console.log("[MIGHT] Executing effect:", effectString);
+        await executeEffectSafely(effectString, { source: "might" });
+    } catch (err) {
+        console.warn("[MIGHT] Could not execute effect:", effectString, err);
+    }
 }
 
 function markCityDestroyed(upperIdx, gameState) {
@@ -524,6 +546,88 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
             if (isCountdownId(villainId)) {
                 console.log("[COUNTDOWN] Drawing countdown card", villainId);
                 handleCountdownDraw(villainId, gameState);
+            } else if (data?.type === "Might" || villainId === "7001") {
+
+                console.log("[MIGHT] Drawn Might of the Overlord — skip city placement.");
+
+                // 1. Swipe animation
+                await playMightSwipeAnimation();
+
+                // 2. Main title banner
+                await showMightBanner("Might of the Overlord!", 2000);
+
+                // Get current overlord object
+                const overlordObj = (function() {
+                    const ovId = gameState.overlords?.[0];
+                    return overlords.find(o => String(o.id) === String(ovId));
+                })();
+
+                if (overlordObj) {
+                    // 3a. Overlord name banners
+                    if (Array.isArray(overlordObj.mightNamePrint)) {
+                        for (const line of overlordObj.mightNamePrint) {
+                            await showMightBanner(line.text, 2000);
+                        }
+                    }
+
+                    // 3b. Overlord effects
+                    if (Array.isArray(overlordObj.mightEffects)) {
+                        for (const eff of overlordObj.mightEffects) {
+                            const effString = eff.effect;
+                            if (typeof effString === "string") {
+                                await executeMightEffectSafe(effString);
+                            } else if (Array.isArray(effString)) {
+                                for (const sub of effString) {
+                                    await executeMightEffectSafe(sub);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 4. Active Tactics
+                const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+                const currentTacticsArr = (gameState.tactics || [])
+                    .map(id => tacticMap.get(String(id)))
+                    .filter(Boolean);
+
+                for (const t of currentTacticsArr) {
+                    // name prints
+                    if (Array.isArray(t.mightNamePrint)) {
+                        for (const line of t.mightNamePrint) {
+                            await showMightBanner(line.text, 2000);
+                        }
+                    }
+
+                    // effects
+                    if (Array.isArray(t.mightEffects)) {
+                        for (const eff of t.mightEffects) {
+                            const effString = eff.effect;
+                            if (typeof effString === "string") {
+                                await executeMightEffectSafe(effString);
+                            } else if (Array.isArray(effString)) {
+                                for (const sub of effString) {
+                                    await executeMightEffectSafe(sub);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (typeof gameState.turnCounter !== "number") gameState.turnCounter = 0;
+                gameState.turnCounter++;
+
+                const heroIds = gameState.heroes || [];
+                if (heroIds.length > 0) {
+                    currentTurn(heroTurnIndex, heroIds);
+                }
+
+                gameState.heroTurnIndex = heroTurnIndex;
+
+                resetTurnTimerForHero();
+                saveGameState(gameState);
+                initializeTurnUI(gameState);
+                return;
             } else {
                 const hasTeleport = data?.abilitiesEffects?.some(e => {
                     if (!e) return false;

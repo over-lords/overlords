@@ -1306,3 +1306,32 @@ html, body {
     display: block;
     height: 50px;
 }
+
+.might-swipe-wrapper .card-wrapper {
+    transform: scale(0.6); /* makes the card a bit larger for dramatic effect */
+}
+
+.might-banner {
+    position: fixed;
+    top: 150px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(31, 31, 31, 0.85);
+    padding: 18px 30px;
+    border-radius: 8px;
+    font-size: 30px;
+    z-index: 99999;
+    opacity: 0;
+    pointer-events: none;
+    color: white;
+    font-weight: bold;
+    transition: opacity .4s ease;
+}
+
+.might-banner.fade-in {
+    opacity: 1;
+}
+
+.might-banner.fade-out {
+    opacity: 0;
+}

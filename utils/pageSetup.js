@@ -1502,3 +1502,59 @@ function buildTopVillainPanelFromDeckTop() {
     // Slide panel open
     panel.classList.add("open");
 }
+
+export function playMightSwipeAnimation() {
+    return new Promise(resolve => {
+
+        // Wrapper to hold the rendered card
+        const wrapper = document.createElement("div");
+        wrapper.className = "might-swipe-wrapper";
+
+        // Position on top of all UI
+        wrapper.style.position = "fixed";
+        wrapper.style.top = "50%";
+        wrapper.style.left = "0";
+        wrapper.style.transform = "translateY(-50%) translateX(100vw)";
+        wrapper.style.transition = "transform 2.5s ease-out";
+        wrapper.style.zIndex = "999999";  // above everything
+        wrapper.style.pointerEvents = "none";
+
+        // Create the actual card using your renderer
+        const cardNode = renderCard("7001", wrapper);  
+        wrapper.appendChild(cardNode);
+
+        document.body.appendChild(wrapper);
+
+        // Kick off animation on next frame
+        requestAnimationFrame(() => {
+            wrapper.style.transform = "translateY(-50%) translateX(-120vw)";
+        });
+
+        // Remove after full sweep
+        setTimeout(() => {
+            wrapper.remove();
+            resolve();
+        }, 1500); // Adjust timing if needed
+    });
+}
+
+export function showMightBanner(text, duration = 1400) {
+    return new Promise(resolve => {
+        const banner = document.createElement("div");
+        banner.className = "might-banner";
+        banner.textContent = text;
+
+        document.body.appendChild(banner);
+        banner.classList.add("fade-in");
+
+        setTimeout(() => {
+            banner.classList.remove("fade-in");
+            banner.classList.add("fade-out");
+
+            setTimeout(() => {
+                banner.remove();
+                resolve();
+            }, 800);
+        }, duration);
+    });
+}

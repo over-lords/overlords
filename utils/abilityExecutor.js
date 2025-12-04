@@ -267,6 +267,39 @@ function runCharge(cardId, distance) {
 
         saveGameState(gameState);
 
+        //
+        // NEW FIX — Clear the cities behind the charging villain
+        //
+        (function clearCitiesBehindCharge() {
+            const citySlots = document.querySelectorAll(".city-slot");
+
+            // The destination position is the last value of fromPos + 1 after the loop.
+            // But since fromPos was decremented after shifts, the destination city is:
+            const destinationPos = fromPos + 1;
+            const destIndex = UPPER_ORDER[destinationPos];
+
+            // Clear all cities *between entryIndex and the destination*, EXCLUDING the destination itself.
+            // entryIndex is CITY_ENTRY_UPPER.
+            const entryPos = UPPER_ORDER.indexOf(entryIndex);
+
+            for (let pos = entryPos; pos > destinationPos; pos--) {
+                const idx = UPPER_ORDER[pos];
+
+                // 1. Clear DOM
+                const slot = citySlots[idx];
+                if (slot) {
+                    const area = slot.querySelector(".city-card-area");
+                    if (area) area.innerHTML = "";
+                }
+
+                // 2. Clear gamestate entry
+                if (Array.isArray(gameState.cities)) {
+                    gameState.cities[idx] = null;
+                }
+            }
+        })();
+
+
         // === NEW: FIX TRAVEL OFFSET AFTER CHARGE ===
         // Force hero travel UI to recalculate AFTER all villain movement is done.
         setTimeout(() => {
@@ -396,12 +429,16 @@ function pushChain(targetIndex) {
 function moveCardModelAndDOM(fromIndex, toIndex) {
 
     const citySlots = document.querySelectorAll(".city-slot");
+    if (!citySlots || !citySlots.length) return;
 
-    // DOM
+    // --- VILLAIN DOM ---
     const fromSlot = citySlots[fromIndex];
-    const toSlot = citySlots[toIndex];
+    const toSlot   = citySlots[toIndex];
+    if (!fromSlot || !toSlot) return;
+
     const fromArea = fromSlot.querySelector(".city-card-area");
-    const toArea = toSlot.querySelector(".city-card-area");
+    const toArea   = toSlot.querySelector(".city-card-area");
+    if (!fromArea || !toArea) return;
 
     const node = fromArea.querySelector(".card-wrapper");
     if (!node) return;
@@ -414,12 +451,74 @@ function moveCardModelAndDOM(fromIndex, toIndex) {
 
     setTimeout(() => node.classList.remove("city-card-slide-left"), 650);
 
-    // MODEL
+    // --- VILLAIN MODEL ---
+    if (!Array.isArray(gameState.cities)) {
+        gameState.cities = new Array(12).fill(null);
+    }
+
     gameState.cities[toIndex] = gameState.cities[fromIndex];
     if (gameState.cities[toIndex]) {
         gameState.cities[toIndex].slotIndex = toIndex;
     }
     gameState.cities[fromIndex] = null;
+
+    // --- HERO FOLLOW LOGIC (for Charge, etc.) ---
+    moveHeroesWithVillain(fromIndex, toIndex);
+}
+
+function moveHeroesWithVillain(fromUpperIndex, toUpperIndex) {
+    // Heroes follow villains from lower city under FROM to lower city under TO
+    // Only applies to valid city indices; HQ heroes (cityIndex === null) are unaffected.
+
+    if (!Array.isArray(gameState.heroes) || !gameState.heroData) return;
+
+    const fromLowerIndex = fromUpperIndex + 1;
+    const toLowerIndex   = toUpperIndex + 1;
+
+    const heroIds = gameState.heroes || [];
+    if (!heroIds.length) return;
+
+    const citySlots = document.querySelectorAll(".city-slot");
+    if (!citySlots || !citySlots.length) return;
+
+    const fromSlot = citySlots[fromLowerIndex];
+    const toSlot   = citySlots[toLowerIndex];
+    if (!fromSlot || !toSlot) return;
+
+    const fromArea = fromSlot.querySelector(".city-card-area");
+    const toArea   = toSlot.querySelector(".city-card-area");
+    if (!fromArea || !toArea) return;
+
+    heroIds.forEach(hid => {
+        const hState = gameState.heroData?.[hid];
+        if (!hState) return;
+
+        // Only heroes currently in the lower city under the FROM upper index should move
+        if (hState.cityIndex !== fromLowerIndex) return;
+
+        // Update model first
+        hState.cityIndex = toLowerIndex;
+
+        const heroNode = fromArea.querySelector(".card-wrapper");
+        if (!heroNode) return;
+
+        // Match the animation behavior from shoveUpper
+        heroNode.classList.remove("city-card-enter");
+        heroNode.classList.remove("city-card-slide-left");
+        heroNode.classList.add("hero-card-slide-left");
+
+        setTimeout(() => {
+            const freshFromArea = fromSlot.querySelector(".city-card-area");
+            const freshToArea   = toSlot.querySelector(".city-card-area");
+            if (freshFromArea && freshToArea) {
+                freshFromArea.innerHTML = "";
+                freshToArea.innerHTML   = "";
+                freshToArea.appendChild(heroNode);
+            }
+
+            heroNode.classList.remove("hero-card-slide-left");
+        }, 650); // same timing as villains
+    });
 }
 
 function isFrozen(cardId) {
@@ -432,7 +531,67 @@ function isFrozen(cardId) {
 }
 
 function resolveExitForVillain(entry) {
-    // Your existing shoveUpper exit logic applies:
-    // KO villains, handle bystanders, takeover rules, etc.
+    if (!entry) return;
+
+    const upperIdx = Number(entry.slotIndex);
+    if (Number.isNaN(upperIdx)) {
+        console.warn("[resolveExitForVillain] Missing or invalid slotIndex on entry:", entry);
+        return;
+    }
+
+    const lowerIdx = upperIdx + 1;
+
     console.warn("Villain exited via Charge push:", entry);
+
+    const citySlots = document.querySelectorAll(".city-slot");
+    const upperSlot = citySlots[upperIdx];
+    const lowerSlot = citySlots[lowerIdx];
+
+    // 1) Clear villain DOM from upper city
+    if (upperSlot) {
+        const upperArea = upperSlot.querySelector(".city-card-area");
+        if (upperArea) {
+            upperArea.innerHTML = "";
+        }
+    }
+
+    // 2) Clear villain model entry (defensive; caller also nulls gameState.cities[targetIndex])
+    if (Array.isArray(gameState.cities)) {
+        gameState.cities[upperIdx] = null;
+    }
+
+    // 3) If a hero is in the lower city under this villain, send them back to HQ
+    const heroIds = gameState.heroes || [];
+    let heroReturnedToHQ = false;
+
+    heroIds.forEach(hid => {
+        const hState = gameState.heroData?.[hid];
+        if (!hState) return;
+
+        if (hState.cityIndex === lowerIdx) {
+            // Move hero back to HQ
+            hState.cityIndex = null;
+            heroReturnedToHQ = true;
+
+            const heroObj =
+                heroes.find(h => String(h.id) === String(hid)) ||
+                null;
+            const heroName = heroObj?.name || `Hero ${hid}`;
+
+            console.log(
+                `[resolveExitForVillain] ${heroName} was facing villain at upper ${upperIdx}/lower ${lowerIdx} and returns to HQ as the villain leaves the board.`
+            );
+        }
+    });
+
+    // 4) Clear hero DOM from the lower city if we moved someone back to HQ
+    if (heroReturnedToHQ && lowerSlot) {
+        const lowerArea = lowerSlot.querySelector(".city-card-area");
+        if (lowerArea) {
+            lowerArea.innerHTML = "";
+        }
+    }
+
+    // Persist hero position changes
+    saveGameState(gameState);
 }
