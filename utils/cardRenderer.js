@@ -183,6 +183,8 @@ export function renderCard(cardId, container) {
     return wrapper;
   } else if (cardData.type === "Hero") {
 
+    const isBoardRender = !!(container?.classList?.contains("card-wrapper"));
+
     const card = document.createElement('div');
     card.classList.add('card');
     card.style.position = 'relative';
@@ -279,14 +281,26 @@ export function renderCard(cardId, container) {
     bottomStrip.style.bottom = '0';
     bottomStrip.style.left = '0';
     bottomStrip.style.width = '100%';
-    bottomStrip.style.height = '110px';
     bottomStrip.style.background = 'rgba(0,0,0,0.65)';
     bottomStrip.style.color = 'white';
-    bottomStrip.style.display = 'grid';
-    bottomStrip.style.gridTemplateColumns = '1fr 4fr 1fr'; // left - center (wide) - right
-    bottomStrip.style.gridTemplateRows = '1fr 1fr'; // two rows
     bottomStrip.style.boxSizing = 'border-box';
-    bottomStrip.style.padding = '4px 6px';
+
+    // Board render = enlarged stat icons, no abilities text
+    if (isBoardRender) {
+        bottomStrip.style.height = '120px';
+        bottomStrip.style.display = 'flex';
+        bottomStrip.style.alignItems = 'center';
+        bottomStrip.style.justifyContent = 'space-evenly';
+    } 
+    // Normal (non-board) render = original grid layout
+    else {
+        bottomStrip.style.height = '110px';
+        bottomStrip.style.display = 'grid';
+        bottomStrip.style.gridTemplateColumns = '1fr 4fr 1fr';
+        bottomStrip.style.gridTemplateRows = '1fr 1fr';
+        bottomStrip.style.padding = '4px 6px';
+    }
+
     card.appendChild(bottomStrip);
 
     // LEFT COLUMN (2 rows)
@@ -294,7 +308,8 @@ export function renderCard(cardId, container) {
     const leftBottom = document.createElement('div');
 
     // CENTER COLUMN (1 tall row spanning both)
-    const center = document.createElement('div');
+    let center = null;
+    center = document.createElement('div');
     center.style.gridRow = '1 / span 2';
     center.style.gridColumn = '2';
     center.style.display = 'flex';
@@ -399,29 +414,96 @@ export function renderCard(cardId, container) {
       })
     );
 
-    // center abilities (tall middle area)
-    const abilityBox = document.createElement('div');
-    abilityBox.style.width = '100%';
-    abilityBox.style.fontSize = '10px';
-    abilityBox.style.lineHeight = '1.1em';
-    abilityBox.style.textAlign = 'center';
+    // If NOT board render, include ability text area
+    if (!isBoardRender) {
+        center = document.createElement('div');
+        center.style.gridRow = '1 / span 2';
+        center.style.gridColumn = '2';
+        center.style.display = 'flex';
+        center.style.alignItems = 'center';
+        center.style.justifyContent = 'center';
+        center.style.textAlign = 'center';
+        center.style.padding = '0 3px';
+        center.style.overflow = 'hidden';
 
-    if (Array.isArray(cardData.abilitiesText)) {
-      cardData.abilitiesText.forEach(a => {
-        const line = document.createElement('div');
-        line.innerHTML = renderAbilityText(a.text);
-        abilityBox.appendChild(line);
-      });
+        const abilityBox = document.createElement('div');
+        abilityBox.style.width = '100%';
+        abilityBox.style.fontSize = '10px';
+        abilityBox.style.lineHeight = '1.1em';
+
+        if (Array.isArray(cardData.abilitiesText)) {
+            cardData.abilitiesText.forEach(a => {
+                const line = document.createElement('div');
+                line.innerHTML = renderAbilityText(a.text);
+                abilityBox.appendChild(line);
+            });
+        }
+
+        center.appendChild(abilityBox);
     }
 
-    center.appendChild(abilityBox);
-
     // place in grid
-    bottomStrip.appendChild(leftTop);
-    bottomStrip.appendChild(center);
-    bottomStrip.appendChild(rightTop);
-    bottomStrip.appendChild(leftBottom);
-    bottomStrip.appendChild(rightBottom);
+    if (isBoardRender) {
+        // SHIELD (Damage Threshold)
+        const shield = leftTop.querySelector(".shieldBlock");
+        if (shield) {
+            shield.style.transform = "translate(20.5px, -25px)";
+            shield.querySelector("img").style.width = "60px";
+            shield.querySelector("img").style.height = "60px";
+            shield.querySelector("div").style.fontSize = "32px";
+            shield.querySelector("div").style.margin = "-5px 0 0 -40px";
+        }
+
+        // HEART (HP)
+        const heart = leftBottom.querySelector(".heartBlock");
+        if (heart) {
+            heart.style.transform = "translate(-32px, 30px)";
+            heart.querySelector("img").style.width = "62px";
+            heart.querySelector("img").style.height = "62px";
+            heart.querySelector("div").style.fontSize = "28px";
+            heart.querySelector("div").style.margin = "-5px 0 0 -47px";
+        }
+
+        // TRAVEL
+        const travel = rightTop.querySelector(".travelBlock");
+        if (travel) {
+            travel.style.transform = "translate(16px, -30px)";
+            travel.querySelector("img").style.width = "58px";
+            travel.querySelector("img").style.height = "58px";
+            travel.querySelector("div").style.fontSize = "32px";
+            travel.querySelector("div").style.margin = "17px 0 0 -41px";
+        }
+
+        // RETREAT
+        const retreat = rightBottom.querySelector(".retreatBlock");
+        if (retreat) {
+            retreat.style.transform = "translate(-40px, 32px)";
+            retreat.querySelector("img").style.width = "64px";
+            retreat.querySelector("img").style.height = "64px";
+            retreat.querySelector("div").style.fontSize = "28px";
+            retreat.querySelector("div").style.margin = "-2px 0 0 -41px";
+        }
+
+        [leftTop, leftBottom, rightTop, rightBottom].forEach(block => {
+            // Enlarge icons & numbers
+            const icon = block.querySelector("img");
+            const num = block.querySelector("div");
+
+            if (icon) icon.style.width = "60px";
+            if (icon) icon.style.height = "60px";
+            if (num) num.style.fontSize = "26px";
+
+            bottomStrip.appendChild(block);
+        });
+    } else {
+        // NORMAL VIEW: full grid layout including abilities
+        bottomStrip.appendChild(leftTop);
+        if (center) bottomStrip.appendChild(center);
+        bottomStrip.appendChild(rightTop);
+        bottomStrip.appendChild(leftBottom);
+        bottomStrip.appendChild(rightBottom);
+    }
+
 
     const wrapper = document.createElement('div');
     wrapper.classList.add('card-wrapper');

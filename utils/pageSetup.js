@@ -233,7 +233,43 @@ async function restoreUIFromState(state) {
 
     if (Array.isArray(state.cities)) {
 
+        const heroIds = state.heroes || [];
         const citySlots = document.querySelectorAll(".city-slot");
+
+        heroIds.forEach(hid => {
+            const hState = state.heroData?.[hid];
+            if (!hState) return;
+
+            const idx = hState.cityIndex;
+            if (idx === null || idx === undefined) return;   // hero is at HQ
+
+            const slot = citySlots[idx];
+            if (!slot) return;
+
+            const area = slot.querySelector(".city-card-area");
+            if (!area) return;
+
+            // Clear old content
+            area.innerHTML = "";
+
+            // Build hero wrapper
+            const wrapper = document.createElement("div");
+            wrapper.className = "card-wrapper";
+
+            const heroObj = heroMap.get(String(hid));
+            if (!heroObj) return;
+
+            const rendered = renderCard(heroObj.id, wrapper);
+            wrapper.appendChild(rendered);
+            area.appendChild(wrapper);
+
+            // Allow clicking hero to open its panel
+            wrapper.style.cursor = "pointer";
+            wrapper.addEventListener("click", (e) => {
+                e.stopPropagation();
+                buildHeroPanel(heroObj);
+            });
+        });
 
         state.cities.forEach(entry => {
             if (!entry || typeof entry.slotIndex !== "number") return;
@@ -389,7 +425,7 @@ async function restoreUIFromState(state) {
 
         gameState.heroData = {};
 
-        console.log("=== Confirming hero decks after pageSetup ===");
+        //console.log("=== Confirming hero decks after pageSetup ===");
         if (gameState.heroData) {
             Object.entries(gameState.heroData).forEach(([heroId, data]) => {
                 const heroObj = heroes.find(h => String(h.id) === heroId);
@@ -402,14 +438,14 @@ async function restoreUIFromState(state) {
             const heroObj = heroMap.get(String(id));
             if (!heroObj) return;
 
-            gameState.heroData[id] = {
-                deck: [],       // You can populate later when real deck logic is ready
-                discard: [],
-                hand: [],
-                cityIndex: null,
-                hp: heroObj.hp,
-                travel: heroObj.travel || 0
-            };
+            gameState.heroData[id] = gameState.heroData[id] || {};
+
+            gameState.heroData[id].deck ||= [];
+            gameState.heroData[id].discard ||= [];
+            gameState.heroData[id].hand ||= [];
+            gameState.heroData[id].cityIndex ??= null;
+            gameState.heroData[id].hp ??= heroObj.hp;
+            gameState.heroData[id].travel ??= (heroObj.travel || 0);
         });
 
         saveGameState(gameState);
@@ -1355,7 +1391,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     btn.addEventListener("click", () => {
-        console.log("End turn clicked.");
+        //console.log("End turn clicked.");
         endCurrentHeroTurn(gameState);
     });
 });

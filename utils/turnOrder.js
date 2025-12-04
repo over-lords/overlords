@@ -468,7 +468,7 @@ export function gameStart(selectedData) {
 
     gameState.heroData = gameState.heroData || {};
 
-    console.log("=== HERO DECKS (in turn order) ===");
+    //console.log("=== HERO DECKS (in turn order) ===");
 
     if (Array.isArray(selectedData.heroes)) {
         selectedData.heroes.forEach(heroId => {
@@ -482,7 +482,7 @@ export function gameStart(selectedData) {
             gameState.heroData[heroId].deck = deck;
 
             // print
-            console.log(`Deck for ${heroObj.name}:`, deck);
+            //console.log(`Deck for ${heroObj.name}:`, deck);
         });
     }
 
