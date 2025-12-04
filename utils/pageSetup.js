@@ -389,6 +389,15 @@ async function restoreUIFromState(state) {
 
         gameState.heroData = {};
 
+        console.log("=== Confirming hero decks after pageSetup ===");
+        if (gameState.heroData) {
+            Object.entries(gameState.heroData).forEach(([heroId, data]) => {
+                const heroObj = heroes.find(h => String(h.id) === heroId);
+                if (!heroObj) return;
+                console.log(`Deck for ${heroObj.name}:`, data.deck);
+            });
+        }
+
         selectedData.heroes.forEach(id => {
             const heroObj = heroMap.get(String(id));
             if (!heroObj) return;

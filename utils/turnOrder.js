@@ -154,6 +154,7 @@ const isSinglePlayer = (window.GAME_MODE === "single");
 const isMultiplayer = (window.GAME_MODE === "multi");
 
 import { heroes } from '../data/faceCards.js';
+import { heroCards } from '../data/heroCards.js';
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
@@ -161,7 +162,6 @@ import { placeCardIntoCitySlot, buildVillainPanel, buildHeroPanel } from './page
 import { currentTurn, executeEffectSafely } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
-
 
 import {    CITY_EXIT_UPPER,
             CITY_5_UPPER,
@@ -178,10 +178,6 @@ function isCountdownId(id) {
     return COUNTDOWN_IDS.has(String(id));
 }
 
-/**
- * Track destroyed cities by their UPPER index.
- * gameState.destroyedCities is a simple { [upperIdx]: true } map.
- */
 function markCityDestroyed(upperIdx, gameState) {
     if (!gameState.destroyedCities) {
         gameState.destroyedCities = {};
@@ -234,12 +230,6 @@ function markCityDestroyed(upperIdx, gameState) {
     });
 }
 
-/**
- * Apply the landing effects of a COUNTDOWN card entering a specific UPPER slot:
- *  - KO henchmen/villains there (log in an index),
- *  - deal 10 to any hero in the corresponding lower city and send them back to HQ,
- *  - mark the city destroyed visually and in gameState.
- */
 function applyCountdownLandingEffects(upperIdx, gameState) {
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
@@ -374,10 +364,6 @@ function advanceSingleCountdown(upperIdx, gameState) {
     gameState.cities[upperIdx] = null;
 }
 
-/**
- * Find the existing countdown (if any) in the UPPER row and shove it left one city.
- * Only countdowns are moved; other villains/henchmen are not shoved by this.
- */
 function shovePriorCountdownIfAny(gameState) {
     if (!Array.isArray(gameState.cities)) return;
 
@@ -480,7 +466,25 @@ export function gameStart(selectedData) {
     //console.log("=== SHUFFLED VILLAIN DECK NAMES ===");
     //console.log(names);
 
-    // continue into actual gameplay setup...
+    gameState.heroData = gameState.heroData || {};
+
+    console.log("=== HERO DECKS (in turn order) ===");
+
+    if (Array.isArray(selectedData.heroes)) {
+        selectedData.heroes.forEach(heroId => {
+            const heroObj = heroes.find(h => String(h.id) === String(heroId));
+            if (!heroObj) return;
+
+            const deck = buildHeroDeck(heroObj.name);
+
+            // store in backend
+            gameState.heroData[heroId] = gameState.heroData[heroId] || {};
+            gameState.heroData[heroId].deck = deck;
+
+            // print
+            console.log(`Deck for ${heroObj.name}:`, deck);
+        });
+    }
 
     return {
         villainDeck: idArray,
@@ -981,7 +985,6 @@ export async function shoveUpper(newCardId) {
     }, 650);
 }
 
-
 export function initializeTurnUI(gameState) {
     const btn = document.getElementById("end-turn-button");
     if (!btn) return;
@@ -1019,6 +1022,28 @@ export function initializeTurnUI(gameState) {
     btn.style.display = "block";
 }
 
+export function buildHeroDeck(heroName) {
+    const cardsForHero = heroCards.filter(c => c.hero === heroName);
+    const deck = [];
+
+    cardsForHero.forEach(card => {
+        const qty = Number(card.perDeck || 0);
+        for (let i = 0; i < qty; i++) deck.push(card.id);
+    });
+
+    // Always ensure total is exactly 20
+    if (deck.length !== 20) {
+        console.warn(`Deck for ${heroName} has ${deck.length} cards, expected 20.`);
+    }
+
+    // Shuffle
+    for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+
+    return deck;
+}
 
 export function endCurrentHeroTurn(gameState) {
 
