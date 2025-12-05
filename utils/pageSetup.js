@@ -28,7 +28,13 @@ import {    CITY_EXIT_UPPER,
             CITY_4_UPPER,
             CITY_3_UPPER,
             CITY_2_UPPER,
-            CITY_ENTRY_UPPER } from '../data/gameState.js';
+            CITY_ENTRY_UPPER,
+            CITY_EXIT_GLIDE,
+            CITY_5_GLIDE,
+            CITY_4_GLIDE,
+            CITY_3_GLIDE,
+            CITY_2_GLIDE,
+            CITY_ENTRY_GLIDE } from '../data/gameState.js';
 
 const HERO_BORDER_URLS = {
     Striker: "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Site%20Assets/strikerBorder.png",

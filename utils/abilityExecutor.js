@@ -28,7 +28,13 @@ import {
     CITY_4_UPPER,
     CITY_3_UPPER,
     CITY_2_UPPER,
-    CITY_ENTRY_UPPER
+    CITY_ENTRY_UPPER,
+    CITY_EXIT_GLIDE,
+    CITY_5_GLIDE,
+    CITY_4_GLIDE,
+    CITY_3_GLIDE,
+    CITY_2_GLIDE,
+    CITY_ENTRY_GLIDE
 } from '../data/gameState.js';
 
 const UPPER_ORDER = [
@@ -38,6 +44,15 @@ const UPPER_ORDER = [
     CITY_3_UPPER,
     CITY_2_UPPER,
     CITY_ENTRY_UPPER
+];
+
+const GLIDE_ORDER = [
+  CITY_EXIT_GLIDE,
+  CITY_5_GLIDE,
+  CITY_4_GLIDE,
+  CITY_3_GLIDE,
+  CITY_2_GLIDE,
+  CITY_ENTRY_GLIDE
 ];
 
 const EFFECT_HANDLERS = {};

@@ -303,7 +303,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `quick`,
@@ -401,7 +401,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `optional`,
@@ -506,7 +506,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `quick`,
@@ -592,7 +592,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `uponDefeat`,
@@ -735,7 +735,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `quick`,
@@ -1196,7 +1196,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `quick`,
@@ -1231,7 +1231,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `quick`,
@@ -1317,7 +1317,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `passive`,
@@ -1497,7 +1497,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide()`
+        effect: `hasGlide`
       },
       {
         type: `quick`,
