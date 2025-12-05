@@ -1081,6 +1081,7 @@ function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
 
 export async function shoveUpper(newCardId) {
     const citySlots = document.querySelectorAll(".city-slot");
+    const EXIT_IDX = CITY_EXIT_UPPER;
 
     // Ensure cities array exists and has room
     if (!Array.isArray(gameState.cities)) {
@@ -1120,24 +1121,33 @@ export async function shoveUpper(newCardId) {
     // - Chain stops at the first empty city.
     function shoveFrom(idx) {
         const snap = snapshot[idx];
-        if (!snap || !snap.cardNode) {
-            // Nothing here in the snapshot → nothing to shove.
-            return false;
-        }
+        if (!snap || !snap.cardNode) return false;
 
         const nextIdx = getNextLeft(idx);
+
+        // If there is nowhere further left than this city in the track,
+        // there is no shove to apply for THIS idx.
+        // (We should *never* be called with idx === EXIT_IDX now.)
         if (nextIdx === null) {
-            // We are at EXIT → this card will be shoved off-board.
-            moveMap[idx] = null;
-            return true;
+            return false;
         }
 
         const nextSnap = snapshot[nextIdx];
 
-        // If there WAS a card at nextIdx in the snapshot, shove it first.
+        // SPECIAL: If nextIdx is the EXIT, we DO NOT recursively shove the EXIT city.
+        // We only target EXIT as the *destination* for this card.
+        if (nextIdx === EXIT_IDX) {
+            // Move this card into EXIT.
+            moveMap[idx] = EXIT_IDX;
+            return true;
+        }
+
+        // For all other intermediate cities:
+        // If there was a card at nextIdx in the snapshot, shove that one first.
         if (nextSnap && nextSnap.cardNode) {
             shoveFrom(nextIdx);
         }
+
         // Now move this card into nextIdx.
         moveMap[idx] = nextIdx;
         return true;

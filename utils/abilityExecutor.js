@@ -244,26 +244,27 @@ export function currentTurn(turnIndex, selectedHeroIds) {
     }
 }
 
-function runCharge(cardId, distance) {
+async function runCharge(cardId, distance) {
 
     const entryIndex = CITY_ENTRY_UPPER;
 
     // STEP 1 — Simulate a blank shove (shift all villains left one)
     // (exactly what you had before)
-    pushChain(entryIndex);
+    await pushChain(entryIndex);
 
     // STEP 2 — Now place the new villain into City 1 AFTER pushing
     // (exactly what you had before)
     placeCardIntoUpperSlot(entryIndex, cardId);
 
     // STEP 3 — After a short delay, visually "charge" left
-    setTimeout(() => {
+    setTimeout(async () => {
         addChargeRushLines(entryIndex);
 
         let fromPos = UPPER_ORDER.indexOf(entryIndex);
 
         for (let step = 0; step < distance; step++) {
-            if (!attemptSingleLeftShift(fromPos)) break;
+            const moved = await attemptSingleLeftShift(fromPos);
+            if (!moved) break;
             fromPos -= 1;
         }
 
@@ -388,7 +389,7 @@ function placeCardIntoUpperSlot(slotIndex, cardId) {
     setTimeout(() => wrapper.classList.remove("city-card-enter"), 650);
 }
 
-function attemptSingleLeftShift(fromPos) {
+async function attemptSingleLeftShift(fromPos) {
 
     if (fromPos <= 0) return false;
 
@@ -401,7 +402,7 @@ function attemptSingleLeftShift(fromPos) {
         return false;
     }
 
-    pushChain(toIndex);
+    await pushChain(toIndex);
     moveCardModelAndDOM(fromIndex, toIndex);
 
     return true;
