@@ -604,7 +604,7 @@ async function pushChain(targetIndex) {
 
     // If occupied, push that one further left (recursively)
     if (gameState.cities[targetIndex]) {
-        pushChain(nextLeft);
+        await pushChain(nextLeft);
         moveCardModelAndDOM(targetIndex, nextLeft);
     }
 }
@@ -725,52 +725,79 @@ function resolveExitForVillain(entry) {
     const lowerIdx = upperIdx + 1;
     console.warn("[resolveExitForVillain] Villain exited:", entry);
 
-    // 1) Remove villain from DOM
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
     const lowerSlot = citySlots[lowerIdx];
 
-    setTimeout(() => {
+    // ---------------------------------------------------------------------
+    // 1) Update MODEL immediately so other moves see the city as empty
+    // ---------------------------------------------------------------------
+    if (Array.isArray(gameState.cities)) {
+        const current = gameState.cities[upperIdx];
 
-        if (upperSlot) {
-            const upperArea = upperSlot.querySelector(".city-card-area");
-            if (upperArea) upperArea.innerHTML = "";
-        }
-
-        // 2) Remove from gameState
-        if (Array.isArray(gameState.cities)) {
+        // Only clear if the exiting villain is still there in the model
+        if (current && String(current.id) === String(entry.id)) {
             gameState.cities[upperIdx] = null;
         }
+    }
 
-        // 3) If a hero is beneath the exiting villain, send them home
-        let heroReturned = false;
+    // ---------------------------------------------------------------------
+    // 2) If a hero is beneath the exiting villain, send them home (MODEL)
+    // ---------------------------------------------------------------------
+    let heroReturned = false;
 
-        for (const hid of gameState.heroes || []) {
-            const hState = gameState.heroData?.[hid];
-            if (!hState) continue;
+    for (const hid of gameState.heroes || []) {
+        const hState = gameState.heroData?.[hid];
+        if (!hState) continue;
 
-            if (hState.cityIndex === lowerIdx) {
-                hState.cityIndex = null;
-                heroReturned = true;
+        if (hState.cityIndex === lowerIdx) {
+            hState.cityIndex = null;
+            heroReturned = true;
 
-                const heroObj = heroes.find(h => String(h.id) === String(hid));
-                console.log(
-                    `[resolveExitForVillain] ${heroObj?.name || hid} returned to HQ.`
-                );
+            const heroObj = heroes.find(h => String(h.id) === String(hid));
+            console.log(
+                `[resolveExitForVillain] ${heroObj?.name || hid} returned to HQ.`
+            );
+        }
+    }
+
+    // Persist model changes now
+    saveGameState(gameState);
+
+    // ---------------------------------------------------------------------
+    // 3) DELAYED VISUAL CLEANUP ONLY
+    //    - Do NOT wipe the slot if a different villain moved in.
+    // ---------------------------------------------------------------------
+    setTimeout(() => {
+        const freshSlots = document.querySelectorAll(".city-slot");
+        const freshUpperSlot = freshSlots[upperIdx];
+        const freshLowerSlot = freshSlots[lowerIdx];
+
+        // Re-check what's in the model for this city
+        const current = Array.isArray(gameState.cities)
+            ? gameState.cities[upperIdx]
+            : null;
+
+        // Only clear the upper slot if:
+        //  - it's still empty in the model (stale DOM),
+        //  - OR it still belongs to the same exiting villain id.
+        // If a new villain (e.g., from city 2) has been moved into 0,
+        // current.id !== entry.id and we skip clearing DOM.
+        if (!current || String(current.id) === String(entry.id)) {
+            if (freshUpperSlot) {
+                const upperArea = freshUpperSlot.querySelector(".city-card-area");
+                if (upperArea) upperArea.innerHTML = "";
             }
         }
 
-        // Clear hero DOM
-        if (heroReturned && lowerSlot) {
-            const lowerArea = lowerSlot.querySelector(".city-card-area");
+        // Clear hero DOM if we returned someone from the lower city
+        if (heroReturned && freshLowerSlot) {
+            const lowerArea = freshLowerSlot.querySelector(".city-card-area");
             if (lowerArea) lowerArea.innerHTML = "";
         }
-
-    }, 2500);
-
-    // 4) Save state of city changes
-    saveGameState(gameState);
-
-    // 5) Delegate ALL escape consequences (HP gain, takeover, KO bystanders, etc.)
-    //handleVillainEscape(entry, gameState);
+    }, 650);
 }
+
+// 5) Delegate ALL escape consequences (HP gain, takeover, KO bystanders, etc.)
+// //handleVillainEscape(entry, gameState);
+// Removed because this doubled the HP the overlord got when escaping
