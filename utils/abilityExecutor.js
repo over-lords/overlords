@@ -730,39 +730,43 @@ function resolveExitForVillain(entry) {
     const upperSlot = citySlots[upperIdx];
     const lowerSlot = citySlots[lowerIdx];
 
-    if (upperSlot) {
-        const upperArea = upperSlot.querySelector(".city-card-area");
-        if (upperArea) upperArea.innerHTML = "";
-    }
+    setTimeout(() => {
 
-    // 2) Remove from gameState
-    if (Array.isArray(gameState.cities)) {
-        gameState.cities[upperIdx] = null;
-    }
-
-    // 3) If a hero is beneath the exiting villain, send them home
-    let heroReturned = false;
-
-    for (const hid of gameState.heroes || []) {
-        const hState = gameState.heroData?.[hid];
-        if (!hState) continue;
-
-        if (hState.cityIndex === lowerIdx) {
-            hState.cityIndex = null;
-            heroReturned = true;
-
-            const heroObj = heroes.find(h => String(h.id) === String(hid));
-            console.log(
-                `[resolveExitForVillain] ${heroObj?.name || hid} returned to HQ.`
-            );
+        if (upperSlot) {
+            const upperArea = upperSlot.querySelector(".city-card-area");
+            if (upperArea) upperArea.innerHTML = "";
         }
-    }
 
-    // Clear hero DOM
-    if (heroReturned && lowerSlot) {
-        const lowerArea = lowerSlot.querySelector(".city-card-area");
-        if (lowerArea) lowerArea.innerHTML = "";
-    }
+        // 2) Remove from gameState
+        if (Array.isArray(gameState.cities)) {
+            gameState.cities[upperIdx] = null;
+        }
+
+        // 3) If a hero is beneath the exiting villain, send them home
+        let heroReturned = false;
+
+        for (const hid of gameState.heroes || []) {
+            const hState = gameState.heroData?.[hid];
+            if (!hState) continue;
+
+            if (hState.cityIndex === lowerIdx) {
+                hState.cityIndex = null;
+                heroReturned = true;
+
+                const heroObj = heroes.find(h => String(h.id) === String(hid));
+                console.log(
+                    `[resolveExitForVillain] ${heroObj?.name || hid} returned to HQ.`
+                );
+            }
+        }
+
+        // Clear hero DOM
+        if (heroReturned && lowerSlot) {
+            const lowerArea = lowerSlot.querySelector(".city-card-area");
+            if (lowerArea) lowerArea.innerHTML = "";
+        }
+
+    }, 2500);
 
     // 4) Save state of city changes
     saveGameState(gameState);
