@@ -80,7 +80,7 @@ export const bystanders = [
                 condition: `none`,
                 uses: `1`,
                 shared: `no`,
-                effect: `healHero(2)`
+                effect: `regainLife(2)`
             }
         ]
     },

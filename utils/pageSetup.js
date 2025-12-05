@@ -1187,7 +1187,7 @@ export function buildVillainPanel(villainCard) {
 
                     return `<div style="margin-top:4px; font-size:0.9em;">${lines}</div>`;
                 })()
-                : ""
+                : `<div style="margin-top:4px; font-size:0.9em; opacity:0.6;">None</div>`
         }
     `;
     content.appendChild(captured);
