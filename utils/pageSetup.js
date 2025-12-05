@@ -220,22 +220,39 @@ async function restoreUIFromState(state) {
      * OVERLORD RESTORATION
      ******************************************************/
     if (state.overlords?.length) {
-        const map = new Map(overlords.map(o => [String(o.id), o]));
-        const first = map.get(String(state.overlords[0]));
 
-        if (first) {
-            // Re-apply saved HP
-            if (state.overlordData?.currentHP != null) {
-                first.currentHP = state.overlordData.currentHP;
+        const ovId = String(state.overlords[0]);
+
+        // First try to find an actual Overlord
+        let restored = overlords.find(o => String(o.id) === ovId);
+
+        // If not found, this was a VILLAIN TAKEOVER
+        if (!restored) {
+            restored = villains.find(v => String(v.id) === ovId);
+
+            if (restored) {
+                console.log("[RESTORE] Overlord is a villain takeover:", restored.name);
+                state.overlordIsVillain = true;
             }
-
-            setCurrentOverlord(first);
+        } else {
+            state.overlordIsVillain = false;
         }
 
-        // tactics
+        if (restored) {
+            // Restore HP from saved state
+            if (state.overlordData?.currentHP != null) {
+                restored.currentHP = state.overlordData.currentHP;
+            }
+
+            // Apply as the live Overlord
+            setCurrentOverlord(restored);
+        }
+
+        // Restore tactics normally
         const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
         currentTactics = (state.tactics || []).map(id => tacticMap.get(String(id))).filter(Boolean);
     }
+
 
     if (Array.isArray(state.cities)) {
 

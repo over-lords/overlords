@@ -567,6 +567,14 @@ async function handleVillainEscape(entry, state) {
         state.overlordHP[foeId] = newHP;
         foeCard.currentHP = newHP;
 
+        // REQUIRED FOR REFRESH RESTORATION
+        state.overlordIsVillain = true;  
+
+        // This is the structure restoreUIFromState() actually reads
+        state.overlordData = {
+            currentHP: newHP
+        };
+
         // Update UI
         try {
             setCurrentOverlord(foeCard);
@@ -578,6 +586,13 @@ async function handleVillainEscape(entry, state) {
         console.log(
             `[TAKEOVER] New Overlord: ${foeCard.name} (${newHP}/${takeoverCap})`
         );
+
+        state.currentOverlordCard = {
+            id: foeCard.id,
+            name: foeCard.name,
+            image: foeCard.image,
+            hp: newHP
+        };
 
         saveGameState(state);
         return;
