@@ -1080,7 +1080,6 @@ function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
 }
 
 export async function shoveUpper(newCardId) {
-
     const citySlots = document.querySelectorAll(".city-slot");
 
     // Ensure cities array exists and has room
@@ -1088,246 +1087,193 @@ export async function shoveUpper(newCardId) {
         gameState.cities = new Array(12).fill(null);
     }
 
-    // Collect which upper slots are filled (DOM)
-    const slotInfo = UPPER_ORDER.map(idx => ({
-        idx,
-        slot: citySlots[idx],
-        hasCard: citySlots[idx].querySelector(".card-wrapper")
-    }));
+    // UPPER_ORDER is [EXIT, 5, 4, 3, 2, ENTRY]
+    const ENTRY_IDX = CITY_ENTRY_UPPER;
 
-    // Find FIRST empty city in the upper row (left → right in UPPER_ORDER)
-    let firstEmptyPos = -1;
-    for (let i = 0; i < slotInfo.length; i++) {
-        if (!slotInfo[i].hasCard) {
-            firstEmptyPos = i;
-            break;
-        }
+    // Build a snapshot of current upper-row state (DOM + model)
+    const snapshot = {};
+    UPPER_ORDER.forEach(idx => {
+        const slot = citySlots[idx];
+        const area = slot ? slot.querySelector(".city-card-area") : null;
+        const cardNode = area ? area.querySelector(".card-wrapper") : null;
+        snapshot[idx] = {
+            slot,
+            area,
+            cardNode,
+            model: gameState.cities[idx] || null
+        };
+    });
+
+    // Helper: given an upper index, get the "next left" city (towards EXIT),
+    // or null if we are already at EXIT.
+    function getNextLeft(idx) {
+        const pos = UPPER_ORDER.indexOf(idx);
+        if (pos <= 0) return null; // EXIT has no left neighbor
+        return UPPER_ORDER[pos - 1];
     }
 
-    // === STEP 1 — SHIFT EXISTING CARDS LEFT (DOM + MODEL), GAP-AWARE ===
+    // moveMap: fromUpperIdx -> destUpperIdx (or null for off-board)
+    const moveMap = {};
 
-    // CASE A: NO EMPTY CITY — perform the original full shove
-    if (firstEmptyPos === -1) {
-        for (let i = 0; i < slotInfo.length - 1; i++) {
-            const curr = slotInfo[i];
-            const next = slotInfo[i + 1];
+    // Recursive shove, based entirely on the snapshot:
+    // - We only push something if it was there at the start of the shove.
+    // - Chain stops at the first empty city.
+    function shoveFrom(idx) {
+        const snap = snapshot[idx];
+        if (!snap || !snap.cardNode) {
+            // Nothing here in the snapshot → nothing to shove.
+            return false;
+        }
 
-            if (!next.hasCard) continue;
+        const nextIdx = getNextLeft(idx);
+        if (nextIdx === null) {
+            // We are at EXIT → this card will be shoved off-board.
+            moveMap[idx] = null;
+            return true;
+        }
 
-            const cardNode = next.hasCard;
+        const nextSnap = snapshot[nextIdx];
 
-            // 1. REMOVE any "enter-from-right" animation for existing cards
-            cardNode.classList.remove("city-card-enter");
+        // If there WAS a card at nextIdx in the snapshot, shove it first.
+        if (nextSnap && nextSnap.cardNode) {
+            shoveFrom(nextIdx);
+        }
+        // Now move this card into nextIdx.
+        moveMap[idx] = nextIdx;
+        return true;
+    }
 
-            // 2. Add a SLIDE-LEFT animation class instead
-            cardNode.classList.add("city-card-slide-left");
+    // --------------------------------------------------------
+    // STEP 1 — Decide whether a shove chain happens this draw.
+    // --------------------------------------------------------
 
-            const currArea = curr.slot.querySelector(".city-card-area");
-            const nextArea = next.slot.querySelector(".city-card-area");
+    const entrySnap = snapshot[ENTRY_IDX];
+    const entryHadCard = !!entrySnap.cardNode;
 
-            if (!currArea || !nextArea) continue;
+    if (entryHadCard) {
+        // Deck is pushing into 10, so the card in 10 must be shoved.
+        // That shove may propagate, but only through cities that had
+        // cards in the snapshot; it stops at the first empty city.
+        shoveFrom(ENTRY_IDX);
+    }
 
-            currArea.innerHTML = "";
-            currArea.appendChild(cardNode);
+    // --------------------------------------------------------
+    // STEP 2 — Apply all recorded villain moves (DOM + model)
+    // --------------------------------------------------------
 
-            nextArea.innerHTML = "";
+    // We process in UPPER_ORDER order so EXIT gets cleared first if needed.
+    const lowerMap = {
+        10: 8,
+        8: 6,
+        6: 4,
+        4: 2,
+        2: 0
+    };
 
-            // Update bookkeeping
-            curr.hasCard = cardNode;
-            next.hasCard = null;
+    for (const fromIdx of UPPER_ORDER) {
+        if (!Object.prototype.hasOwnProperty.call(moveMap, fromIdx)) continue;
 
-            gameState.cities[curr.idx] = gameState.cities[next.idx] || null;
-            if (gameState.cities[curr.idx]) {
-                gameState.cities[curr.idx].slotIndex = curr.idx;
+        const toIdx = moveMap[fromIdx]; // may be null (off-board)
+        const snap = snapshot[fromIdx];
+        const cardNode = snap.cardNode;
+        if (!cardNode) continue;
+
+        // Remove entry animation and add slide-left animation
+        cardNode.classList.remove("city-card-enter");
+        cardNode.classList.add("city-card-slide-left");
+
+        if (toIdx === null) {
+            // Off-board: remove from DOM and model
+            if (snap.area) {
+                snap.area.innerHTML = "";
             }
-            gameState.cities[next.idx] = null;
+            gameState.cities[fromIdx] = null;
 
-            // Let animation play
-            await new Promise(r => setTimeout(r, 20));
-            setTimeout(() => cardNode.classList.remove("city-card-slide-left"), 650);
+            // TODO: hook off-board logic (bystanders/takeover) here.
+        } else {
+            const toSlot = citySlots[toIdx];
+            const toArea = toSlot ? toSlot.querySelector(".city-card-area") : null;
+            if (!toArea || !snap.area) continue;
 
-            // -----------------------------
-            // MOVE HEROES WHO WERE IN NEXT → CURR (with animation)
-            // -----------------------------
-            const lowerMap = {
-                10: 8,   // Gotham Upper → Metropolis Lower moves lower(11→9)
-                8: 6,    // Metropolis Upper → Central Lower moves lower(9→7)
-                6: 4,    // Central → Keystone
-                4: 2,    // Keystone → Coast
-                2: 0,    // Coast → Star
-            };
+            // Move DOM
+            snap.area.innerHTML = "";
+            toArea.innerHTML = "";
+            toArea.appendChild(cardNode);
 
-            if (lowerMap.hasOwnProperty(next.idx)) {
+            // Move model
+            gameState.cities[toIdx] = gameState.cities[fromIdx] || null;
+            if (gameState.cities[toIdx]) {
+                gameState.cities[toIdx].slotIndex = toIdx;
+            }
+            gameState.cities[fromIdx] = null;
 
-                const fromLower = next.idx + 1;
-                const toLower   = curr.idx + 1;
+            // Move heroes underneath, if any, matching old behavior
+            if (lowerMap.hasOwnProperty(fromIdx)) {
+                const fromLower = fromIdx + 1;
+                const toLower = toIdx + 1;
 
                 const heroIds = gameState.heroes || [];
-
                 heroIds.forEach(hid => {
                     const hState = gameState.heroData?.[hid];
                     if (!hState) return;
 
                     if (hState.cityIndex === fromLower) {
-
-                        // Move model immediately
+                        // Update model
                         hState.cityIndex = toLower;
 
-                        // DOM nodes
-                        const citySlots = document.querySelectorAll(".city-slot");
-                        const fromSlot  = citySlots[fromLower];
-                        const toSlot    = citySlots[toLower];
-                        if (!fromSlot || !toSlot) return;
+                        const fromSlotLower = citySlots[fromLower];
+                        const toSlotLower = citySlots[toLower];
+                        if (!fromSlotLower || !toSlotLower) return;
 
-                        const heroNode = fromSlot.querySelector(".card-wrapper");
+                        const heroNode = fromSlotLower.querySelector(".card-wrapper");
                         if (!heroNode) return;
 
-                        // Add the same slide-left animation as villains
                         heroNode.classList.remove("city-card-enter");
                         heroNode.classList.remove("city-card-slide-left");
                         heroNode.classList.add("hero-card-slide-left");
 
-                        // After animation completes, physically move hero DOM into new city
                         setTimeout(() => {
-                            const fromArea = fromSlot.querySelector(".city-card-area");
-                            const toArea   = toSlot.querySelector(".city-card-area");
-
-                            if (fromArea && toArea) {
-                                fromArea.innerHTML = "";
-                                toArea.innerHTML = "";
-                                toArea.appendChild(heroNode);
+                            const fromAreaLower = fromSlotLower.querySelector(".city-card-area");
+                            const toAreaLower = toSlotLower.querySelector(".city-card-area");
+                            if (fromAreaLower && toAreaLower) {
+                                fromAreaLower.innerHTML = "";
+                                toAreaLower.innerHTML = "";
+                                toAreaLower.appendChild(heroNode);
                             }
-
                             heroNode.classList.remove("hero-card-slide-left");
-                        }, 650); // same timing as villain slide
+                        }, 650);
                     }
                 });
             }
         }
+
+        // Let animation start before moving to the next one
+        await new Promise(r => setTimeout(r, 20));
+        setTimeout(() => cardNode.classList.remove("city-card-slide-left"), 650);
     }
 
-    // CASE B: AT LEAST ONE EMPTY CITY AND THE GAP IS NOT AT THE RIGHTMOST SLOT
-    // (i.e., there is a gap somewhere between Exit and City 2)
-    else if (firstEmptyPos < slotInfo.length - 1) {
+    // --------------------------------------------------------
+    // STEP 3 — Insert the new villain into city 10
+    // --------------------------------------------------------
 
-        // Slide only cards to the RIGHT of the first empty slot into the gap
-        for (let i = firstEmptyPos + 1; i < slotInfo.length; i++) {
+    const entrySlotFinal = citySlots[ENTRY_IDX];
+    const entryAreaFinal = entrySlotFinal
+        ? entrySlotFinal.querySelector(".city-card-area")
+        : null;
 
-            const next = slotInfo[i];      // slot to the right
-            const curr = slotInfo[i - 1];  // empty or earlier slot
-
-            if (!next.hasCard) continue;
-
-            const cardNode = next.hasCard;
-
-            // 1. REMOVE any "enter-from-right" animation for existing cards
-            cardNode.classList.remove("city-card-enter");
-
-            // 2. Add a SLIDE-LEFT animation class instead
-            cardNode.classList.add("city-card-slide-left");
-
-            const currArea = curr.slot.querySelector(".city-card-area");
-            const nextArea = next.slot.querySelector(".city-card-area");
-
-            if (!currArea || !nextArea) continue;
-
-            currArea.innerHTML = "";
-            currArea.appendChild(cardNode);
-
-            nextArea.innerHTML = "";
-
-            // Update bookkeeping
-            curr.hasCard = cardNode;
-            next.hasCard = null;
-
-            gameState.cities[curr.idx] = gameState.cities[next.idx] || null;
-            if (gameState.cities[curr.idx]) {
-                gameState.cities[curr.idx].slotIndex = curr.idx;
-            }
-            gameState.cities[next.idx] = null;
-
-            // Let animation play
-            await new Promise(r => setTimeout(r, 20));
-            setTimeout(() => cardNode.classList.remove("city-card-slide-left"), 650);
-
-            // -----------------------------
-            // MOVE HEROES WHO WERE IN NEXT → CURR (with animation)
-            // -----------------------------
-            const lowerMap = {
-                10: 8,   // Gotham Upper → Metropolis Lower moves lower(11→9)
-                8: 6,    // Metropolis Upper → Central Lower moves lower(9→7)
-                6: 4,    // Central → Keystone
-                4: 2,    // Keystone → Coast
-                2: 0,    // Coast → Star
-            };
-
-            if (lowerMap.hasOwnProperty(next.idx)) {
-
-                const fromLower = next.idx + 1;
-                const toLower   = curr.idx + 1;
-
-                const heroIds = gameState.heroes || [];
-
-                heroIds.forEach(hid => {
-                    const hState = gameState.heroData?.[hid];
-                    if (!hState) return;
-
-                    if (hState.cityIndex === fromLower) {
-
-                        // Move model immediately
-                        hState.cityIndex = toLower;
-
-                        // DOM nodes
-                        const citySlots = document.querySelectorAll(".city-slot");
-                        const fromSlot  = citySlots[fromLower];
-                        const toSlot    = citySlots[toLower];
-                        if (!fromSlot || !toSlot) return;
-
-                        const heroNode = fromSlot.querySelector(".card-wrapper");
-                        if (!heroNode) return;
-
-                        // Add the same slide-left animation as villains
-                        heroNode.classList.remove("city-card-enter");
-                        heroNode.classList.remove("city-card-slide-left");
-                        heroNode.classList.add("hero-card-slide-left");
-
-                        // After animation completes, physically move hero DOM into new city
-                        setTimeout(() => {
-                            const fromArea = fromSlot.querySelector(".city-card-area");
-                            const toArea   = toSlot.querySelector(".city-card-area");
-
-                            if (fromArea && toArea) {
-                                fromArea.innerHTML = "";
-                                toArea.innerHTML = "";
-                                toArea.appendChild(heroNode);
-                            }
-
-                            heroNode.classList.remove("hero-card-slide-left");
-                        }, 650); // same timing as villain slide
-                    }
-                });
-            }
-        }
+    if (entryAreaFinal) {
+        entryAreaFinal.innerHTML = "";
     }
-    // CASE C: firstEmptyPos === slotInfo.length - 1
-    // Gap is at rightmost city (City 1) → do not shift anything
 
-    // The rightmost slot (UPPER_ORDER[last]) is now empty (or already was).
-    const rightmost = slotInfo[slotInfo.length - 1];
-    const rightmostArea = rightmost.slot.querySelector(".city-card-area");
-    rightmostArea.innerHTML = "";
-
-    // === STEP 2 — WAIT FOR SHIFT ANIMATIONS TO FINISH ===
-    await new Promise(r => setTimeout(r, 600));
-
-    // === STEP 3 — INSERT THE NEW CARD (slide-in from the right) ===
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper city-card-enter";
 
     const rendered = renderCard(newCardId, wrapper);
     wrapper.appendChild(rendered);
 
-    rightmost.slot.querySelector(".city-card-area").appendChild(wrapper);
+    if (entryAreaFinal) {
+        entryAreaFinal.appendChild(wrapper);
+    }
 
     const cardData =
         henchmen.find(h => h.id === newCardId) ||
@@ -1348,20 +1294,19 @@ export async function shoveUpper(newCardId) {
     }
 
     const entryType = isCountdownId(newCardId) ? "countdown" : "villain";
-    gameState.cities[rightmost.idx] = {
-        slotIndex: rightmost.idx,
+    gameState.cities[ENTRY_IDX] = {
+        slotIndex: ENTRY_IDX,
         type: entryType,
         id: String(newCardId)
     };
 
-    // Persist everything (including cities + deck pointer + turnCounter etc.)
     saveGameState(gameState);
 
-    // Remove animation class after animation ends
     setTimeout(() => {
         wrapper.classList.remove("city-card-enter");
     }, 650);
 }
+
 
 export function initializeTurnUI(gameState) {
     const btn = document.getElementById("end-turn-button");
