@@ -1014,7 +1014,7 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
     initializeTurnUI(gameState);
 }
 
-function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
+export function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
 
     const citySlots = document.querySelectorAll(".city-slot");
 
