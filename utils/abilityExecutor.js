@@ -16,6 +16,8 @@ import { tactics } from '../data/tactics.js';
 import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
+import { setCurrentOverlord } from "./pageSetup.js";
+import { startHeroTurn, getCurrentOverlordInfo } from "./turnOrder.js";
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
 import { saveGameState } from "./stateManager.js";
@@ -405,53 +407,195 @@ function attemptSingleLeftShift(fromPos) {
     return true;
 }
 
-function pushChain(targetIndex) {
+async function handleVillainEscape(entry, state) {
+    if (!entry || !state) return;
+
+    const foeId = String(entry.id || "");
+    if (!foeId) return;
+
+    // ---------------------------------------------------------------------
+    // 1. KO CAPTURED BYSTANDERS (existing behavior)
+    // ---------------------------------------------------------------------
+    const captured = Array.isArray(entry.capturedBystanders)
+        ? entry.capturedBystanders
+        : [];
+
+    if (captured.length > 0) {
+        if (!Array.isArray(state.koCards)) {
+            state.koCards = [];
+        }
+
+        for (const b of captured) {
+            state.koCards.push({
+                id: b.id,
+                name: b.name,
+                type: "Bystander",
+                source: "escape"
+            });
+        }
+
+        const total = captured.length;
+        const msg = total === 1 ? "1 Bystander KO'd" : `${total} Bystanders KO'd`;
+
+        try {
+            await showMightBanner(msg, 2000);
+        } catch (e) {
+            console.warn("[BYSTANDER KO BANNER FAILED]", e);
+        }
+
+        console.log(`[ESCAPE] KO’d ${total} bystanders:`, captured);
+    }
+
+    // ---------------------------------------------------------------------
+    // 2. Identify villain or henchman object for HP/takeover
+    // ---------------------------------------------------------------------
+    const foeCard =
+        villains.find(v => String(v.id) === foeId) ||
+        henchmen.find(h => String(h.id) === foeId);
+
+    if (!foeCard) {
+        console.warn("[handleVillainEscape] No foe card found for id:", foeId);
+        return;
+    }
+
+    // Establish villain.currentHP if missing
+    const vMax = Number(foeCard.hp || 0);
+    if (typeof foeCard.currentHP !== "number") {
+        foeCard.currentHP = vMax;
+    }
+    const vCur = foeCard.currentHP;
+
+    // ---------------------------------------------------------------------
+    // 3. Retrieve current Overlord + ensure overlord.currentHP exists
+    // ---------------------------------------------------------------------
+    const ovId = state.overlords?.[0];
+    if (!ovId) return;
+
+    let overlord =
+        overlords.find(o => String(o.id) === String(ovId)) ||
+        villains.find(v => String(v.id) === String(ovId));
+
+    if (!overlord) return;
+
+    const ovBaseHP = Number(overlord.hp || 0);
+
+    if (!state.overlordHP) state.overlordHP = {};
+    if (typeof state.overlordHP[ovId] !== "number") {
+        state.overlordHP[ovId] = ovBaseHP;
+    }
+    overlord.currentHP = state.overlordHP[ovId];
+
+    const ovCur = overlord.currentHP;
+    const ovLevel = Number(overlord.level || 0);
+
+    // ---------------------------------------------------------------------
+    // 4. Determine takeover(N)
+    // ---------------------------------------------------------------------
+    let takeoverLevel = 0;
+
+    if (Array.isArray(foeCard.abilitiesEffects)) {
+        for (const eff of foeCard.abilitiesEffects) {
+            const raw = eff?.effect;
+            const list = Array.isArray(raw) ? raw : [raw];
+
+            for (const x of list) {
+                if (typeof x !== "string") continue;
+                const m = x.match(/^takeover\((\d+)\)/i);
+                if (m) {
+                    takeoverLevel = Number(m[1]);
+                }
+            }
+        }
+    }
+
+    const hasTakeover = takeoverLevel > 0;
+
+    // ---------------------------------------------------------------------
+    // 5. Evaluate takeover conditions
+    // ---------------------------------------------------------------------
+    const qualifiesLevel = hasTakeover && takeoverLevel >= ovLevel;
+    const qualifiesHP = hasTakeover && vCur >= ovCur;
+
+    if (qualifiesLevel && qualifiesHP) {
+        // =============================================================
+        // SUCCESSFUL TAKEOVER
+        // =============================================================
+
+        console.log(
+            `[TAKEOVER SUCCESS] ${foeCard.name} overthrows ${overlord.name}.`
+        );
+
+        // KO old overlord
+        if (!Array.isArray(state.koCards)) state.koCards = [];
+        state.koCards.push({
+            id: ovId,
+            name: overlord.name,
+            type: "Overlord",
+            reason: "takeover"
+        });
+
+        // New Overlord HP = overlord.currentHP + villain.currentHP
+        let newHP = ovCur + vCur;
+        const takeoverCap = vMax * 2;
+        if (newHP > takeoverCap) newHP = takeoverCap;
+
+        // Replace Overlord
+        state.overlords[0] = foeId;
+        state.overlordHP[foeId] = newHP;
+        foeCard.currentHP = newHP;
+
+        // Update UI
+        try {
+            setCurrentOverlord(foeCard);
+            buildOverlordPanel(foeCard);
+        } catch (e) {
+            console.warn("[TAKEOVER PANEL ERROR]", e);
+        }
+
+        console.log(
+            `[TAKEOVER] New Overlord: ${foeCard.name} (${newHP}/${takeoverCap})`
+        );
+
+        saveGameState(state);
+        return;
+    }
+
+    // ---------------------------------------------------------------------
+    // 6. FAILED TAKEOVER OR NO TAKEOVER → Overlord gains HP
+    // ---------------------------------------------------------------------
+    const hpGain = vCur;
+    let updatedHP = ovCur + hpGain;
+    const overCap = ovBaseHP * 2;
+
+    if (updatedHP > overCap) updatedHP = overCap;
+
+    state.overlordHP[ovId] = updatedHP;
+    overlord.currentHP = updatedHP;
+
+    console.log(
+        `[ESCAPE] ${foeCard.name} escaped → Overlord gains ${hpGain} HP `
+        + `(${updatedHP}/${overCap}).`
+    );
+
+    try {
+        setCurrentOverlord(overlord);
+        buildOverlordPanel(overlord);
+    } catch (e) {
+        console.warn("[OVERLORD PANEL REFRESH ERROR]", e);
+    }
+
+    saveGameState(state);
+}
+
+async function pushChain(targetIndex) {
 
     const pos = UPPER_ORDER.indexOf(targetIndex);
     if (pos <= 0) {
-        // Off-board push occurs here
         const exiting = gameState.cities[targetIndex];
         if (!exiting) return;
 
-        //
-        // --- NEW: HANDLE BYSTANDER KO ON ESCAPE ---
-        //
-        if (Array.isArray(exiting.capturedBystanders) &&
-            exiting.capturedBystanders.length > 0) {
-
-            // Ensure KO pile exists
-            if (!Array.isArray(gameState.koCards)) {
-                gameState.koCards = [];
-            }
-
-            const victims = exiting.capturedBystanders;
-            victims.forEach(b => {
-                gameState.koCards.push({
-                    id: b.id,
-                    name: b.name,
-                    type: "Bystander",
-                    source: "escape"
-                });
-            });
-
-            const count = victims.length;
-            const message =
-                count === 1
-                    ? `1 Bystander KO'd`
-                    : `${count} Bystanders KO'd`;
-
-            // Use your banner system
-            if (typeof showMightBanner === "function") {
-                showMightBanner(message, 2000);
-            }
-
-            console.log(`[ESCAPE] Villain escaped with ${count} bystanders → ALL KO’d.`, victims);
-        }
-        // --- END NEW CODE ---
-
-        // Continue normal exit handling
+        await handleVillainEscape(exiting, gameState);
         resolveExitForVillain(exiting);
-        gameState.cities[targetIndex] = null;
         return;
     }
 
@@ -573,63 +717,55 @@ function resolveExitForVillain(entry) {
 
     const upperIdx = Number(entry.slotIndex);
     if (Number.isNaN(upperIdx)) {
-        console.warn("[resolveExitForVillain] Missing or invalid slotIndex on entry:", entry);
+        console.warn("[resolveExitForVillain] Invalid slotIndex on entry:", entry);
         return;
     }
 
     const lowerIdx = upperIdx + 1;
+    console.warn("[resolveExitForVillain] Villain exited:", entry);
 
-    console.warn("Villain exited via Charge push:", entry);
-
+    // 1) Remove villain from DOM
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
     const lowerSlot = citySlots[lowerIdx];
 
-    // 1) Clear villain DOM from upper city
     if (upperSlot) {
         const upperArea = upperSlot.querySelector(".city-card-area");
-        if (upperArea) {
-            upperArea.innerHTML = "";
-        }
+        if (upperArea) upperArea.innerHTML = "";
     }
 
-    // 2) Clear villain model entry (defensive; caller also nulls gameState.cities[targetIndex])
+    // 2) Remove from gameState
     if (Array.isArray(gameState.cities)) {
         gameState.cities[upperIdx] = null;
     }
 
-    // 3) If a hero is in the lower city under this villain, send them back to HQ
-    const heroIds = gameState.heroes || [];
-    let heroReturnedToHQ = false;
+    // 3) If a hero is beneath the exiting villain, send them home
+    let heroReturned = false;
 
-    heroIds.forEach(hid => {
+    for (const hid of gameState.heroes || []) {
         const hState = gameState.heroData?.[hid];
-        if (!hState) return;
+        if (!hState) continue;
 
         if (hState.cityIndex === lowerIdx) {
-            // Move hero back to HQ
             hState.cityIndex = null;
-            heroReturnedToHQ = true;
+            heroReturned = true;
 
-            const heroObj =
-                heroes.find(h => String(h.id) === String(hid)) ||
-                null;
-            const heroName = heroObj?.name || `Hero ${hid}`;
-
+            const heroObj = heroes.find(h => String(h.id) === String(hid));
             console.log(
-                `[resolveExitForVillain] ${heroName} was facing villain at upper ${upperIdx}/lower ${lowerIdx} and returns to HQ as the villain leaves the board.`
+                `[resolveExitForVillain] ${heroObj?.name || hid} returned to HQ.`
             );
-        }
-    });
-
-    // 4) Clear hero DOM from the lower city if we moved someone back to HQ
-    if (heroReturnedToHQ && lowerSlot) {
-        const lowerArea = lowerSlot.querySelector(".city-card-area");
-        if (lowerArea) {
-            lowerArea.innerHTML = "";
         }
     }
 
-    // Persist hero position changes
+    // Clear hero DOM
+    if (heroReturned && lowerSlot) {
+        const lowerArea = lowerSlot.querySelector(".city-card-area");
+        if (lowerArea) lowerArea.innerHTML = "";
+    }
+
+    // 4) Save state of city changes
     saveGameState(gameState);
+
+    // 5) Delegate ALL escape consequences (HP gain, takeover, KO bystanders, etc.)
+    //handleVillainEscape(entry, gameState);
 }

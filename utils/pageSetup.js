@@ -846,26 +846,36 @@ export function setCurrentOverlord(overlord) {
     const hpText = document.getElementById("overlord-hp-text");
     if (!hpText) return;
 
-    const maxHP = Number(overlord.hp) || 0;
     const idStr = String(overlord.id);
 
-    // Resolve current HP:
-    // prefer overlord.currentHP, then gameState containers, then printed hp
+    // Determine base HP of this overlord or takeover-villain
+    const maxHP = Number(overlord.hp || 0);
+
+    // Resolve current HP from object, scenario store, or overlordData
     let currentHP = overlord.currentHP;
 
     if (currentHP == null) {
-        if (overlord.type === "Scenario" && gameState.scenarioHP && gameState.scenarioHP[idStr] != null) {
-            currentHP = Number(gameState.scenarioHP[idStr]);
-        } else if (overlord.type !== "Scenario" && gameState.overlordData && gameState.overlordData.currentHP != null) {
-            currentHP = Number(gameState.overlordData.currentHP);
+        if (overlord.type === "Scenario") {
+            // Scenario HP source
+            if (gameState.scenarioHP && gameState.scenarioHP[idStr] != null) {
+                currentHP = Number(gameState.scenarioHP[idStr]);
+            } else {
+                currentHP = maxHP;
+            }
         } else {
-            currentHP = maxHP;
+            // Standard Overlord or Takeover-Villain
+            if (gameState.overlordData && gameState.overlordData.currentHP != null) {
+                currentHP = Number(gameState.overlordData.currentHP);
+            } else {
+                currentHP = maxHP;
+            }
         }
     }
 
-    // Sync object + gameState
+    // Sync runtime card object
     overlord.currentHP = currentHP;
 
+    // Write back to gameState
     if (overlord.type === "Scenario") {
         if (!gameState.scenarioHP) gameState.scenarioHP = {};
         gameState.scenarioHP[idStr] = currentHP;
@@ -875,13 +885,13 @@ export function setCurrentOverlord(overlord) {
         gameState.overlordData.currentHP = currentHP;
     }
 
-    // Display: full = "10", damaged = "6 / 10"
-    const hpDisplay =
-        maxHP && currentHP < maxHP
-            ? `${currentHP} / ${maxHP}`
-            : `${maxHP}`;
+    const hpDisplay = `${currentHP}`;
 
+    // Update main-page HP indicator
     hpText.textContent = hpDisplay;
+
+    // Persist changes
+    saveGameState(gameState);
 }
 
 /* === Left Panel Button (the entire overlord frame is clickable) === */
@@ -976,11 +986,14 @@ export function buildOverlordPanel(overlord) {
         gameState.overlordData.currentHP = currentHP;
     }
 
-    // Display: full = "10", damaged = "6 / 10"
-    const hpDisplay =
-        maxHP && currentHP < maxHP
-            ? `${currentHP} / ${maxHP}`
-            : `${maxHP}`;
+    const baseHP = Number(overlord.hp || 0);
+    if (typeof currentHP !== "number") {
+        currentHP = baseHP;
+    }
+
+    const hpDisplay = (currentHP === baseHP)
+        ? `${baseHP}`
+        : `${currentHP} / ${baseHP}`;
 
     statsBox.innerHTML = `
         <h2 style="margin: 4px 0;">${overlord.name}</h2>
@@ -1087,6 +1100,21 @@ document.getElementById("villain-panel-close").addEventListener("click", () => {
         document.getElementById("villain-panel").classList.remove("open");
 });
 
+function getFoeCurrentAndMaxHP(foeCard) {
+    if (!foeCard) return { currentHP: 0, maxHP: 0 };
+
+    const maxHP = Number(foeCard.hp || 0);
+    let currentHP = foeCard.currentHP;
+
+    if (typeof currentHP !== "number") {
+        currentHP = maxHP;
+        foeCard.currentHP = currentHP;
+    }
+
+    return { currentHP, maxHP };
+}
+
+
 export function buildVillainPanel(villainCard) {
     if (!villainCard) return;
 
@@ -1102,11 +1130,15 @@ export function buildVillainPanel(villainCard) {
     // Right-side stats/text
     const rightCol = document.createElement("div");
     rightCol.className = "villain-right-column";
+    const { currentHP, maxHP } = getFoeCurrentAndMaxHP(villainCard);
+    const hpDisplay = (currentHP === maxHP)
+        ? `${maxHP}`
+        : `${currentHP} / ${maxHP}`;
 
     rightCol.innerHTML = `
         <h2>${villainCard.name}</h2>
         <div><strong>${villainCard.type}</strong></div>
-        <div><strong>HP:</strong> ${villainCard.hp}</div>
+        <div><strong>HP:</strong> ${hpDisplay}</div>
         <div><strong>Damage:</strong> ${villainCard.damage}</div>
         <h3>Abilities</h3>
     `;

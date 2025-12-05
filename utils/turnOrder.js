@@ -721,7 +721,10 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
                 if (villainId === "7001") {
                     const overlordObj = (function () {
                         const ovId = gameState.overlords?.[0];
-                        return overlords.find(o => String(o.id) === String(ovId));
+                        return (
+                            overlords.find(o => String(o.id) === String(ovId)) ||
+                            villains.find(v => String(v.id) === String(ovId))
+                        );
                     })();
 
                     if (overlordObj) {
@@ -1047,6 +1050,26 @@ function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
         type: entryType,
         id: String(newCardId)
     };
+
+    const baseHP = Number((cardData && cardData.hp) || 1);
+
+    // If this villain/henchman has been seen before (persistent HP), restore it
+    if (!gameState.villainHP) gameState.villainHP = {};
+    const savedHP = gameState.villainHP[String(newCardId)];
+
+    let currentHP;
+    if (typeof savedHP === "number") {
+        currentHP = savedHP;
+    } else {
+        currentHP = baseHP;
+    }
+
+    // Assign runtime HP to entry stored in gameState
+    gameState.cities[slotIndex].maxHP = baseHP;
+    gameState.cities[slotIndex].currentHP = currentHP;
+
+    // Persist to global villainHP map so reloads preserve wounds
+    gameState.villainHP[String(newCardId)] = currentHP;
 
     saveGameState(gameState);
 
@@ -1448,7 +1471,7 @@ export function endCurrentHeroTurn(gameState) {
                 if (foeDamage >= dt) {
                     heroState.hp -= foeDamage;
                     flashScreenRed();
-                    
+
                     if (heroState.hp < 0) heroState.hp = 0;
                     updateHeroHPDisplays(heroId);
                     updateBoardHeroHP(heroId);
@@ -1813,41 +1836,6 @@ export function updateBoardHeroHP(heroId) {
         });
 }
 
-function handleVillainEscape(entry, state) {
-    if (!entry) return;
-
-    const captured = Array.isArray(entry.capturedBystanders)
-        ? entry.capturedBystanders
-        : [];
-
-    if (captured.length === 0) return;
-
-    if (!Array.isArray(state.koCards)) {
-        state.koCards = [];
-    }
-
-    for (const b of captured) {
-        state.koCards.push({
-            id: b.id,
-            name: b.name,
-            type: "Bystander",
-            source: "escape"
-        });
-    }
-
-    const total = captured.length;
-    const message = total === 1
-        ? "1 Bystander KO'd"
-        : `${total} Bystanders KO'd`;
-
-    showMightBanner(message, 2000);
-
-    console.log(
-        `[ESCAPE] Villain escaped with ${total} bystanders → All KO’d.`,
-        captured
-    );
-}
-
 export function flashScreenRed() {
     const flash = document.getElementById("damage-flash");
     if (!flash) return;
@@ -1857,4 +1845,44 @@ export function flashScreenRed() {
     setTimeout(() => {
         flash.style.opacity = "0";
     }, 120); // quick pulse
+}
+
+export function getCurrentOverlordInfo(state) {
+    if (!Array.isArray(state.overlords) || state.overlords.length === 0) {
+        return null;
+    }
+
+    const ovId = String(state.overlords[0]);
+
+    // Overlord may be an Overlord card *or* a Villain (after takeover)
+    let card =
+        overlords.find(o => String(o.id) === ovId) ||
+        villains.find(v => String(v.id) === ovId);
+
+    if (!card) return null;
+
+    const baseHP = Number(card.hp || 0);
+    if (!state.overlordHP) {
+        state.overlordHP = {};
+    }
+
+    let currentHP = state.overlordHP[ovId];
+    if (typeof currentHP !== "number") {
+        currentHP = baseHP;
+        state.overlordHP[ovId] = currentHP;
+    }
+
+    // Cap is always double the base HP of whoever is currently the Overlord
+    const cap = baseHP * 2;
+
+    // Keep the runtime card object in sync
+    card.currentHP = currentHP;
+
+    return {
+        id: ovId,
+        card,
+        baseHP,
+        currentHP,
+        cap
+    };
 }
