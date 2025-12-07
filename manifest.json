@@ -10,7 +10,7 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/Public/Images/Site Assets/favicon.png",
+      "src": "Public/Images/Site Assets/favicon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
