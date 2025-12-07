@@ -1,21 +1,21 @@
-const CACHE_NAME = "overlords-static-v3.2"; // Version number - update when something significant happens
+const CACHE_NAME = "overlords-static-v3.3"; // Version number - update when something significant happens
 
 const ASSETS = [
   // Unchanging - air quotes...
-  "/Public/Images/Site Assets/favicon.png",
-  "/manifest.json",
-  "/supabaseClient.js",
-  "/utils/session.js",
+  "Public/Images/Site Assets/favicon.png",
+  "manifest.json",
+  "supabaseClient.js",
+  "utils/session.js",
 
   // Unlikely to change much
-  "/login.html",
-  "/utils/login.js",
-  "/register.html",
-  "/utils/register.js",
+  "login.html",
+  "utils/login.js",
+  "register.html",
+  "utils/register.js",
 
   // Yeah, these are why this is gonna have to be iterated
-  "/style.css",
-  "/index.html",
+  "style.css",
+  "index.html",
 ];
 
 // -------------------------------------------
