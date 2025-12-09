@@ -1492,7 +1492,6 @@ export function initializeTurnUI(gameState) {
                 : (typeof heroState.travel === "number" ? heroState.travel : 0);
 
             const canFaceOverlord =
-                !inCity &&
                 !heroState.isFacingOverlord &&
                 currentTravel >= 1;
 
