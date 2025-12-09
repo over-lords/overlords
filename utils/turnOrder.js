@@ -1473,6 +1473,45 @@ export function initializeTurnUI(gameState) {
         return;
     }
 
+    const faceOverlordButton = document.getElementById("face-overlord-button");
+    if (faceOverlordButton) {
+        // Start from hidden/disabled each time we recompute UI
+        let btn = faceOverlordButton;
+        btn.style.display = "none";
+        btn.disabled = true;
+
+        const heroIds = gameState.heroes || [];
+        const heroId = heroIds[heroTurnIndex];
+
+        if (heroId && gameState.heroData && gameState.heroData[heroId]) {
+            const heroState = gameState.heroData[heroId];
+
+            const inCity = (heroState.cityIndex !== null && heroState.cityIndex !== undefined);
+            const currentTravel = (typeof heroState.currentTravel === "number")
+                ? heroState.currentTravel
+                : (typeof heroState.travel === "number" ? heroState.travel : 0);
+
+            const canFaceOverlord =
+                !inCity &&
+                !heroState.isFacingOverlord &&
+                currentTravel >= 1;
+
+            if (canFaceOverlord) {
+                // Replace the button node to clear old listeners
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                btn = newBtn;
+
+                btn.style.display = "inline-block";
+                btn.disabled = false;
+
+                btn.addEventListener("click", () => {
+                    showFaceOverlordPopup(gameState, heroId);
+                });
+            }
+        }
+    }
+
     setupStartingTravelOptions(gameState, heroId);
 
     // 4. You are single-player → ALWAYS show the button
@@ -1609,12 +1648,22 @@ function setupStartingTravelOptions(gameState, heroId) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
     // Clear any previous glow
     clearCityHighlights();
 
     // Only if hero is NOT in a city
     if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
-        return; // Already on map → skip to hero draw normally
+        console.log(`[TRAVEL] ${heroName} already in city ${heroState.cityIndex}; skipping HQ/Overlord travel UI.`);
+        return; // already on map → normal hero draw / turn
+    }
+
+    // NOTE: Facing overlord is "not in a city" but still allowed to travel.
+    // We only log here; do NOT suppress highlights.
+    if (heroState.isFacingOverlord) {
+        console.log(`[TRAVEL] ${heroName} is facing the Overlord and can still spend travel to move to a city.`);
     }
 
     // ---------------------
@@ -1633,7 +1682,7 @@ function setupStartingTravelOptions(gameState, heroId) {
 
             const foePresent = !!upperSlot.querySelector(".card-wrapper");
 
-            // NEW: is any hero already in this lower city?
+            // is any hero already in this lower city?
             const heroAlreadyHere = (gameState.heroes || []).some(hid => {
                 const hState = gameState.heroData?.[hid];
                 return hState && hState.cityIndex === lowerIndices[i];
@@ -1656,6 +1705,11 @@ function setupStartingTravelOptions(gameState, heroId) {
             el.style.cursor  = "";
         });
 
+        // stop if no travel
+        if (!heroState || heroState.currentTravel <= 0) {
+            return;
+        }
+
         // re-evaluate + draw
         const targets = computeLegalTargets();
         targets.forEach(t => {
@@ -1669,7 +1723,6 @@ function setupStartingTravelOptions(gameState, heroId) {
     // ---------------------
     const initialTargets = computeLegalTargets();
     initialTargets.forEach(target => {
-        // only attach listener once
         target.lowerSlot.addEventListener("click", () => {
             if (!heroState || heroState.currentTravel <= 0) {
                 hideTravelHighlights();
@@ -1696,13 +1749,14 @@ function setupStartingTravelOptions(gameState, heroId) {
         refreshHighlights();
     }, 1000);
 
-    // optionally store intervalId on window or state if you want to cancel early elsewhere
+    // optionally store intervalId if you want to cancel early elsewhere
     // window._travelHighlightInterval = intervalId;
 }
 
 window.recalculateHeroTravel = function () {
     try {
         initializeTurnUI(gameState);
+        showRetreatButtonForCurrentHero(gameState);
     } catch (err) {
         console.warn("[recalculateHeroTravel] failed to recompute travel UI:", err);
     }
@@ -1836,9 +1890,6 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
 
     showRetreatButtonForCurrentHero(gameState);
 
-    // Remove the persistent travel banner now that the hero actually traveled
-    removeTravelBanner();
-
     // Persist travel + location changes
     saveGameState(gameState);
 }
@@ -1918,6 +1969,39 @@ function showTravelPopup(gameState, heroId, cityIndex) {
         // Do NOT travel — do NOT clear highlights
         // Player may click another city or proceed normally
     });
+}
+
+function showFaceOverlordPopup(gameState, heroId) {
+    const overlay = document.getElementById("face-overlord-popup-overlay");
+    if (!overlay) {
+        console.warn("[OVERLORD] face-overlord-popup-overlay not found; falling back to direct travel.");
+        performHeroTravelToOverlord(gameState, heroId);
+        return;
+    }
+
+    overlay.style.display = "flex";
+
+    const yesBtn = overlay.querySelector(".face-overlord-popup-yes");
+    const noBtn  = overlay.querySelector(".face-overlord-popup-no");
+
+    if (yesBtn) {
+        const newYes = yesBtn.cloneNode(true);
+        yesBtn.parentNode.replaceChild(newYes, yesBtn);
+
+        newYes.addEventListener("click", () => {
+            performHeroTravelToOverlord(gameState, heroId);
+            overlay.style.display = "none";
+        });
+    }
+
+    if (noBtn) {
+        const newNo = noBtn.cloneNode(true);
+        noBtn.parentNode.replaceChild(newNo, noBtn);
+
+        newNo.addEventListener("click", () => {
+            overlay.style.display = "none";
+        });
+    }
 }
 
 function getCityNameFromIndex(idx) {
@@ -2046,29 +2130,6 @@ export function getCurrentOverlordInfo(state) {
     };
 }
 
-function showPersistentTravelBanner(text) {
-    // Re-use existing might-banner styling, but do NOT auto-hide
-    let banner = document.querySelector(".might-banner.travel-banner");
-    if (banner) {
-        banner.textContent = text;
-        return banner;
-    }
-
-    banner = document.createElement("div");
-    banner.className = "might-banner travel-banner";
-    banner.textContent = text;
-
-    document.body.appendChild(banner);
-    return banner;
-}
-
-function removeTravelBanner() {
-    const banner = document.querySelector(".might-banner.travel-banner");
-    if (banner && banner.parentNode) {
-        banner.parentNode.removeChild(banner);
-    }
-}
-
 export async function startTravelPrompt(gameState) {
     const heroIds = gameState.heroes || [];
     const activeIdx = gameState.heroTurnIndex ?? 0;
@@ -2141,6 +2202,7 @@ function resetHeroCurrentTravelAtTurnStart(gameState) {
         : faceTravel;
 
     heroState.currentTravel = baseTravel;
+    heroState.isFacingOverlord = false;
 
     const heroName = heroObj?.name || `Hero ${activeHeroId}`;
 
@@ -2175,14 +2237,24 @@ function showRetreatButtonForCurrentHero(gameState) {
     const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
     const heroName = heroObj?.name || `Hero ${activeHeroId}`;
 
-    // If hero not in city (HQ), hide + log exactly WHY
+    // CASE 1: Facing Overlord → retreat is allowed
+    if (heroState.isFacingOverlord) {
+        btn.style.display = "block";
+        btn.onclick = () => {
+            openRetreatConfirm(gameState, activeHeroId);
+        };
+        console.log(`[RETREAT] ${heroName} is facing the Overlord. Retreat option shown.`);
+        return;
+    }
+
+    // CASE 2: At HQ (not in city, not facing Overlord) → hide retreat
     if (heroState.cityIndex === null || heroState.cityIndex === undefined) {
         btn.style.display = "none";
         console.log(`[RETREAT] ${heroName} is at HQ. Retreat option hidden.`);
         return;
     }
 
-    // Otherwise show it, wire up click, and log
+    // CASE 3: In a city → retreat shown
     btn.style.display = "block";
     btn.onclick = () => {
         openRetreatConfirm(gameState, activeHeroId);
@@ -2197,8 +2269,9 @@ function retreatHeroToHQ(gameState, heroId) {
 
     const currentIdx = heroState.cityIndex;
 
-    // Move hero to HQ (null)
+    // Move hero to HQ (null) and clear overlord state
     heroState.cityIndex = null;
+    heroState.isFacingOverlord = false;
 
     // Remove hero DOM from the previous city slot if any
     if (typeof currentIdx === "number") {
@@ -2217,6 +2290,11 @@ function retreatHeroToHQ(gameState, heroId) {
     console.log(`[RETREAT] ${heroName} retreats to HQ.`);
 
     saveGameState(gameState);
+
+    // Optional: recompute UI after retreat
+    if (typeof window.recalculateHeroTravel === "function") {
+        window.recalculateHeroTravel();
+    }
 }
 
 function openRetreatConfirm(gameState, heroId) {
@@ -2245,4 +2323,65 @@ function openRetreatConfirm(gameState, heroId) {
     noBtn.onclick = () => {
         overlay.style.display = "none";
     };
+}
+
+function performHeroTravelToOverlord(gameState, heroId) {
+    if (!gameState || !heroId) return;
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        console.warn("[performHeroTravelToOverlord] Missing heroState for heroId", heroId);
+        return;
+    }
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    if (heroState.isFacingOverlord) {
+        console.log(`[OVERLORD] ${heroName} is already facing the Overlord.`);
+        return;
+    }
+
+    // Must be in HQ (not already in a city) to use travel to face the Overlord
+    if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
+        console.log("[OVERLORD] performHeroTravelToOverlord called while hero is in a city. Ignoring for now.", {
+            heroId,
+            cityIndex: heroState.cityIndex
+        });
+        return;
+    }
+
+    const beforeTravel =
+        (typeof heroState.currentTravel === "number")
+            ? heroState.currentTravel
+            : (typeof heroState.travel === "number" ? heroState.travel : 0);
+
+    if (beforeTravel <= 0) {
+        console.log(`[OVERLORD] ${heroName} has no travel remaining to face the Overlord.`);
+        hideTravelHighlights();
+        clearCityHighlights();
+        return;
+    }
+
+    // Spend exactly 1 travel, like traveling to a city
+    heroState.currentTravel = beforeTravel - 1;
+
+    // Mark that this hero is now engaged with the Overlord for this turn
+    heroState.isFacingOverlord = true;
+
+    console.log(
+        `[OVERLORD] ${heroName} spends 1 travel to face the Overlord. currentTravel ${beforeTravel} → ${heroState.currentTravel}.`,
+        { heroId, heroState }
+    );
+
+    // Shut down city travel UI immediately
+    hideTravelHighlights();
+    clearCityHighlights();
+
+    // Recompute turn UI for this hero (this will also hide the Face Overlord button)
+    try {
+        recalculateHeroTravel(gameState);
+    } catch (err) {
+        console.warn("[OVERLORD] Failed to recalculate travel after facing Overlord:", err);
+    }
 }

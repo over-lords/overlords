@@ -1060,6 +1060,25 @@ html, body {
     animation: endTurnGlow 1.8s ease-in-out infinite;
 }
 
+#face-overlord-button {
+    position: fixed;
+    left: 3.5px;
+    top: 30%;
+    transform: translateY(-50%);
+    padding: 5px 5px;
+    font-size: 8px;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+    background: rgb(221, 4, 4);
+    color: #000;
+    box-shadow: 0 0 12px rgba(0,0,0,0.35);
+    cursor: pointer;
+    z-index: 250000;
+    display: none; /* visible only on your hero's turn */
+    animation: endTurnGlow 1.8s ease-in-out infinite;
+}
+
 #villain-panel {
     position: fixed;
     top: 0;

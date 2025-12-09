@@ -230,8 +230,77 @@
     <button id="start-game-btn" style="display:none;">START GAME</button>
     <button id="end-turn-button" style="display:none;">End Turn</button>
     <button id="retreat-button" style="display:none;">Retreat</button>
+    <button id="face-overlord-button" style="display:none;">Engage Overlord</button>
 
     <div id="bottom-turn-timer" style="display:none;"></div>
+
+        <!-- FACE OVERLORD CONFIRMATION POPUP -->
+    <div id="face-overlord-popup-overlay" style="
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100vw; height:100vh;
+        background:rgba(0,0,0,0.6);
+        z-index:999999;
+        justify-content:center;
+        align-items:center;
+    ">
+        <div id="face-overlord-popup-box" style="
+            width:80%;
+            max-width:360px;
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            font-family:'Racing Sans One', sans-serif;
+            text-align:center;
+            box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        ">
+            <div style="
+                font-size:24px;
+                margin-bottom:12px;
+            ">
+                Engage the Overlord?
+            </div>
+
+            <div style="
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                gap:16px;
+                flex-wrap:wrap;
+                margin-top:10px;
+            ">
+                <button class="face-overlord-popup-yes" style="
+                    padding:12px 22px;
+                    font-size:18px;
+                    font-weight:bold;
+                    border:none;
+                    border-radius:10px;
+                    background:#26a626;
+                    border:4px solid black;
+                    color:black;
+                    cursor:pointer;
+                    min-width:120px;
+                ">
+                    Yes
+                </button>
+                <button class="face-overlord-popup-no" style="
+                    padding:12px 22px;
+                    font-size:18px;
+                    font-weight:bold;
+                    border:none;
+                    border-radius:10px;
+                    background:#a62626;
+                    border:4px solid black;
+                    color:black;
+                    cursor:pointer;
+                    min-width:120px;
+                ">
+                    No
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="travel-popup-overlay" style="
         display:none;
