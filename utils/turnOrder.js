@@ -2325,62 +2325,73 @@ function openRetreatConfirm(gameState, heroId) {
 }
 
 function performHeroTravelToOverlord(gameState, heroId) {
-    if (!gameState || !heroId) return;
-
     const heroState = gameState.heroData?.[heroId];
-    if (!heroState) {
-        console.warn("[performHeroTravelToOverlord] Missing heroState for heroId", heroId);
-        return;
-    }
+    if (!heroState) return;
 
-    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroObj  = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
+    // Already facing the overlord, nothing to do
     if (heroState.isFacingOverlord) {
         console.log(`[OVERLORD] ${heroName} is already facing the Overlord.`);
         return;
     }
 
-    // Must be in HQ (not already in a city) to use travel to face the Overlord
-    if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
-        console.log("[OVERLORD] performHeroTravelToOverlord called while hero is in a city. Ignoring for now.", {
-            heroId,
-            cityIndex: heroState.cityIndex
-        });
-        return;
-    }
+    // Compute current travel
+    const currentTravel = typeof heroState.currentTravel === "number"
+        ? heroState.currentTravel
+        : (typeof heroState.travel === "number" ? heroState.travel : 0);
 
-    const beforeTravel =
-        (typeof heroState.currentTravel === "number")
-            ? heroState.currentTravel
-            : (typeof heroState.travel === "number" ? heroState.travel : 0);
-
-    if (beforeTravel <= 0) {
-        console.log(`[OVERLORD] ${heroName} has no travel remaining to face the Overlord.`);
+    if (currentTravel <= 0) {
+        console.log(`[OVERLORD] ${heroName} has no travel remaining and cannot face the Overlord.`);
         hideTravelHighlights();
         clearCityHighlights();
         return;
     }
 
-    // Spend exactly 1 travel, like traveling to a city
-    heroState.currentTravel = beforeTravel - 1;
+    // If they are currently in a city, remove them from that city (DOM + model)
+    const prevCityIndex = heroState.cityIndex;
+    if (typeof prevCityIndex === "number") {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const slot      = citySlots[prevCityIndex];
 
-    // Mark that this hero is now engaged with the Overlord for this turn
-    heroState.isFacingOverlord = true;
+        if (slot) {
+            const area = slot.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";   // remove hero card DOM
+            }
+        }
+
+        heroState.cityIndex = null;     // hero leaves the city
+        console.log(
+            `[OVERLORD] ${heroName} leaves city index ${prevCityIndex} and travels to face the Overlord.`
+        );
+    }
+
+    // Spend 1 travel
+    const newTravel = currentTravel - 1;
+    heroState.currentTravel = newTravel;
 
     console.log(
-        `[OVERLORD] ${heroName} spends 1 travel to face the Overlord. currentTravel ${beforeTravel} → ${heroState.currentTravel}.`,
+        `[OVERLORD] ${heroName} spends 1 travel to face the Overlord. `
+        + `currentTravel ${currentTravel} → ${newTravel}.`,
         { heroId, heroState }
     );
 
-    // Shut down city travel UI immediately
+    // Mark them as facing the overlord
+    heroState.isFacingOverlord = true;
+
+    // Clean up travel UI; recalc will rebuild highlights/buttons as needed
     hideTravelHighlights();
     clearCityHighlights();
 
-    // Recompute turn UI for this hero (this will also hide the Face Overlord button)
-    try {
-        recalculateHeroTravel(gameState);
-    } catch (err) {
-        console.warn("[OVERLORD] Failed to recalculate travel after facing Overlord:", err);
+    if (typeof window.recalculateHeroTravel === "function") {
+        try {
+            window.recalculateHeroTravel(gameState);
+        } catch (e) {
+            console.warn("[OVERLORD] recalculateHeroTravel threw:", e);
+        }
     }
+
+    saveGameState(gameState);
 }
