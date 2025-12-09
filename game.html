@@ -292,6 +292,69 @@
         </div>
     </div>
 
+    <!-- RETREAT CONFIRMATION POPUP -->
+    <div id="retreat-popup-overlay" style="
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100vw; height:100vh;
+        background:rgba(0,0,0,0.6);
+        z-index:999999;
+        justify-content:center;
+        align-items:center;
+    ">
+        <div id="retreat-popup-box" style="
+            width:80%;
+            max-width:360px;
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            font-family:'Racing Sans One', sans-serif;
+            text-align:center;
+            box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        ">
+            <div id="retreat-popup-text" style="
+                font-size:32px; 
+                margin-bottom:20px;
+            ">
+                Retreat back to HQ?
+            </div>
+
+            <div style="
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                gap:50px;
+                margin-top:10px;
+            ">
+                <button id="retreat-popup-yes" style="
+                    padding:14px 26px;
+                    font-size:24px;
+                    font-weight: bold;
+                    border:none;
+                    border-radius:10px;
+                    background:#26a626;
+                    border: 4px solid black;
+                    color:black;
+                    cursor:pointer;
+                ">Yes</button>
+
+                <button id="retreat-popup-no" style="
+                    padding:14px 26px;
+                    font-size:24px;
+                    font-weight: bold;
+                    border:none;
+                    border-radius:10px;
+                    background:#c92222;
+                    border: 4px solid black;
+                    color:black;
+                    cursor:pointer;
+                ">No</button>
+            </div>
+        </div>
+    </div>
+
+
     <div id="sideMenu">
         <h2 id="menuHeader">Menu</h2>
         <div id="menuContent">

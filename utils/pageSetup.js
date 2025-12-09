@@ -1322,7 +1322,22 @@ export function buildHeroPanel(hero) {
                 : `${hero.currentHP} / ${hero.hp}`  // otherwise show current/max
         }</div>
         <div><strong>Damage Threshold:</strong> ${hero.damageThreshold}</div>
-        <div><strong>Travel Budget:</strong> ${hero.travel}</div>
+        <div><strong>Travel Budget:</strong> ${
+            (() => {
+                const heroState = gameState.heroData?.[hero.id];
+                const base = Number(hero.travel || 0);
+
+                // If we have a currentTravel value, use it; otherwise fall back to base.
+                const curr = (heroState && typeof heroState.currentTravel === "number")
+                    ? heroState.currentTravel
+                    : base;
+
+                // If different, show "current/base", else just base.
+                return (curr !== base)
+                    ? `${curr} / ${base}`
+                    : `${base}`;
+            })()
+        }</div>
         <div><strong>Retreat Requirement:</strong> ${hero.retreat}</div>
     `;
 

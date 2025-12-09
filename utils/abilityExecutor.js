@@ -16,7 +16,7 @@ import { tactics } from '../data/tactics.js';
 import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
-import { setCurrentOverlord, buildOverlordPanel } from "./pageSetup.js";
+import { setCurrentOverlord, buildOverlordPanel, showMightBanner } from "./pageSetup.js";
 import {
     startHeroTurn,
     getCurrentOverlordInfo,

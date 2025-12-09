@@ -1193,9 +1193,14 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
 
     gameState.heroTurnIndex = heroTurnIndex;
 
+    resetHeroCurrentTravelAtTurnStart(gameState);
+    showRetreatButtonForCurrentHero(gameState);
+
     resetTurnTimerForHero();
     saveGameState(gameState);
     initializeTurnUI(gameState);
+
+    await startTravelPrompt(gameState);
 }
 
 export async function shoveUpper(newCardId) {
@@ -1642,6 +1647,11 @@ function setupStartingTravelOptions(gameState, heroId) {
         target.lowerSlot.style.outline = "4px solid yellow";
         target.lowerSlot.style.cursor = "pointer";
         target.lowerSlot.addEventListener("click", () => {
+            if (!heroState || heroState.currentTravel <= 0) {
+                // hide highlights if somehow still visible
+                hideTravelHighlights();
+                return;
+            }
             showTravelPopup(gameState, heroId, target.lowerIndex);
         });
     });
@@ -1663,14 +1673,43 @@ function clearCityHighlights() {
     });
 }
 
+function hideTravelHighlights() {
+    const slots = document.querySelectorAll(".city-slot.travel-highlight");
+    slots.forEach(s => s.classList.remove("travel-highlight"));
+}
+
 function performHeroStartingTravel(gameState, heroId, cityIndex) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
-    // Spend 1 travel
-    if (heroState.travel > 0) {
-        heroState.travel -= 1;
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    if (heroState.currentTravel <= 0) {
+        console.log(`[TRAVEL] ${heroName} has no travel left. Travel blocked.`);
+        hideTravelHighlights();
+        return;
     }
+
+    // --- Spend 1 from currentTravel (per-turn mutable budget) ---
+    let beforeTravel =
+        (typeof heroState.currentTravel === "number")
+            ? heroState.currentTravel
+            : (typeof heroState.travel === "number" ? heroState.travel : 0);
+
+    if (beforeTravel > 0) {
+        heroState.currentTravel = beforeTravel - 1;
+    } else {
+        // No travel left; we still allow this to go through for now but log that it hit zero
+        heroState.currentTravel = beforeTravel;
+    }
+
+    const afterTravel = heroState.currentTravel;
+
+    console.log(
+        `[TRAVEL] ${heroName} traveling to city ${cityIndex}. `
+        + `currentTravel before=${beforeTravel}, after=${afterTravel}.`
+    );
 
     // Remember where they were before this travel (if anywhere)
     const previousIndex = heroState.cityIndex ?? null;
@@ -1752,10 +1791,13 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
         });
     }
 
-    saveGameState(gameState);
+    showRetreatButtonForCurrentHero(gameState);
 
-    clearCityHighlights();
-    initializeTurnUI(gameState);
+    // Remove the persistent travel banner now that the hero actually traveled
+    removeTravelBanner();
+
+    // Persist travel + location changes
+    saveGameState(gameState);
 }
 
 let turnTimerInterval = null;
@@ -1958,5 +2000,206 @@ export function getCurrentOverlordInfo(state) {
         baseHP,
         currentHP,
         cap
+    };
+}
+
+function showPersistentTravelBanner(text) {
+    // Re-use existing might-banner styling, but do NOT auto-hide
+    let banner = document.querySelector(".might-banner.travel-banner");
+    if (banner) {
+        banner.textContent = text;
+        return banner;
+    }
+
+    banner = document.createElement("div");
+    banner.className = "might-banner travel-banner";
+    banner.textContent = text;
+
+    document.body.appendChild(banner);
+    return banner;
+}
+
+function removeTravelBanner() {
+    const banner = document.querySelector(".might-banner.travel-banner");
+    if (banner && banner.parentNode) {
+        banner.parentNode.removeChild(banner);
+    }
+}
+
+export async function startTravelPrompt(gameState) {
+    const heroIds = gameState.heroes || [];
+    const activeIdx = gameState.heroTurnIndex ?? 0;
+    const heroId = heroIds[activeIdx];
+
+    if (!heroId) {
+        console.warn("[TRAVEL] startTravelPrompt: no active hero id.");
+        return;
+    }
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        console.warn("[TRAVEL] startTravelPrompt: no heroState for heroId", heroId);
+        return;
+    }
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    // If the hero is already in a city, skip this starting travel prompt
+    if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
+        console.log(
+            `[TRAVEL] ${heroName} already in city ${heroState.cityIndex}. `
+            + `Skipping 'Where are you traveling?' banner.`
+        );
+        return;
+    }
+
+    // Pull currentTravel from gameState (mutable per turn), with fallback to travel
+    const currentTravel =
+        (typeof heroState.currentTravel === "number")
+            ? heroState.currentTravel
+            : (typeof heroState.travel === "number" ? heroState.travel : 0);
+
+    if (currentTravel <= 0) {
+        console.log(
+            `[TRAVEL] ${heroName} has no currentTravel remaining (=${currentTravel}). `
+            + `Cannot travel from HQ this turn.`
+        );
+        return;
+    }
+
+    // Show a persistent "Where are you traveling?" banner
+    showMightBanner("Where are you traveling?");
+
+    console.log(
+        `[TRAVEL] Prompting ${heroName} to choose a travel destination. `
+        + `currentTravel=${currentTravel}.`
+    );
+
+    // No await here: actual travel happens when a city is clicked,
+    // via setupStartingTravelOptions → showTravelPopup → performHeroStartingTravel.
+}
+
+function resetHeroCurrentTravelAtTurnStart(gameState) {
+    const heroIds = gameState.heroes || [];
+    const activeHeroId = heroIds[gameState.heroTurnIndex];
+    if (activeHeroId == null) return;
+
+    gameState.heroData = gameState.heroData || {};
+    const heroState = gameState.heroData[activeHeroId] || (gameState.heroData[activeHeroId] = {});
+
+    // travel originates from faceCard (heroes)
+    const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
+    const faceTravel = Number(heroObj?.travel || 0);
+
+    // fallback: use heroState.travel only if the game mutates it somewhere
+    const baseTravel = (typeof heroState.travel === "number")
+        ? heroState.travel
+        : faceTravel;
+
+    heroState.currentTravel = baseTravel;
+
+    const heroName = heroObj?.name || `Hero ${activeHeroId}`;
+
+    console.log(
+        `[TRAVEL] Start of turn for ${heroName}. `
+        + `baseTravel=${baseTravel}, currentTravel reset to ${heroState.currentTravel}.`
+    );
+}
+
+function showRetreatButtonForCurrentHero(gameState) {
+    const btn = document.getElementById("retreat-button");
+    if (!btn) {
+        console.warn("[RETREAT] retreat-button element not found in DOM.");
+        return;
+    }
+
+    const heroIds = gameState.heroes || [];
+    const activeHeroId = heroIds[gameState.heroTurnIndex];
+    if (activeHeroId == null) {
+        console.log("[RETREAT] No active hero id (cannot evaluate retreat button).");
+        btn.style.display = "none";
+        return;
+    }
+
+    const heroState = gameState.heroData?.[activeHeroId];
+    if (!heroState) {
+        console.log("[RETREAT] No heroState for active hero (cannot evaluate retreat button).");
+        btn.style.display = "none";
+        return;
+    }
+
+    const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
+    const heroName = heroObj?.name || `Hero ${activeHeroId}`;
+
+    // If hero not in city (HQ), hide + log exactly WHY
+    if (heroState.cityIndex === null || heroState.cityIndex === undefined) {
+        btn.style.display = "none";
+        console.log(`[RETREAT] ${heroName} is at HQ. Retreat option hidden.`);
+        return;
+    }
+
+    // Otherwise show it, wire up click, and log
+    btn.style.display = "block";
+    btn.onclick = () => {
+        openRetreatConfirm(gameState, activeHeroId);
+    };
+
+    console.log(`[RETREAT] ${heroName} is in city ${heroState.cityIndex}. Retreat option shown.`);
+}
+
+function retreatHeroToHQ(gameState, heroId) {
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) return;
+
+    const currentIdx = heroState.cityIndex;
+
+    // Move hero to HQ (null)
+    heroState.cityIndex = null;
+
+    // Remove hero DOM from the previous city slot if any
+    if (typeof currentIdx === "number") {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const slot = citySlots[currentIdx];
+        if (slot) {
+            const area = slot.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";
+            }
+        }
+    }
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+    console.log(`[RETREAT] ${heroName} retreats to HQ.`);
+
+    saveGameState(gameState);
+}
+
+function openRetreatConfirm(gameState, heroId) {
+    const overlay = document.getElementById("retreat-popup-overlay");
+    if (!overlay) return;
+
+    overlay.style.display = "flex";
+
+    const yesBtn = document.getElementById("retreat-popup-yes");
+    const noBtn  = document.getElementById("retreat-popup-no");
+
+    // remove old listeners if any
+    yesBtn.onclick = null;
+    noBtn.onclick  = null;
+
+    yesBtn.onclick = () => {
+        retreatHeroToHQ(gameState, heroId);
+
+        // hide retreat button as the hero has left the city
+        const retreatBtn = document.getElementById("retreat-button");
+        if (retreatBtn) retreatBtn.style.display = "none";
+
+        overlay.style.display = "none";
+    };
+
+    noBtn.onclick = () => {
+        overlay.style.display = "none";
     };
 }
