@@ -1617,44 +1617,87 @@ function setupStartingTravelOptions(gameState, heroId) {
         return; // Already on map → skip to hero draw normally
     }
 
-    // Hero is at HQ
-    const citySlots = document.querySelectorAll(".city-slot");
-    const upperIndices = [0, 2, 4, 6, 8, 10];
-    const lowerIndices = [1, 3, 5, 7, 9, 11];
+    // ---------------------
+    // Step 1: compute legal targets
+    // ---------------------
+    function computeLegalTargets() {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const upperIndices = [0, 2, 4, 6, 8, 10];
+        const lowerIndices = [1, 3, 5, 7, 9, 11];
 
-    const legalTargets = [];
+        const arr = [];
 
-    for (let i = 0; i < 6; i++) {
-        const upperSlot = citySlots[upperIndices[i]];
-        const lowerSlot = citySlots[lowerIndices[i]];
+        for (let i = 0; i < 6; i++) {
+            const upperSlot = citySlots[upperIndices[i]];
+            const lowerSlot = citySlots[lowerIndices[i]];
 
-        const foePresent = !!upperSlot.querySelector(".card-wrapper");
+            const foePresent = !!upperSlot.querySelector(".card-wrapper");
 
-        // NEW: is any hero already in this lower city?
-        const heroAlreadyHere = (gameState.heroes || []).some(hid => {
-            const hState = gameState.heroData?.[hid];
-            return hState && hState.cityIndex === lowerIndices[i];
-        });
+            // NEW: is any hero already in this lower city?
+            const heroAlreadyHere = (gameState.heroes || []).some(hid => {
+                const hState = gameState.heroData?.[hid];
+                return hState && hState.cityIndex === lowerIndices[i];
+            });
 
-        // Only highlight if foe exists AND no hero is there already
-        if (foePresent && !heroAlreadyHere) {
-            legalTargets.push({ lowerSlot, lowerIndex: lowerIndices[i] });
+            if (foePresent && !heroAlreadyHere) {
+                arr.push({ lowerSlot, lowerIndex: lowerIndices[i] });
+            }
         }
+        return arr;
     }
 
-    // Highlight and activate yellow travel cities
-    legalTargets.forEach(target => {
-        target.lowerSlot.style.outline = "4px solid yellow";
-        target.lowerSlot.style.cursor = "pointer";
+    // ---------------------
+    // Step 2: visual refresh only (no click!)
+    // ---------------------
+    function refreshHighlights() {
+        // remove old styling
+        document.querySelectorAll(".city-slot").forEach(el => {
+            el.style.outline = "";
+            el.style.cursor  = "";
+        });
+
+        // re-evaluate + draw
+        const targets = computeLegalTargets();
+        targets.forEach(t => {
+            t.lowerSlot.style.outline = "4px solid yellow";
+            t.lowerSlot.style.cursor = "pointer";
+        });
+    }
+
+    // ---------------------
+    // Step 3: set click ONCE right now
+    // ---------------------
+    const initialTargets = computeLegalTargets();
+    initialTargets.forEach(target => {
+        // only attach listener once
         target.lowerSlot.addEventListener("click", () => {
             if (!heroState || heroState.currentTravel <= 0) {
-                // hide highlights if somehow still visible
                 hideTravelHighlights();
                 return;
             }
             showTravelPopup(gameState, heroId, target.lowerIndex);
         });
     });
+
+    // ---------------------
+    // Step 4: begin periodic refresh
+    // ---------------------
+    // Immediately draw
+    refreshHighlights();
+
+    // Every 1s, re-draw outlines ONLY
+    // Stop if travel ends
+    const intervalId = setInterval(() => {
+        if (!heroState || heroState.currentTravel <= 0) {
+            clearInterval(intervalId);
+            hideTravelHighlights();
+            return;
+        }
+        refreshHighlights();
+    }, 1000);
+
+    // optionally store intervalId on window or state if you want to cancel early elsewhere
+    // window._travelHighlightInterval = intervalId;
 }
 
 window.recalculateHeroTravel = function () {
