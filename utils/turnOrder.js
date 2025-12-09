@@ -64,13 +64,17 @@ VILLAIN DRAW
                     increase Overlord HP by remaining HP
 
 
-HERO STARTING TRAVEL
+HERO STARTING TRAVEL - AFTER VILLAIN DRAW
     if multiplayer
         start Hero turn timer (3 minutes)
 
     if (hero not in city)
-        Where are they traveling
-            -1 travel
+        Where are they traveling - Display banner (use might banner) asking "Where are you traveling?"
+            -1 travel when they travel
+                Travel resets at the start of their turns
+                Travel is an aspect of each faceCard heroes item
+                Minus from currentTravel and reset at start of their next turn
+                When they hit 0, only allow retreat to HQ and no other travel
     else if hero in a city
         skip to next phase (hero draw)
 
