@@ -434,7 +434,7 @@ function handleCountdownDraw(villainId, gameState) {
     applyCountdownLandingEffects(entryUpperIdx, gameState);
 
     // 3) Place this countdown card into the entry city's upper slot
-    placeVillainInUpperCity(entryUpperIdx, villainId, gameState);
+    placeCardInUpperCity(entryUpperIdx, villainId, gameState, "countdown");
 
     // NOTE: placeVillainInUpperCity will tag this as type "countdown" (see below type tweak)
 }
@@ -544,17 +544,477 @@ const GLIDE_ORDER = [
   CITY_ENTRY_GLIDE
 ];
 
-export function drawNextVillainCard(gameState) {
-    const deck = gameState.villainDeck;
-    let ptr = gameState.villainDeckPointer ?? 0;
+// --- VILLAIN DECK HELPERS & CENTRAL VILLAIN DRAW --------------------------
+
+/**
+ * Draw and advance the villain deck pointer (internal).
+ * Returns the id at the current pointer, or null if deck exhausted.
+ */
+function drawNextVillainId(state = gameState) {
+    const deck = state.villainDeck;
+    let ptr = state.villainDeckPointer ?? 0;
 
     if (!Array.isArray(deck) || deck.length === 0) return null;
     if (ptr >= deck.length) return null;
 
     const id = deck[ptr];
-    gameState.villainDeckPointer = ptr + 1;
+    state.villainDeckPointer = ptr + 1;
 
     return id;
+}
+
+function classifyVillainCard(villainId, cardData) {
+    if (isCountdownId(villainId)) return "countdown";
+
+    if (cardData?.type === "Might" || String(villainId) === "7001") {
+        return "might";
+    }
+
+    if (cardData?.type === "Scenario") return "scenario";
+    if (cardData?.type === "Bystander") return "bystander";
+
+    const idStr = String(villainId);
+    const isHench = henchmen.some(h => String(h.id) === idStr);
+    const isVill  = villains.some(v => String(v.id) === idStr);
+
+    if (isHench || isVill) return "enemy";
+
+    return "unknown";
+}
+
+function cardHasTeleport(cardData) {
+    if (!cardData) return false;
+
+    // Keywords
+    if (Array.isArray(cardData.keywords) && cardData.keywords.includes("Teleport")) {
+        return true;
+    }
+
+    // AbilitiesEffects (onEntry teleport)
+    if (Array.isArray(cardData.abilitiesEffects)) {
+        return cardData.abilitiesEffects.some(e => {
+            if (!e) return false;
+            if (e.condition && e.condition !== "onEntry") return false;
+
+            const eff = e.effect;
+            if (!eff) return false;
+
+            if (typeof eff === "string") {
+                const s = eff.trim();
+                return s === "teleport" || s === "teleport()";
+            }
+
+            if (Array.isArray(eff)) {
+                return eff.some(x => {
+                    if (typeof x !== "string") return false;
+                    const s = x.trim();
+                    return s === "teleport" || s === "teleport()";
+                });
+            }
+
+            return false;
+        });
+    }
+
+    return false;
+}
+
+function cardChargeDistance(cardData) {
+    if (!cardData) return 0;
+
+    // Keyword / data-level hint
+    if (cardData.keywords?.includes("Charge") && cardData.chargeDistance) {
+        const dist = Number(cardData.chargeDistance);
+        if (!Number.isNaN(dist) && dist > 0) return dist;
+    }
+
+    // AbilitiesEffects (charge(N))
+    if (Array.isArray(cardData.abilitiesEffects)) {
+        for (const e of cardData.abilitiesEffects) {
+            const eff = e?.effect;
+            if (!eff) continue;
+
+            if (typeof eff === "string" && eff.startsWith("charge(")) {
+                const m = eff.match(/\((\d+)\)/);
+                if (m) return Number(m[1] || 0) || 0;
+            }
+
+            if (Array.isArray(eff)) {
+                const found = eff.find(x => typeof x === "string" && x.startsWith("charge("));
+                if (found) {
+                    const m = found.match(/\((\d+)\)/);
+                    if (m) return Number(m[1] || 0) || 0;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Centralized Might handling (Overlord Might + Tactics Might).
+ * Does NOT start hero turn or increment turnCounter.
+ */
+async function handleMightDraw(villainId, cardData, state) {
+    console.log("[MIGHT] Drawn Might of the Overlord — skip city placement.");
+
+    // 1. Swipe animation
+    await playMightSwipeAnimation();
+
+    // 2. Main title banner
+    await showMightBanner("Might of the Overlord!", 2000);
+
+    const scenarioCurrentlyActive = isScenarioActive(state);
+
+    // Overlord Might (suppressed if Scenario is active)
+    if (String(villainId) === "7001") {
+        const overlordObj = (function () {
+            const ovId = state.overlords?.[0];
+            return (
+                overlords.find(o => String(o.id) === String(ovId)) ||
+                villains.find(v => String(v.id) === String(ovId))
+            );
+        })();
+
+        if (overlordObj) {
+            if (!scenarioCurrentlyActive) {
+                if (Array.isArray(overlordObj.mightNamePrint)) {
+                    for (const line of overlordObj.mightNamePrint) {
+                        await showMightBanner(line.text, 2000);
+                    }
+                }
+
+                if (Array.isArray(overlordObj.mightEffects)) {
+                    for (const eff of overlordObj.mightEffects) {
+                        const effString = eff.effect;
+                        if (typeof effString === "string") {
+                            await executeMightEffectSafe(effString);
+                        } else if (Array.isArray(effString)) {
+                            for (const sub of effString) {
+                                await executeMightEffectSafe(sub);
+                            }
+                        }
+                    }
+                }
+            } else {
+                console.log("[MIGHT] Overlord Might suppressed because a Scenario is active.");
+            }
+        }
+    }
+
+    // Tactic Might (never masked by Scenario)
+    if (Array.isArray(state.tactics) && state.tactics.length > 0) {
+        const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+        const currentTacticsArr = (state.tactics || [])
+            .map(id => tacticMap.get(String(id)))
+            .filter(Boolean);
+
+        for (const t of currentTacticsArr) {
+            if (Array.isArray(t.mightNamePrint)) {
+                for (const line of t.mightNamePrint) {
+                    await showMightBanner(line.text, 2000);
+                }
+            }
+
+            if (Array.isArray(t.mightEffects)) {
+                for (const eff of t.mightEffects) {
+                    const effString = eff.effect;
+                    if (typeof effString === "string") {
+                        await executeMightEffectSafe(effString);
+                    } else if (Array.isArray(effString)) {
+                        for (const sub of effString) {
+                            await executeMightEffectSafe(sub);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Centralized Scenario handling.
+ * Sets it atop Overlord, applies HP buffer & passive rules.
+ * Does NOT start hero turn or increment turnCounter.
+ */
+async function handleScenarioDraw(villainId, cardData, state) {
+    console.log("[SCENARIO] Drawn Scenario card:", villainId, cardData?.name);
+
+    if (!Array.isArray(state.scenarioStack)) {
+        state.scenarioStack = [];
+    }
+    if (!state.scenarioHP) {
+        state.scenarioHP = {};
+    }
+
+    const scenarioId = String(cardData.id);
+    const baseHP = Number(cardData.hp) || 0;
+
+    if (typeof state.scenarioHP[scenarioId] !== "number") {
+        state.scenarioHP[scenarioId] = baseHP;
+    }
+    cardData.currentHP = state.scenarioHP[scenarioId];
+
+    if (!state.scenarioStack.includes(scenarioId)) {
+        state.scenarioStack.push(scenarioId);
+    }
+    state.activeScenarioId = scenarioId;
+
+    // Scenario overtakes Overlord UI
+    setCurrentOverlord(cardData);
+    buildOverlordPanel(cardData);
+
+    await showMightBanner(cardData.name, 2000);
+    if (Array.isArray(cardData.abilitiesNamePrint)) {
+        for (const line of cardData.abilitiesNamePrint) {
+            await showMightBanner(line.text, 2000);
+        }
+    }
+
+    if (Array.isArray(cardData.abilitiesEffects)) {
+        for (const eff of cardData.abilitiesEffects) {
+            if (!eff) continue;
+            if (eff.type === "passive" && eff.effect && eff.condition === "none") {
+                try {
+                    await executeEffectSafely(eff.effect, cardData, { source: "scenario" });
+                } catch (err) {
+                    console.warn("[SCENARIO] Passive effect failed:", err);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Internal helper to place a card in an upper city slot (no shove).
+ * Used by teleport and countdown entry.
+ */
+function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
+    const citySlots = document.querySelectorAll(".city-slot");
+
+    if (!Array.isArray(state.cities)) {
+        state.cities = new Array(12).fill(null);
+    }
+
+    const slot = citySlots[slotIndex];
+    if (!slot) {
+        console.warn("[placeCardInUpperCity] No DOM slot at index", slotIndex);
+        return;
+    }
+
+    const area = slot.querySelector(".city-card-area");
+    if (!area) {
+        console.warn("[placeCardInUpperCity] No .city-card-area at index", slotIndex);
+        return;
+    }
+
+    area.innerHTML = "";
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper city-card-enter";
+
+    const rendered = renderCard(newCardId, wrapper);
+    wrapper.appendChild(rendered);
+
+    area.appendChild(wrapper);
+
+    const cardData =
+        henchmen.find(h => h.id === newCardId) ||
+        villains.find(v => v.id === newCardId);
+
+    if (cardData) {
+        wrapper.style.cursor = "pointer";
+        wrapper.addEventListener("click", (e) => {
+            e.stopPropagation();
+            console.log("Villain/Henchmen card clicked (from upper-city placement):", {
+                newCardId,
+                cardName: cardData.name
+            });
+            buildVillainPanel(cardData);
+        });
+    } else {
+        console.warn("No cardData found for newCardId (upper-city placement):", newCardId);
+    }
+
+    const entryType = explicitType || (isCountdownId(newCardId) ? "countdown" : "villain");
+    state.cities[slotIndex] = {
+        slotIndex,
+        type: entryType,
+        id: String(newCardId)
+    };
+
+    const baseHP = Number((cardData && cardData.hp) || 1);
+
+    if (!state.villainHP) state.villainHP = {};
+    const savedHP = state.villainHP[String(newCardId)];
+
+    let currentHP;
+    if (typeof savedHP === "number") {
+        currentHP = savedHP;
+    } else {
+        currentHP = baseHP;
+    }
+
+    state.cities[slotIndex].maxHP = baseHP;
+    state.cities[slotIndex].currentHP = currentHP;
+
+    state.villainHP[String(newCardId)] = currentHP;
+
+    saveGameState(state);
+
+    setTimeout(() => {
+        wrapper.classList.remove("city-card-enter");
+    }, 650);
+}
+
+/**
+ * Shared henchman / villain entry logic.
+ * Handles Teleport, Charge, and normal shove.
+ * `fromDeck: true` means it may revert the pointer & reveal top card for Teleport.
+ */
+async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false } = {}) {
+    const hasTeleport = cardHasTeleport(cardData);
+    const chargeDist = cardChargeDistance(cardData);
+
+    if (hasTeleport) {
+        const openSlots = UPPER_ORDER.filter(idx => !state.cities?.[idx]);
+
+        if (openSlots.length === 0) {
+            console.warn(
+                `[TELEPORT BLOCKED] Cannot place '${cardData?.name}' (ID ${villainId}) — all upper cities occupied.`
+            );
+
+            if (fromDeck) {
+                const ptr = state.villainDeckPointer ?? 0;
+                if (ptr > 0) {
+                    state.villainDeckPointer = ptr - 1;
+                }
+                state.revealedTopVillain = true;
+                try {
+                    await showMightBanner("Top Card Revealed", 2000);
+                } catch (err) {
+                    console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
+                }
+            }
+            return;
+        }
+
+        const randomIndex = Math.floor(Math.random() * openSlots.length);
+        const targetIdx = openSlots[randomIndex];
+
+        state.revealedTopVillain = false;
+        placeCardInUpperCity(targetIdx, villainId, state, "villain");
+        return;
+    }
+
+    if (chargeDist > 0) {
+        await executeEffectSafely(`charge(${chargeDist})`, cardData, {});
+        return;
+    }
+
+    // NORMAL ENTRY: shove into city 1 using existing shoveUpper logic
+    await shoveUpper(villainId);
+}
+
+/**
+ * PUBLIC: Central villain-deck draw.
+ * Draws `count` cards and routes each to the appropriate handler:
+ *   Countdown / Might / Scenario / Bystander / Henchman+Villain.
+ *
+ * Does NOT increment turnCounter or start hero turn; caller does that.
+ */
+export async function villainDraw(count = 1) {
+    const draws = Number(count) || 0;
+    if (draws <= 0) return;
+
+    if (!Array.isArray(gameState.villainDeck) || gameState.villainDeck.length === 0) {
+        console.log("[VILLAIN DRAW] No villain deck present.");
+        return;
+    }
+
+    for (let i = 0; i < draws; i++) {
+        const villainId = drawNextVillainId(gameState);
+        if (!villainId) {
+            console.log("[VILLAIN DRAW] Deck exhausted; stopping draws.");
+            break;
+        }
+
+        const data = findCardInAllSources(villainId);
+        const kind = classifyVillainCard(villainId, data);
+
+        switch (kind) {
+            case "countdown":
+                console.log("[VILLAIN DRAW] Countdown card:", villainId);
+                handleCountdownDraw(villainId, gameState);
+                break;
+            case "might":
+                console.log("[VILLAIN DRAW] Might card:", villainId);
+                await handleMightDraw(villainId, data, gameState);
+                break;
+            case "scenario":
+                console.log("[VILLAIN DRAW] Scenario card:", villainId);
+                await handleScenarioDraw(villainId, data, gameState);
+                break;
+            case "bystander":
+                console.log("[VILLAIN DRAW] Bystander card:", villainId);
+                await handleBystanderDraw(villainId, data, gameState);
+                break;
+            case "enemy":
+                console.log("[VILLAIN DRAW] Hench/Villain card:", villainId, data?.name);
+                await handleEnemyEntry(villainId, data, gameState, { fromDeck: true });
+                break;
+            default:
+                console.warn("[VILLAIN DRAW] Unknown villain deck card type:", villainId, data);
+                break;
+        }
+    }
+
+    gameState.isGameStarted = true;
+}
+
+/**
+ * PUBLIC: Scan forward in the villain deck and return the next `count`
+ * henchman/villain ids, advancing the pointer past everything scanned.
+ * Used by rally effects.
+ */
+export function takeNextHenchVillainsFromDeck(count) {
+    const deck = gameState.villainDeck;
+    if (!Array.isArray(deck) || deck.length === 0) return [];
+
+    let ptr = gameState.villainDeckPointer ?? 0;
+    const collected = [];
+    const target = Number(count) || 0;
+    if (target <= 0) return [];
+
+    while (ptr < deck.length && collected.length < target) {
+        const id = deck[ptr];
+
+        const idStr = String(id);
+        const isHench = henchmen.some(h => String(h.id) === idStr);
+        const isVill  = villains.some(v => String(v.id) === idStr);
+
+        if (isHench || isVill) {
+            collected.push(id);
+        }
+
+        ptr++;
+    }
+
+    gameState.villainDeckPointer = ptr;
+    return collected;
+}
+
+/**
+ * PUBLIC: Play a henchman/villain card (by id) onto the map from an effect,
+ * reusing the same Teleport / Charge / normal entry logic, but without
+ * touching the villain deck pointer.
+ */
+export async function enterVillainFromEffect(id) {
+    const data = findCardInAllSources(id);
+    if (!data) return;
+
+    await handleEnemyEntry(id, data, gameState, { fromDeck: false });
 }
 
 // --- BYSTANDER HELPERS -----------------------------------------------------
@@ -713,292 +1173,12 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
 
 export async function startHeroTurn(gameState, { skipVillainDraw = false } = {}) {
 
+    // 1) VILLAIN PHASE — centralized
     if (!skipVillainDraw && window.VILLAIN_DRAW_ENABLED) {
-        const villainId = drawNextVillainCard(gameState);
-        if (villainId) {
-            const data = findCardInAllSources(villainId);
-
-            if (isCountdownId(villainId)) {
-                console.log("[COUNTDOWN] Drawing countdown card", villainId);
-                handleCountdownDraw(villainId, gameState);
-            } else if (data?.type === "Might" || villainId === "7001") {
-
-                console.log("[MIGHT] Drawn Might of the Overlord — skip city placement.");
-
-                // 1. Swipe animation
-                await playMightSwipeAnimation();
-
-                // 2. Main title banner
-                await showMightBanner("Might of the Overlord!", 2000);
-
-                const scenarioCurrentlyActive = isScenarioActive(gameState);
-
-                if (villainId === "7001") {
-                    const overlordObj = (function () {
-                        const ovId = gameState.overlords?.[0];
-                        return (
-                            overlords.find(o => String(o.id) === String(ovId)) ||
-                            villains.find(v => String(v.id) === String(ovId))
-                        );
-                    })();
-
-                    if (overlordObj) {
-                        if (!scenarioCurrentlyActive) {
-                            // 3a. Overlord name banners
-                            if (Array.isArray(overlordObj.mightNamePrint)) {
-                                for (const line of overlordObj.mightNamePrint) {
-                                    await showMightBanner(line.text, 2000);
-                                }
-                            }
-
-                            // 3b. Overlord effects
-                            if (Array.isArray(overlordObj.mightEffects)) {
-                                for (const eff of overlordObj.mightEffects) {
-                                    const effString = eff.effect;
-                                    if (typeof effString === "string") {
-                                        await executeMightEffectSafe(effString);
-                                    } else if (Array.isArray(effString)) {
-                                        for (const sub of effString) {
-                                            await executeMightEffectSafe(sub);
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            console.log("[MIGHT] Overlord Might suppressed because a Scenario is active.");
-                        }
-                    }
-                }
-
-                // 4. Tactic Might – NEVER masked by Scenario
-                if (Array.isArray(gameState.tactics) && gameState.tactics.length > 0) {
-
-                    const tacticMap = new Map(
-                        tactics.map(t => [String(t.id), t])
-                    );
-                    const currentTacticsArr = (gameState.tactics || [])
-                        .map(id => tacticMap.get(String(id)))
-                        .filter(Boolean);
-
-                    for (const t of currentTacticsArr) {
-                        // name prints
-                        if (Array.isArray(t.mightNamePrint)) {
-                            for (const line of t.mightNamePrint) {
-                                await showMightBanner(line.text, 2000);
-                            }
-                        }
-
-                        // effects
-                        if (Array.isArray(t.mightEffects)) {
-                            for (const eff of t.mightEffects) {
-                                const effString = eff.effect;
-                                if (typeof effString === "string") {
-                                    await executeMightEffectSafe(effString);
-                                } else if (Array.isArray(effString)) {
-                                    for (const sub of effString) {
-                                        await executeMightEffectSafe(sub);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (typeof gameState.turnCounter !== "number") gameState.turnCounter = 0;
-                gameState.turnCounter++;
-
-                const heroIds = gameState.heroes || [];
-                if (heroIds.length > 0) {
-                    currentTurn(heroTurnIndex, heroIds);
-                }
-
-                gameState.heroTurnIndex = heroTurnIndex;
-
-                resetTurnTimerForHero();
-                saveGameState(gameState);
-                initializeTurnUI(gameState);
-                return;
-            } else if (data?.type === "Scenario") {
-
-                console.log("[SCENARIO] Drawn Scenario card:", villainId, data?.name);
-
-                // Ensure Scenario state containers exist
-                if (!Array.isArray(gameState.scenarioStack)) {
-                    gameState.scenarioStack = [];
-                }
-                if (!gameState.scenarioHP) {
-                    gameState.scenarioHP = {};
-                }
-
-                const scenarioId = String(data.id);
-                const baseHP = Number(data.hp) || 0;
-
-                // Track Scenario HP in gameState so it persists and can be modified by damage logic
-                if (typeof gameState.scenarioHP[scenarioId] !== "number") {
-                    gameState.scenarioHP[scenarioId] = baseHP;
-                }
-                data.currentHP = gameState.scenarioHP[scenarioId];
-
-                // Mark this as the active Scenario, on top of the stack
-                if (!gameState.scenarioStack.includes(scenarioId)) {
-                    gameState.scenarioStack.push(scenarioId);
-                }
-                gameState.activeScenarioId = scenarioId;
-
-                // Scenario "overtakes" Overlord UI: reuse overlord frame/panel, but with Scenario data
-                setCurrentOverlord(data);
-                buildOverlordPanel(data);
-
-                // Announce its name and abilitiesNamePrint
-                await showMightBanner(data.name, 2000);
-                if (Array.isArray(data.abilitiesNamePrint)) {
-                    for (const line of data.abilitiesNamePrint) {
-                        await showMightBanner(line.text, 2000);
-                    }
-                }
-
-                // Execute passive abilitiesEffects safely (usually condition: 'none')
-                if (Array.isArray(data.abilitiesEffects)) {
-                    for (const eff of data.abilitiesEffects) {
-                        if (!eff) continue;
-                        if (eff.type === "passive" && eff.effect && eff.condition === "none") {
-                            try {
-                                await executeEffectSafely(eff.effect, data, { source: "scenario" });
-                            } catch (err) {
-                                console.warn("[SCENARIO] Passive effect failed:", err);
-                            }
-                        }
-                    }
-                }
-
-                // IMPORTANT: do NOT place a villain on the board, do NOT shove the upper row.
-                // This behaves like Might — the draw is "consumed", but no city movement occurs.
-
-                if (typeof gameState.turnCounter !== "number") gameState.turnCounter = 0;
-                gameState.turnCounter++;
-
-                const heroIds = gameState.heroes || [];
-                if (heroIds.length > 0) {
-                    currentTurn(heroTurnIndex, heroIds);
-                }
-
-                gameState.heroTurnIndex = heroTurnIndex;
-
-                resetTurnTimerForHero();
-                saveGameState(gameState);
-                initializeTurnUI(gameState);
-                return;
-
-            } else if (data?.type === "Bystander") {
-                await handleBystanderDraw(villainId, data, gameState);
-            } else {
-                const hasTeleport = data?.abilitiesEffects?.some(e => {
-                    if (!e) return false;
-                    // must be an onEntry effect
-                    if (e.condition && e.condition !== "onEntry") return false;
-
-                    const eff = e.effect;
-                    if (!eff) return false;
-
-                    // Single string
-                    if (typeof eff === "string") {
-                        const s = eff.trim();
-                        return s === "teleport" || s === "teleport()";
-                    }
-
-                    // Array of effects
-                    if (Array.isArray(eff)) {
-                        return eff.some(x => {
-                            if (typeof x !== "string") return false;
-                            const s = x.trim();
-                            return s === "teleport" || s === "teleport()";
-                        });
-                    }
-
-                    return false;
-                });
-
-                const hasCharge = data?.abilitiesEffects?.some(e => {
-                    const eff = e.effect;
-
-                    if (!eff) return false;
-
-                    // Single string
-                    if (typeof eff === "string") {
-                        return eff.trim().startsWith("charge(");
-                    }
-
-                    // Array of effects
-                    if (Array.isArray(eff)) {
-                        return eff.some(x =>
-                            typeof x === "string" &&
-                            x.trim().startsWith("charge(")
-                        );
-                    }
-
-                    return false;
-                });
-
-                if (hasTeleport) {
-                    // Gather all unoccupied UPPER city indices
-                    const openSlots = UPPER_ORDER.filter(idx => !gameState.cities[idx]);
-
-                    if (openSlots.length === 0) {
-                        console.warn(
-                            `[TELEPORT BLOCKED] Cannot place '${data?.name}' (ID ${villainId}) — all upper cities are occupied. ` +
-                            `Teleporting henchman/villain will remain on top of the villain deck until a city becomes empty.`
-                        );
-                        // No unoccupied cities: DO NOT DRAW.
-                        // Rewind the deck pointer so this card stays on top.
-                        const ptr = gameState.villainDeckPointer ?? 0;
-                        if (ptr > 0) {
-                            gameState.villainDeckPointer = ptr - 1;
-                        }
-                        // Reveal top card of the villain deck
-                        gameState.revealedTopVillain = true;
-                        // Nothing enters the map this villain phase.
-
-                        try {
-                            await showMightBanner("Top Card Revealed", 2000);
-                        } catch (err) {
-                            console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
-                        }
-                    } else {
-                        const randomIndex = Math.floor(Math.random() * openSlots.length);
-                        const targetIdx = openSlots[randomIndex];
-
-                        gameState.revealedTopVillain = false;
-                        placeVillainInUpperCity(targetIdx, villainId, gameState);
-                    }
-                } else if (hasCharge) {
-                    // Find the *first* charge(N) to extract N
-                    let dist = 1;
-
-                    for (const e of data.abilitiesEffects) {
-                        const eff = e.effect;
-                        if (typeof eff === "string" && eff.startsWith("charge(")) {
-                            dist = Number(eff.match(/\((\d+)\)/)?.[1] ?? 1);
-                            break;
-                        }
-                        if (Array.isArray(eff)) {
-                            const found = eff.find(x => typeof x === "string" && x.startsWith("charge("));
-                            if (found) {
-                                dist = Number(found.match(/\((\d+)\)/)?.[1] ?? 1);
-                                break;
-                            }
-                        }
-                    }
-
-                    // Run through the ability engine
-                    executeEffectSafely(`charge(${dist})`, data, {});
-                } else {
-                    await shoveUpper(villainId);
-                }
-            }
-        }
-        gameState.isGameStarted = true;
+        await villainDraw(1);
     }
 
+    // 2) HERO TURN SETUP
     if (typeof gameState.turnCounter !== "number") gameState.turnCounter = 0;
     gameState.turnCounter++;
 
@@ -1012,86 +1192,6 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
     resetTurnTimerForHero();
     saveGameState(gameState);
     initializeTurnUI(gameState);
-}
-
-export function placeVillainInUpperCity(slotIndex, newCardId, gameState) {
-
-    const citySlots = document.querySelectorAll(".city-slot");
-
-    if (!Array.isArray(gameState.cities)) {
-        gameState.cities = new Array(12).fill(null);
-    }
-
-    const slot = citySlots[slotIndex];
-    if (!slot) return;
-
-    const area = slot.querySelector(".city-card-area");
-    if (!area) return;
-
-    // Clear existing content in that upper city
-    area.innerHTML = "";
-
-    // Build wrapper for the villain
-    const wrapper = document.createElement("div");
-    wrapper.className = "card-wrapper city-card-enter";
-
-    const rendered = renderCard(newCardId, wrapper);
-    wrapper.appendChild(rendered);
-
-    area.appendChild(wrapper);
-
-    // Hook up panel click behavior (same as shoveUpper)
-    const cardData =
-        henchmen.find(h => h.id === newCardId) ||
-        villains.find(v => v.id === newCardId);
-
-    if (cardData) {
-        wrapper.style.cursor = "pointer";
-        wrapper.addEventListener("click", (e) => {
-            e.stopPropagation();
-            console.log("Villain/Henchmen card clicked (from teleport):", {
-                newCardId,
-                cardName: cardData.name
-            });
-            buildVillainPanel(cardData);
-        });
-    } else {
-        console.warn("No cardData found for newCardId (teleport):", newCardId);
-    }
-
-    const entryType = isCountdownId(newCardId) ? "countdown" : "villain";
-    gameState.cities[slotIndex] = {
-        slotIndex,
-        type: entryType,
-        id: String(newCardId)
-    };
-
-    const baseHP = Number((cardData && cardData.hp) || 1);
-
-    // If this villain/henchman has been seen before (persistent HP), restore it
-    if (!gameState.villainHP) gameState.villainHP = {};
-    const savedHP = gameState.villainHP[String(newCardId)];
-
-    let currentHP;
-    if (typeof savedHP === "number") {
-        currentHP = savedHP;
-    } else {
-        currentHP = baseHP;
-    }
-
-    // Assign runtime HP to entry stored in gameState
-    gameState.cities[slotIndex].maxHP = baseHP;
-    gameState.cities[slotIndex].currentHP = currentHP;
-
-    // Persist to global villainHP map so reloads preserve wounds
-    gameState.villainHP[String(newCardId)] = currentHP;
-
-    saveGameState(gameState);
-
-    // Remove entry animation class after it finishes
-    setTimeout(() => {
-        wrapper.classList.remove("city-card-enter");
-    }, 650);
 }
 
 export async function shoveUpper(newCardId) {

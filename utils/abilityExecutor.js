@@ -16,8 +16,13 @@ import { tactics } from '../data/tactics.js';
 import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
-import { setCurrentOverlord } from "./pageSetup.js";
-import { startHeroTurn, getCurrentOverlordInfo, placeVillainInUpperCity } from "./turnOrder.js";
+import { setCurrentOverlord, buildOverlordPanel } from "./pageSetup.js";
+import {
+    startHeroTurn,
+    getCurrentOverlordInfo,
+    takeNextHenchVillainsFromDeck,
+    enterVillainFromEffect
+} from "./turnOrder.js";
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
 import { saveGameState } from "./stateManager.js";
@@ -845,80 +850,12 @@ function resolveExitForVillain(entry) {
 export async function rallyNextHenchVillains(count) {
     if (!count || count <= 0) return;
 
-    const deck = gameState.villainDeck;
-    if (!Array.isArray(deck) || deck.length === 0) return;
+    const collected = takeNextHenchVillainsFromDeck(count);
+    if (!Array.isArray(collected) || collected.length === 0) return;
 
-    let ptr = gameState.villainDeckPointer ?? 0;
-    let collected = [];
-
-    // 1. SCAN FOR NEXT HENCH/VILLAIN CARDS
-    while (ptr < deck.length && collected.length < count) {
-        const id = deck[ptr];
-
-        const isHench = henchmen.some(h => String(h.id) === String(id));
-        const isVill  = villains.some(v => String(v.id) === String(id));
-
-        if (isHench || isVill) {
-            collected.push(id);
-        }
-
-        ptr++;
-    }
-
-    // Advance pointer to end of scanned area
-    gameState.villainDeckPointer = ptr;
-
-    // 2. PLAY EACH COLLECTED CARD USING NORMAL CITY ENTRY LOGIC
     for (const id of collected) {
-        await playSingleRalliedHenchVillain(id);
+        await enterVillainFromEffect(id);
     }
 
     saveGameState(gameState);
-}
-
-async function playSingleRalliedHenchVillain(id) {
-    const data = findCardInAllSources(id);
-    if (!data) return;
-
-    // TELEPORT
-    if (data.keywords?.includes("Teleport")) {
-        await handleTeleportEntry(id, gameState);
-        return;
-    }
-
-    // GLIDE
-    if (data.keywords?.includes("Glide")) {
-        await handleGlideEntry(id, gameState);
-        return;
-    }
-
-    // CHARGE
-    if (data.keywords?.includes("Charge")) {
-        const dist = Number(data.chargeDistance || 1);
-        await handleChargeEntry(id, dist, gameState);
-        return;
-    }
-
-    // NORMAL ENTRY
-    await handleNormalVillainEntry(id);
-}
-
-async function handleNormalVillainEntry(id) {
-    const entryIndex = CITY_ENTRY_UPPER;
-
-    // If city 1 is frozen, do NOT enter — just reveal top card
-    const cityEntry = gameState.cities[entryIndex];
-    const isFrozenCity1 = cityEntry && isFrozen(cityEntry.id);
-
-    if (isFrozenCity1) {
-        // Rally still respects frozen entry rules
-        gameState.revealedTopVillain = true;
-        return;
-    }
-
-    // 1. SHOVE upper row left by one
-    await pushChain(entryIndex);
-
-    // 2. Place villain into city 1
-    placeVillainInUpperCity(entryIndex, id, gameState);
 }
