@@ -7,7 +7,7 @@ import { bystanders } from '../data/bystanders.js';
 import { scenarios } from '../data/scenarios.js';
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
-import { renderCard, renderAbilityText } from './cardRenderer.js';
+import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview } from "./turnOrder.js";
@@ -1892,4 +1892,60 @@ export function buildMainCardPanel(cardData) {
 
     // Now animate to open
     panel.classList.add("open");
+}
+
+export function renderHeroHandBar(state) {
+        console.log("[renderHeroHandBar] called", {
+            heroTurnIndex: state.heroTurnIndex,
+            heroes: state.heroes,
+            hand: state.heroData?.[state.heroes?.[state.heroTurnIndex ?? 0]]?.hand
+        });
+
+        const handBar = document.getElementById("hero-hand-bar");
+        if (!handBar) {
+            console.warn("No hand div found.");
+            return;
+        }
+
+        const heroIds = state.heroes || [];
+        const hIndex  = state.heroTurnIndex ?? 0;
+        const heroId  = heroIds[hIndex];
+        if (!heroId) {
+            console.warn("No hero id found.");
+            return;
+        }
+
+        const heroState = state.heroData?.[heroId];
+        if (!heroState) {
+            console.warn("No hero state found.");
+            return;
+        }
+
+        // Clear old cards
+        handBar.innerHTML = "";
+
+        // Draw cards in the hand
+        const hand = heroState.hand || [];
+        hand.forEach(cardId => {
+            const cardData = findCardInAllSources(cardId);
+            console.log("[renderHeroHandBar] card:", {
+                id: cardId,
+                name: cardData?.name
+            });
+
+            const wrap = document.createElement("div");
+            wrap.className = "card-wrapper";
+
+            const cardNode = renderCard(cardId, wrap);
+            wrap.appendChild(cardNode);
+
+            // click opens the full panel
+            wrap.addEventListener("click", (e)=>{
+                e.stopPropagation();
+                const cardData = findCardInAllSources(cardId);
+                if (cardData) buildMainCardPanel(cardData);
+            });
+
+            handBar.appendChild(wrap);
+        });
 }

@@ -1476,3 +1476,28 @@ html, body {
     margin: 0 -20px;          /* keep your card spacing */
     pointer-events: auto;
 }
+
+#hero-hand-bar {
+  position: fixed;
+  bottom: -10px;
+  right: 30px;
+
+  display: flex;
+  flex-direction: row-reverse;  /* rightmost card rendered first visually */
+  align-items: flex-end;
+
+  pointer-events: auto;
+  z-index: 2500;  /* on top of board */
+}
+
+#hero-hand-bar .card-wrapper {
+  position: relative;
+  margin-left: -90px; /* overlap amount, tune this */
+  cursor: pointer;
+
+  /* Smaller tabletop style */
+  transform: scale(0.55);
+  transform-origin: bottom right;
+
+  pointer-events: auto;
+}

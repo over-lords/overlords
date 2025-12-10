@@ -168,7 +168,7 @@ import { tactics } from '../data/tactics.js';
 import { scenarios } from '../data/scenarios.js';
 
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
-import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord } from './pageSetup.js';
+import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, renderHeroHandBar } from './pageSetup.js';
 import { currentTurn, executeEffectSafely } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -1199,6 +1199,7 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
     resetTurnTimerForHero();
     saveGameState(gameState);
     initializeTurnUI(gameState);
+    renderHeroHandBar(gameState);
 
     await startTravelPrompt(gameState);
 
@@ -1524,6 +1525,7 @@ export function initializeTurnUI(gameState) {
         }
     }
 
+    renderHeroHandBar(gameState);
     setupStartingTravelOptions(gameState, heroId);
 
     // 4. You are single-player → ALWAYS show the button
@@ -1909,7 +1911,11 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
 
     showRetreatButtonForCurrentHero(gameState);
 
-    showHeroTopPreview(heroId, gameState);
+    if (!heroState.hasDrawnThisTurn) {
+        showHeroTopPreview(heroId, gameState);
+        heroState.hasDrawnThisTurn = true;
+    }
+    renderHeroHandBar(gameState);
 
     // Persist travel + location changes
     saveGameState(gameState);
@@ -2225,6 +2231,7 @@ function resetHeroCurrentTravelAtTurnStart(gameState) {
     heroState.currentTravel = baseTravel;
     heroState.isFacingOverlord = false;
 
+    heroState.hasDrawnThisTurn = false;
     const heroName = heroObj?.name || `Hero ${activeHeroId}`;
 
     console.log(
@@ -2416,6 +2423,7 @@ function performHeroTravelToOverlord(gameState, heroId) {
     }
 
     showHeroTopPreview(heroId, gameState);
+    renderHeroHandBar(gameState);
     saveGameState(gameState);
 }
 
@@ -2560,7 +2568,7 @@ export function showHeroTopPreview(heroId, state, count = 3) {
                         heroData.deck
                     );
                     console.log("Hero hand:", heroData.hand);
-
+                    renderHeroHandBar(gameState);
                 } catch (err) {
                     console.warn("[HERO DRAW] Failed to resolve hero draw/choice:", err);
                 }
