@@ -2371,7 +2371,7 @@ function performHeroTravelToOverlord(gameState, heroId) {
     // Mark them as facing the overlord
     heroState.isFacingOverlord = true;
 
-        // Clean up travel UI
+    // Clean up travel UI
     hideTravelHighlights();
     clearCityHighlights();
 
@@ -2394,7 +2394,10 @@ function performHeroTravelToOverlord(gameState, heroId) {
         remainingDestinations
     );
 
-    showHeroTopPreview(heroId, gameState);
+    if (!heroState.hasDrawnThisTurn) {
+        showHeroTopPreview(heroId, gameState);
+        heroState.hasDrawnThisTurn = true;
+    }
     renderHeroHandBar(gameState);
     saveGameState(gameState);
 }

@@ -266,7 +266,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `rallyNextHenchVillains(2)`
+        effect: [`rallyNextHenchVillains(1)`,`rallyNextHenchVillains(1)`]
       }
     ],
     evilWinsNamePrint: [

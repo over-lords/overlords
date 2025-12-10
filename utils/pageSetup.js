@@ -1922,6 +1922,12 @@ export function renderHeroHandBar(state) {
             return;
         }
 
+        const inCity           = (typeof heroState.cityIndex === "number");
+        const isFacingOverlord = !!heroState.isFacingOverlord;
+
+        // Show button when hero is in a city OR is facing the overlord
+        const canShowActivateButtons = inCity || isFacingOverlord;
+
         // Clear old cards
         handBar.innerHTML = "";
 
@@ -1936,6 +1942,73 @@ export function renderHeroHandBar(state) {
 
             const wrap = document.createElement("div");
             wrap.className = "card-wrapper";
+
+            // --- NEW: Activate button above the card ---
+            const activateBtn = document.createElement("button");
+
+            if (canShowActivateButtons) {
+                activateBtn.className = "hero-hand-activate-btn";
+                activateBtn.type = "button";
+
+                const icon = document.createElement("img");
+                icon.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/activate.png";
+                icon.alt = "Activate";
+                activateBtn.appendChild(icon);
+            }
+
+            activateBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+
+                const cardName = cardData?.name || `Card ${cardId}`;
+                console.log(`Activated ${cardName}`);
+
+                // Resolve the active hero correctly
+                const heroIds       = state.heroes || [];
+                const activeIndex   = state.heroTurnIndex ?? 0;
+                const activeHeroId  = heroIds[activeIndex];
+
+                if (!activeHeroId) {
+                    console.error("No activeHeroId found in state.heroes/heroTurnIndex", {
+                        heroIds,
+                        activeIndex,
+                        state
+                    });
+                    return;
+                }
+
+                const heroState = state.heroData?.[activeHeroId];
+
+                // SAFETY CHECK: must be an object
+                if (!heroState || typeof heroState !== "object") {
+                    console.error("No heroState found for activeHeroId", {
+                        activeHeroId,
+                        heroState,
+                        state
+                    });
+                    return;
+                }
+
+                // Ensure arrays exist
+                if (!Array.isArray(heroState.hand))    heroState.hand    = [];
+                if (!Array.isArray(heroState.discard)) heroState.discard = [];
+
+                // Remove this card from hand
+                const handIndex = heroState.hand.indexOf(cardId);
+                if (handIndex !== -1) {
+                    heroState.hand.splice(handIndex, 1);
+                }
+
+                // Add it to discard
+                heroState.discard.push(cardId);
+
+                console.log(`Discarded ${cardName}`);
+                console.log("Current discard pile:", heroState.discard);
+
+                renderHeroHandBar(state);
+            });
+
+            // Put button first so it appears above the card
+            wrap.appendChild(activateBtn);
 
             const cardNode = renderCard(cardId, wrap);
             wrap.appendChild(cardNode);

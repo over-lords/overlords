@@ -1501,3 +1501,22 @@ html, body {
 
   pointer-events: auto;
 }
+
+.hero-hand-activate-btn {
+    position: absolute;            /* float above */
+    top: -95px;                    /* adjust height above the card */
+    left: -25px;
+    transform: translateX(-50%);   /* perfect centering */
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 20;                   /* ensure it appears over the card */
+}
+
+.hero-hand-activate-btn img {
+    width: 100px;                  /* or any size you want */
+    height: auto;
+    display: block;
+}
