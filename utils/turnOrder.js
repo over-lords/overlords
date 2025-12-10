@@ -168,7 +168,7 @@ import { tactics } from '../data/tactics.js';
 import { scenarios } from '../data/scenarios.js';
 
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
-import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord } from './pageSetup.js';
+import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord } from './pageSetup.js';
 import { currentTurn, executeEffectSafely } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -1201,6 +1201,19 @@ export async function startHeroTurn(gameState, { skipVillainDraw = false } = {})
     initializeTurnUI(gameState);
 
     await startTravelPrompt(gameState);
+
+    const heroId   = gameState.heroes[gameState.heroTurnIndex];
+    const heroState = gameState.heroData?.[heroId];
+
+    if (heroState && typeof heroState.cityIndex === "number") {
+        // Only draw if player did not already draw this turn:
+        if (!heroState.hasDrawnThisTurn) {
+            // Apply your existing Hero Draw + preview
+            showHeroTopPreview(heroId, gameState);
+            heroState.hasDrawnThisTurn = true;
+            saveGameState(gameState);
+        }
+    }
 }
 
 export async function shoveUpper(newCardId) {
@@ -1607,11 +1620,18 @@ export function endCurrentHeroTurn(gameState) {
         }
     }
 
+    heroState.hasDrawnThisTurn = false;
     if (Array.isArray(heroState.hand) && heroState.hand.length > 0) {
         heroState.discard = heroState.discard || [];
         heroState.discard.push(...heroState.hand);
         heroState.hand = [];
     }
+
+    heroState.discard = heroState.discard || [];
+    console.log(
+    `[END TURN] ${heroes.find(h => String(h.id)===String(heroId))?.name}'s discard pile:`,
+    heroState.discard
+    );
 
     // -------------------------------------------
     // STEP 4 — Advance to next hero
@@ -1888,6 +1908,8 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     }
 
     showRetreatButtonForCurrentHero(gameState);
+
+    showHeroTopPreview(heroId, gameState);
 
     // Persist travel + location changes
     saveGameState(gameState);
@@ -2393,5 +2415,187 @@ function performHeroTravelToOverlord(gameState, heroId) {
         }
     }
 
+    showHeroTopPreview(heroId, gameState);
     saveGameState(gameState);
+}
+
+export function showHeroTopPreview(heroId, state, count = 3) {
+    try {
+        const inner    = document.getElementById("hero-deck-preview-inner");
+        const bar      = document.getElementById("hero-deck-preview-bar");
+        const backdrop = document.getElementById("hero-deck-preview-backdrop");
+
+        if (!inner) {
+            console.warn("[HERO PREVIEW] #hero-deck-preview-inner not found in DOM.");
+            return;
+        }
+
+        // Clear any previous hero’s preview UI
+        inner.innerHTML = "";
+
+        // Default: clear any previously remembered preview
+        if (state) {
+            state.heroDeckPreview = null;
+        }
+
+        if (!state || !state.heroData) {
+            if (bar)      bar.style.display = "none";
+            if (backdrop) backdrop.style.display = "none";
+            return;
+        }
+
+        const heroState = state.heroData[heroId];
+        if (!heroState || !Array.isArray(heroState.deck) || heroState.deck.length === 0) {
+            console.log("[HERO PREVIEW] No deck found for hero id", heroId);
+            if (bar)      bar.style.display = "none";
+            if (backdrop) backdrop.style.display = "none";
+            return;
+        }
+
+        const heroObj    = heroes.find(h => String(h.id) === String(heroId));
+        const heroName   = heroObj?.name  || `Hero ${heroId}`;
+        const glowColor  = heroObj?.color || "#ffffff";
+
+        const safeCount  = Number.isFinite(Number(count)) ? Number(count) : 3;
+        const topCards   = heroState.deck.slice(0, safeCount);
+
+        console.log(
+            `[HERO PREVIEW] Top ${topCards.length} cards for ${heroName}:`,
+            topCards
+        );
+
+        // Persist preview metadata into state so we can restore it after a refresh
+        state.heroDeckPreview = {
+            heroId: String(heroId),
+            count : safeCount
+        };
+
+        topCards.forEach(cardId => {
+            const cardData = findCardInAllSources(cardId);
+            const cardName = cardData?.name || `Card ${cardId}`;
+
+            // OUTER container – NOT SCALED
+            const outer = document.createElement("div");
+            outer.className = "hero-preview-outer";
+
+            // BUTTON lives in the non-scaled outer container
+            const activateBtn = document.createElement("button");
+            activateBtn.className = "hero-preview-activate-btn";
+
+            const activateImg = document.createElement("img");
+            activateImg.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/activate.png";
+
+            activateBtn.appendChild(activateImg);
+            activateBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+
+                try {
+                    const heroData = state.heroData?.[heroId];
+                    if (!heroData) {
+                        console.warn("[HERO DRAW] No heroData for heroId", heroId);
+                        return;
+                    }
+
+                    const deck = heroData.deck || [];
+                    heroData.hand = heroData.hand || [];
+
+                    // How many we actually showed (usually = safeCount, but clamp to deck length)
+                    const shownCount = Math.min(deck.length, safeCount);
+
+                    // Exactly the cards we revealed at top-of-deck
+                    const shownCards = deck.slice(0, shownCount);
+
+                    // Everything below those shown cards
+                    const rest = deck.slice(shownCount);
+
+                    const chosenId = cardId;
+
+                    // 1) Chosen card goes to hand
+                    heroData.hand.push(chosenId);
+
+                    // 2) Compute unchosen by removing *one instance* of chosen from shownCards
+                    const unchosen = [...shownCards]; // shallow copy
+                    const idxToRemove = unchosen.findIndex(id => String(id) === String(chosenId));
+                    if (idxToRemove !== -1) {
+                        unchosen.splice(idxToRemove, 1); // remove exactly one copy
+                    } else {
+                        console.warn(
+                            "[HERO DRAW] Chosen card not found in shownCards (unexpected)",
+                            { chosenId, shownCards }
+                        );
+                    }
+
+                    // 3) Put the unchosen cards back on top of the remaining deck and shuffle
+                    rest.push(...unchosen);
+
+                    // Fisher–Yates shuffle
+                    for (let i = rest.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [rest[i], rest[j]] = [rest[j], rest[i]];
+                    }
+
+                    // 4) Commit new deck
+                    heroData.deck = rest;
+
+                    // 5) Close preview UI
+                    const bar      = document.getElementById("hero-deck-preview-bar");
+                    const inner    = document.getElementById("hero-deck-preview-inner");
+                    const backdrop = document.getElementById("hero-deck-preview-backdrop");
+
+                    if (inner) inner.innerHTML = "";
+                    if (bar) bar.style.display = "none";
+                    if (backdrop) backdrop.style.display = "none";
+
+                    // Clear persisted preview so it doesn’t reappear after refresh
+                    state.heroDeckPreview = null;
+
+                    // Persist
+                    if (typeof saveGameState === "function") {
+                        saveGameState(state);
+                    }
+
+                    console.log(`Chose ${cardName}.`);
+                    console.log(
+                        "New deck after returning the other revealed and shuffling:",
+                        heroData.deck
+                    );
+                    console.log("Hero hand:", heroData.hand);
+
+                } catch (err) {
+                    console.warn("[HERO DRAW] Failed to resolve hero draw/choice:", err);
+                }
+            });
+
+            // INNER SCALED card wrapper FIRST
+            const wrapper = document.createElement("div");
+            wrapper.className = "card-wrapper hero-preview-card"; 
+            wrapper.style.setProperty("--hero-preview-color", glowColor);
+
+            wrapper.addEventListener("click", e => {
+                e.stopPropagation();
+                if (cardData) buildMainCardPanel(cardData);
+            });
+
+            const rendered = renderCard(cardId, wrapper);
+            wrapper.appendChild(rendered);
+
+            // append CARD first
+            outer.appendChild(wrapper);
+
+            // then append BUTTON below
+            outer.appendChild(activateBtn);
+
+            // finally to outer row
+            inner.appendChild(outer);
+        });
+
+        if (bar) {
+            bar.style.display = "block";
+        }
+        if (backdrop) {
+            backdrop.style.display = "block";
+        }
+    } catch (err) {
+        console.warn("[HERO PREVIEW] Failed to render preview:", err);
+    }
 }

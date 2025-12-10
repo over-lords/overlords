@@ -10,7 +10,7 @@ import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
-import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI } from "./turnOrder.js";
+import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { gameState } from "../data/gameState.js";
@@ -215,6 +215,21 @@ async function restoreUIFromState(state) {
     // Attach click events
     setTimeout(attachHeroClicks, 0);
 
+        // Restore hero top-deck preview bar, if any was active when the game was saved
+    if (state.heroDeckPreview && state.heroDeckPreview.heroId != null) {
+        const { heroId, count } = state.heroDeckPreview;
+        try {
+            showHeroTopPreview(heroId, state, count || 3);
+        } catch (err) {
+            console.warn("[RESTORE] Failed to restore hero deck preview:", err);
+        }
+    } else {
+        // Ensure the preview UI is hidden if there is no saved preview
+        const bar      = document.getElementById("hero-deck-preview-bar");
+        const backdrop = document.getElementById("hero-deck-preview-backdrop");
+        if (bar)      bar.style.display = "none";
+        if (backdrop) backdrop.style.display = "none";
+    }
 
     /******************************************************
      * OVERLORD RESTORATION
@@ -435,6 +450,7 @@ async function restoreUIFromState(state) {
             tactics: selectedData.tactics,
 
             revealedTopVillain: false,
+            heroDeckPreview: null,
 
             // villain deck from gameStart()
             villainDeck: startResult.villainDeck,
@@ -1740,3 +1756,140 @@ export function showMightBanner(text, duration = 1400) {
     });
 }
 
+
+// === MAIN CARD PANEL (name, damage, abilities in top row; villain-style keywords under row) ===
+export function buildMainCardPanel(cardData) {
+    if (!cardData) return;
+
+    const panel   = document.getElementById("main-card-panel");
+    const content = document.getElementById("main-card-panel-content");
+    if (!panel || !content) return;
+
+    // Clear previous
+    content.innerHTML = "";
+
+    /* === MAIN PANEL COLORING from card's hero === */
+    let panelColor = "white";
+
+    // if this card lists a hero name, match it in heroes[]
+    if (cardData.hero) {
+        const heroObj = heroes.find(h =>
+            h.name && h.name.toLowerCase() === cardData.hero.toLowerCase()
+        );
+        if (heroObj && heroObj.color) {
+            panelColor = heroObj.color;
+        }
+    }
+
+    // now mirror buildHeroPanel
+    const rgb   = getRGB(panelColor);
+    const light = lightenRGB(rgb, 0.35);
+
+    panel.style.backgroundColor = light
+        .replace("rgb", "rgba")
+        .replace(")", ", 0.85)");
+
+    panel.style.borderRight = `4px solid ${panelColor}`;
+
+    // ------------------------------------------------------------
+    // LEFT column (big card) – same scale class as villain
+    // ------------------------------------------------------------
+    const leftCol = document.createElement("div");
+    leftCol.className = "villain-card-scale";
+    leftCol.appendChild(renderCard(cardData.id, leftCol));
+
+    // ------------------------------------------------------------
+    // RIGHT column – name, damage, abilities only
+    // ------------------------------------------------------------
+    const rightCol = document.createElement("div");
+    rightCol.className = "villain-right-column";
+
+    // Name
+    const h2 = document.createElement("h2");
+    h2.textContent = cardData.name || "(Unnamed Card)";
+    rightCol.appendChild(h2);
+
+    // Damage (optional)
+    if (typeof cardData.damage !== "undefined") {
+        const dmg = document.createElement("div");
+        dmg.innerHTML = `<strong>Damage:</strong> ${cardData.damage}`;
+        rightCol.appendChild(dmg);
+    }
+
+    // Abilities (abilitiesText)
+    if (Array.isArray(cardData.abilitiesText) && cardData.abilitiesText.length > 0) {
+        const h3 = document.createElement("h3");
+        h3.textContent = "Abilities";
+        rightCol.appendChild(h3);
+
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement("div");
+            line.innerHTML = renderAbilityText(a.text);
+            rightCol.appendChild(line);
+        });
+    }
+
+    // ------------------------------------------------------------
+    // TOP ROW (same structure as villain)
+    // ------------------------------------------------------------
+    const topRow = document.createElement("div");
+    topRow.className = "villain-top-row";
+    topRow.appendChild(leftCol);
+    topRow.appendChild(rightCol);
+
+    content.appendChild(topRow);
+
+    // ------------------------------------------------------------
+    // KEYWORDS AND DEFINITIONS (villain style, below the top row)
+    // ------------------------------------------------------------
+    // collect keywords exactly like villain
+    const foundKeys = extractKeywordsFromAbilities(cardData.abilitiesText || [])
+        .sort((a,b)=> a.localeCompare(b));
+
+    if (foundKeys.length > 0) {
+        const keyBox = document.createElement("div");
+        keyBox.innerHTML = `<h3>Keywords</h3>`;
+
+        foundKeys.forEach(k => {
+            const def = keywords[k] || "No definition found.";
+            const line = document.createElement("div");
+            line.style.marginBottom = "6px";
+            line.innerHTML = `
+                <div style="font-weight:bold;">${k}</div>
+                <div style="margin-left:8px;">${def}</div>
+            `;
+            keyBox.appendChild(line);
+        });
+
+        content.appendChild(keyBox);
+    }
+
+
+    // ------------------------------------------------------------
+    // Close button (same behavior as villain)
+    // ------------------------------------------------------------
+    const closeBtn = document.getElementById("main-card-panel-close");
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            panel.classList.remove("open");
+            setTimeout(() => {
+                panel.style.display = "none";
+            }, 350);
+        };
+    }
+
+    // ------------------------------------------------------------
+    // OPEN panel (same behavior as villain)
+    // ------------------------------------------------------------
+    // Make it visible
+    panel.style.display = "flex";
+
+    // Reset to closed state
+    panel.classList.remove("open");
+
+    // Force a layout flush so browser acknowledges left:-40vw
+    panel.offsetWidth; 
+
+    // Now animate to open
+    panel.classList.add("open");
+}

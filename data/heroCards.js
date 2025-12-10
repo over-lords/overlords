@@ -99,7 +99,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `CHOOSE: KO a Henchman or Villain, and if you do, this card deals no Damage and you take the KO'd Henchman or Villain's Damage (ignoring Superman's Damage Threshold). <span class="line-gap"></span> OR <span class="line-gap"></span> After using this card, Superman's Travel Budget increases by 1 for this turn.`
+        text: `CHOOSE: KO a Henchman or Villain, and if you do, this card deals no Damage and you take the KO'd Henchman or Villain's Damage. <span class="line-gap"></span> OR <span class="line-gap"></span> After using this card, Superman's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [

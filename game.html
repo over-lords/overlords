@@ -184,6 +184,83 @@
             flex: 1 1 auto;
             padding: 20px;
         }
+
+        #hero-deck-preview-bar {
+            position: fixed;
+            inset: 0;
+            margin: 0;
+            z-index: 500000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+
+            /* IMPORTANT: do the shrink here */
+            transform: translateY(-4vh) scale(0.5);
+            transform-origin: center center;
+        }
+
+        #hero-deck-preview-inner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0px;
+            pointer-events: auto;
+            /* REMOVE scale here */
+        }
+
+
+        /* This is the card+glow wrapper we created in JS */
+        .hero-preview-card {
+            pointer-events: auto;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+
+            /* keep existing spacing/overlap between cards */
+            margin: 0 40px;
+
+            /* CSS variable for glow color; JS sets this */
+            --hero-preview-color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Remove extra margin around the card inside the preview */
+        .hero-preview-card .card {
+            margin: 0;
+        }
+
+        /* Under-glow as a pseudo-element, so it scales with the card row */
+        .hero-preview-card::before {
+            content: "";
+            position: absolute;
+            inset: 0; /* exactly the same footprint as the card */
+            border-radius: inherit; /* follow the card’s rounding */
+            box-shadow: 0 0 20px 6px var(--hero-preview-color);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* (Optional legacy glow class, if still used elsewhere) */
+        .hero-preview-glow {
+            position: relative;
+            display: inline-block;
+            border-radius: 12px;
+            box-shadow: 0 0 16px 4px var(--hero-glow-color, rgba(255,255,255,0.8));
+            transition: box-shadow 0.2s ease;
+        }
+
+        .hero-preview-glow:hover {
+            box-shadow: 0 0 20px 8px var(--hero-glow-color, rgba(255,255,255,1));
+        }
+
+        #hero-deck-preview-backdrop {
+            position: fixed;
+            inset: 0;                 /* covers entire viewport */
+            background: rgba(0,0,0,0.5); /* 50% black */
+            z-index: 499999;          /* below the preview bar */
+            display: none;            /* hidden until needed */
+            pointer-events: none;     /* prevent blocking board interactions */
+        }
     </style>
 </head>
 <body style="background-color:white;">
@@ -216,6 +293,11 @@
     <div id="villain-panel">
         <div id="villain-panel-close">X</div>
         <div id="villain-panel-content"></div>
+    </div>
+
+    <div id="main-card-panel">
+        <div id="main-card-panel-close">X</div>
+        <div id="main-card-panel-content"></div>
     </div>
 
     <div id="top-villain-button" style="display:none;">&lt;</div>
@@ -460,6 +542,11 @@
     </div>
 
     <div id="heroes-row"></div>
+
+    <div id="hero-deck-preview-backdrop"></div>
+    <div id="hero-deck-preview-bar">
+        <div id="hero-deck-preview-inner"></div>
+    </div>
 
     <div id="damage-flash"></div>
 
