@@ -859,3 +859,32 @@ export async function rallyNextHenchVillains(count) {
 
     saveGameState(gameState);
 }
+
+export function onHeroCardActivated(cardId, meta = {}) {
+    const idStr    = String(cardId);
+    const action   = meta.action || "activated";
+    const heroId   = meta.heroId ?? null;
+
+    const cardData = findCardInAllSources(cardId);
+    const cardName = cardData?.name || `Card ${idStr}`;
+
+    const heroObj  = heroId != null
+        ? heroes.find(h => String(h.id) === String(heroId))
+        : null;
+    const heroName = heroObj?.name || (heroId != null ? `Hero ${heroId}` : "Unknown hero");
+
+    console.log(
+        `[AbilityExecutor] Hero card ${action}: ${cardName} (ID ${idStr})`,
+        {
+            heroId,
+            heroName,
+            meta,
+            cardData
+        }
+    );
+
+    // This is where we'll later:
+    // - look up the card's abilities
+    // - interpret conditions like "heroTurn()" / "inCity()" / etc.
+    // - call executeEffectSafely(...) with the right effect string
+}

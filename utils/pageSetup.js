@@ -9,7 +9,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
+import { runGameStartAbilities, currentTurn, onHeroCardActivated } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
@@ -1986,6 +1986,16 @@ export function renderHeroHandBar(state) {
                         state
                     });
                     return;
+                }
+
+                // SEND TO abilityExecutor.js
+                try {
+                    onHeroCardActivated(cardId, {
+                        action: "activated",
+                        heroId: activeHeroId
+                    });
+                } catch (err) {
+                    console.warn("[HeroActivate] onHeroCardActivated failed:", err);
                 }
 
                 // Ensure arrays exist
