@@ -2160,8 +2160,8 @@ export async function startTravelPrompt(gameState) {
         return;
     }
 
-    // Show a persistent "Where are you traveling?" banner
-    showMightBanner("Where are you traveling?");
+    // Show a "Where are you traveling?" banner
+    showMightBanner("Travel Where?");
 
     console.log(
         `[TRAVEL] Prompting ${heroName} to choose a travel destination. `
