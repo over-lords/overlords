@@ -1672,123 +1672,75 @@ function setupStartingTravelOptions(gameState, heroId) {
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
-    // Clear any previous glow
-    clearCityHighlights();
+    // Start from a clean outline state; centralized refresher will redraw as needed.
+    refreshAllCityOutlines(gameState, { clearOnly: true });
 
     // Only if hero is NOT in a city
     if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
-        console.log(`[TRAVEL] ${heroName} already in city ${heroState.cityIndex}; skipping HQ/Overlord travel UI.`);
+        console.log(
+            `[TRAVEL] ${heroName} already in city ${heroState.cityIndex}; ` +
+            `skipping HQ/Overlord travel UI.`
+        );
         return; // already on map → normal hero draw / turn
     }
 
     // NOTE: Facing overlord is "not in a city" but still allowed to travel.
     // We only log here; do NOT suppress highlights.
     if (heroState.isFacingOverlord) {
-        console.log(`[TRAVEL] ${heroName} is facing the Overlord and can still spend travel to move to a city.`);
+        console.log(
+            `[TRAVEL] ${heroName} is facing the Overlord and can still ` +
+            `spend travel to move to a city.`
+        );
     }
 
     // ---------------------
-    // Step 1: compute legal targets
+    // Step 1: compute legal targets (pure helper – no DOM styling)
     // ---------------------
-    function computeLegalTargets() {
-        const citySlots = document.querySelectorAll(".city-slot");
-        const upperIndices = [0, 2, 4, 6, 8, 10];
-        const lowerIndices = [1, 3, 5, 7, 9, 11];
-
-        const arr = [];
-
-        for (let i = 0; i < 6; i++) {
-            const upperSlot = citySlots[upperIndices[i]];
-            const lowerSlot = citySlots[lowerIndices[i]];
-
-            const foePresent = !!upperSlot.querySelector(".card-wrapper");
-
-            // is any hero already in this lower city?
-            const heroAlreadyHere = (gameState.heroes || []).some(hid => {
-                const hState = gameState.heroData?.[hid];
-                return hState && hState.cityIndex === lowerIndices[i];
-            });
-
-            if (foePresent && !heroAlreadyHere) {
-                arr.push({ lowerSlot, lowerIndex: lowerIndices[i] });
-            }
-        }
-        return arr;
-    }
+    const initialTargets = computeHeroTravelLegalTargets(gameState, heroId);
 
     // ---------------------
-    // Step 2: visual refresh only (no click!)
+    // Step 2: set click handlers ONCE right now
     // ---------------------
-    function refreshHighlights() {
-        // remove old styling
-        document.querySelectorAll(".city-slot").forEach(el => {
-            el.style.outline = "";
-            el.style.cursor  = "";
-        });
-
-        // stop if no travel
-        if (!heroState || heroState.currentTravel <= 0) {
-            return;
-        }
-
-        // re-evaluate + draw
-        const targets = computeLegalTargets();
-        targets.forEach(t => {
-            t.lowerSlot.style.outline = "4px solid yellow";
-            t.lowerSlot.style.cursor = "pointer";
-        });
-    }
-
-    // ---------------------
-    // Step 3: set click ONCE right now
-    // ---------------------
-    const initialTargets = computeLegalTargets();
     initialTargets.forEach(target => {
-        target.lowerSlot.addEventListener("click", () => {
-            if (!heroState || heroState.currentTravel <= 0) {
+        const lowerSlot = target.lowerSlot;
+        if (!lowerSlot) return;
+
+        lowerSlot.addEventListener("click", () => {
+            // Always consult the latest state for safety
+            const latestHeroState = gameState.heroData?.[heroId];
+
+            if (!latestHeroState || latestHeroState.currentTravel <= 0) {
                 hideTravelHighlights();
+                // Also clear outlines immediately via the central helper
+                refreshAllCityOutlines(gameState, { clearOnly: true });
                 return;
             }
+
             showTravelPopup(gameState, heroId, target.lowerIndex);
         });
     });
 
     // ---------------------
-    // Step 4: begin periodic refresh
+    // Step 3: initial visual draw (outlines)
     // ---------------------
-    // Immediately draw
-    refreshHighlights();
-
-    // Every 1s, re-draw outlines ONLY
-    // Stop if travel ends
-    const intervalId = setInterval(() => {
-        if (!heroState || heroState.currentTravel <= 0) {
-            clearInterval(intervalId);
-            hideTravelHighlights();
-            return;
-        }
-        refreshHighlights();
-    }, 1000);
-
-    // optionally store intervalId if you want to cancel early elsewhere
-    // window._travelHighlightInterval = intervalId;
+    refreshAllCityOutlines(gameState);
 }
 
 window.recalculateHeroTravel = function () {
     try {
         initializeTurnUI(gameState);
         showRetreatButtonForCurrentHero(gameState);
+
+        const destinations = recomputeCurrentHeroTravelDestinations(gameState);
+        console.log("[recalculateHeroTravel] destinations:", destinations);
     } catch (err) {
         console.warn("[recalculateHeroTravel] failed to recompute travel UI:", err);
     }
 };
 
 function clearCityHighlights() {
-    const citySlots = document.querySelectorAll(".city-slot");
-    citySlots.forEach(slot => {
-        slot.style.outline = "";
-        slot.style.cursor = "default";
-    });
+    refreshAllCityOutlines(gameState, { clearOnly: true });
+    hideFaceOverlordButton();
 }
 
 function hideTravelHighlights() {
@@ -1806,6 +1758,7 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     if (heroState.currentTravel <= 0) {
         console.log(`[TRAVEL] ${heroName} has no travel left. Travel blocked.`);
         hideTravelHighlights();
+        clearCityHighlights();
         return;
     }
 
@@ -1916,6 +1869,14 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
         heroState.hasDrawnThisTurn = true;
     }
     renderHeroHandBar(gameState);
+
+    // After spending travel and moving, recompute destinations for the CURRENT hero.
+    // If they are out of travel, this returns null and clears highlights.
+    const remainingDestinations = recomputeCurrentHeroTravelDestinations(gameState);
+    console.log(
+        "[performHeroStartingTravel] remaining destinations after move:",
+        remainingDestinations
+    );
 
     // Persist travel + location changes
     saveGameState(gameState);
@@ -2240,7 +2201,7 @@ function resetHeroCurrentTravelAtTurnStart(gameState) {
     );
 }
 
-function showRetreatButtonForCurrentHero(gameState) {
+export function showRetreatButtonForCurrentHero(gameState) {
     const btn = document.getElementById("retreat-button");
     if (!btn) {
         console.warn("[RETREAT] retreat-button element not found in DOM.");
@@ -2410,10 +2371,11 @@ function performHeroTravelToOverlord(gameState, heroId) {
     // Mark them as facing the overlord
     heroState.isFacingOverlord = true;
 
-    // Clean up travel UI; recalc will rebuild highlights/buttons as needed
+        // Clean up travel UI
     hideTravelHighlights();
     clearCityHighlights();
 
+    // Rebuild turn UI and travel UI as usual
     if (typeof window.recalculateHeroTravel === "function") {
         try {
             window.recalculateHeroTravel(gameState);
@@ -2421,6 +2383,16 @@ function performHeroTravelToOverlord(gameState, heroId) {
             console.warn("[OVERLORD] recalculateHeroTravel threw:", e);
         }
     }
+
+    // Explicitly recompute travel destinations for the CURRENT turn hero.
+    // Since we just spent 1 travel to face the Overlord, this will either:
+    //   - return null and clear highlights if travel is now 0, OR
+    //   - keep the travel highlights in sync if there's still travel.
+    const remainingDestinations = recomputeCurrentHeroTravelDestinations(gameState);
+    console.log(
+        "[performHeroTravelToOverlord] remaining destinations after move:",
+        remainingDestinations
+    );
 
     showHeroTopPreview(heroId, gameState);
     renderHeroHandBar(gameState);
@@ -2605,5 +2577,193 @@ export function showHeroTopPreview(heroId, state, count = 3) {
         }
     } catch (err) {
         console.warn("[HERO PREVIEW] Failed to render preview:", err);
+    }
+}
+
+// ============================================================================
+// CENTRALIZED CITY OUTLINE HANDLING
+// ============================================================================
+
+/**
+ * Pure helper: compute the list of "lower" city slots that are valid starting
+ * travel destinations for the given hero.
+ *
+ * This does NOT touch DOM styling – it only returns references/indices.
+ */
+function computeHeroTravelLegalTargets(gameState, heroId) {
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) return [];
+
+    const citySlots = document.querySelectorAll(".city-slot");
+    if (!citySlots.length) return [];
+
+    const upperIndices = [0, 2, 4, 6, 8, 10];
+    const lowerIndices = [1, 3, 5, 7, 9, 11];
+
+    const results = [];
+
+    for (let i = 0; i < upperIndices.length; i++) {
+        const upperIdx = upperIndices[i];
+        const lowerIdx = lowerIndices[i];
+
+        const upperSlot = citySlots[upperIdx];
+        const lowerSlot = citySlots[lowerIdx];
+        if (!upperSlot || !lowerSlot) continue;
+
+        const foePresent = !!upperSlot.querySelector(".card-wrapper");
+
+        // Is any hero already in this lower city?
+        const heroAlreadyHere = (gameState.heroes || []).some(hid => {
+            const hState = gameState.heroData?.[hid];
+            return hState && hState.cityIndex === lowerIdx;
+        });
+
+        if (foePresent && !heroAlreadyHere) {
+            results.push({
+                upperSlot,
+                lowerSlot,
+                lowerIndex: lowerIdx
+            });
+        }
+    }
+
+    return results;
+}
+
+/**
+ * Single centralized place that is allowed to put an outline/cursor on
+ * .city-slot elements.
+ *
+ * - Safe to call as often as you like.
+ * - Always clears existing outlines before applying new ones.
+ * - If options.clearOnly === true, it will only clear and then return.
+ */
+function refreshAllCityOutlines(gameState, options = {}) {
+    const clearOnly = options.clearOnly === true;
+
+    const citySlots = document.querySelectorAll(".city-slot");
+    if (!citySlots.length) return;
+
+    // 1) Clear everything first
+    citySlots.forEach(slot => {
+        slot.style.outline = "";
+        slot.style.cursor = "default";
+    });
+
+    if (clearOnly) {
+        return;
+    }
+
+    // 2) Figure out the active hero
+    const heroIds = gameState.heroes || [];
+    const activeIdx = gameState.heroTurnIndex ?? 0;
+    const heroId = heroIds[activeIdx];
+
+    if (heroId == null) {
+        return;
+    }
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        return;
+    }
+
+    // If the hero is already in a city, no starting-travel outlines.
+    //if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
+        //return;
+    //}
+
+    // Compute their current travel pool
+    const currentTravel =
+        typeof heroState.currentTravel === "number"
+            ? heroState.currentTravel
+            : (typeof heroState.travel === "number" ? heroState.travel : 0);
+
+    if (currentTravel <= 0) {
+        return;
+    }
+
+    // Facing the Overlord is still allowed to travel; we just treat it
+    // as "not in a city" above.
+
+    const targets = computeHeroTravelLegalTargets(gameState, heroId);
+    targets.forEach(target => {
+        const lowerSlot = target.lowerSlot;
+        if (!lowerSlot) return;
+
+        lowerSlot.style.outline = "4px solid yellow";
+        lowerSlot.style.cursor = "pointer";
+    });
+}
+
+setInterval(() => {
+    try {
+        // This both refreshes the outlines and enforces "no travel when out".
+        recomputeCurrentHeroTravelDestinations(gameState);
+    } catch (e) {
+        console.warn("[OUTLINES] periodic travel-destination refresh failed:", e);
+    }
+}, 1000);
+
+function recomputeCurrentHeroTravelDestinations(gameState) {
+    const heroIds  = gameState.heroes || [];
+    const activeIx = gameState.heroTurnIndex ?? 0;
+    const heroId   = heroIds[activeIx];
+
+    if (heroId == null) {
+        // No current hero – wipe travel UI and block travel
+        clearCityHighlights();
+        hideTravelHighlights();
+        return null;
+    }
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        clearCityHighlights();
+        hideTravelHighlights();
+        return null;
+    }
+
+    const heroObj  = Array.isArray(heroes)
+        ? heroes.find(h => String(h.id) === String(heroId))
+        : null;
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    const currentTravel =
+        typeof heroState.currentTravel === "number"
+            ? heroState.currentTravel
+            : (typeof heroState.travel === "number" ? heroState.travel : 0);
+
+    // OUT OF TRAVEL → clear outlines, no destinations, no travel
+    if (currentTravel <= 0) {
+        console.log(
+            `[TRAVEL] ${heroName} has run out of travel. ` +
+            `Clearing travel destinations and disabling travel.`
+        );
+        clearCityHighlights();    // removes outlines / pointer cursors
+        hideTravelHighlights();   // removes any .travel-highlight classes
+        return null;
+    }
+
+    // STILL HAS TRAVEL → recompute / redraw outlines via the centralized helper
+    if (typeof refreshAllCityOutlines === "function") {
+        refreshAllCityOutlines(gameState);
+    }
+
+    // Return the up-to-date legal destinations for the active hero
+    if (typeof computeHeroTravelLegalTargets === "function") {
+        const targets = computeHeroTravelLegalTargets(gameState, heroId) || [];
+        return targets;
+    }
+
+    // Fallback: if for some reason the helper isn't present, just say "no info"
+    return [];
+}
+
+function hideFaceOverlordButton() {
+    const btn = document.getElementById("face-overlord-button");
+    if (btn) {
+        btn.style.display = "none";
+        btn.disabled = true;
     }
 }

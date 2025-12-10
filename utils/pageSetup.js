@@ -10,7 +10,7 @@ import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn } from './abilityExecutor.js';
-import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview } from "./turnOrder.js";
+import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { gameState } from "../data/gameState.js";
@@ -402,6 +402,7 @@ async function restoreUIFromState(state) {
         }
 
         initializeTurnUI(gameState);
+        showRetreatButtonForCurrentHero(gameState);
         return;
     }
 

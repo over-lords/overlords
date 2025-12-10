@@ -1479,25 +1479,25 @@ html, body {
 
 #hero-hand-bar {
   position: fixed;
-  bottom: -10px;
-  right: 30px;
+  bottom: -260px;
+  right: -80px;
 
   display: flex;
-  flex-direction: row-reverse;  /* rightmost card rendered first visually */
+  flex-direction: row-reverse;
   align-items: flex-end;
 
   pointer-events: auto;
-  z-index: 2500;  /* on top of board */
+  z-index: 990;
 }
 
 #hero-hand-bar .card-wrapper {
   position: relative;
-  margin-left: -90px; /* overlap amount, tune this */
+  margin-left: -90px;
   cursor: pointer;
 
   /* Smaller tabletop style */
   transform: scale(0.55);
-  transform-origin: bottom right;
+  transform-origin: top left;
 
   pointer-events: auto;
 }

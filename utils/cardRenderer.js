@@ -397,11 +397,15 @@ export function renderCard(cardId, container) {
     const hpBox = statBlock(`${assets}/Heart.png`, liveHP, {
         iconSize: 32,
         iconMargin: "0px 0 0 0px",
-        textMargin: "-5px 0 0 -26px",
+        textMargin: "-5px 0 0 -33px",
         className: "heartBlock"
     });
 
-    // ADD THESE TWO LINES
+    const hpText = hpBox.querySelector("div");
+    hpText.style.textAlign = "center";
+    hpText.style.display = "inline-block";
+    hpText.style.width = "30px";
+
     hpBox.classList.add("hero-board-hp");
     hpBox.dataset.heroId = cardData.id;
 
