@@ -117,7 +117,7 @@ export const villains = [
   ],
   abilitiesEffects: [
       {
-          type: `chooseOption()`,
+          type: `chooseOption`,
           condition: `uponDefeat`
       },
       {
@@ -267,7 +267,7 @@ export const villains = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `turnEndWasDamaged()`,
+        condition: `turnEndWasDamaged`,
         effect: `increaseVillainDamage(1)`
       },
       {
@@ -366,7 +366,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `disableIconAbilitiesAgainst()`
+        effect: `disableIconAbilitiesAgainst`
       },
       {
         type: `optional`,
@@ -854,7 +854,7 @@ export const villains = [
         effect: `charge(1)`
       },
       {
-          type: `chooseOption()`,
+          type: `chooseOption`,
           condition: `uponDefeat`
       },
       {
@@ -937,7 +937,7 @@ export const villains = [
         type: `quick`,
         condition: `travelsTo(Keystone)`,
         uses: `1`,
-        effect: `doubleVillainLife()`
+        effect: `doubleVillainLife`
       },
       {
         type: `optional`,
@@ -1031,7 +1031,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasClash()`
+        effect: `hasClash`
       },
       {
         type: `quick`,
@@ -1126,7 +1126,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasClash()`
+        effect: `hasClash`
       },
       {
         type: `optional`,
@@ -1161,7 +1161,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasEject()`
+        effect: `hasEject`
       },
       {
         type: `quick`,
@@ -1275,12 +1275,12 @@ export const villains = [
         effect: `charge(1)`
       },
       {
-          type: `chooseOption()`,
+          type: `chooseOption`,
           condition: `uponDefeat`
       },
       {
           type: `chooseOption(1)`,
-          effect: [`restoreCity()`]
+          effect: [`restoreCity`]
       },
       {
           type: `chooseOption(2)`,
@@ -1321,7 +1321,7 @@ export const villains = [
       },
       {
         type: `passive`,
-        condition: `firstAttackPerTurn()`,
+        condition: `firstAttackPerTurn`,
         effect: `damageAttacker(1)`
       },
       {
@@ -1362,7 +1362,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `damageOverlord(2*getOverlordLevel())`
+        effect: `damageOverlord(2*getOverlordLevel)`
       }
     ]
   },

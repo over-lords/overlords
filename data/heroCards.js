@@ -47,7 +47,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: `increaseCardDamage(findKOdHeroes())`
+        effect: `increaseCardDamage(findKOdHeroes)`
       }
     ]
   },
@@ -77,7 +77,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
@@ -115,11 +115,11 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
-        effect: [`setCardDamageTo(0)`,`koAnyFoe()`,`takeSelectedFoeDamage()`]
+        effect: [`setCardDamageTo(0)`,`koAnyFoe`,`takeSelectedFoeDamage`]
       },
       {
         type: `chooseOption(2)`,
@@ -216,8 +216,8 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: [`checkAdjacentCities()`],
-        effect: [`useAgainstAdjacent()`]
+        condition: [`checkAdjacentCities`],
+        effect: [`useAgainstAdjacent`]
       }
     ]
   },
@@ -246,7 +246,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: [`none`],
-        effect: [`gainSidekick()`]
+        effect: [`gainSidekick`]
       },
       {
         type: `quick`,
@@ -275,7 +275,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(damagedVillain(),endCurrentNext())`
+        effect: `lockVillain(damagedVillain,endCurrentNext)`
       }
     ]
   },
@@ -329,7 +329,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
@@ -655,7 +655,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
@@ -699,15 +699,15 @@ export const heroCards = [
         type: `shoveDamaged(5)`
       },
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
-        effect: [`travelTo(lastShovedVillain())`]
+        effect: [`travelTo(lastShovedVillain)`]
       },
       {
         type: `chooseOption(2)`,
-        effect: [`withdraw()`]
+        effect: [`withdraw`]
       }
     ]
   },
@@ -732,7 +732,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `damagedAtTurnEnd()`,
+        condition: `damagedAtTurnEnd`,
         effect: [`damageVillain(current,2)`]
       },
     ]
@@ -757,7 +757,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `increaseCardDamage(getTravelUsed())`
+        effect: `increaseCardDamage(getTravelUsed)`
       }
     ]
   },
@@ -805,7 +805,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(damagedVillain(),endCurrentNext())`
+        effect: `lockVillain(damagedVillain,endCurrentNext)`
       }
     ]
   },
@@ -835,7 +835,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
@@ -961,7 +961,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
@@ -1289,7 +1289,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: `giveHeroPassiveTemp(discardCardsAtWill())`
+        effect: `giveHeroPassiveTemp(discardCardsAtWill)`
       },
     ]
   },
@@ -1321,7 +1321,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        condition: `ifDiscarded()`,
+        condition: `ifDiscarded`,
         effect: `koFoeIn(Gotham)`
       },
     ]
@@ -1350,11 +1350,11 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: `increaseCardDamage(findKOdHeroes())`
+        effect: `increaseCardDamage(findKOdHeroes)`
       },
       {
         type: `quick`,
-        condition: `ifDiscarded()`,
+        condition: `ifDiscarded`,
         effect: `damageOverlord(3)`
       },
     ]
@@ -1387,7 +1387,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        condition: `ifDiscarded()`,
+        condition: `ifDiscarded`,
         effect: `damageOverlord(2)`
       }
     ]
@@ -1420,7 +1420,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        condition: `ifDiscarded()`,
+        condition: `ifDiscarded`,
         effect: `draw(2)`
       }
     ]
@@ -1451,7 +1451,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption()`
+        type: `chooseOption`
       },
       {
         type: `chooseOption(1)`,
@@ -1483,7 +1483,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(damagedVillain(),endCurrentNext())`
+        effect: `lockVillain(damagedVillain,endCurrentNext)`
       }
     ]
   },
@@ -1518,11 +1518,11 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: `giveHeroPassiveTemp(discardCardsAtWill())`
+        effect: `giveHeroPassiveTemp(discardCardsAtWill)`
       },
       {
         type: `quick`,
-        effect: `increaseCardDamage(getCardsDiscarded())`
+        effect: `increaseCardDamage(getCardsDiscarded)`
       },
     ]
   },
@@ -1554,7 +1554,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        condition: `ifDiscarded()`,
+        condition: `ifDiscarded`,
         effect: [`scanDeck(enemy,3)`,`applyActivateKoCancel(scanned(enemy))`]
       },
     ]
@@ -1686,12 +1686,12 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: [`confirmActiveTeammates()`],
-        effect: `giveTeammateExtraTurn()`
+        condition: [`confirmActiveTeammates`],
+        effect: `giveTeammateExtraTurn`
       },
       {
         type: `quick`,
-        condition: [`confirmNoActiveTeammates()`],
+        condition: [`confirmNoActiveTeammates`],
         effect: `draw(2)`
       },
     ]

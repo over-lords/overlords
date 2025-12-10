@@ -29,10 +29,10 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `damageHero()`,
+        condition: `damageHero`,
         uses: `3`,
         shared: `no`,
-        effect: `blockDamage()`
+        effect: `blockDamage`
       }
     ]
   },
@@ -177,7 +177,7 @@ export const heroes = [
         condition: `checkDamagedVillainRemaining(2)`,
         uses: `3`,
         shared: `no`,
-        effect: `koDamagedVillain()`
+        effect: `koDamagedVillain`
       },
       {
         type: `passive`,
@@ -217,7 +217,7 @@ export const heroes = [
         condition: `startAfterTravel`,
         uses: `3`,
         shared: `no`,
-        effect: `damageOppSleepHero(10)`
+        effect: `damageOppSleepHero(10,1)`
       }
     ]
   },
@@ -1012,10 +1012,10 @@ export const heroes = [
       },
       {
         type: `quick`,
-        condition: `wouldUseDamageCard()`,
+        condition: `wouldUseDamageCard`,
         uses: `1`,
         shared: `no`,
-        effect: `ignoreTextDoubleDamage()`
+        effect: `ignoreTextDoubleDamage`
       }
     ]
   },
@@ -1988,11 +1988,11 @@ export const heroes = [
         condition: `checkDamageTargetCity(Gotham)`,
         uses: `0`,
         shared: `no`,
-        effect: `doubleDamage()`
+        effect: `doubleDamage`
       },
       {
         type: `quick`,
-        condition: `beforeDraw()`,
+        condition: `beforeDraw`,
         uses: `2`,
         shared: `no`,
         effect: `extendDrawView(self,4)`
@@ -2736,17 +2736,17 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `beforeTravel()`,
+        condition: `beforeTravel`,
         uses: `999`,
         shared: `no`,
-        effect: `deadmanBorrowVillain()`
+        effect: `deadmanBorrowVillain`
       },
       {
         type: `quick`,
-        condition: `beforeTravel()`,
+        condition: `beforeTravel`,
         uses: `999`,
         shared: `no`,
-        effect: `deadmanBorrowHero()`
+        effect: `deadmanBorrowHero`
       }
     ]
   },

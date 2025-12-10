@@ -93,7 +93,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `chooseOption()`
+                type: `chooseOption`
             },
             {
                 type: `chooseOption(1)`,
@@ -415,7 +415,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `chooseOption()`
+                type: `chooseOption`
             },
             {
                 type: `chooseOption(1)`,
@@ -577,7 +577,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `doubleNextCardDamage()`
+                effect: `doubleNextCardDamage`
             }
         ]
     },
@@ -665,7 +665,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `succeedNextFailedRetreat()`
+                effect: `succeedNextFailedRetreat`
             }
         ]
     },
