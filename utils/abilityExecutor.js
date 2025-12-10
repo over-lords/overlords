@@ -404,13 +404,36 @@ function placeCardIntoUpperSlot(slotIndex, cardId) {
     if (!Array.isArray(gameState.cities)) {
         gameState.cities = new Array(12).fill(null);
     }
+    if (!gameState.villainHP) {
+        gameState.villainHP = {};
+    }
 
-    // Update gameState
+    const idStr  = String(cardId);
+    const baseHP = Number((cardData && cardData.hp) || 1) || 1;
+
+    const savedHP = gameState.villainHP[idStr];
+    let currentHP;
+
+    if (typeof savedHP === "number") {
+        currentHP = savedHP;
+    } else {
+        currentHP = baseHP;
+        gameState.villainHP[idStr] = currentHP;
+    }
+
     gameState.cities[slotIndex] = {
         slotIndex,
         type: "villain",
-        id: String(cardId)
+        id: idStr,
+        maxHP: baseHP,
+        currentHP
     };
+
+    if (cardData) {
+        cardData.currentHP = currentHP;
+    }
+
+    saveGameState(gameState);
 
     // Remove animation afterwards
     setTimeout(() => wrapper.classList.remove("city-card-enter"), 650);
@@ -622,7 +645,7 @@ async function handleVillainEscape(entry, state) {
 
     try {
         setCurrentOverlord(overlord);
-        buildOverlordPanel(overlord);
+        //buildOverlordPanel(overlord);
     } catch (e) {
         console.warn("[OVERLORD PANEL REFRESH ERROR]", e);
     }

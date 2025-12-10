@@ -767,8 +767,9 @@ async function handleScenarioDraw(villainId, cardData, state) {
 
     // Scenario overtakes Overlord UI
     setCurrentOverlord(cardData);
-    buildOverlordPanel(cardData);
+    //buildOverlordPanel(cardData);
 
+    await showMightBanner("Scenario Drawn!", 2000);
     await showMightBanner(cardData.name, 2000);
     if (Array.isArray(cardData.abilitiesNamePrint)) {
         for (const line of cardData.abilitiesNamePrint) {
@@ -864,6 +865,11 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
     state.cities[slotIndex].currentHP = currentHP;
 
     state.villainHP[String(newCardId)] = currentHP;
+
+    // Keep the master card object in sync for panels / re-renders
+    if (cardData) {
+        cardData.currentHP = currentHP;
+    }
 
     saveGameState(state);
 

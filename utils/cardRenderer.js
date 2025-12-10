@@ -804,6 +804,36 @@ export function renderCard(cardId, container) {
     heartImg.style.objectFit = "contain";
     hpContainer.appendChild(heartImg);
 
+    // --- NEW: determine displayed HP ---
+    const baseHP = Number(cardData.hp ?? 0) || 0;
+    let displayHP = baseHP;
+
+    if (isBoardRender) {
+      const idStr = String(cardData.id);
+
+      // Prefer the authoritative city entry if present
+      if (Array.isArray(gameState.cities)) {
+        const entry = gameState.cities.find(e => e && String(e.id) === idStr);
+        if (entry && typeof entry.currentHP === "number") {
+          displayHP = entry.currentHP;
+        }
+      }
+
+      // Fallback to cardData.currentHP if set
+      if (displayHP === baseHP && typeof cardData.currentHP === "number") {
+        displayHP = cardData.currentHP;
+      }
+
+      // Fallback to villainHP map if present
+      if (
+        displayHP === baseHP &&
+        gameState.villainHP &&
+        typeof gameState.villainHP[idStr] === "number"
+      ) {
+        displayHP = gameState.villainHP[idStr];
+      }
+    }
+
     const hpNum = document.createElement("div");
     hpNum.textContent = cardData.hp ?? "0";
     hpNum.style.position = "absolute";

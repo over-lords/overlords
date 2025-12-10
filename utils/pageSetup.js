@@ -335,6 +335,25 @@ async function restoreUIFromState(state) {
                 villains.find(v => v.id === entry.id);
 
             if (cardData) {
+                const idStr  = String(cardData.id);
+                const baseHP = Number(cardData.hp || 0) || 0;
+
+                if (!state.villainHP) state.villainHP = {};
+
+                let currentHP = baseHP;
+
+                if (typeof entry.currentHP === "number") {
+                    currentHP = Number(entry.currentHP);
+                } else if (typeof state.villainHP[idStr] === "number") {
+                    currentHP = Number(state.villainHP[idStr]);
+                }
+
+                // Sync all representations
+                cardData.currentHP = currentHP;
+                state.villainHP[idStr] = currentHP;
+                entry.maxHP = baseHP;
+                entry.currentHP = currentHP;
+
                 wrapper.style.cursor = "pointer";
                 wrapper.addEventListener("click", (e) => {
                     e.stopPropagation();
@@ -1141,19 +1160,42 @@ document.getElementById("villain-panel-close").addEventListener("click", () => {
 });
 
 function getFoeCurrentAndMaxHP(foeCard) {
-    if (!foeCard) return { currentHP: 0, maxHP: 0 };
+    if (!foeCard) {
+        return { currentHP: 0, maxHP: 0 };
+    }
 
-    const maxHP = Number(foeCard.hp || 0);
+    const maxHP = Number(foeCard.hp) || 0;
+    const idStr = String(foeCard.id);
+
     let currentHP = foeCard.currentHP;
 
-    if (typeof currentHP !== "number") {
-        currentHP = maxHP;
-        foeCard.currentHP = currentHP;
+    // 1) If we don't have a runtime currentHP, try gameState
+    if (currentHP == null) {
+        // Prefer villainHP map
+        if (gameState.villainHP && typeof gameState.villainHP[idStr] === "number") {
+            currentHP = Number(gameState.villainHP[idStr]);
+        } else if (Array.isArray(gameState.cities)) {
+            // Fallback: look at any city entry with matching id
+            const cityEntry = gameState.cities.find(c => c && String(c.id) === idStr);
+            if (cityEntry && typeof cityEntry.currentHP === "number") {
+                currentHP = Number(cityEntry.currentHP);
+            }
+        }
     }
+
+    // 2) If still null, just use full HP
+    if (currentHP == null) {
+        currentHP = maxHP;
+    }
+
+    // 3) Sync back into card object & state
+    foeCard.currentHP = currentHP;
+
+    if (!gameState.villainHP) gameState.villainHP = {};
+    gameState.villainHP[idStr] = currentHP;
 
     return { currentHP, maxHP };
 }
-
 
 export function buildVillainPanel(villainCard) {
     if (!villainCard) return;
