@@ -232,9 +232,27 @@ async function restoreUIFromState(state) {
     }
 
     /******************************************************
-     * OVERLORD RESTORATION
+     * OVERLORD / SCENARIO RESTORATION
      ******************************************************/
-    if (state.overlords?.length) {
+    if (state.activeScenarioId != null) {
+        // A Scenario is currently sitting on top of the Overlord stack
+        const scenId = String(state.activeScenarioId);
+        const scenarioCard = scenarios.find(s => String(s.id) === scenId);
+
+        if (scenarioCard) {
+            const baseHP   = Number(scenarioCard.hp || 0) || 0;
+            const savedHP  = state.scenarioHP?.[scenId];
+            const currHP   = (typeof savedHP === "number") ? Number(savedHP) : baseHP;
+
+            // Sync runtime object + state
+            scenarioCard.currentHP = currHP;
+            if (!state.scenarioHP) state.scenarioHP = {};
+            state.scenarioHP[scenId] = currHP;
+
+            // Use the same helper that already knows how to handle Scenarios
+            setCurrentOverlord(scenarioCard);
+        }
+    } else if (state.overlords?.length) {
 
         const ovId = String(state.overlords[0]);
 
@@ -259,14 +277,14 @@ async function restoreUIFromState(state) {
                 restored.currentHP = state.overlordData.currentHP;
             }
 
-            // Apply as the live Overlord
+            // Apply as the live Overlord (non-Scenario)
             setCurrentOverlord(restored);
         }
-
-        // Restore tactics normally
-        const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
-        currentTactics = (state.tactics || []).map(id => tacticMap.get(String(id))).filter(Boolean);
     }
+
+    // Restore tactics normally (unchanged)
+    const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+    currentTactics = (state.tactics || []).map(id => tacticMap.get(String(id))).filter(Boolean);
 
 
     if (Array.isArray(state.cities)) {
