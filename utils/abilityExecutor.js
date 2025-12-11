@@ -919,10 +919,18 @@ export function onHeroCardActivated(cardId, meta = {}) {
             if (heroState.isFacingOverlord) {
                 const ovInfo = getCurrentOverlordInfo(gameState);
                 if (ovInfo && ovInfo.card) {
+                    const ovHP =
+                        typeof ovInfo.currentHP === "number"
+                            ? ovInfo.currentHP
+                            : (typeof gameState.currentOverlordHP === "number"
+                                ? gameState.currentOverlordHP
+                                : ovInfo.card.hp);
+
                     foeSummary = {
                         foeType: ovInfo.card.type || "Overlord",
                         foeId:   ovInfo.id,
                         foeName: ovInfo.card.name || `Overlord ${ovInfo.id}`,
+                        currentHP: ovHP,
                         source:  "overlord"
                     };
                 }
@@ -943,10 +951,17 @@ export function onHeroCardActivated(cardId, meta = {}) {
                         villains.find(v => String(v.id) === foeIdStr);
 
                     if (foeCard) {
+                        const instance = entry; // this is gameState.cities[upperIdx]
+                        const hp =
+                            typeof instance.currentHP === "number"
+                                ? instance.currentHP
+                                : foeCard.hp; // fallback to base printed HP
+
                         foeSummary = {
                             foeType: foeCard.type || "Enemy",
                             foeId:   foeIdStr,
                             foeName: foeCard.name || `Enemy ${foeIdStr}`,
+                            currentHP: hp,
                             slotIndex: upperIdx,
                             source:  "city-upper"
                         };
@@ -958,13 +973,10 @@ export function onHeroCardActivated(cardId, meta = {}) {
 
     if (foeSummary) {
         console.log(
-            `[AbilityExecutor] ${heroName}'s current foe: ${foeSummary.foeName} `
-            + `(${foeSummary.foeType}) [ID ${foeSummary.foeId}]`,
-            {
-                heroId,
-                heroName,
-                foe: foeSummary
-            }
+            `[AbilityExecutor] ${heroName}'s current foe: `
+            + `${foeSummary.foeName} (${foeSummary.foeType}) `
+            + `[ID ${foeSummary.foeId}] HP: ${foeSummary.currentHP}`,
+            { heroId, heroName, foe: foeSummary }
         );
     } else {
         console.log(
