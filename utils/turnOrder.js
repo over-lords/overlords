@@ -2262,9 +2262,80 @@ function retreatHeroToHQ(gameState, heroId) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
     const currentIdx = heroState.cityIndex;
 
+    // ------------------------------------------------------
+    // RETREAT ROLL — ONLY when:
+    //   - hero is NOT facing the Overlord
+    //   - hero is in a city (lower row)
+    //   - there is a Henchman/Villain in the upper slot above them
+    // ------------------------------------------------------
+    if (!heroState.isFacingOverlord && typeof currentIdx === "number") {
+
+        const heroIdx = currentIdx;       // lower slot index
+        const foeIdx  = heroIdx - 1;      // upper slot above hero
+        const slotEntry = gameState.cities?.[foeIdx];
+
+        if (slotEntry && slotEntry.id) {
+            const foeId = String(slotEntry.id);
+
+            // Look up the foe in Henchmen/Villains data
+            const foe =
+                henchmen.find(h => String(h.id) === foeId) ||
+                villains.find(v => String(v.id) === foeId);
+
+            if (foe) {
+                const retreatTarget = Number(heroObj?.retreat || 0);
+                const roll = Math.floor(Math.random() * 6) + 1; // 1–6
+
+                console.log(
+                    `[RETREAT] ${heroName} attempts to retreat from ${foe.name} `
+                    + `in city ${heroIdx}. Roll=${roll}, needs >= ${retreatTarget}.`
+                );
+
+                // Only do anything special on a FAILED roll
+                if (roll < retreatTarget) {
+                    const foeDamage = Number(foe.damage || 0);
+                    const dt = Number(heroObj?.damageThreshold || 0);
+
+                    // Match end-of-turn damage behavior: only if foeDamage >= DT
+                    if (foeDamage >= dt) {
+                        heroState.hp -= foeDamage;
+                        flashScreenRed();
+
+                        if (heroState.hp < 0) heroState.hp = 0;
+                        updateHeroHPDisplays(heroId);
+                        updateBoardHeroHP(heroId);
+
+                        console.log(
+                            `[RETREAT] ${heroName} FAILS retreat roll `
+                            + `and takes ${foeDamage} damage from ${foe.name}. `
+                            + `(DT=${dt}, new HP=${heroState.hp})`
+                        );
+                    } else {
+                        console.log(
+                            `[RETREAT] ${heroName} FAILS retreat roll but ignores `
+                            + `${foe.name}'s damage (foeDamage=${foeDamage} < DT=${dt}).`
+                        );
+                    }
+                } else {
+                    console.log(
+                        `[RETREAT] ${heroName} SUCCEEDS retreat roll `
+                        + `and takes no damage from ${foe.name}.`
+                    );
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------
     // Move hero to HQ (null) and clear overlord state
+    // (Overlord retreat behavior remains unchanged; we just
+    //  did extra work above for city + hench/villain case.)
+    // ------------------------------------------------------
     heroState.cityIndex = null;
     heroState.isFacingOverlord = false;
 
@@ -2280,8 +2351,6 @@ function retreatHeroToHQ(gameState, heroId) {
         }
     }
 
-    const heroObj = heroes.find(h => String(h.id) === String(heroId));
-    const heroName = heroObj?.name || `Hero ${heroId}`;
     console.log(`[RETREAT] ${heroName} retreats to HQ.`);
 
     saveGameState(gameState);
