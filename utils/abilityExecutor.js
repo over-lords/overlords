@@ -18,7 +18,7 @@ import { villains } from "../data/villains.js";
 
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner } from "./pageSetup.js";
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck,
-         enterVillainFromEffect, checkGameEndConditions } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw } from "./turnOrder.js";
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
 import { saveGameState } from "./stateManager.js";
@@ -98,6 +98,11 @@ EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {
 EFFECT_HANDLERS.rallyNextHenchVillains = function(args) {
     const count = Number(args[0]) || 1;
     rallyNextHenchVillains(count);
+};
+
+EFFECT_HANDLERS.villainDraw = function(args) {
+    const count = Number(args[0]) || 1;
+    villainDraw(count);
 };
 
 // END OF EFFECT HANDLERS

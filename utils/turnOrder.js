@@ -188,8 +188,6 @@ import {    CITY_EXIT_UPPER,
             CITY_2_GLIDE,
             CITY_ENTRY_GLIDE } from '../data/gameState.js';
 
-let heroTurnIndex = 0;
-
 const COUNTDOWN_IDS = new Set(["8001", "8002", "8003", "8004", "8005", "8006"]);
 
 function isCountdownId(id) {
@@ -1217,13 +1215,17 @@ export async function startHeroTurn(state, opts = {}) {
         await villainDraw(1);
     }
 
-    // Ensure we have a valid index
-    if (typeof state.heroTurnIndex !== "number") {
+    // Ensure we have a valid index (store ONLY on state)
+    const heroCount = heroIds.length;
+
+    if (!Number.isInteger(state.heroTurnIndex)) {
         state.heroTurnIndex = 0;
     }
-    heroTurnIndex = state.heroTurnIndex;
+    if (state.heroTurnIndex < 0 || state.heroTurnIndex >= heroCount) {
+        state.heroTurnIndex = 0;
+    }
 
-    const heroCount = heroIds.length;
+    let heroTurnIndex = state.heroTurnIndex; // local working copy
     let attempts = 0;
 
     // 2) Find the next hero who can actually act.
@@ -1697,7 +1699,17 @@ export function endCurrentHeroTurn(gameState) {
 
     if (turnTimerInterval) clearInterval(turnTimerInterval);
     const heroIds = gameState.heroes || [];
-    const currentIdx = gameState.heroTurnIndex ?? 0;
+    const heroCount = heroIds.length;
+    if (!heroCount) return;
+
+    let currentIdx = Number.isInteger(gameState.heroTurnIndex)
+        ? gameState.heroTurnIndex
+        : 0;
+
+    if (currentIdx < 0 || currentIdx >= heroCount) {
+        currentIdx = 0;
+    }
+
     const heroId = heroIds[currentIdx];
     if (!heroId) return;
 
@@ -1785,11 +1797,9 @@ export function endCurrentHeroTurn(gameState) {
     heroState.discard
     );
 
-    const heroCount = heroIds.length || 1;
     const nextIdx = (currentIdx + 1) % heroCount;
 
     gameState.heroTurnIndex = nextIdx;
-    heroTurnIndex = nextIdx; // maintain your existing variable
 
     saveGameState(gameState);
 
@@ -1811,10 +1821,10 @@ function setupStartingTravelOptions(gameState, heroId) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
-    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroObj  = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
-    // Start from a clean outline state; centralized refresher will redraw as needed.
+    // Always start from a clean outline state; centralized refresher will redraw as needed.
     refreshAllCityOutlines(gameState, { clearOnly: true });
 
     if (heroState.cityIndex != null) {
@@ -1825,49 +1835,101 @@ function setupStartingTravelOptions(gameState, heroId) {
     }
 
     // NOTE: Facing overlord is "not in a city" but still allowed to travel.
-    // We only log here; do NOT suppress highlights.
     if (heroState.isFacingOverlord) {
         console.log(
-            `[TRAVEL] ${heroName} is facing the Overlord and can still ` +
-            `spend travel to move to a city.`
+            `[TRAVEL] ${heroName} is facing the Overlord and can still `
+            + `spend travel to move to a city.`
         );
     }
 
-    // ---------------------
-    // Step 1: compute legal targets (pure helper – no DOM styling)
-    // ---------------------
-    const initialTargets = computeHeroTravelLegalTargets(gameState, heroId);
+    // ----------------------------------------------------------------
+    // Ensure every .city-slot knows its numeric index (used later in clicks)
+    // ----------------------------------------------------------------
+    const citySlots = document.querySelectorAll(".city-slot");
+    citySlots.forEach((slot, idx) => {
+        if (slot.dataset.cityIndex == null) {
+            slot.dataset.cityIndex = String(idx);
+        }
+    });
 
-    // ---------------------
-    // Step 2: set click handlers ONCE right now
-    // ---------------------
+    // ----------------------------------------------------------------
+    // Step 1: compute legal targets for the *current* hero (for highlights)
+    // ----------------------------------------------------------------
+    const initialTargets = computeHeroTravelLegalTargets(gameState, heroId) || [];
+
+    // ----------------------------------------------------------------
+    // Step 2: attach a generic click handler ONCE per lower slot
+    //         The handler always uses the *currently active* hero.
+    // ----------------------------------------------------------------
     initialTargets.forEach(target => {
         const lowerSlot = target.lowerSlot;
         if (!lowerSlot) return;
 
+        // Only attach once per DOM element
         if (lowerSlot.dataset.travelHandlerAttached === "true") {
             return;
         }
         lowerSlot.dataset.travelHandlerAttached = "true";
 
         lowerSlot.addEventListener("click", () => {
-            // Always consult the latest state for safety
-            const latestHeroState = gameState.heroData?.[heroId];
+            // Figure out who is active *right now*
+            const heroIds = gameState.heroes || [];
+            const activeIdx = gameState.heroTurnIndex ?? 0;
+            const activeHeroId = heroIds[activeIdx];
 
-            if (!latestHeroState || latestHeroState.currentTravel <= 0) {
+            if (activeHeroId == null) {
+                console.warn("[TRAVEL] Click on city but no active hero.");
+                return;
+            }
+
+            const latestHeroState = gameState.heroData?.[activeHeroId];
+            if (!latestHeroState) {
+                console.warn("[TRAVEL] Click on city but no heroState for active hero", activeHeroId);
+                return;
+            }
+
+            const lowerIndex = Number(lowerSlot.dataset.cityIndex);
+
+            // Recompute legal targets for the ACTIVE hero and confirm this city is legal
+            const legalTargets = computeHeroTravelLegalTargets(gameState, activeHeroId) || [];
+            const isLegal = legalTargets.some(t => t.lowerIndex === lowerIndex);
+
+            if (!isLegal) {
+                console.log("[TRAVEL] Clicked city", lowerIndex,
+                    "is not a legal destination for hero", activeHeroId);
+                return;
+            }
+
+            // Enforce travel budget from the *current* hero
+            const currentTravel =
+                typeof latestHeroState.currentTravel === "number"
+                    ? latestHeroState.currentTravel
+                    : (typeof latestHeroState.travel === "number"
+                        ? latestHeroState.travel
+                        : 0);
+
+            if (currentTravel <= 0) {
+                const activeHeroObj  = heroes.find(h => String(h.id) === String(activeHeroId));
+                const activeHeroName = activeHeroObj?.name || `Hero ${activeHeroId}`;
+
+                console.log(
+                    `[TRAVEL] ${activeHeroName} has no travel left (currentTravel=${currentTravel}). `
+                    + "Click ignored."
+                );
+
                 hideTravelHighlights();
-                // Also clear outlines immediately via the central helper
                 refreshAllCityOutlines(gameState, { clearOnly: true });
                 return;
             }
 
-            showTravelPopup(gameState, heroId, target.lowerIndex);
+            // Now open the confirmation popup for the *current* hero
+            showTravelPopup(gameState, activeHeroId, lowerIndex);
         });
     });
 
-    // ---------------------
-    // Step 3: initial visual draw (outlines)
-    // ---------------------
+    // ----------------------------------------------------------------
+    // Step 3: redraw outlines for the current hero
+    // ----------------------------------------------------------------
     refreshAllCityOutlines(gameState);
 }
 

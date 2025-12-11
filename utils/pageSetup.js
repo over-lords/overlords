@@ -435,19 +435,31 @@ async function restoreUIFromState(state) {
         // IMPORTANT: Do NOT auto-start when resuming a game
         window.VILLAIN_DRAW_ENABLED = true;
 
-        // Restore turn index
-        window.heroTurnIndex = saved.heroTurnIndex ?? 0;
-        gameState.heroTurnIndex = saved.heroTurnIndex ?? 0;
+        // Restore and clamp turn index from save; store ONLY on gameState
+        const heroIds = gameState.heroes || [];
+        const heroCount = heroIds.length;
+
+        let restoredIndex = Number.isInteger(saved.heroTurnIndex)
+            ? saved.heroTurnIndex
+            : 0;
+
+        if (heroCount === 0) {
+            restoredIndex = 0;
+        } else if (restoredIndex < 0 || restoredIndex >= heroCount) {
+            // clamp out-of-range index if hero list changed
+            restoredIndex = 0;
+        }
+
+        gameState.heroTurnIndex = restoredIndex;
+
+        if (heroCount > 0) {
+            currentTurn(restoredIndex, heroIds);
+        }
 
         if (typeof saved.turnCounter === "number") {
             gameState.turnCounter = saved.turnCounter;
         } else {
             gameState.turnCounter = 0;
-        }
-
-        const heroIds = gameState.heroes || [];
-        if (heroIds.length > 0) {
-            currentTurn(heroTurnIndex, heroIds);
         }
 
         initializeTurnUI(gameState);
