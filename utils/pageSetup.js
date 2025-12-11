@@ -534,7 +534,10 @@ async function restoreUIFromState(state) {
             gameState.heroData[id].discard ||= [];
             gameState.heroData[id].hand ||= [];
             gameState.heroData[id].cityIndex ??= null;
-            gameState.heroData[id].hp ??= heroObj.hp;
+
+            const baseHP = Number(heroObj.hp || 0);
+                gameState.heroData[id].hp ??= baseHP;
+
             gameState.heroData[id].travel ??= (heroObj.travel || 0);
         });
 

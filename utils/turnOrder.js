@@ -232,17 +232,13 @@ function markCityDestroyed(upperIdx, gameState) {
     const upperSlot = citySlots[upperIdx];
     const lowerSlot = citySlots[upperIdx + 1];
 
-    [upperSlot, lowerSlot].forEach(slot => {
+        [upperSlot, lowerSlot].forEach(slot => {
         if (!slot) return;
 
-        // Kill any existing background art
-        const area = slot.querySelector(".city-card-area");
-        if (area) {
-            area.style.backgroundColor = "black";
-            area.style.backgroundImage = "none";
-        }
+        // Background black
+        slot.style.backgroundColor = "black";
 
-        // Add a big red X overlay
+        // Ensure relative position so overlay can be absolutely placed
         if (getComputedStyle(slot).position === "static") {
             slot.style.position = "relative";
         }
@@ -268,6 +264,9 @@ function markCityDestroyed(upperIdx, gameState) {
             slot.appendChild(overlay);
         }
     });
+
+    // Check for "all 6 cities destroyed" loss condition
+    checkGameEndConditions(gameState);
 }
 
 function applyCountdownLandingEffects(upperIdx, gameState) {
@@ -1203,6 +1202,11 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
 export async function startHeroTurn(state, opts = {}) {
     const { skipVillainDraw = false } = opts;
 
+    if (state.gameOver) {
+        console.log("[startHeroTurn] Game is already over; no new hero turn will start.");
+        return;
+    }
+
     const heroIds = state.heroes || [];
     if (!heroIds.length) {
         return;
@@ -1264,6 +1268,7 @@ export async function startHeroTurn(state, opts = {}) {
     if (attempts >= heroCount) {
         console.warn("[startHeroTurn] All heroes are currently KO'd. No hero turn started.");
         saveGameState(state);
+        checkGameEndConditions(state);
         return;
     }
 
@@ -1685,6 +1690,10 @@ export function buildHeroDeck(heroName) {
 }
 
 export function endCurrentHeroTurn(gameState) {
+    if (gameState.gameOver) {
+        console.log("[endCurrentHeroTurn] Game is already over; ignoring end-turn.");
+        return;
+    }
 
     if (turnTimerInterval) clearInterval(turnTimerInterval);
     const heroIds = gameState.heroes || [];
@@ -1776,9 +1785,6 @@ export function endCurrentHeroTurn(gameState) {
     heroState.discard
     );
 
-    // -------------------------------------------
-    // STEP 4 — Advance to next hero
-    // -------------------------------------------
     const heroCount = heroIds.length || 1;
     const nextIdx = (currentIdx + 1) % heroCount;
 
@@ -1787,15 +1793,10 @@ export function endCurrentHeroTurn(gameState) {
 
     saveGameState(gameState);
 
-    // -------------------------------------------
-    // STEP 5 — Start next hero turn
-    // -------------------------------------------
-    startHeroTurn(gameState);
-
-    // -------------------------------------------
-    // STEP 6 — Reinitialize End-Turn button
-    // -------------------------------------------
-    initializeTurnUI(gameState);
+    if (!gameState.gameOver) {
+        startHeroTurn(gameState);
+        initializeTurnUI(gameState);
+    }
 }
 
 function shuffle(arr) {
@@ -2260,6 +2261,159 @@ export function getCurrentOverlordInfo(state) {
         currentHP,
         cap
     };
+}
+
+function freezeGameAndSetupQuitButton(state) {
+    const s = state || gameState;
+
+    // 1) Disable board interactions
+    try {
+        const board = document.getElementById("game-board");
+        if (board) {
+            board.style.pointerEvents = "none";
+        }
+
+        const grid = document.getElementById("city-grid");
+        if (grid) {
+            grid.style.pointerEvents = "none";
+        }
+    } catch (err) {
+        console.warn("[GameOver] Failed to disable board interactions", err);
+    }
+
+    // 2) Disable End Turn button
+    try {
+        const endTurnBtn = document.getElementById("end-turn-button");
+        if (endTurnBtn) {
+            endTurnBtn.disabled = true;
+        }
+    } catch (err) {
+        console.warn("[GameOver] Failed to disable end-turn button", err);
+    }
+
+    // 3) Collapse side menu and turn hamburger into a single X that quits
+    try {
+        const menuBtn = document.getElementById("gameMenu-box");
+        if (menuBtn && menuBtn.parentNode) {
+            const sideMenu = document.getElementById("sideMenu");
+            if (sideMenu) {
+                sideMenu.classList.remove("open");
+            }
+
+            // Clone node to strip existing listeners (menuOpen logic, etc.)
+            const newBtn = menuBtn.cloneNode(true);
+            menuBtn.parentNode.replaceChild(newBtn, menuBtn);
+
+            newBtn.style.backgroundColor = "red";
+            newBtn.textContent = "X";
+
+            newBtn.addEventListener("click", () => {
+                clearGameState();
+                window.location.href = "index.html";
+            });
+        }
+    } catch (err) {
+        console.warn("[GameOver] Failed to set up game-over menu button", err);
+    }
+}
+
+// Centralized win/loss check
+export function checkGameEndConditions(state) {
+    const s = state || gameState;
+    if (!s) return;
+
+    // Already handled
+    if (s.gameOver) {
+        return;
+    }
+
+    let outcome = null;   // "win" | "loss"
+    let reason = "";
+
+    // ------------------------------------------------------------
+    // WIN CONDITION:
+    // Players win when the Overlord index runs dry (no overlords left)
+    // ------------------------------------------------------------
+    if (Array.isArray(s.overlords) && s.overlords.length === 0) {
+        outcome = "win";
+        reason = "All Overlords were defeated.";
+    }
+
+    // ------------------------------------------------------------
+    // LOSS CONDITION #1:
+    // All 6 cities are destroyed
+    // ------------------------------------------------------------
+    if (!outcome) {
+        const destroyedMap = s.destroyedCities || {};
+        const destroyedCount = Object.keys(destroyedMap).length;
+
+        if (destroyedCount >= 6) {
+            outcome = "loss";
+            reason = "All 6 cities were destroyed.";
+        }
+    }
+
+    // ------------------------------------------------------------
+    // LOSS CONDITION #2:
+    // All heroes are KO'd (hp <= 0 or isKO)
+    // ------------------------------------------------------------
+    if (!outcome) {
+        const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+        if (heroIds.length > 0 && s.heroData) {
+            const allKO = heroIds.every(hid => {
+                const hState = s.heroData[hid];
+                if (!hState || typeof hState !== "object") return false;
+
+                // OLD:
+                // const hp = (typeof hState.hp === "number") ? hState.hp : 0;
+
+                // NEW: Coerce to a number, treating invalid/missing as 0
+                let hp = 0;
+                if (hState.hp != null) {
+                    const parsed = Number(hState.hp);
+                    hp = Number.isNaN(parsed) ? 0 : parsed;
+                }
+
+                // Optionally normalize back into state (helps long-term consistency)
+                hState.hp = hp;
+
+                return hp <= 0 || !!hState.isKO;
+            });
+
+            if (allKO) {
+                outcome = "loss";
+                reason  = "All heroes were KO'd.";
+            }
+        }
+    }
+
+    // No end state reached
+    if (!outcome) {
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // Finalize game over
+    // ------------------------------------------------------------
+    s.gameOver = true;
+
+    try {
+        saveGameState(s);
+    } catch (err) {
+        console.warn("[GameOver] Failed to save game state", err);
+    }
+
+    const outcomeText = (outcome === "win") ? "You Won!" : "You Lost!";
+    const bannerText = `${outcomeText} – ${reason}`;
+
+    try {
+        // Very long duration as requested
+        showMightBanner(bannerText, 999999);
+    } catch (err) {
+        console.warn("[GameOver] Failed to show game-over banner", err);
+    }
+
+    freezeGameAndSetupQuitButton(s);
 }
 
 export async function startTravelPrompt(gameState) {
@@ -3051,5 +3205,9 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
         console.warn("[handleHeroKnockout] KO markers failed", err);
     }
 
-    saveGameState(state || gameState);
+    const effectiveState = state || gameState;
+    saveGameState(effectiveState);
+
+    // Check "all heroes KO'd" loss condition (and any others)
+    checkGameEndConditions(effectiveState);
 }

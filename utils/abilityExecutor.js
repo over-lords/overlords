@@ -17,12 +17,8 @@ import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner } from "./pageSetup.js";
-import {
-    startHeroTurn,
-    getCurrentOverlordInfo,
-    takeNextHenchVillainsFromDeck,
-    enterVillainFromEffect
-} from "./turnOrder.js";
+import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck,
+         enterVillainFromEffect, checkGameEndConditions } from "./turnOrder.js";
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
 import { saveGameState } from "./stateManager.js";
@@ -884,6 +880,11 @@ export async function rallyNextHenchVillains(count) {
 }
 
 export function onHeroCardActivated(cardId, meta = {}) {
+    if (gameState.gameOver) {
+        console.log("[GameOver] Ignoring hero card activation; game is already over.");
+        return;
+    }
+
     const idStr    = String(cardId);
     const action   = meta.action || "activated";
     const heroId   = meta.heroId ?? null;
@@ -999,8 +1000,383 @@ export function onHeroCardActivated(cardId, meta = {}) {
         );
     }
 
+    const rawDamage =
+        (cardData && (cardData.damage ?? cardData.dmg ?? cardData.attack)) ?? 0;
+    const damageAmount = Number(rawDamage) || 0;
+
+    if (foeSummary && damageAmount > 0) {
+        console.log(
+            `[AbilityExecutor] ${heroName} is dealing ${damageAmount} damage to ${foeSummary.foeName}.`
+        );
+
+        if (foeSummary.source === "overlord") {
+            // Overlord damage uses the existing damageOverlord helper
+            damageOverlord(damageAmount, gameState);
+        } else if (foeSummary.source === "city-upper") {
+            // Henchmen / Villain damage goes through the new damageFoe helper
+            damageFoe(damageAmount, foeSummary, heroId, gameState);
+        } else {
+            console.log(
+                "[AbilityExecutor] Foe summary has unknown source; no damage applied.",
+                foeSummary
+            );
+        }
+    } else {
+        if (!foeSummary) {
+            console.log("[AbilityExecutor] No foe to damage for this hero activation.");
+        } else {
+            console.log(
+                "[AbilityExecutor] Hero card has no positive damage value; skipping damage.",
+                { rawDamage, damageAmount }
+            );
+        }
+    }
+
     // This is where we'll later:
     // - look up the card's abilities
     // - interpret conditions like "heroTurn()" / "inCity()" / etc.
     // - call executeEffectSafely(...) with the right effect string
+}
+
+// =======================================================================
+// DAMAGE THE CURRENT OVERLORD
+// =======================================================================
+// =======================================================================
+// DAMAGE THE CURRENT OVERLORD
+// =======================================================================
+export function damageOverlord(amount, state = gameState) {
+    const s = state;
+
+    // If game is over, ignore further damage
+    if (s.gameOver) {
+        console.log("[damageOverlord] Ignored because game is already over.");
+        return;
+    }
+
+    const info = getCurrentOverlordInfo(s);
+    if (!info) {
+        console.warn("[damageOverlord] No current overlord found.");
+        return;
+    }
+
+    const ovId      = info.id;
+    const ovCard    = info.card;
+    const currentHP = info.currentHP;
+    const newHP     = Math.max(0, currentHP - amount);
+
+    if (!s.overlordHP) s.overlordHP = {};
+    s.overlordHP[ovId] = newHP;
+
+    // Keep the overlord card & overlordData in sync for panels/restore
+    if (ovCard && typeof ovCard === "object") {
+        ovCard.currentHP = newHP;
+    }
+    if (!s.overlordData) {
+        s.overlordData = {};
+    }
+    s.overlordData.currentHP = newHP;
+
+    console.log(`Overlord ${ovId} took ${amount} damage -> ${newHP} HP`);
+
+    // If not dead, update panel + persist and return
+    if (newHP > 0) {
+        try {
+            if (ovCard) {
+                setCurrentOverlord(ovCard);
+                //buildOverlordPanel(ovCard);
+            }
+        } catch (e) {
+            console.warn("[damageOverlord] Failed to update overlord panel after damage.", e);
+        }
+
+        saveGameState(s);
+        return;
+    }
+
+    // ===================================================================
+    // OVERLORD KO'D — REMOVE FROM INDEX & LOG INTO KO ARRAY
+    // ===================================================================
+    console.log(`Overlord ${ovId} has been defeated.`);
+
+    if (!Array.isArray(s.koCards)) {
+        s.koCards = [];
+    }
+    s.koCards.push({
+        id: ovId,
+        name: ovCard?.name || `Overlord ${ovId}`,
+        type: "Overlord",
+        source: "hp-zero"
+    });
+
+    // Remove current overlord from the index (slides the others down)
+    if (Array.isArray(s.overlords)) {
+        s.overlords.shift();
+    }
+
+    // Remove HP entry so it's clean on next load
+    delete s.overlordHP[ovId];
+
+    // ===================================================================
+    // INITIALIZE NEXT OVERLORD (if any remain) and update UI/state
+    // ===================================================================
+    const nextInfo = getCurrentOverlordInfo(s);
+
+    if (nextInfo) {
+        const nextId   = nextInfo.id;
+        const nextCard = nextInfo.card;
+        const baseHP   = nextInfo.baseHP;
+
+        if (!s.overlordHP) s.overlordHP = {};
+        s.overlordHP[nextId] = baseHP;
+
+        if (nextCard && typeof nextCard === "object") {
+            nextCard.currentHP = baseHP;
+        }
+        if (!s.overlordData) {
+            s.overlordData = {};
+        }
+        s.overlordData.currentHP = baseHP;
+
+        if (!s.currentOverlordCard) {
+            s.currentOverlordCard = {};
+        }
+        s.currentOverlordCard.id    = nextCard?.id ?? nextId;
+        s.currentOverlordCard.name  = nextCard?.name ?? `Overlord ${nextId}`;
+        s.currentOverlordCard.image = nextCard?.image ?? "";
+        s.currentOverlordCard.hp    = baseHP;
+
+        console.log(`Next Overlord is now ${nextId} with HP ${baseHP}.`);
+
+        try {
+            if (nextCard) {
+                setCurrentOverlord(nextCard);
+                buildOverlordPanel(nextCard);
+            }
+        } catch (e) {
+            console.warn("[damageOverlord] Failed to build panel for next overlord.", e);
+        }
+    } else {
+        console.log("No Overlords remain after KO.");
+        // checkGameEndConditions will detect the win
+    }
+
+    // ===================================================================
+    // SAVE + CHECK WIN/LOSS
+    // ===================================================================
+    saveGameState(s);
+    checkGameEndConditions(s);
+}
+
+// =======================================================================
+// DAMAGE A HENCHMAN / VILLAIN IN THE CITY
+// =======================================================================
+export function damageFoe(amount, foeSummary, heroId = null, state = gameState) {
+    const s = state;
+
+    if (!foeSummary) {
+        console.warn("[damageFoe] Called with no foeSummary.");
+        return;
+    }
+
+    const foeIdStr = String(foeSummary.foeId || "");
+    if (!foeIdStr) {
+        console.warn("[damageFoe] foeSummary.foeId missing.", foeSummary);
+        return;
+    }
+
+    if (!Array.isArray(s.cities)) {
+        console.warn("[damageFoe] No cities array on state; cannot locate foe.");
+        return;
+    }
+
+    // Locate the city entry for this foe
+    let slotIndex = (typeof foeSummary.slotIndex === "number")
+        ? foeSummary.slotIndex
+        : null;
+
+    let entry = (slotIndex != null) ? s.cities[slotIndex] : null;
+    if (!entry || String(entry.id) !== foeIdStr) {
+        // Fallback: search city entries by id
+        entry = null;
+        for (let i = 0; i < s.cities.length; i++) {
+            const e = s.cities[i];
+            if (e && String(e.id) === foeIdStr) {
+                entry = e;
+                slotIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (!entry) {
+        console.warn("[damageFoe] Could not find city entry for foe id:", foeIdStr);
+        return;
+    }
+
+    // Lookup the full card data
+    const foeCard =
+        villains.find(v => String(v.id) === foeIdStr) ||
+        henchmen.find(h => String(h.id) === foeIdStr);
+
+    if (!foeCard) {
+        console.warn("[damageFoe] No card data found for foe id:", foeIdStr);
+        return;
+    }
+
+    const baseHP = Number(foeCard.hp || 0) || 0;
+
+    if (!s.villainHP) {
+        s.villainHP = {};
+    }
+
+    let currentHP = entry.currentHP;
+    const savedHP = s.villainHP[foeIdStr];
+
+    if (typeof currentHP !== "number") {
+        if (typeof savedHP === "number") {
+            currentHP = savedHP;
+        } else if (typeof foeCard.currentHP === "number") {
+            currentHP = foeCard.currentHP;
+        } else {
+            currentHP = baseHP;
+        }
+    }
+
+    const newHP = Math.max(0, currentHP - amount);
+
+    // Sync all representations
+    entry.maxHP     = baseHP;
+    entry.currentHP = newHP;
+    foeCard.currentHP = newHP;
+    s.villainHP[foeIdStr] = newHP;
+
+    console.log(
+        `[damageFoe] ${foeCard.name} took ${amount} damage `
+        + `(${currentHP} -> ${newHP}).`
+    );
+
+    // Re-render the foe card in its city slot so board shows updated HP
+    try {
+        const citySlots = document.querySelectorAll(".city-slot");
+        if (slotIndex != null && citySlots[slotIndex]) {
+            const slot = citySlots[slotIndex];
+            const area = slot.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";
+                const wrapper = document.createElement("div");
+                wrapper.className = "card-wrapper";
+                wrapper.appendChild(renderCard(foeIdStr, wrapper));
+                area.appendChild(wrapper);
+
+                // Keep villain clickable for the panel
+                wrapper.style.cursor = "pointer";
+                wrapper.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    if (typeof window !== "undefined" &&
+                        typeof window.buildVillainPanel === "function") {
+                        window.buildVillainPanel(foeCard);
+                    }
+                });
+            }
+        }
+    } catch (err) {
+        console.warn("[damageFoe] Failed to re-render foe card on board.", err);
+    }
+
+    // Update villain panel if it's open
+    try {
+        if (typeof window !== "undefined" &&
+            typeof window.buildVillainPanel === "function") {
+            //window.buildVillainPanel(foeCard);
+        }
+    } catch (err) {
+        console.warn("[damageFoe] Failed to update villain panel.", err);
+    }
+
+    // If the foe is not KO'd, just persist and exit
+    if (newHP > 0) {
+        saveGameState(s);
+        return;
+    }
+
+    // ===================================================================
+    // FOE KO'D: REMOVE FROM BOARD, LOG TO KO ARRAY, RETURN HERO TO HQ
+    // ===================================================================
+    console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
+    showMightBanner(`${foeCard.name} has been KO'd.`, 2000);
+
+    // 1) Remove from model
+    if (slotIndex != null && Array.isArray(s.cities)) {
+        const e = s.cities[slotIndex];
+        if (e && String(e.id) === foeIdStr) {
+            s.cities[slotIndex] = null;
+        }
+    }
+
+    // 2) Remove from DOM
+    try {
+        const citySlots = document.querySelectorAll(".city-slot");
+        if (slotIndex != null && citySlots[slotIndex]) {
+            const slot = citySlots[slotIndex];
+            const area = slot.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";
+            }
+        }
+    } catch (err) {
+        console.warn("[damageFoe] Failed to clear foe card from DOM.", err);
+    }
+
+    // 3) Append to KO array (bystanders, henchmen, villains, overlords live here)
+    if (!Array.isArray(s.koCards)) {
+        s.koCards = [];
+    }
+    s.koCards.push({
+        id: foeCard.id,
+        name: foeCard.name,
+        type: foeCard.type || "Enemy",
+        source: "hero-attack"
+    });
+
+    // Clear entry in villainHP map for cleanliness
+    delete s.villainHP[foeIdStr];
+
+    // 4) Return the attacking hero to HQ, using existing "remove from board" behavior
+    if (heroId != null) {
+        sendHeroHomeFromBoard(heroId, s);
+    }
+
+    saveGameState(s);
+}
+
+// =======================================================================
+// HELPER: SEND A HERO BACK TO HQ (REMOVE FROM BOARD)
+// =======================================================================
+function sendHeroHomeFromBoard(heroId, state = gameState) {
+    if (!state.heroData) return;
+
+    const heroState = state.heroData[heroId];
+    if (!heroState || typeof heroState !== "object") return;
+
+    const cityIndex = heroState.cityIndex;
+
+    // Clear board position
+    if (typeof cityIndex === "number") {
+        try {
+            const citySlots = document.querySelectorAll(".city-slot");
+            if (citySlots[cityIndex]) {
+                const slot = citySlots[cityIndex];
+                const area = slot.querySelector(".city-card-area");
+                if (area) {
+                    area.innerHTML = "";
+                }
+            }
+        } catch (err) {
+            console.warn("[sendHeroHomeFromBoard] Failed to clear hero card from DOM.", err);
+        }
+    }
+
+    // Reset hero's city position and facing
+    heroState.cityIndex = null;
+    heroState.isFacingOverlord = false;
 }
