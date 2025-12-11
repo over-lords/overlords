@@ -907,7 +907,16 @@ export function onHeroCardActivated(cardId, meta = {}) {
     );
 
     // ------------------------------------------------------
-    //  NEW: Log the hero's current foe (Overlord or upper-city enemy)
+    // NEW: Print discarded card + damage
+    // (Even though activation != discard, user requested this log here)
+    // ------------------------------------------------------
+    const dmgValue = cardData?.damage ?? cardData?.dmg ?? "Unknown";
+    console.log(
+        `[AbilityExecutor] Discarded ${cardName} - Card Damage is ${dmgValue}`
+    );
+
+    // ------------------------------------------------------
+    //  Log the hero's current foe (Overlord or upper-city enemy)
     // ------------------------------------------------------
     let foeSummary = null;
 
@@ -915,6 +924,7 @@ export function onHeroCardActivated(cardId, meta = {}) {
         const heroState = gameState.heroData[heroId];
 
         if (heroState && typeof heroState === "object") {
+
             // Case 1: Hero is facing the Overlord
             if (heroState.isFacingOverlord) {
                 const ovInfo = getCurrentOverlordInfo(gameState);
@@ -935,27 +945,27 @@ export function onHeroCardActivated(cardId, meta = {}) {
                     };
                 }
             }
-            // Case 2: Hero is in a city – check the upper slot above their cityIndex
+
+            // Case 2: Hero is in a city – check the upper slot above
             else if (typeof heroState.cityIndex === "number") {
-                const heroIdx = heroState.cityIndex;     // lower slot index
-                const upperIdx = heroIdx - 1;           // upper slot directly above
+                const heroIdx = heroState.cityIndex;
+                const upperIdx = heroIdx - 1;
                 const cities   = Array.isArray(gameState.cities) ? gameState.cities : null;
                 const entry    = cities ? cities[upperIdx] : null;
 
                 if (entry && entry.id != null) {
                     const foeIdStr = String(entry.id);
 
-                    // Only treat Henchmen/Villains as "foes" here
                     const foeCard =
                         henchmen.find(h => String(h.id) === foeIdStr) ||
                         villains.find(v => String(v.id) === foeIdStr);
 
                     if (foeCard) {
-                        const instance = entry; // this is gameState.cities[upperIdx]
+                        const instance = entry;
                         const hp =
                             typeof instance.currentHP === "number"
                                 ? instance.currentHP
-                                : foeCard.hp; // fallback to base printed HP
+                                : foeCard.hp;
 
                         foeSummary = {
                             foeType: foeCard.type || "Enemy",

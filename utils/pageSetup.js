@@ -2032,7 +2032,7 @@ export function renderHeroHandBar(state) {
                 e.stopPropagation();
 
                 const cardName = cardData?.name || `Card ${cardId}`;
-                console.log(`Activated ${cardName}`);
+                //console.log(`Activated ${cardName}`);
 
                 // Resolve the active hero correctly
                 const heroIds       = state.heroes || [];
@@ -2085,7 +2085,7 @@ export function renderHeroHandBar(state) {
 
                 saveGameState(state || gameState);
 
-                console.log(`Discarded ${cardName}`);
+                //console.log(`[pageSetup.js] Discarded ${cardName}`);
                 console.log("Current discard pile:", heroState.discard);
 
                 renderHeroHandBar(state);
