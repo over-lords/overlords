@@ -168,7 +168,9 @@ import { tactics } from '../data/tactics.js';
 import { scenarios } from '../data/scenarios.js';
 
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
-import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, renderHeroHandBar } from './pageSetup.js';
+import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, 
+         buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
+         renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -329,9 +331,26 @@ function applyCountdownLandingEffects(upperIdx, gameState) {
             hState.cityIndex = null;
             heroWasHit = true;
 
-            const heroObj = heroes.find(h => String(h.id) === String(hid));
-            const heroName = heroObj?.name || `Hero ${hid}`;
-            console.log(`[COUNTDOWN] ${heroName} takes 10 damage in city index ${lowerIdx} and is forced back to HQ.`);
+            if (heroWasHit && hState) {
+                const heroObj = heroes.find(h => String(h.id) === String(heroId));
+                const dmg = 10;
+
+                hState.hp -= dmg;
+                if (hState.hp < 0) hState.hp = 0;
+
+                updateHeroHPDisplays(heroId);
+                updateBoardHeroHP(heroId);
+
+                console.log(
+                    `[COUNTDOWN] ${heroObj?.name || 'Hero'} takes ${dmg} damage `
+                    + `from countdown in city ${heroIndexLower}. New HP=${hState.hp}`
+                );
+
+                if (heroWasHit && hState && hState.hp <= 0) {
+                    // Countdown killed the hero → full KO behavior (hand dump, overlay, etc.)
+                    handleHeroKnockout(heroId, hState, gameState, { source: "countdown" });
+                }
+            }
         }
     });
 
@@ -1181,44 +1200,100 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
     );
 }
 
-export async function startHeroTurn(gameState, { skipVillainDraw = false } = {}) {
+export async function startHeroTurn(state, opts = {}) {
+    const { skipVillainDraw = false } = opts;
 
-    // 1) VILLAIN PHASE — centralized
-    if (!skipVillainDraw && window.VILLAIN_DRAW_ENABLED) {
+    const heroIds = state.heroes || [];
+    if (!heroIds.length) {
+        return;
+    }
+
+    // 1) VILLAIN DRAW for this "turn slot"
+    if (!skipVillainDraw) {
         await villainDraw(1);
     }
 
-    // 2) HERO TURN SETUP
-    if (typeof gameState.turnCounter !== "number") gameState.turnCounter = 0;
-    gameState.turnCounter++;
+    // Ensure we have a valid index
+    if (typeof state.heroTurnIndex !== "number") {
+        state.heroTurnIndex = 0;
+    }
+    heroTurnIndex = state.heroTurnIndex;
 
-    const heroIds = gameState.heroes || [];
-    if (heroIds.length > 0) {
-        currentTurn(heroTurnIndex, heroIds);
+    const heroCount = heroIds.length;
+    let attempts = 0;
+
+    // 2) Find the next hero who can actually act.
+    //    - Permanently KO heroes (hp <= 0) are skipped.
+    //    - If a hero was KO'd but now has hp >= 1, clear their KO markers.
+    while (attempts < heroCount) {
+        const heroId = heroIds[heroTurnIndex];
+        const heroState = state.heroData?.[heroId];
+
+        if (!heroState) {
+            heroTurnIndex = (heroTurnIndex + 1) % heroCount;
+            attempts++;
+            continue;
+        }
+
+        // Resurrection check: if HP has been raised to 1+, clear KO visuals.
+        if (heroState.hp > 0 && heroState.isKO) {
+            heroState.isKO = false;
+            try {
+                clearHeroKOMarkers(heroId);
+            } catch (err) {
+                console.warn("[startHeroTurn] Failed to clear KO markers for hero", heroId, err);
+            }
+        }
+
+        // Still at 0 HP? This hero is KO'd → skip this turn slot.
+        if (!heroState.hp || heroState.hp <= 0) {
+            handleHeroKnockout(heroId, heroState, state, { fromTurnStart: true });
+
+            // Move to next hero; do NOT trigger another villain draw.
+            heroTurnIndex = (heroTurnIndex + 1) % heroCount;
+            state.heroTurnIndex = heroTurnIndex;
+            attempts++;
+            continue;
+        }
+
+        // Found a live hero who can act.
+        break;
     }
 
-    gameState.heroTurnIndex = heroTurnIndex;
+    // Everyone KO'd: no hero turn can be started.
+    if (attempts >= heroCount) {
+        console.warn("[startHeroTurn] All heroes are currently KO'd. No hero turn started.");
+        saveGameState(state);
+        return;
+    }
 
-    resetHeroCurrentTravelAtTurnStart(gameState);
-    showRetreatButtonForCurrentHero(gameState);
+    // Persist the (possibly advanced) index
+    state.heroTurnIndex = heroTurnIndex;
 
+    // 3) Normal hero turn setup for the chosen hero
+    if (typeof state.turnCounter !== "number") state.turnCounter = 0;
+    state.turnCounter++;
+
+    currentTurn(heroTurnIndex, heroIds);
+
+    resetHeroCurrentTravelAtTurnStart(state);
+    showRetreatButtonForCurrentHero(state);
     resetTurnTimerForHero();
-    saveGameState(gameState);
-    initializeTurnUI(gameState);
-    renderHeroHandBar(gameState);
 
-    await startTravelPrompt(gameState);
+    saveGameState(state);
+    initializeTurnUI(state);
+    renderHeroHandBar(state);
 
-    const heroId   = gameState.heroes[gameState.heroTurnIndex];
-    const heroState = gameState.heroData?.[heroId];
+    await startTravelPrompt(state);
 
-    if (heroState && typeof heroState.cityIndex === "number") {
-        // Only draw if player did not already draw this turn:
-        if (!heroState.hasDrawnThisTurn) {
-            // Apply your existing Hero Draw + preview
-            showHeroTopPreview(heroId, gameState);
-            heroState.hasDrawnThisTurn = true;
-            saveGameState(gameState);
+    const activeHeroId = heroIds[heroTurnIndex];
+    const activeHeroState = state.heroData?.[activeHeroId];
+
+    if (activeHeroState && typeof activeHeroState.cityIndex === "number") {
+        if (!activeHeroState.hasDrawnThisTurn) {
+            showHeroTopPreview(activeHeroId, state);
+            activeHeroState.hasDrawnThisTurn = true;
+            saveGameState(state);
         }
     }
 }
@@ -1506,10 +1581,9 @@ export async function shoveUpper(newCardId) {
     }, 650);
 }
 
-
 export function initializeTurnUI(gameState) {
-    const btn = document.getElementById("end-turn-button");
-    if (!btn) return;
+    const endTurnBtn = document.getElementById("end-turn-button");
+    if (!endTurnBtn) return;
 
     const topVillainBtn = document.getElementById("top-villain-button");
     if (topVillainBtn) {
@@ -1519,7 +1593,7 @@ export function initializeTurnUI(gameState) {
     // 1. Who has the indicator?
     const indicator = document.querySelector(".turn-indicator-circle");
     if (!indicator) {
-        btn.style.display = "none";
+        endTurnBtn.style.display = "none";
         return;
     }
 
@@ -1527,60 +1601,64 @@ export function initializeTurnUI(gameState) {
     const slots = [...document.querySelectorAll("#heroes-row .hero-slot")];
     const slotIndex = slots.findIndex(slot => slot.contains(indicator));
     if (slotIndex === -1) {
-        btn.style.display = "none";
+        endTurnBtn.style.display = "none";
         return;
     }
 
     // 3. That slotIndex is the active hero index
-    const heroId = gameState.heroes?.[slotIndex];
-    if (!heroId) {
-        btn.style.display = "none";
+    const heroIds = gameState.heroes || [];
+    const activeHeroId = heroIds[slotIndex];
+    if (!activeHeroId) {
+        endTurnBtn.style.display = "none";
         return;
     }
 
+    const heroState = gameState.heroData?.[activeHeroId];
+    if (!heroState) {
+        endTurnBtn.style.display = "none";
+        return;
+    }
+
+    // -----------------------------
+    // Restore / recompute Engage Overlord UI
+    // -----------------------------
     const faceOverlordButton = document.getElementById("face-overlord-button");
     if (faceOverlordButton) {
         // Start from hidden/disabled each time we recompute UI
-        let btn = faceOverlordButton;
-        btn.style.display = "none";
-        btn.disabled = true;
+        let engageBtn = faceOverlordButton;
+        engageBtn.style.display = "none";
+        engageBtn.disabled = true;
 
-        const heroIds = gameState.heroes || [];
-        const heroId = heroIds[heroTurnIndex];
-
-        if (heroId && gameState.heroData && gameState.heroData[heroId]) {
-            const heroState = gameState.heroData[heroId];
-
-            const inCity = (heroState.cityIndex !== null && heroState.cityIndex !== undefined);
-            const currentTravel = (typeof heroState.currentTravel === "number")
+        const currentTravel =
+            (typeof heroState.currentTravel === "number")
                 ? heroState.currentTravel
                 : (typeof heroState.travel === "number" ? heroState.travel : 0);
 
-            const canFaceOverlord =
-                !heroState.isFacingOverlord &&
-                currentTravel >= 1;
+        const canFaceOverlord =
+            !heroState.isFacingOverlord &&
+            currentTravel >= 1;
 
-            if (canFaceOverlord) {
-                // Replace the button node to clear old listeners
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-                btn = newBtn;
+        if (canFaceOverlord) {
+            // Replace the button node to clear old listeners
+            const newBtn = engageBtn.cloneNode(true);
+            engageBtn.parentNode.replaceChild(newBtn, engageBtn);
+            engageBtn = newBtn;
 
-                btn.style.display = "inline-block";
-                btn.disabled = false;
+            engageBtn.style.display = "inline-block";
+            engageBtn.disabled = false;
 
-                btn.addEventListener("click", () => {
-                    showFaceOverlordPopup(gameState, heroId);
-                });
-            }
+            engageBtn.addEventListener("click", () => {
+                showFaceOverlordPopup(gameState, activeHeroId);
+            });
         }
     }
 
+    // Rebuild hero hand + travel UI for the active hero
     renderHeroHandBar(gameState);
-    setupStartingTravelOptions(gameState, heroId);
+    setupStartingTravelOptions(gameState, activeHeroId);
 
-    // 4. You are single-player → ALWAYS show the button
-    btn.style.display = "block";
+    // 4. You are single-player → ALWAYS show the end-turn button
+    endTurnBtn.style.display = "block";
 }
 
 export function buildHeroDeck(heroName) {
@@ -1655,14 +1733,26 @@ export function endCurrentHeroTurn(gameState) {
                     heroState.hp -= foeDamage;
                     flashScreenRed();
 
-                    if (heroState.hp < 0) heroState.hp = 0;
-                    updateHeroHPDisplays(heroId);
-                    updateBoardHeroHP(heroId);
+                    if (heroState.hp <= 0) {
+                        heroState.hp = 0;
+                        updateHeroHPDisplays(heroId);
+                        updateBoardHeroHP(heroId);
 
-                    console.log(
-                        `[END TURN] ${heroObj?.name} takes ${foeDamage} damage from ${foe.name} in city ${heroState.cityIndex}.`
-                        + ` (DT=${dt})`
-                    );
+                        console.log(
+                            `[END TURN] ${heroObj?.name} takes ${foeDamage} damage from ${foe.name} in city ${heroState.cityIndex}.`
+                            + ` (DT=${dt}) → KO!`
+                        );
+
+                        handleHeroKnockout(heroId, heroState, gameState, { source: "endTurnDamage" });
+                    } else {
+                        updateHeroHPDisplays(heroId);
+                        updateBoardHeroHP(heroId);
+
+                        console.log(
+                            `[END TURN] ${heroObj?.name} takes ${foeDamage} damage from ${foe.name} in city ${heroState.cityIndex}.`
+                            + ` (DT=${dt})`
+                        );
+                    }
                 } else {
                     console.log(
                         `[END TURN] ${heroObj?.name} ignores ${foe.name}'s damage `
@@ -1726,13 +1816,11 @@ function setupStartingTravelOptions(gameState, heroId) {
     // Start from a clean outline state; centralized refresher will redraw as needed.
     refreshAllCityOutlines(gameState, { clearOnly: true });
 
-    // Only if hero is NOT in a city
-    if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
+    if (heroState.cityIndex != null) {
         console.log(
-            `[TRAVEL] ${heroName} already in city ${heroState.cityIndex}; ` +
-            `skipping HQ/Overlord travel UI.`
+            `[TRAVEL] ${heroName} currently in city ${heroState.cityIndex}. `
+            + `Binding travel UI from existing state.`
         );
-        return; // already on map → normal hero draw / turn
     }
 
     // NOTE: Facing overlord is "not in a city" but still allowed to travel.
@@ -1755,6 +1843,11 @@ function setupStartingTravelOptions(gameState, heroId) {
     initialTargets.forEach(target => {
         const lowerSlot = target.lowerSlot;
         if (!lowerSlot) return;
+
+        if (lowerSlot.dataset.travelHandlerAttached === "true") {
+            return;
+        }
+        lowerSlot.dataset.travelHandlerAttached = "true";
 
         lowerSlot.addEventListener("click", () => {
             // Always consult the latest state for safety
@@ -2351,15 +2444,28 @@ function retreatHeroToHQ(gameState, heroId) {
                         heroState.hp -= foeDamage;
                         flashScreenRed();
 
-                        if (heroState.hp < 0) heroState.hp = 0;
-                        updateHeroHPDisplays(heroId);
-                        updateBoardHeroHP(heroId);
+                        if (heroState.hp <= 0) {
+                            heroState.hp = 0;
+                            updateHeroHPDisplays(heroId);
+                            updateBoardHeroHP(heroId);
 
-                        console.log(
-                            `[RETREAT] ${heroName} FAILS retreat roll `
-                            + `and takes ${foeDamage} damage from ${foe.name}. `
-                            + `(DT=${dt}, new HP=${heroState.hp})`
-                        );
+                            console.log(
+                                `[RETREAT] ${heroName} FAILS retreat roll `
+                                + `and takes ${foeDamage} damage from ${foe.name}. `
+                                + `(DT=${dt}, new HP=${heroState.hp}) → KO!`
+                            );
+
+                            handleHeroKnockout(heroId, heroState, gameState, { source: "retreatFail" });
+                        } else {
+                            updateHeroHPDisplays(heroId);
+                            updateBoardHeroHP(heroId);
+
+                            console.log(
+                                `[RETREAT] ${heroName} FAILS retreat roll `
+                                + `and takes ${foeDamage} damage from ${foe.name}. `
+                                + `(DT=${dt}, new HP=${heroState.hp})`
+                            );
+                        }
                     } else {
                         console.log(
                             `[RETREAT] ${heroName} FAILS retreat roll but ignores `
@@ -2889,4 +2995,61 @@ function hideFaceOverlordButton() {
         btn.style.display = "none";
         btn.disabled = true;
     }
+}
+
+// ================================================================
+// HERO KO HANDLER
+// ================================================================
+function handleHeroKnockout(heroId, heroState, state, options = {}) {
+    if (!heroState || !state) return;
+
+    // Normalize HP
+    if (heroState.hp == null || heroState.hp > 0) {
+        heroState.hp = 0;
+    }
+
+    const alreadyKO = !!heroState.isKO;
+    heroState.isKO = true;
+
+    // 1) Move entire hand into discard
+    if (Array.isArray(heroState.hand) && heroState.hand.length) {
+        if (!Array.isArray(heroState.discard)) {
+            heroState.discard = [];
+        }
+        heroState.discard.push(...heroState.hand);
+        heroState.hand = [];
+    }
+
+    // 2) Remove hero from board / city
+    if (!alreadyKO && typeof heroState.cityIndex === "number") {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const idx = heroState.cityIndex;
+        const slot = citySlots?.[idx];
+        if (slot) {
+            const area = slot.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";
+            }
+        }
+
+        heroState.cityIndex = null;
+        heroState.isFacingOverlord = false;
+    }
+
+    // 3) Update HP UI
+    try {
+        updateHeroHPDisplays(heroId);
+        updateBoardHeroHP(heroId);
+    } catch (err) {
+        console.warn("[handleHeroKnockout] HP UI update failed", err);
+    }
+
+    // 4) Apply heroes-row KO overlay + icon
+    try {
+        applyHeroKOMarkers(heroId);
+    } catch (err) {
+        console.warn("[handleHeroKnockout] KO markers failed", err);
+    }
+
+    saveGameState(state || gameState);
 }

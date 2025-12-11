@@ -906,6 +906,77 @@ export function onHeroCardActivated(cardId, meta = {}) {
         }
     );
 
+    // ------------------------------------------------------
+    //  NEW: Log the hero's current foe (Overlord or upper-city enemy)
+    // ------------------------------------------------------
+    let foeSummary = null;
+
+    if (heroId != null && gameState.heroData) {
+        const heroState = gameState.heroData[heroId];
+
+        if (heroState && typeof heroState === "object") {
+            // Case 1: Hero is facing the Overlord
+            if (heroState.isFacingOverlord) {
+                const ovInfo = getCurrentOverlordInfo(gameState);
+                if (ovInfo && ovInfo.card) {
+                    foeSummary = {
+                        foeType: ovInfo.card.type || "Overlord",
+                        foeId:   ovInfo.id,
+                        foeName: ovInfo.card.name || `Overlord ${ovInfo.id}`,
+                        source:  "overlord"
+                    };
+                }
+            }
+            // Case 2: Hero is in a city – check the upper slot above their cityIndex
+            else if (typeof heroState.cityIndex === "number") {
+                const heroIdx = heroState.cityIndex;     // lower slot index
+                const upperIdx = heroIdx - 1;           // upper slot directly above
+                const cities   = Array.isArray(gameState.cities) ? gameState.cities : null;
+                const entry    = cities ? cities[upperIdx] : null;
+
+                if (entry && entry.id != null) {
+                    const foeIdStr = String(entry.id);
+
+                    // Only treat Henchmen/Villains as "foes" here
+                    const foeCard =
+                        henchmen.find(h => String(h.id) === foeIdStr) ||
+                        villains.find(v => String(v.id) === foeIdStr);
+
+                    if (foeCard) {
+                        foeSummary = {
+                            foeType: foeCard.type || "Enemy",
+                            foeId:   foeIdStr,
+                            foeName: foeCard.name || `Enemy ${foeIdStr}`,
+                            slotIndex: upperIdx,
+                            source:  "city-upper"
+                        };
+                    }
+                }
+            }
+        }
+    }
+
+    if (foeSummary) {
+        console.log(
+            `[AbilityExecutor] ${heroName}'s current foe: ${foeSummary.foeName} `
+            + `(${foeSummary.foeType}) [ID ${foeSummary.foeId}]`,
+            {
+                heroId,
+                heroName,
+                foe: foeSummary
+            }
+        );
+    } else {
+        console.log(
+            `[AbilityExecutor] ${heroName} currently has no engaged foe `
+            + `(not facing Overlord and no henchman/villain in the upper city slot).`,
+            {
+                heroId,
+                heroName
+            }
+        );
+    }
+
     // This is where we'll later:
     // - look up the card's abilities
     // - interpret conditions like "heroTurn()" / "inCity()" / etc.

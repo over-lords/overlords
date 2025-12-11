@@ -44,6 +44,7 @@ const HERO_BORDER_URLS = {
 
 const EMPTY_HERO_URL = "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Card%20Assets/Misc/emptyHero.png";
 
+const HERO_KO_ICON_URL = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/permanentKO.png";
 
 function buildHeroesRow(selectedHeroIds, heroMap) {
     const row = document.getElementById("heroes-row");
@@ -211,6 +212,17 @@ async function restoreUIFromState(state) {
     // UI row
     selectedHeroes = restoredHeroIds;
     buildHeroesRow(restoredHeroIds, heroMap);
+
+    restoredHeroIds.forEach(id => {
+        const hState = state.heroData?.[id];
+        if (!hState) return;
+
+        if (hState.hp <= 0 || hState.isKO) {
+            hState.hp = 0;
+            hState.isKO = true;
+            applyHeroKOMarkers(id);
+        }
+    });
 
     // Attach click events
     setTimeout(attachHeroClicks, 0);
@@ -2071,6 +2083,8 @@ export function renderHeroHandBar(state) {
                 // Add it to discard
                 heroState.discard.push(cardId);
 
+                saveGameState(state || gameState);
+
                 console.log(`Discarded ${cardName}`);
                 console.log("Current discard pile:", heroState.discard);
 
@@ -2092,4 +2106,63 @@ export function renderHeroHandBar(state) {
 
             handBar.appendChild(wrap);
         });
+}
+
+// === HERO KO OVERLAY HELPERS =====================================
+
+export function applyHeroKOMarkers(heroId) {
+    try {
+        const row = document.getElementById("heroes-row");
+        if (!row) return;
+
+        const heroIds = gameState.heroes || [];
+        const index = heroIds.findIndex(id => String(id) === String(heroId));
+        if (index === -1) return;
+
+        const slots = row.querySelectorAll(".hero-slot");
+        const slot = slots[index];
+        if (!slot) return;
+
+        // Ensure the slot can host absolutely-positioned children
+        if (getComputedStyle(slot).position === "static") {
+            slot.style.position = "relative";
+        }
+
+        // 50% black overlay
+        if (!slot.querySelector(".hero-ko-overlay")) {
+            const overlay = document.createElement("div");
+            overlay.className = "hero-ko-overlay";
+            slot.appendChild(overlay);
+        }
+
+        // Permanent KO icon
+        if (!slot.querySelector(".hero-ko-icon")) {
+            const icon = document.createElement("img");
+            icon.className = "hero-ko-icon";
+            icon.src = HERO_KO_ICON_URL;
+            icon.alt = "KO";
+            slot.appendChild(icon);
+        }
+    } catch (err) {
+        console.warn("[applyHeroKOMarkers] Failed for hero", heroId, err);
+    }
+}
+
+export function clearHeroKOMarkers(heroId) {
+    try {
+        const row = document.getElementById("heroes-row");
+        if (!row) return;
+
+        const heroIds = gameState.heroes || [];
+        const index = heroIds.findIndex(id => String(id) === String(heroId));
+        if (index === -1) return;
+
+        const slots = row.querySelectorAll(".hero-slot");
+        const slot = slots[index];
+        if (!slot) return;
+
+        slot.querySelectorAll(".hero-ko-overlay, .hero-ko-icon").forEach(el => el.remove());
+    } catch (err) {
+        console.warn("[clearHeroKOMarkers] Failed for hero", heroId, err);
+    }
 }

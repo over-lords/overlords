@@ -1520,3 +1520,24 @@ html, body {
     height: auto;
     display: block;
 }
+
+/* Permanent KO overlay on heroes row */
+.hero-ko-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5); /* 50% black */
+    z-index: 20;
+    pointer-events: none;
+}
+
+/* Permanent KO icon centered over the overlay */
+.hero-ko-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 70%;
+    max-height: 70%;
+    z-index: 21;
+    pointer-events: none;
+}
