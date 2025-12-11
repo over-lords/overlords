@@ -458,7 +458,7 @@ async function attemptSingleLeftShift(fromPos) {
     return true;
 }
 
-async function handleVillainEscape(entry, state) {
+export async function handleVillainEscape(entry, state) {
     if (!entry || !state) return;
 
     const foeId = String(entry.id || "");
@@ -778,7 +778,7 @@ function isFrozen(cardId) {
     return data?.isFrozen === true;
 }
 
-function resolveExitForVillain(entry) {
+export function resolveExitForVillain(entry) {
     if (!entry) return;
 
     const upperIdx = Number(entry.slotIndex);

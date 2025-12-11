@@ -169,7 +169,7 @@ import { scenarios } from '../data/scenarios.js';
 
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
 import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, renderHeroHandBar } from './pageSetup.js';
-import { currentTurn, executeEffectSafely } from './abilityExecutor.js';
+import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -1311,6 +1311,23 @@ export async function shoveUpper(newCardId) {
         shoveFrom(ENTRY_IDX);
     }
 
+    if (entryHadCard) {
+        shoveFrom(ENTRY_IDX);
+
+        // If the row was completely full, the shove will push something into EXIT.
+        // In that case, the *original* card at EXIT escapes off-board.
+        const exitSnap = snapshot[EXIT_IDX];
+        const exitWasOccupied = !!(exitSnap && exitSnap.cardNode);
+
+        const someoneMovedIntoExit = Object.values(moveMap).some(
+            dest => dest === EXIT_IDX
+        );
+
+        if (exitWasOccupied && someoneMovedIntoExit) {
+            moveMap[EXIT_IDX] = null;   // mark original EXIT card as escaping off-board
+        }
+    }
+
     // --------------------------------------------------------
     // STEP 2 — Apply all recorded villain moves (DOM + model)
     // --------------------------------------------------------
@@ -1337,13 +1354,41 @@ export async function shoveUpper(newCardId) {
         cardNode.classList.add("city-card-slide-left");
 
         if (toIdx === null) {
-            // Off-board: remove from DOM and model
+            // This entry is being pushed completely off-board.
+            // If it's a henchman or villain, run full escape logic
+            // (bystanders, takeover, Overlord HP gain with cap).
+            const entry = Array.isArray(gameState.cities)
+                ? gameState.cities[fromIdx]
+                : null;
+
+            if (entry) {
+                const idStr = String(entry.id || "");
+
+                const isHench = henchmen.some(h => String(h.id) === idStr);
+                const isVill  = villains.some(v => String(v.id) === idStr);
+
+                if (isHench || isVill) {
+                    // Full escape consequences: KO bystanders, takeover, HP gain (2× cap)
+                    await handleVillainEscape(entry, gameState);
+
+                    // Handles hero return + DOM cleanup for an exiting villain.
+                    resolveExitForVillain(entry);
+
+                    // Do NOT run the generic DOM wipe below; resolveExitForVillain
+                    // already coordinates DOM/model cleanup with a delay.
+                    continue;
+                }
+            }
+
+            // Fallback for non-villain entries (if ever used):
             if (snap.area) {
                 snap.area.innerHTML = "";
             }
-            gameState.cities[fromIdx] = null;
+            if (Array.isArray(gameState.cities)) {
+                gameState.cities[fromIdx] = null;
+            }
 
-            // TODO: hook off-board logic (bystanders/takeover) here.
+            continue;
         } else {
             const toSlot = citySlots[toIdx];
             const toArea = toSlot ? toSlot.querySelector(".city-card-area") : null;
