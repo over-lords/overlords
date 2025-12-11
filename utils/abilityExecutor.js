@@ -422,13 +422,19 @@ function placeCardIntoUpperSlot(slotIndex, cardId) {
         gameState.villainHP[idStr] = currentHP;
     }
 
+    const instanceId = idStr + "#" + crypto.randomUUID();
+
     gameState.cities[slotIndex] = {
         slotIndex,
         type: "villain",
-        id: idStr,
+        baseId: idStr,
+        instanceId,
         maxHP: baseHP,
         currentHP
     };
+
+    // Store HP under instance ID (NOT baseId)
+    gameState.villainHP[instanceId] = currentHP;
 
     if (cardData) {
         cardData.currentHP = currentHP;
@@ -976,6 +982,7 @@ export function onHeroCardActivated(cardId, meta = {}) {
                         foeSummary = {
                             foeType: foeCard.type || "Enemy",
                             foeId:   foeIdStr,
+                            instanceId: foeCard.instanceId,
                             foeName: foeCard.name || `Enemy ${foeIdStr}`,
                             currentHP: hp,
                             slotIndex: upperIdx,
@@ -1199,7 +1206,9 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
         ? foeSummary.slotIndex
         : null;
 
-    let entry = (slotIndex != null) ? s.cities[slotIndex] : null;
+    let entry = s.cities.find(e =>
+        e && e.instanceId === foeSummary.instanceId
+    );
     if (!entry || String(entry.id) !== foeIdStr) {
         // Fallback: search city entries by id
         entry = null;
@@ -1252,8 +1261,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
     // Sync all representations
     entry.maxHP     = baseHP;
     entry.currentHP = newHP;
-    foeCard.currentHP = newHP;
-    s.villainHP[foeIdStr] = newHP;
+    //foeCard.currentHP = newHP;
+    const instId = entry.instanceId;
+    s.villainHP[instId] = newHP;
+    entry.currentHP = newHP;
 
     console.log(
         `[damageFoe] ${foeCard.name} took ${amount} damage `
@@ -1313,7 +1324,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
     // 1) Remove from model
     if (slotIndex != null && Array.isArray(s.cities)) {
         const e = s.cities[slotIndex];
-        if (e && String(e.id) === foeIdStr) {
+        if (e && e.instanceId === foeSummary.instanceId) {
             s.cities[slotIndex] = null;
         }
     }
@@ -1344,7 +1355,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
     });
 
     // Clear entry in villainHP map for cleanliness
-    delete s.villainHP[foeIdStr];
+    delete s.villainHP[foeSummary.instanceId];
 
     // 4) Return the attacking hero to HQ, using existing "remove from board" behavior
     if (heroId != null) {

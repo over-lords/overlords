@@ -1644,11 +1644,14 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
 
     cardArea.appendChild(wrapper);
 
+    const instanceId = idStr + "#" + crypto.randomUUID();
+
     // Update game state
     if (!Array.isArray(gameState.cities)) gameState.cities = [];
     gameState.cities[slotIndex] = {
         slotIndex,
         type: "villain",
+        instanceId,
         id: String(cardId)
     };
 
