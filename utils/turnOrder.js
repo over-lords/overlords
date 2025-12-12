@@ -1785,16 +1785,28 @@ export function endCurrentHeroTurn(gameState) {
     }
 
     heroState.hasDrawnThisTurn = false;
+
     if (Array.isArray(heroState.hand) && heroState.hand.length > 0) {
         heroState.discard = heroState.discard || [];
-        heroState.discard.push(...heroState.hand);
-        heroState.hand = [];
+
+        const newHand = [];
+        heroState.hand.forEach(cardId => {
+            const cardData = findCardInAllSources(cardId);
+            // Any card with type === "Bystander" stays in hand
+            if (cardData && cardData.type === "Bystander") {
+                newHand.push(cardId);
+            } else {
+                heroState.discard.push(cardId);
+            }
+        });
+
+        heroState.hand = newHand;
     }
 
     heroState.discard = heroState.discard || [];
     console.log(
-    `[END TURN] ${heroes.find(h => String(h.id)===String(heroId))?.name}'s discard pile:`,
-    heroState.discard
+        `[END TURN] ${heroes.find(h => String(h.id) === String(heroId))?.name}'s discard pile:`,
+        heroState.discard
     );
 
     const nextIdx = (currentIdx + 1) % heroCount;

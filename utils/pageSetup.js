@@ -2033,10 +2033,15 @@ export function renderHeroHandBar(state) {
             const wrap = document.createElement("div");
             wrap.className = "card-wrapper";
 
-            // --- NEW: Activate button above the card ---
             const activateBtn = document.createElement("button");
 
-            if (canShowActivateButtons) {
+            const isBystanderCard =
+                cardData && String(cardData.type || "").toLowerCase() === "bystander";
+
+            const shouldShowActivateButton =
+                isBystanderCard || canShowActivateButtons;
+
+            if (shouldShowActivateButton) {
                 activateBtn.className = "hero-hand-activate-btn";
                 activateBtn.type = "button";
 

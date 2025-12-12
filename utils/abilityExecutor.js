@@ -16,7 +16,7 @@ import { tactics } from '../data/tactics.js';
 import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
-import { setCurrentOverlord, buildOverlordPanel, showMightBanner } from "./pageSetup.js";
+import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar } from "./pageSetup.js";
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck,
          enterVillainFromEffect, checkGameEndConditions, villainDraw } from "./turnOrder.js";
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
@@ -428,7 +428,7 @@ function placeCardIntoUpperSlot(slotIndex, cardId) {
         slotIndex,
         type: "villain",
         baseId: idStr,
-        instanceId,
+        instanceId: instanceId,
         maxHP: baseHP,
         currentHP
     };
@@ -1044,15 +1044,128 @@ export function onHeroCardActivated(cardId, meta = {}) {
         }
     }
 
-    // This is where we'll later:
-    // - look up the card's abilities
-    // - interpret conditions like "heroTurn()" / "inCity()" / etc.
-    // - call executeEffectSafely(...) with the right effect string
+    if (Array.isArray(cardData?.abilitiesEffects) && cardData.abilitiesEffects.length > 0) {
+        console.log(`[AbilityExecutor] Abilities Effects for ${cardName}:`);
+
+        cardData.abilitiesEffects.forEach((eff, index) => {
+            // Normalize effect field: can be string OR array
+            let effectsList = [];
+
+            if (Array.isArray(eff.effect)) {
+                effectsList = eff.effect;
+            } else if (typeof eff.effect === "string") {
+                effectsList = [eff.effect];
+            } else {
+                effectsList = ["<No valid effect>"];
+            }
+
+            console.log(
+                `  [Effect ${index + 1}]`,
+                {
+                    type: eff.type ?? "none",
+                    condition: eff.condition ?? "none",
+                    uses: eff.uses ?? "n/a",
+                    shared: eff.shared ?? "n/a",
+                    effects: effectsList
+                }
+            );
+        });
+    } else {
+        console.log(
+            `[AbilityExecutor] ${cardName} has no abilitiesEffects array or it is empty.`,
+            cardData
+        );
+    }
+
+    // ------------------------------------------------------
+    // EFFECT EXECUTION PIPELINE
+    // ------------------------------------------------------
+    console.log(`[AbilityExecutor] Beginning effect execution for ${cardName}.`);
+
+    if (Array.isArray(cardData?.abilitiesEffects)) {
+
+        for (const eff of cardData.abilitiesEffects) {
+
+            // 1. CONDITION CHECK
+            const cond = eff.condition?.trim() || "none";
+            let allow = false;
+
+            if (cond === "none") {
+                allow = true;
+            } else {
+                // This is where additional conditions will go later.
+                console.log(`[AbilityExecutor] Condition '${cond}' not yet implemented, skipping.`);
+                continue;
+            }
+
+            if (!allow) {
+                console.log(`[AbilityExecutor] Condition '${cond}' failed for ${cardName}, skipping effect.`);
+                continue;
+            }
+
+            // 2. NORMALIZE effect field
+            let effectsArray = [];
+            if (Array.isArray(eff.effect)) {
+                effectsArray = eff.effect;
+            } else if (typeof eff.effect === "string") {
+                effectsArray = [eff.effect];
+            } else {
+                console.warn("[AbilityExecutor] Invalid effect field:", eff.effect);
+                continue;
+            }
+
+            // 3. EXECUTE EACH EFFECT
+            for (const effectString of effectsArray) {
+                if (typeof effectString !== "string") {
+                    console.warn("[AbilityExecutor] Skipping invalid effect value:", effectString);
+                    continue;
+                }
+
+                // Parse functionName(args)
+                const match = effectString.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
+                if (!match) {
+                    console.warn(`[AbilityExecutor] Could not parse effect '${effectString}' on ${cardName}.`);
+                    continue;
+                }
+
+                const fnName = match[1];
+                const argsRaw = match[2]
+                    .split(",")
+                    .map(x => x.trim())
+                    .filter(x => x.length > 0);
+
+                console.log(`[AbilityExecutor] → Found effect '${fnName}' on ${cardName}. Args:`, argsRaw);
+
+                const handler = EFFECT_HANDLERS[fnName];
+
+                if (!handler) {
+                    console.warn(`[AbilityExecutor] No EFFECT_HANDLERS entry for '${fnName}'.`);
+                    continue;
+                }
+
+                // Convert args
+                const parsedArgs = argsRaw.map(a => {
+                    if (/^\d+$/.test(a)) return Number(a);
+                    if (a.toLowerCase() === "true") return true;
+                    if (a.toLowerCase() === "false") return false;
+                    return a;
+                });
+
+                console.log(`[AbilityExecutor] Executing effect handler '${fnName}'…`);
+
+                try {
+                    handler(parsedArgs, cardData, gameState);
+                    console.log(`[AbilityExecutor] '${fnName}' executed successfully.`);
+                } catch (err) {
+                    console.warn(`[AbilityExecutor] Handler '${fnName}' failed: ${err.message}`);
+                }
+            }
+        }
+    }
+
+    console.log(`[AbilityExecutor] Completed effect execution for ${cardName}.`);
 }
 
-// =======================================================================
-// DAMAGE THE CURRENT OVERLORD
-// =======================================================================
 // =======================================================================
 // DAMAGE THE CURRENT OVERLORD
 // =======================================================================
@@ -1261,7 +1374,6 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
     // Sync all representations
     entry.maxHP     = baseHP;
     entry.currentHP = newHP;
-    //foeCard.currentHP = newHP;
     const instId = entry.instanceId;
     s.villainHP[instId] = newHP;
     entry.currentHP = newHP;
@@ -1299,16 +1411,6 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
         console.warn("[damageFoe] Failed to re-render foe card on board.", err);
     }
 
-    // Update villain panel if it's open
-    try {
-        if (typeof window !== "undefined" &&
-            typeof window.buildVillainPanel === "function") {
-            //window.buildVillainPanel(foeCard);
-        }
-    } catch (err) {
-        console.warn("[damageFoe] Failed to update villain panel.", err);
-    }
-
     // If the foe is not KO'd, just persist and exit
     if (newHP > 0) {
         saveGameState(s);
@@ -1316,12 +1418,51 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
     }
 
     // ===================================================================
-    // FOE KO'D: REMOVE FROM BOARD, LOG TO KO ARRAY, RETURN HERO TO HQ
+    // FOE KO'D
     // ===================================================================
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
     showMightBanner(`${foeCard.name} has been KO'd.`, 2000);
 
-    // 1) Remove from model
+    // ===================================================================
+    // 1) RESCUE CAPTURED BYSTANDERS (NEW LOGIC)
+    // ===================================================================
+    if (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) {
+        const captured = entry.capturedBystanders;
+
+        if (heroId != null && s.heroData && s.heroData[heroId]) {
+            // Give to the hero who KO'd the foe
+            const heroState = s.heroData[heroId];
+            if (!Array.isArray(heroState.hand)) heroState.hand = [];
+
+            captured.forEach(b => {
+                // b is a full card object
+                heroState.hand.push(String(b.id));
+            });
+
+            console.log(
+                `[damageFoe] Hero ${heroId} rescues bystanders:`,
+                captured.map(b => b.name)
+            );
+        } else {
+            // No hero credited: KO them so they don't vanish
+            if (!Array.isArray(s.koCards)) s.koCards = [];
+            captured.forEach(b => {
+                s.koCards.push({
+                    id: b.id,
+                    name: b.name,
+                    type: "Bystander",
+                    source: "foe-ko-no-hero"
+                });
+            });
+        }
+
+        // Clear captured bystanders on the city entry
+        entry.capturedBystanders = [];
+    }
+
+    // ===================================================================
+    // 2) REMOVE FOE FROM MODEL AND DOM
+    // ===================================================================
     if (slotIndex != null && Array.isArray(s.cities)) {
         const e = s.cities[slotIndex];
         if (e && e.instanceId === foeSummary.instanceId) {
@@ -1329,21 +1470,20 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
         }
     }
 
-    // 2) Remove from DOM
     try {
         const citySlots = document.querySelectorAll(".city-slot");
         if (slotIndex != null && citySlots[slotIndex]) {
             const slot = citySlots[slotIndex];
             const area = slot.querySelector(".city-card-area");
-            if (area) {
-                area.innerHTML = "";
-            }
+            if (area) area.innerHTML = "";
         }
     } catch (err) {
         console.warn("[damageFoe] Failed to clear foe card from DOM.", err);
     }
 
-    // 3) Append to KO array (bystanders, henchmen, villains, overlords live here)
+    // ===================================================================
+    // 3) APPEND FOE TO KO ARRAY
+    // ===================================================================
     if (!Array.isArray(s.koCards)) {
         s.koCards = [];
     }
@@ -1354,14 +1494,17 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
         source: "hero-attack"
     });
 
-    // Clear entry in villainHP map for cleanliness
+    // Clean up villainHP entry
     delete s.villainHP[foeSummary.instanceId];
 
-    // 4) Return the attacking hero to HQ, using existing "remove from board" behavior
+    // ===================================================================
+    // 4) RETURN HERO TO HQ
+    // ===================================================================
     if (heroId != null) {
         sendHeroHomeFromBoard(heroId, s);
     }
 
+    renderHeroHandBar(s);
     saveGameState(s);
 }
 

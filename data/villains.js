@@ -118,6 +118,7 @@ export const villains = [
   abilitiesEffects: [
       {
           type: `chooseOption`,
+          effect: `chooseYourEffect`,
           condition: `uponDefeat`
       },
       {
@@ -855,6 +856,7 @@ export const villains = [
       },
       {
           type: `chooseOption`,
+          effect: `chooseYourEffect`,
           condition: `uponDefeat`
       },
       {
@@ -1276,6 +1278,7 @@ export const villains = [
       },
       {
           type: `chooseOption`,
+          effect: `chooseYourEffect`,
           condition: `uponDefeat`
       },
       {

@@ -77,7 +77,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
@@ -115,7 +116,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
@@ -329,7 +331,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
@@ -655,7 +658,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
@@ -699,7 +703,8 @@ export const heroCards = [
         type: `shoveDamaged(5)`
       },
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
@@ -835,7 +840,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
@@ -961,7 +967,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
@@ -1451,7 +1458,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `chooseOption`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
       },
       {
         type: `chooseOption(1)`,
