@@ -63,6 +63,104 @@ EFFECT_HANDLERS.charge = function (args, card, selectedData) {
     runCharge(card.id, distance);
 };
 
+EFFECT_HANDLERS.draw = function(args, card, selectedData) {
+    const count = Number(args?.[0]) || 1;
+
+    const heroId = selectedData?.currentHeroId ?? null;
+    if (!heroId) {
+        console.warn("[draw] No currentHeroId available.");
+        return;
+    }
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        console.warn("[draw] No heroState for heroId:", heroId);
+        return;
+    }
+
+    if (!Array.isArray(heroState.deck))   heroState.deck = [];
+    if (!Array.isArray(heroState.hand))   heroState.hand = [];
+
+    console.log(`[draw] ${count} card(s) for hero ${heroId}.`);
+
+    for (let i = 0; i < count; i++) {
+        if (heroState.deck.length === 0) {
+            console.log("[draw] Deck empty – cannot draw further.");
+            break;
+        }
+
+        const cardId = heroState.deck.shift();
+        heroState.hand.push(cardId);
+        console.log(`[draw] → Drawn card ID ${cardId}`);
+    }
+
+    saveGameState(gameState);
+    renderHeroHandBar(gameState);
+};
+
+EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
+    const amount = Number(args?.[0]) || 1;
+
+    const heroId = selectedData?.currentHeroId ?? null;
+    if (!heroId) {
+        console.warn("[regainLife] No currentHeroId available.");
+        return;
+    }
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        console.warn("[regainLife] No heroState found for heroId:", heroId);
+        return;
+    }
+
+    const heroCard = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroCard) {
+        console.warn("[regainLife] Could not find hero card for heroId:", heroId);
+        return;
+    }
+
+    const baseHP = Number(heroCard.hp || heroCard.baseHP || 0);
+    if (!heroState.hp && heroState.hp !== 0) {
+        heroState.hp = baseHP; // initialize if missing
+    }
+
+    const before = heroState.hp;
+    heroState.hp = Math.min(baseHP, heroState.hp + amount);
+
+    console.log(
+        `[regainLife] ${heroCard.name} regains ${amount} HP (${before} → ${heroState.hp}).`
+    );
+
+    saveGameState(gameState);
+};
+
+EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
+    const count = Number(args?.[0]) || 1;
+
+    const heroId = selectedData?.currentHeroId ?? null;
+    if (!heroId) {
+        console.warn("[gainSidekick] No currentHeroId available.");
+        return;
+    }
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        console.warn("[gainSidekick] No heroState for heroId:", heroId);
+        return;
+    }
+
+    if (!Array.isArray(heroState.discard)) heroState.discard = [];
+
+    console.log(`[gainSidekick] Adding ${count} Sidekick(s) to hero ${heroId}'s discard pile.`);
+
+    for (let i = 0; i < count; i++) {
+        heroState.discard.push("0"); // Sidekick card ID = "0"
+        console.log("[gainSidekick] → Sidekick added.");
+    }
+
+    saveGameState(gameState);
+};
+
 EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {
 
     const newOverlordId = String(args[0]);
@@ -152,7 +250,7 @@ export function executeEffectSafely(effectString, card, selectedData) {
         }
 
         try {
-            handler(parsedArgs, card, selectedData);
+            handler(parsedArgs, card, { ...selectedData });
         } catch (err) {
             console.warn(`[executeEffectSafely] Handler '${fnName}' failed: ${err.message}`);
         }
@@ -1154,7 +1252,7 @@ export function onHeroCardActivated(cardId, meta = {}) {
                 console.log(`[AbilityExecutor] Executing effect handler '${fnName}'…`);
 
                 try {
-                    handler(parsedArgs, cardData, gameState);
+                    handler(parsedArgs, cardData, { currentHeroId: heroId, state: gameState });
                     console.log(`[AbilityExecutor] '${fnName}' executed successfully.`);
                 } catch (err) {
                     console.warn(`[AbilityExecutor] Handler '${fnName}' failed: ${err.message}`);
