@@ -38,7 +38,10 @@ export function clearGameState() {
         "cities",
         "heroData",
         "heroesByPlayer",
-        "playerUsernames"
+        "playerUsernames",
+        "enemyAllyDeck",
+        "enemyAllyDeckPointer",
+        "enemyAllyDiscard",
     ];
 
     keysToClear.forEach(k => localStorage.removeItem(k));

@@ -98,6 +98,12 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     renderHeroHandBar(gameState);
 };
 
+EFFECT_HANDLERS.enemyDraw = function(args, card, selectedData) {
+    const count = Number(args?.[0]) || 1;
+    const limit = args?.[1] ?? null;
+    return enemyDraw(count, limit);
+};
+
 EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
     const amount = Number(args?.[0]) || 1;
 
@@ -215,7 +221,23 @@ export function executeEffectSafely(effectString, card, selectedData) {
         //"color:#22a;font-weight:bold");
 
     // Some effects have MULTIPLE comma-separated calls
-    const calls = effectString.split(",").map(x => x.trim()).filter(Boolean);
+    const calls = [];
+    let depth = 0;
+    let current = "";
+
+    for (const ch of effectString) {
+        if (ch === "(") depth++;
+        if (ch === ")") depth--;
+
+        if (ch === "," && depth === 0) {
+            if (current.trim()) calls.push(current.trim());
+            current = "";
+        } else {
+            current += ch;
+        }
+    }
+
+    if (current.trim()) calls.push(current.trim());
 
     for (const call of calls) {
 
@@ -1556,4 +1578,151 @@ function sendHeroHomeFromBoard(heroId, state = gameState) {
     // Reset hero's city position and facing
     heroState.cityIndex = null;
     heroState.isFacingOverlord = false;
+}
+
+export async function enemyDraw(count = 1, limit = null) {
+    if (!Array.isArray(gameState.enemyAllyDeck)) {
+        console.warn("[enemyDraw] enemyAllyDeck missing or invalid.");
+        return;
+    }
+
+    if (!Array.isArray(gameState.enemyAllyDiscard)) {
+        gameState.enemyAllyDiscard = [];
+    }
+
+    const drawnCards = [];
+
+    for (let n = 0; n < count; n++) {
+
+        let cardId = null;
+        let deckIndexUsed = null;
+
+        // -------------------------------------------------
+        // NORMAL DRAW (advances pointer)
+        // -------------------------------------------------
+        if (!limit || (limit !== "nextEnemy" && limit !== "nextAlly")) {
+
+            const ptr = gameState.enemyAllyDeckPointer ?? 0;
+
+            if (ptr >= gameState.enemyAllyDeck.length) {
+                console.warn("[enemyDraw] Deck exhausted.");
+                break;
+            }
+
+            cardId = gameState.enemyAllyDeck[ptr];
+            deckIndexUsed = ptr;
+
+            gameState.enemyAllyDeckPointer += 1;
+        }
+
+        // -------------------------------------------------
+        // FILTERED DRAW (does NOT move pointer)
+        // -------------------------------------------------
+        else {
+            const wantType = limit === "nextEnemy" ? "Enemy" : "Ally";
+
+            for (let i = gameState.enemyAllyDeckPointer; i < gameState.enemyAllyDeck.length; i++) {
+                const id = gameState.enemyAllyDeck[i];
+                const card = findCardInAllSources(id);
+
+                if (card?.type === wantType) {
+                    cardId = id;
+                    deckIndexUsed = i;
+                    break;
+                }
+            }
+
+            if (!cardId) {
+                console.warn(`[enemyDraw] No ${wantType} found in remaining deck.`);
+                break;
+            }
+        }
+
+        if (!cardId) continue;
+
+        const cardData = findCardInAllSources(cardId);
+        if (!cardData) {
+            console.warn("[enemyDraw] Card data not found for ID:", cardId);
+            continue;
+        }
+
+        // -------------------------------------------------
+        // DISCARD HANDLING
+        // -------------------------------------------------
+        gameState.enemyAllyDiscard.push(cardId);
+
+        drawnCards.push(cardData);
+
+        console.log(
+            `[enemyDraw] Drew ${cardData.type}: ${cardData.name} (ID ${cardId})`,
+            {
+                index: deckIndexUsed,
+                effects: (cardData.abilitiesEffects || []).map(e => e.effect)
+            }
+        );
+
+        // -------------------------------------------------
+        // VISUAL RENDER
+        // -------------------------------------------------
+        const overlay = document.createElement("div");
+        overlay.style.position = "fixed";
+        overlay.style.left = "50%";
+        overlay.style.top = "50%";
+        overlay.style.transform = "translate(-50%, 120%) scale(0.7)";
+        overlay.style.zIndex = "9999";
+        overlay.style.transition = "transform 0.35s ease, opacity 0.35s ease";
+
+        const rendered = renderCard(cardId);
+        overlay.appendChild(rendered);
+        document.body.appendChild(overlay);
+
+        // slide up to true center
+        requestAnimationFrame(() => {
+            overlay.style.transform = "translate(-50%, -50%) scale(0.7)";
+        });
+
+        // hold, then fade
+        await new Promise(r => setTimeout(r, 1500));
+        overlay.style.opacity = "0";
+
+        setTimeout(() => overlay.remove(), 400);
+
+        // -------------------------------------------------
+        // MIGHT BANNER
+        // -------------------------------------------------
+        const bannerText =
+            cardData?.abilitiesNamePrint?.[0]?.text ||
+            cardData.name ||
+            "Enemy / Ally Effect";
+
+        try {
+            await showMightBanner(bannerText, 1800);
+        } catch (e) {
+            console.warn("[enemyDraw] Might banner failed:", e);
+        }
+
+        // -------------------------------------------------
+        // SAFE EFFECT EXECUTION
+        // -------------------------------------------------
+        if (Array.isArray(cardData.abilitiesEffects)) {
+            for (const eff of cardData.abilitiesEffects) {
+                if (!eff?.effect) continue;
+
+                console.log(
+                    `[enemyDraw] Executing effect '${eff.effect}' from ${cardData.name}`
+                );
+
+                try {
+                    executeEffectSafely(eff.effect, cardData, {});
+                } catch (err) {
+                    console.warn(
+                        `[enemyDraw] Effect failed on ${cardData.name}:`,
+                        err
+                    );
+                }
+            }
+        }
+    }
+
+    saveGameState(gameState);
 }

@@ -12,6 +12,9 @@ export const gameState = {
     rngSeed: null,
     turnCounter: 0,   // total turns elapsed since start
     heroTurnIndex: 0, // whose turn it is
+    enemyAllyDeck: [],
+    enemyAllyDeckPointer: 0,
+    enemyAllyDiscard: [],
 };
 
 export const CITY_EXIT_UPPER = 0; // Star

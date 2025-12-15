@@ -431,6 +431,7 @@ async function restoreUIFromState(state) {
         Object.assign(gameState, saved);
 
         restoreDropdownContentFromState(gameState);
+        establishEnemyAllyDeckFromLoadout(null, gameState);
 
         restoreUIFromState(gameState);
         restoreCapturedBystandersIntoCardData(saved);
@@ -556,6 +557,7 @@ async function restoreUIFromState(state) {
             gameState.heroData[id].travel ??= (heroObj.travel || 0);
         });
 
+        establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: true });
         saveGameState(gameState);
 
         const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
@@ -1864,6 +1866,10 @@ export function playMightSwipeAnimation() {
 }
 
 export function showMightBanner(text, duration = 1400) {
+    document.querySelectorAll(".might-banner").forEach(banner => {
+        banner.remove();
+    });
+    
     return new Promise(resolve => {
         const banner = document.createElement("div");
         banner.className = "might-banner";
@@ -2241,5 +2247,41 @@ function restoreDropdownContentFromState(state = gameState) {
 
     if (typeof state.dropdownContentHTML === "string") {
         dropdown.innerHTML = state.dropdownContentHTML;
+    }
+}
+
+// === Establish Enemies + Allies Deck ===
+export function establishEnemyAllyDeckFromLoadout(selectedData, state = gameState, opts = {}) {
+    try {
+        if (!state) return;
+
+        // If a saved deck exists, reuse it unless explicitly rebuilding
+        if (!opts.forceRebuild && Array.isArray(state.enemyAllyDeck) && state.enemyAllyDeck.length > 0) {
+            console.log("Loaded existing enemy+ally deck:", state.enemyAllyDeck);
+            window.ENEMY_ALLY_DECK = state.enemyAllyDeck;
+            return state.enemyAllyDeck;
+        }
+
+        const enemyIds = selectedData?.enemies?.ids || [];
+        const allyIds  = selectedData?.allies?.ids || [];
+        const combined = [...enemyIds, ...allyIds];
+
+        // Fisher-Yates shuffle
+        for (let i = combined.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [combined[i], combined[j]] = [combined[j], combined[i]];
+        }
+
+        state.enemyAllyDeck = combined;
+        state.enemyAllyDeckPointer = 0;
+        state.enemyAllyDiscard = [];
+
+        saveGameState(state);
+        window.ENEMY_ALLY_DECK = combined;
+        console.log("New shuffled enemy+ally deck:", combined);
+
+        return combined;
+    } catch (err) {
+        console.error("Error establishing enemy+ally deck:", err);
     }
 }

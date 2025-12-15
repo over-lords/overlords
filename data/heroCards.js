@@ -933,7 +933,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: `draw(1)`
+        effect: `draw(2)`
       },
       {
         type: `quick`,
