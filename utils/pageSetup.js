@@ -1262,10 +1262,12 @@ export function buildVillainPanel(villainCard) {
         ? `${maxHP}`
         : `${currentHP} / ${maxHP}`;
 
+    panel.dataset.villainId = String(villainCard.id);
+
     rightCol.innerHTML = `
         <h2>${villainCard.name}</h2>
         <div><strong>${villainCard.type}</strong></div>
-        <div><strong>HP:</strong> ${hpDisplay}</div>
+        <div><strong>HP:</strong> <span id="villain-panel-hp">${hpDisplay}</span></div>
         <div><strong>Damage:</strong> ${villainCard.damage}</div>
         <h3>Abilities</h3>
     `;

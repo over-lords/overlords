@@ -1388,9 +1388,13 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
     // Sync all representations
     entry.maxHP     = baseHP;
     entry.currentHP = newHP;
+
     const instId = entry.instanceId;
-    s.villainHP[instId] = newHP;
-    entry.currentHP = newHP;
+    if (instId) s.villainHP[instId] = newHP;
+
+    s.villainHP[foeIdStr] = newHP;
+    foeCard.currentHP = newHP;
+    foeCard.maxHP = baseHP;
 
     console.log(
         `[damageFoe] ${foeCard.name} took ${amount} damage `
