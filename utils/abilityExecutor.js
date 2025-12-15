@@ -12,6 +12,7 @@ const isMultiplayer = (window.GAME_MODE === "multi");
 
 import { heroes } from '../data/faceCards.js';
 import { overlords } from '../data/overlords.js';
+import { scenarios } from "../data/scenarios.js";
 import { tactics } from '../data/tactics.js';
 import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
@@ -560,7 +561,57 @@ export async function handleVillainEscape(entry, state) {
     const vCur = foeCard.currentHP;
 
     // ---------------------------------------------------------------------
-    // 3. Retrieve current Overlord + ensure overlord.currentHP exists
+    // 3. SCENARIO BRANCH:
+    //    If a Scenario is on top, it gains HP with NO CAP and no takeover
+    // ---------------------------------------------------------------------
+    if (state.activeScenarioId != null) {
+        const scenId = String(state.activeScenarioId);
+        const scenarioCard = scenarios.find(s => String(s.id) === scenId);
+
+        if (scenarioCard) {
+            if (!state.scenarioHP) state.scenarioHP = {};
+
+            // Resolve prior HP: prefer stored scenarioHP, then currentHP, then baseHP
+            let prevHP = state.scenarioHP[scenId];
+            if (typeof prevHP !== "number") {
+                if (typeof scenarioCard.currentHP === "number") {
+                    prevHP = Number(scenarioCard.currentHP);
+                } else {
+                    const baseHP = Number(scenarioCard.hp || 0) || 0;
+                    prevHP = baseHP;
+                }
+            }
+
+            // Scenarios have NO MAX HP: simply add vCur
+            const newHP = prevHP + vCur;
+
+            state.scenarioHP[scenId] = newHP;
+            scenarioCard.currentHP = newHP;
+
+            console.log(
+                `[ESCAPE] ${foeCard.name} escaped → Scenario ${scenarioCard.name} gains `
+                + `${vCur} HP (${prevHP} → ${newHP}).`
+            );
+
+            try {
+                // Keep the Scenario on top of the frame; do NOT bring back the Overlord
+                setCurrentOverlord(scenarioCard);
+                // We intentionally do NOT call buildOverlordPanel(overlord) here.
+            } catch (e) {
+                console.warn("[ESCAPE] Failed to refresh Scenario panel after escape.", e);
+            }
+
+            saveGameState(state);
+        }
+
+        // IMPORTANT: when a Scenario is active,
+        // takeover can never occur and Overlord HP should not change.
+        return;
+    }
+
+    // ---------------------------------------------------------------------
+    // 4. Retrieve current Overlord + ensure overlord.currentHP exists
+    //    (original behavior for when NO Scenario is present)
     // ---------------------------------------------------------------------
     const ovId = state.overlords?.[0];
     if (!ovId) return;
@@ -583,7 +634,7 @@ export async function handleVillainEscape(entry, state) {
     const ovLevel = Number(overlord.level || 0);
 
     // ---------------------------------------------------------------------
-    // 4. Determine takeover(N)
+    // 5. Determine takeover(N)  (unchanged)
     // ---------------------------------------------------------------------
     let takeoverLevel = 0;
 
@@ -605,14 +656,14 @@ export async function handleVillainEscape(entry, state) {
     const hasTakeover = takeoverLevel > 0;
 
     // ---------------------------------------------------------------------
-    // 5. Evaluate takeover conditions
+    // 6. Evaluate takeover conditions (ONLY when no Scenario is active)
     // ---------------------------------------------------------------------
     const qualifiesLevel = hasTakeover && takeoverLevel >= ovLevel;
     const qualifiesHP = hasTakeover && vCur >= ovCur;
 
     if (qualifiesLevel && qualifiesHP) {
         // =============================================================
-        // SUCCESSFUL TAKEOVER
+        // SUCCESSFUL TAKEOVER (original behavior)
         // =============================================================
 
         console.log(
@@ -670,7 +721,8 @@ export async function handleVillainEscape(entry, state) {
     }
 
     // ---------------------------------------------------------------------
-    // 6. FAILED TAKEOVER OR NO TAKEOVER → Overlord gains HP
+    // 7. FAILED TAKEOVER OR NO TAKEOVER → Overlord gains HP (capped)
+    //    (original behavior)
     // ---------------------------------------------------------------------
     const hpGain = vCur;
     let updatedHP = ovCur + hpGain;
@@ -1225,108 +1277,193 @@ export function damageOverlord(amount, state = gameState) {
     const currentHP = info.currentHP;
     const newHP     = Math.max(0, currentHP - amount);
 
-    if (!s.overlordHP) s.overlordHP = {};
-    s.overlordHP[ovId] = newHP;
+    // ===================================================================
+    // SCENARIO BRANCH: damage active Scenario HP, do NOT touch overlordHP
+    // ===================================================================
+    if (info.kind === "scenario" || (ovCard && ovCard.type === "Scenario")) {
 
-    // Keep the overlord card & overlordData in sync for panels/restore
-    if (ovCard && typeof ovCard === "object") {
-        ovCard.currentHP = newHP;
-    }
-    if (!s.overlordData) {
-        s.overlordData = {};
-    }
-    s.overlordData.currentHP = newHP;
+        if (!s.scenarioHP) s.scenarioHP = {};
+        s.scenarioHP[ovId] = newHP;
 
-    console.log(`Overlord ${ovId} took ${amount} damage -> ${newHP} HP`);
-
-    // If not dead, update panel + persist and return
-    if (newHP > 0) {
-        try {
-            if (ovCard) {
-                setCurrentOverlord(ovCard);
-                //buildOverlordPanel(ovCard);
-            }
-        } catch (e) {
-            console.warn("[damageOverlord] Failed to update overlord panel after damage.", e);
+        // Keep the scenario card in sync for panels/restore
+        if (ovCard && typeof ovCard === "object") {
+            ovCard.currentHP = newHP;
         }
 
-        saveGameState(s);
-        return;
-    }
+        console.log(`Scenario ${ovId} took ${amount} damage -> ${newHP} HP`);
 
-    // ===================================================================
-    // OVERLORD KO'D — REMOVE FROM INDEX & LOG INTO KO ARRAY
-    // ===================================================================
-    console.log(`Overlord ${ovId} has been defeated.`);
+        // If Scenario not dead, update panel + persist and return
+        if (newHP > 0) {
+            try {
+                if (ovCard) {
+                    setCurrentOverlord(ovCard);
+                    //buildOverlordPanel(ovCard);
+                }
+            } catch (e) {
+                console.warn("[damageOverlord] Failed to update scenario panel after damage.", e);
+            }
 
-    if (!Array.isArray(s.koCards)) {
-        s.koCards = [];
-    }
-    s.koCards.push({
-        id: ovId,
-        name: ovCard?.name || `Overlord ${ovId}`,
-        type: "Overlord",
-        source: "hp-zero"
-    });
+            saveGameState(s);
+            return;
+        }
 
-    // Remove current overlord from the index (slides the others down)
-    if (Array.isArray(s.overlords)) {
-        s.overlords.shift();
-    }
+        // ===============================================================
+        // Scenario reduced to 0 HP → remove from stack, reveal what's under
+        // ===============================================================
+        console.log(`Scenario ${ovId} has been defeated.`);
 
-    // Remove HP entry so it's clean on next load
-    delete s.overlordHP[ovId];
+        if (!Array.isArray(s.koCards)) {
+            s.koCards = [];
+        }
+        s.koCards.push({
+            id: ovId,
+            name: ovCard?.name || `Scenario ${ovId}`,
+            type: "Scenario",
+            source: "hp-zero"
+        });
 
-    // ===================================================================
-    // INITIALIZE NEXT OVERLORD (if any remain) and update UI/state
-    // ===================================================================
-    const nextInfo = getCurrentOverlordInfo(s);
+        // Remove this Scenario from stack + HP map
+        if (Array.isArray(s.scenarioStack)) {
+            s.scenarioStack = s.scenarioStack.filter(id => String(id) !== String(ovId));
+        }
+        if (s.scenarioHP) {
+            delete s.scenarioHP[ovId];
+        }
 
-    if (nextInfo) {
-        const nextId   = nextInfo.id;
-        const nextCard = nextInfo.card;
-        const baseHP   = nextInfo.baseHP;
+        // Determine what sits on top now: another Scenario or the real Overlord
+        if (Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {
+            const nextScenarioId = String(s.scenarioStack[s.scenarioStack.length - 1]);
+            s.activeScenarioId = nextScenarioId;
+        } else {
+            s.activeScenarioId = null;
+        }
+
+        // Re-resolve "current overlord-ish thing" (either Scenario or Overlord)
+        const nextInfo = getCurrentOverlordInfo(s);
+
+        try {
+            if (nextInfo && nextInfo.card) {
+                setCurrentOverlord(nextInfo.card);
+                if (nextInfo.kind !== "scenario") {
+                    // For non-Scenario, keep existing behavior of rebuilding the panel
+                    buildOverlordPanel(nextInfo.card);
+                }
+            }
+        } catch (e) {
+            console.warn("[damageOverlord] Failed to update panel after Scenario KO.", e);
+        }
+
+        // Do NOT return here: we still want to hit the SAVE + CHECK block below
+
+    } else {
+        // ===================================================================
+        // ORIGINAL OVERLORD BRANCH (unchanged behavior)
+        // ===================================================================
 
         if (!s.overlordHP) s.overlordHP = {};
-        s.overlordHP[nextId] = baseHP;
+        s.overlordHP[ovId] = newHP;
 
-        if (nextCard && typeof nextCard === "object") {
-            nextCard.currentHP = baseHP;
+        // Keep the overlord card & overlordData in sync for panels/restore
+        if (ovCard && typeof ovCard === "object") {
+            ovCard.currentHP = newHP;
         }
         if (!s.overlordData) {
             s.overlordData = {};
         }
-        s.overlordData.currentHP = baseHP;
+        s.overlordData.currentHP = newHP;
 
-        if (!s.currentOverlordCard) {
-            s.currentOverlordCard = {};
-        }
-        s.currentOverlordCard.id    = nextCard?.id ?? nextId;
-        s.currentOverlordCard.name  = nextCard?.name ?? `Overlord ${nextId}`;
-        s.currentOverlordCard.image = nextCard?.image ?? "";
-        s.currentOverlordCard.hp    = baseHP;
+        console.log(`Overlord ${ovId} took ${amount} damage -> ${newHP} HP`);
 
-        console.log(`Next Overlord is now ${nextId} with HP ${baseHP}.`);
-
-        try {
-            if (nextCard) {
-                setCurrentOverlord(nextCard);
-                buildOverlordPanel(nextCard);
+        // If not dead, update panel + persist and return
+        if (newHP > 0) {
+            try {
+                if (ovCard) {
+                    setCurrentOverlord(ovCard);
+                    //buildOverlordPanel(ovCard);
+                }
+            } catch (e) {
+                console.warn("[damageOverlord] Failed to update overlord panel after damage.", e);
             }
-        } catch (e) {
-            console.warn("[damageOverlord] Failed to build panel for next overlord.", e);
+
+            saveGameState(s);
+            return;
         }
-    } else {
-        console.log("No Overlords remain after KO.");
-        // checkGameEndConditions will detect the win
+
+        // ===================================================================
+        // OVERLORD KO'D — REMOVE FROM INDEX & LOG INTO KO ARRAY
+        // ===================================================================
+        console.log(`Overlord ${ovId} has been defeated.`);
+
+        if (!Array.isArray(s.koCards)) {
+            s.koCards = [];
+        }
+        s.koCards.push({
+            id: ovId,
+            name: ovCard?.name || `Overlord ${ovId}`,
+            type: "Overlord",
+            source: "hp-zero"
+        });
+
+        // Remove current overlord from the index (slides the others down)
+        if (Array.isArray(s.overlords)) {
+            s.overlords.shift();
+        }
+
+        // Remove HP entry so it's clean on next load
+        delete s.overlordHP[ovId];
+
+        // ===================================================================
+        // INITIALIZE NEXT OVERLORD (if any remain) and update UI/state
+        // ===================================================================
+        const nextInfo = getCurrentOverlordInfo(s);
+
+        if (nextInfo) {
+            const nextId   = nextInfo.id;
+            const nextCard = nextInfo.card;
+            const baseHP   = nextInfo.baseHP;
+
+            if (!s.overlordHP) s.overlordHP = {};
+            s.overlordHP[nextId] = baseHP;
+
+            if (nextCard && typeof nextCard === "object") {
+                nextCard.currentHP = baseHP;
+            }
+            if (!s.overlordData) {
+                s.overlordData = {};
+            }
+            s.overlordData.currentHP = baseHP;
+
+            if (!s.currentOverlordCard) {
+                s.currentOverlordCard = {};
+            }
+            s.currentOverlordCard.id    = nextCard?.id ?? nextId;
+            s.currentOverlordCard.name  = nextCard?.name ?? `Overlord ${nextId}`;
+            s.currentOverlordCard.image = nextCard?.image ?? "";
+            s.currentOverlordCard.hp    = baseHP;
+
+            console.log(`Next Overlord is now ${nextId} with HP ${baseHP}.`);
+
+            try {
+                if (nextCard) {
+                    setCurrentOverlord(nextCard);
+                    buildOverlordPanel(nextCard);
+                }
+            } catch (e) {
+                console.warn("[damageOverlord] Failed to build panel for next overlord.", e);
+            }
+        } else {
+            console.log("No Overlords remain after KO.");
+            // checkGameEndConditions will detect the win
+        }
     }
 
     // ===================================================================
-    // SAVE + CHECK WIN/LOSS
+    // SAVE + CHECK WIN/LOSS  (unchanged)
     // ===================================================================
     saveGameState(s);
     checkGameEndConditions(s);
 }
+
 
 // =======================================================================
 // DAMAGE A HENCHMAN / VILLAIN IN THE CITY

@@ -2294,11 +2294,56 @@ export function flashScreenRed() {
 }
 
 export function getCurrentOverlordInfo(state) {
-    if (!Array.isArray(state.overlords) || state.overlords.length === 0) {
+    const s = state || gameState;
+
+    // --------------------------------------------------------
+    // 1) If a Scenario is active, treat it as the current target
+    // --------------------------------------------------------
+    if (s && s.activeScenarioId != null && Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {
+        const scenId = String(s.activeScenarioId);
+
+        // Make sure the activeScenarioId is actually in the stack
+        if (s.scenarioStack.some(id => String(id) === scenId)) {
+            const scenarioCard = scenarios.find(sc => String(sc.id) === scenId);
+            if (scenarioCard) {
+                const baseHP = Number(scenarioCard.hp || 0) || 0;
+
+                if (!s.scenarioHP) {
+                    s.scenarioHP = {};
+                }
+
+                let currentHP = s.scenarioHP[scenId];
+                if (typeof currentHP !== "number") {
+                    currentHP = baseHP;
+                    s.scenarioHP[scenId] = currentHP;
+                }
+
+                // Same semantics as Overlord cap: 2x base HP (if you ever need it)
+                const cap = baseHP * 2;
+
+                // Keep the runtime card object in sync
+                scenarioCard.currentHP = currentHP;
+
+                return {
+                    id: scenId,
+                    card: scenarioCard,
+                    baseHP,
+                    currentHP,
+                    cap,
+                    kind: "scenario"
+                };
+            }
+        }
+    }
+
+    // --------------------------------------------------------
+    // 2) No active Scenario → original Overlord logic
+    // --------------------------------------------------------
+    if (!Array.isArray(s.overlords) || s.overlords.length === 0) {
         return null;
     }
 
-    const ovId = String(state.overlords[0]);
+    const ovId = String(s.overlords[0]);
 
     // Overlord may be an Overlord card *or* a Villain (after takeover)
     let card =
@@ -2308,14 +2353,14 @@ export function getCurrentOverlordInfo(state) {
     if (!card) return null;
 
     const baseHP = Number(card.hp || 0);
-    if (!state.overlordHP) {
-        state.overlordHP = {};
+    if (!s.overlordHP) {
+        s.overlordHP = {};
     }
 
-    let currentHP = state.overlordHP[ovId];
+    let currentHP = s.overlordHP[ovId];
     if (typeof currentHP !== "number") {
         currentHP = baseHP;
-        state.overlordHP[ovId] = currentHP;
+        s.overlordHP[ovId] = currentHP;
     }
 
     // Cap is always double the base HP of whoever is currently the Overlord
@@ -2329,9 +2374,11 @@ export function getCurrentOverlordInfo(state) {
         card,
         baseHP,
         currentHP,
-        cap
+        cap,
+        kind: "overlord"
     };
 }
+
 
 function freezeGameAndSetupQuitButton(state) {
     const s = state || gameState;
