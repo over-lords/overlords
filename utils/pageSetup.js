@@ -1577,53 +1577,18 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
     const cardArea = slot.querySelector(".city-card-area");
     if (!cardArea) return;
 
-    // Remove previous card
+    // Clear old content
     cardArea.innerHTML = "";
 
+    // Build wrapper + render
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper";
 
     const rendered = renderCard(cardId, wrapper);
     wrapper.appendChild(rendered);
+    cardArea.appendChild(wrapper);
 
-    // Attach click AFTER animation settles
-    setTimeout(() => {
-        const finalWrapper = slot.querySelector(".card-wrapper");
-        if (!finalWrapper) {
-            console.warn("No finalWrapper found after animation for slot", slotIndex);
-            return;
-        }
-
-        const cardData =
-            henchmen.find(h => h.id === cardId) ||
-            villains.find(v => v.id === cardId);
-
-        console.log("Detected card placed into slot:", {
-            slotIndex,
-            cardId,
-            cardData,
-            finalWrapper
-        });
-
-        if (cardData) {
-            finalWrapper.style.cursor = "pointer";
-            finalWrapper.addEventListener("click", (e) => {
-                e.stopPropagation();
-                console.log("Villain/Henchmen card clicked:", {
-                    slotIndex,
-                    cardId,
-                    cardName: cardData.name,
-                    wrapper: finalWrapper
-                });
-
-                buildVillainPanel(cardData);
-            });
-        } else {
-            console.warn("cardData NOT FOUND for id:", cardId);
-        }
-    }, 650); // matches your card-enter animation duration
-
-
+    // Upper-row entry animation (previously split across two functions)
     const isUpperRow = (
         slotIndex === CITY_EXIT_UPPER ||
         slotIndex === CITY_5_UPPER ||
@@ -1635,25 +1600,88 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
 
     if (isUpperRow) {
         wrapper.classList.add("city-card-enter");
-
-        // Remove animation class when finished
-        setTimeout(() => {
-            wrapper.classList.remove("city-card-enter");
-        }, 650); // a little longer than 0.6s
+        setTimeout(() => wrapper.classList.remove("city-card-enter"), 650);
     }
 
-    cardArea.appendChild(wrapper);
+    // Resolve cardData (string-safe match)
+    const idStr = String(cardId);
+    const cardData =
+        henchmen.find(h => String(h.id) === idStr) ||
+        villains.find(v => String(v.id) === idStr) ||
+        null;
 
-    const instanceId = idStr + "#" + crypto.randomUUID();
+    // Click-to-open villain panel (supports your Charge-style window fallback)
+    if (cardData) {
+        wrapper.style.cursor = "pointer";
+        wrapper.addEventListener("click", (e) => {
+            e.stopPropagation();
 
-    // Update game state
-    if (!Array.isArray(gameState.cities)) gameState.cities = [];
+            const panelFn =
+                (typeof window !== "undefined" && typeof window.buildVillainPanel === "function")
+                    ? window.buildVillainPanel
+                    : (typeof buildVillainPanel === "function" ? buildVillainPanel : null);
+
+            if (!panelFn) {
+                console.warn("[CitySlot] buildVillainPanel not available.");
+                return;
+            }
+
+            panelFn(cardData);
+        });
+    }
+
+    // -----------------------------
+    // GAME STATE + HP (merged in)
+    // -----------------------------
+    if (!Array.isArray(gameState.cities)) {
+        gameState.cities = new Array(12).fill(null);
+    } else if (gameState.cities.length < 12) {
+        // ensure fixed board length
+        const old = gameState.cities.slice();
+        gameState.cities = new Array(12).fill(null);
+        for (let i = 0; i < Math.min(old.length, 12); i++) gameState.cities[i] = old[i];
+    }
+
+    if (!gameState.villainHP) {
+        gameState.villainHP = {};
+    }
+
+    const baseHP = Number((cardData && cardData.hp) || 1) || 1;
+
+    const savedHP = gameState.villainHP[idStr];
+    const currentHP = (typeof savedHP === "number") ? savedHP : baseHP;
+
+    // Always ensure baseId HP exists
+    if (typeof gameState.villainHP[idStr] !== "number") {
+        gameState.villainHP[idStr] = currentHP;
+    }
+
+    const uuid =
+        (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const instanceId = `${idStr}#${uuid}`;
+
     gameState.cities[slotIndex] = {
         slotIndex,
         type: "villain",
+        id: idStr,          // keep legacy field used elsewhere
+        baseId: idStr,      // merged behavior
         instanceId,
-        id: String(cardId)
+        maxHP: baseHP,
+        currentHP
     };
+
+    // Store HP under instance ID as well (merged behavior)
+    gameState.villainHP[instanceId] = currentHP;
+
+    // Sync runtime card object if present
+    if (cardData) {
+        cardData.currentHP = currentHP;
+        cardData.maxHP = baseHP;
+        cardData.instanceId = instanceId;
+    }
 
     saveGameState(gameState);
 }

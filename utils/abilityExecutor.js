@@ -16,7 +16,7 @@ import { tactics } from '../data/tactics.js';
 import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
-import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar } from "./pageSetup.js";
+import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot } from "./pageSetup.js";
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck,
          enterVillainFromEffect, checkGameEndConditions, villainDraw } from "./turnOrder.js";
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
@@ -380,7 +380,7 @@ async function runCharge(cardId, distance) {
 
     // STEP 2 — Now place the new villain into City 1 AFTER pushing
     // (exactly what you had before)
-    placeCardIntoUpperSlot(entryIndex, cardId);
+    placeCardIntoCitySlot(cardId, entryIndex);
 
     // STEP 3 — After a short delay, visually "charge" left
     setTimeout(async () => {
@@ -458,90 +458,6 @@ function addChargeRushLines(slotIndex) {
     setTimeout(() => {
         overlay.remove();
     }, 250);
-}
-
-function placeCardIntoUpperSlot(slotIndex, cardId) {
-    const citySlots = document.querySelectorAll(".city-slot");
-    const slot = citySlots[slotIndex];
-    if (!slot) return;
-
-    const area = slot.querySelector(".city-card-area");
-    if (!area) return;
-
-    // Clear old content
-    area.innerHTML = "";
-
-    // Render the new card
-    const wrapper = document.createElement("div");
-    wrapper.className = "card-wrapper city-card-enter";
-    wrapper.appendChild(renderCard(cardId, wrapper));
-    area.appendChild(wrapper);
-
-    const cardData =
-        henchmen.find(h => String(h.id) === String(cardId)) ||
-        villains.find(v => String(v.id) === String(cardId));
-
-    if (cardData) {
-        wrapper.style.cursor = "pointer";
-        wrapper.addEventListener("click", (e) => {
-            e.stopPropagation();
-            console.log("Villain/Henchmen card clicked (from Charge):", {
-                cardId,
-                cardName: cardData.name
-            });
-
-            // Prefer global buildVillainPanel, which you exposed in pageSetup.js
-            if (typeof window !== "undefined" &&
-                typeof window.buildVillainPanel === "function") {
-                window.buildVillainPanel(cardData);
-            } else {
-                console.warn("[Charge] buildVillainPanel not available on window.");
-            }
-        });
-    }
-
-    if (!Array.isArray(gameState.cities)) {
-        gameState.cities = new Array(12).fill(null);
-    }
-    if (!gameState.villainHP) {
-        gameState.villainHP = {};
-    }
-
-    const idStr  = String(cardId);
-    const baseHP = Number((cardData && cardData.hp) || 1) || 1;
-
-    const savedHP = gameState.villainHP[idStr];
-    let currentHP;
-
-    if (typeof savedHP === "number") {
-        currentHP = savedHP;
-    } else {
-        currentHP = baseHP;
-        gameState.villainHP[idStr] = currentHP;
-    }
-
-    const instanceId = idStr + "#" + crypto.randomUUID();
-
-    gameState.cities[slotIndex] = {
-        slotIndex,
-        type: "villain",
-        baseId: idStr,
-        instanceId: instanceId,
-        maxHP: baseHP,
-        currentHP
-    };
-
-    // Store HP under instance ID (NOT baseId)
-    gameState.villainHP[instanceId] = currentHP;
-
-    if (cardData) {
-        cardData.currentHP = currentHP;
-    }
-
-    saveGameState(gameState);
-
-    // Remove animation afterwards
-    setTimeout(() => wrapper.classList.remove("city-card-enter"), 650);
 }
 
 async function attemptSingleLeftShift(fromPos) {
