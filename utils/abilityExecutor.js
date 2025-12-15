@@ -1414,10 +1414,6 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState) 
     const instId = entry.instanceId;
     if (instId) s.villainHP[instId] = newHP;
 
-    s.villainHP[foeIdStr] = newHP;
-    foeCard.currentHP = newHP;
-    foeCard.maxHP = baseHP;
-
     console.log(
         `[damageFoe] ${foeCard.name} took ${amount} damage `
         + `(${currentHP} -> ${newHP}).`

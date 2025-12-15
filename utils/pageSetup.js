@@ -333,10 +333,22 @@ async function restoreUIFromState(state) {
 
             // Allow clicking hero to open its panel
             wrapper.style.cursor = "pointer";
+            wrapper.setAttribute("data-card-id", String(heroObj.id));
+
+            // IMPORTANT: capture-phase so inner card handlers can't swallow the click
             wrapper.addEventListener("click", (e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                buildHeroPanel(heroObj);
-            });
+                e.stopImmediatePropagation();
+
+                const handledByShove = (typeof window.maybePromptHeroShove === "function")
+                    ? window.maybePromptHeroShove(heroObj, hid, idx)
+                    : false;
+
+                if (!handledByShove) {
+                    buildHeroPanel(heroObj);
+                }
+            }, true);
         });
 
         state.cities.forEach(entry => {
@@ -429,6 +441,7 @@ async function restoreUIFromState(state) {
     if (saved) {
         console.log("=== RESUMING SAVED GAME ===");
         Object.assign(gameState, saved);
+        window.gameState = gameState;
 
         restoreDropdownContentFromState(gameState);
         establishEnemyAllyDeckFromLoadout(null, gameState);
@@ -528,6 +541,7 @@ async function restoreUIFromState(state) {
             heroesByPlayer: selectedData.heroesByPlayer,
             playerUsernames: selectedData.playerUsernames
         });
+        window.gameState = gameState;
 
         console.log("=== Confirming hero decks after pageSetup ===");
         selectedData.heroes.forEach(heroId => {
@@ -1591,15 +1605,37 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
     // Clear old content
     cardArea.innerHTML = "";
 
-    // Build wrapper + render
+    // Resolve base ID (string-safe)
+    const baseId = String(cardId);
+
+    // Resolve immutable template (NEVER MUTATE THIS)
+    const cardTemplate =
+        henchmen.find(h => String(h.id) === baseId) ||
+        villains.find(v => String(v.id) === baseId) ||
+        null;
+
+    if (!cardTemplate) {
+        console.warn("[CitySlot] No card template found for", baseId);
+        return;
+    }
+
+    // Generate instance ID FIRST (critical)
+    const uuid =
+        (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const instanceId = `${baseId}#${uuid}`;
+
+    // Build wrapper + render using BASE ID (renderCard expects base card)
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper";
 
-    const rendered = renderCard(cardId, wrapper);
+    const rendered = renderCard(baseId, wrapper);
     wrapper.appendChild(rendered);
     cardArea.appendChild(wrapper);
 
-    // Upper-row entry animation (previously split across two functions)
+    // Upper-row entry animation
     const isUpperRow = (
         slotIndex === CITY_EXIT_UPPER ||
         slotIndex === CITY_5_UPPER ||
@@ -1614,85 +1650,66 @@ export function placeCardIntoCitySlot(cardId, slotIndex) {
         setTimeout(() => wrapper.classList.remove("city-card-enter"), 650);
     }
 
-    // Resolve cardData (string-safe match)
-    const idStr = String(cardId);
-    const cardData =
-        henchmen.find(h => String(h.id) === idStr) ||
-        villains.find(v => String(v.id) === idStr) ||
-        null;
-
-    // Click-to-open villain panel (supports your Charge-style window fallback)
-    if (cardData) {
-        wrapper.style.cursor = "pointer";
-        wrapper.addEventListener("click", (e) => {
-            e.stopPropagation();
-
-            const panelFn =
-                (typeof window !== "undefined" && typeof window.buildVillainPanel === "function")
-                    ? window.buildVillainPanel
-                    : (typeof buildVillainPanel === "function" ? buildVillainPanel : null);
-
-            if (!panelFn) {
-                console.warn("[CitySlot] buildVillainPanel not available.");
-                return;
-            }
-
-            panelFn(cardData);
-        });
-    }
-
     // -----------------------------
-    // GAME STATE + HP (merged in)
+    // GAME STATE + HP (INSTANCE SAFE)
     // -----------------------------
     if (!Array.isArray(gameState.cities)) {
         gameState.cities = new Array(12).fill(null);
     } else if (gameState.cities.length < 12) {
-        // ensure fixed board length
         const old = gameState.cities.slice();
         gameState.cities = new Array(12).fill(null);
-        for (let i = 0; i < Math.min(old.length, 12); i++) gameState.cities[i] = old[i];
+        for (let i = 0; i < Math.min(old.length, 12); i++) {
+            gameState.cities[i] = old[i];
+        }
     }
 
     if (!gameState.villainHP) {
         gameState.villainHP = {};
     }
 
-    const baseHP = Number((cardData && cardData.hp) || 1) || 1;
-
-    const savedHP = gameState.villainHP[idStr];
-    const currentHP = (typeof savedHP === "number") ? savedHP : baseHP;
-
-    // Always ensure baseId HP exists
-    if (typeof gameState.villainHP[idStr] !== "number") {
-        gameState.villainHP[idStr] = currentHP;
-    }
-
-    const uuid =
-        (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
-            ? crypto.randomUUID()
-            : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-    const instanceId = `${idStr}#${uuid}`;
+    // ALWAYS derive HP from immutable template
+    const baseHP = Number(cardTemplate.hp) || 1;
+    const currentHP = baseHP;
 
     gameState.cities[slotIndex] = {
         slotIndex,
         type: "villain",
-        id: idStr,          // keep legacy field used elsewhere
-        baseId: idStr,      // merged behavior
+        id: baseId,        // legacy compatibility
+        baseId: baseId,
         instanceId,
         maxHP: baseHP,
         currentHP
     };
 
-    // Store HP under instance ID as well (merged behavior)
+    // Track HP ONLY by instance ID
     gameState.villainHP[instanceId] = currentHP;
 
-    // Sync runtime card object if present
-    if (cardData) {
-        cardData.currentHP = currentHP;
-        cardData.maxHP = baseHP;
-        cardData.instanceId = instanceId;
-    }
+    // -----------------------------
+    // Click-to-open panel (INSTANCE COPY)
+    // -----------------------------
+    wrapper.style.cursor = "pointer";
+    wrapper.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        const panelFn =
+            (typeof window !== "undefined" && typeof window.buildVillainPanel === "function")
+                ? window.buildVillainPanel
+                : (typeof buildVillainPanel === "function" ? buildVillainPanel : null);
+
+        if (!panelFn) {
+            console.warn("[CitySlot] buildVillainPanel not available.");
+            return;
+        }
+
+        // Pass a SAFE per-instance object
+        panelFn({
+            ...cardTemplate,
+            baseId,
+            instanceId,
+            currentHP,
+            maxHP: baseHP
+        });
+    });
 
     saveGameState(gameState);
 }
@@ -1869,7 +1886,7 @@ export function showMightBanner(text, duration = 1400) {
     document.querySelectorAll(".might-banner").forEach(banner => {
         banner.remove();
     });
-    
+
     return new Promise(resolve => {
         const banner = document.createElement("div");
         banner.className = "might-banner";

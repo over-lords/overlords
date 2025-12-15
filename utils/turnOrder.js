@@ -2072,14 +2072,10 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     // Insert into DOM
     area.appendChild(wrapper);
 
-    // Optional: hero click = open hero panel (matches villain behavior)
-    const heroData = heroes.find(h => h.id === heroId);
-    if (heroData) {
-        wrapper.addEventListener("click", (e) => {
-            e.stopPropagation();
-            buildHeroPanel(heroData);
-        });
-    }
+     const heroData = heroes.find(h => String(h.id) === String(heroId));
+     if (heroData) {
+         bindCityHeroClick(wrapper, heroData, heroId, cityIndex);
+     }
 
     showRetreatButtonForCurrentHero(gameState);
 
@@ -3037,16 +3033,6 @@ export function showHeroTopPreview(heroId, state, count = 3) {
     }
 }
 
-// ============================================================================
-// CENTRALIZED CITY OUTLINE HANDLING
-// ============================================================================
-
-/**
- * Pure helper: compute the list of "lower" city slots that are valid starting
- * travel destinations for the given hero.
- *
- * This does NOT touch DOM styling – it only returns references/indices.
- */
 function computeHeroTravelLegalTargets(gameState, heroId) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return [];
@@ -3087,14 +3073,6 @@ function computeHeroTravelLegalTargets(gameState, heroId) {
     return results;
 }
 
-/**
- * Single centralized place that is allowed to put an outline/cursor on
- * .city-slot elements.
- *
- * - Safe to call as often as you like.
- * - Always clears existing outlines before applying new ones.
- * - If options.clearOnly === true, it will only clear and then return.
- */
 function refreshAllCityOutlines(gameState, options = {}) {
     const clearOnly = options.clearOnly === true;
 
@@ -3186,13 +3164,12 @@ function refreshAllCityOutlines(gameState, options = {}) {
     });
 }
 
-
 setInterval(() => {
     try {
         // This both refreshes the outlines and enforces "no travel when out".
         recomputeCurrentHeroTravelDestinations(gameState);
     } catch (e) {
-        console.warn("[OUTLINES] periodic travel-destination refresh failed:", e);
+        console.warn("[turnOrder] periodic travel-destination refresh failed:", e);
     }
 }, 1000);
 
@@ -3258,6 +3235,345 @@ function hideFaceOverlordButton() {
         btn.disabled = true;
     }
 }
+
+// ================================================================
+// SHOVE TRAVEL
+// ================================================================
+function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLowerIndex) {
+  const activeState = state.heroData?.[activeHeroId];
+  const targetState = state.heroData?.[targetHeroId];
+  if (!activeState || !targetState) return;
+
+  const dest = Number(destinationLowerIndex);
+  if (!Number.isFinite(dest)) return;
+
+  // Validate target is actually in that city
+  if (typeof targetState.cityIndex !== "number" || Number(targetState.cityIndex) !== dest) {
+    console.warn("[SHOVE] Blocked: target hero is not in the clicked city.");
+    return;
+  }
+
+  // Travel budget check for active hero
+  const currentTravel =
+    (typeof activeState.currentTravel === "number")
+      ? activeState.currentTravel
+      : (typeof activeState.travel === "number" ? activeState.travel : 0);
+
+  if (currentTravel <= 0) {
+    console.log("[SHOVE] Blocked: no travel remaining for active hero.");
+    return;
+  }
+
+  // Spend 1 travel (counts as travel for the shover only)
+  activeState.currentTravel = currentTravel - 1;
+
+  // Remember where the active hero was (if any)
+  const previousIndex = (typeof activeState.cityIndex === "number") ? activeState.cityIndex : null;
+
+  // Shoved hero goes to HQ; this does NOT spend their travel
+  targetState.cityIndex = null;
+  targetState.isFacingOverlord = false;
+
+  // Active hero enters the city
+  activeState.cityIndex = dest;
+  activeState.isFacingOverlord = false;
+
+  // DOM updates
+  const citySlots = document.querySelectorAll(".city-slot");
+
+  if (previousIndex !== null && citySlots[previousIndex]) {
+    const prevArea = citySlots[previousIndex].querySelector(".city-card-area");
+    if (prevArea) prevArea.innerHTML = "";
+  }
+
+  if (citySlots[dest]) {
+    const destArea = citySlots[dest].querySelector(".city-card-area");
+    if (destArea) destArea.innerHTML = "";
+  }
+
+  // Render active hero into destination
+  const destSlot = citySlots[dest];
+  const destArea = destSlot?.querySelector(".city-card-area");
+  if (destArea) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("card-wrapper");
+
+    const rendered = renderCard(activeHeroId, wrapper);
+    wrapper.appendChild(rendered);
+    destArea.appendChild(wrapper);
+
+    const heroData = heroes.find(h => String(h.id) === String(activeHeroId));
+    if (heroData) {
+      // use the helper you added earlier
+      bindCityHeroClick(wrapper, heroData, activeHeroId, dest);
+    }
+  }
+
+  // Immediate city-entry damage from the villain/henchman in the upper slot above this city (DT applies)
+  try {
+    const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
+    const foeEntry = state.cities?.[dest - 1];
+    const foeId = foeEntry?.id != null ? String(foeEntry.id) : null;
+
+    const foe = foeId
+      ? (henchmen.find(h => String(h.id) === foeId) || villains.find(v => String(v.id) === foeId))
+      : null;
+
+    if (foe && heroObj) {
+      const foeDamage = Number(foe.damage || 0);
+      const dt = Number(heroObj.damageThreshold || 0);
+
+      if (foeDamage >= dt && foeDamage > 0) {
+        activeState.hp = Number(activeState.hp || 0) - foeDamage;
+        console.log(`[Shove Entry] ${heroObj.name} took ${foeDamage} Damage for forcing a Hero from the fight.`);
+        flashScreenRed();
+
+        updateHeroHPDisplays(activeHeroId);
+        updateBoardHeroHP(activeHeroId);
+
+        if (activeState.hp <= 0) {
+          activeState.hp = 0;
+          handleHeroKnockout(activeHeroId, activeState, state, { source: "shoveEntry" });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[SHOVE] entry damage calculation failed", err);
+  }
+
+  // After shove: proceed to draw if this was pre-draw; otherwise continue normally
+  showRetreatButtonForCurrentHero(state);
+
+  if (!activeState.hasDrawnThisTurn) {
+    showHeroTopPreview(activeHeroId, state);
+    activeState.hasDrawnThisTurn = true;
+  }
+
+  renderHeroHandBar(state);
+  recomputeCurrentHeroTravelDestinations(state);
+  refreshAllCityOutlines(state);
+  saveGameState(state);
+}
+
+// Allow other modules (pageSetup, etc.) to call shove directly if desired.
+window.performHeroShoveTravel = performHeroShoveTravel;
+
+// ================================================================
+// CLICK-TO-SHOVE CONTROLLER
+// ================================================================
+
+window.maybePromptHeroShove = function (clickedHeroObj, clickedHeroId, clickedCityIndex) {
+    try {
+        const state = window.gameState;
+        if (!state) return false;
+
+        const heroIds = Array.isArray(state.heroes) ? state.heroes : [];
+        const activeIdx = state.heroTurnIndex ?? 0;
+        const activeHeroId = heroIds[activeIdx];
+        if (activeHeroId == null) return false;
+
+        // Only shove OTHER heroes that are in a city
+        if (clickedHeroId == null) return false;
+        if (String(clickedHeroId) === String(activeHeroId)) return false;
+
+        const activeState = state.heroData?.[activeHeroId];
+        const targetState = state.heroData?.[clickedHeroId];
+        if (!activeState || !targetState) return false;
+
+        if (activeState.isKO) return false;
+        if (typeof targetState.cityIndex !== "number") return false;
+
+        const dest = Number.isFinite(Number(clickedCityIndex))
+            ? Number(clickedCityIndex)
+            : Number(targetState.cityIndex);
+
+        if (!Number.isFinite(dest)) return false;
+
+        // Must have travel remaining
+        const currentTravel =
+            typeof activeState.currentTravel === "number"
+                ? activeState.currentTravel
+                : (typeof activeState.travel === "number" ? activeState.travel : 0);
+
+        if (currentTravel <= 0) return false;
+
+        // Shove modal elements
+        const overlay = document.getElementById("shove-popup-overlay");
+        const text = document.getElementById("shove-popup-text");
+        const yesBtn = document.getElementById("shove-popup-yes");
+        const noBtn = document.getElementById("shove-popup-no");
+
+        if (!overlay || !text || !yesBtn || !noBtn) {
+            console.warn("[SHOVE] shove popup elements not found in DOM.");
+            return false;
+        }
+
+        const targetName = clickedHeroObj?.name || `Hero ${clickedHeroId}`;
+        const cityName = getCityNameFromIndex(dest);
+
+        text.textContent = `Shove ${targetName} back to HQ and enter ${cityName}?`;
+        overlay.style.display = "flex";
+
+        // Replace old YES listener
+        const newYes = yesBtn.cloneNode(true);
+        yesBtn.parentNode.replaceChild(newYes, yesBtn);
+
+        newYes.addEventListener("click", () => {
+            overlay.style.display = "none";
+            performHeroShoveTravel(state, activeHeroId, clickedHeroId, dest);
+        });
+
+        // Replace old NO listener
+        const newNo = noBtn.cloneNode(true);
+        noBtn.parentNode.replaceChild(newNo, noBtn);
+
+        // If they cancel shove, fall back to normal hero panel
+        newNo.addEventListener("click", () => {
+            overlay.style.display = "none";
+            if (clickedHeroObj) {
+                buildHeroPanel(clickedHeroObj);
+            }
+        });
+
+        return true;
+    } catch (err) {
+        console.warn("[SHOVE] maybePromptHeroShove failed", err);
+        return false;
+    }
+};
+
+function bindCityHeroClick(wrapper, heroData, heroId, cityIndex) {
+    if (!wrapper || !heroData) return;
+
+    wrapper.style.cursor = "pointer";
+    wrapper.setAttribute("data-card-id", String(heroId));
+
+    // Capture-phase is critical; the inner .card often has its own click handler.
+     if (wrapper.__cityHeroClickBound) return; // prevent duplicate listeners on re-renders
+     wrapper.__cityHeroClickBound = true;
+
+     wrapper.addEventListener("click", (e) => {
+         e.preventDefault();
+         e.stopPropagation();
+         e.stopImmediatePropagation();
+
+         const shoveFn =
+             (typeof window !== "undefined" && typeof window.maybePromptHeroShove === "function")
+                 ? window.maybePromptHeroShove
+                 : (typeof maybePromptHeroShove === "function" ? maybePromptHeroShove : null);
+
+         const handledByShove = shoveFn ? shoveFn(heroData, heroId, cityIndex) : false;
+         if (!handledByShove) {
+             buildHeroPanel(heroData);
+         }
+     }, true);
+}
+
+const CITY_LOWER_INDEX_TO_NAME = {
+  1:  "Star City",
+  3:  "Coast City",
+  5:  "Keystone City",
+  7:  "Central City",
+  9:  "Metropolis",
+  11: "Gotham City"
+};
+
+function getCityNameFromLowerIndex(cityIndex) {
+  return CITY_LOWER_INDEX_TO_NAME[cityIndex] || "Unknown City";
+}
+
+function showShoveConfirm({ activeHeroName, targetHeroName, cityIndex, onYes, onNo }) {
+  const overlay = document.getElementById("shove-popup-overlay");
+  const text    = document.getElementById("shove-popup-text");
+  const yesBtn  = document.getElementById("shove-popup-yes");
+  const noBtn   = document.getElementById("shove-popup-no");
+
+  if (!overlay || !text || !yesBtn || !noBtn) {
+    console.warn("[SHOVE] shove modal elements missing in game.html");
+    // Fallback: treat as "No"
+    if (typeof onNo === "function") onNo();
+    return;
+  }
+
+  const cityName = getCityNameFromLowerIndex(cityIndex);
+
+  text.textContent = `Shove ${targetHeroName} out of ${cityName}?`;
+
+  // Clear previous handlers
+  yesBtn.onclick = null;
+  noBtn.onclick  = null;
+
+  yesBtn.onclick = () => {
+    overlay.style.display = "none";
+    if (typeof onYes === "function") onYes();
+  };
+
+  noBtn.onclick = () => {
+    overlay.style.display = "none";
+    if (typeof onNo === "function") onNo();
+  };
+
+  overlay.style.display = "flex";
+}
+
+function maybePromptHeroShove(targetHeroData, targetHeroId, targetCityIndex) {
+    const state = window.gameState || gameState;   // fallback to module gameState
+    window.gameState = state;                     // re-sync the alias
+    if (!state) return false;
+
+    const heroIds = state.heroes || [];
+    const activeIdx = state.heroTurnIndex ?? 0;
+    const activeHeroId = heroIds[activeIdx];
+
+    // Only meaningful if there is an active hero
+    if (activeHeroId == null) return false;
+
+    // You cannot shove yourself
+    if (String(activeHeroId) === String(targetHeroId)) return false;
+
+    const activeState = state.heroData?.[activeHeroId];
+    const targetState = state.heroData?.[targetHeroId];
+    if (!activeState || !targetState) return false;
+
+    // Target must actually be in a city (red-outline case)
+    const dest = (typeof targetState.cityIndex === "number")
+        ? Number(targetState.cityIndex)
+        : NaN;
+
+    if (!Number.isFinite(dest)) return false;
+
+    // Active hero must have travel remaining
+    const currentTravel =
+        (typeof activeState.currentTravel === "number")
+        ? activeState.currentTravel
+        : (typeof activeState.travel === "number" ? activeState.travel : 0);
+
+    if (currentTravel <= 0) return false;
+
+    const activeHeroObj  = heroes.find(h => String(h.id) === String(activeHeroId));
+    const targetHeroObj  = heroes.find(h => String(h.id) === String(targetHeroId));
+
+    const activeName = activeHeroObj?.name || `Hero ${activeHeroId}`;
+    const targetName = targetHeroObj?.name || `Hero ${targetHeroId}`;
+
+    // Show mobile-friendly shove modal
+    showShoveConfirm({
+        activeHeroName: activeName,
+        targetHeroName: targetName,
+        cityIndex: dest,
+        onYes: () => {
+        performHeroShoveTravel(state, activeHeroId, targetHeroId, dest);
+        },
+        onNo: () => {
+        // If they click No, behave exactly like a normal click
+        if (targetHeroObj) buildHeroPanel(targetHeroObj);
+        }
+    });
+
+    return true;
+}
+
+window.maybePromptHeroShove = maybePromptHeroShove;
 
 // ================================================================
 // HERO KO HANDLER
