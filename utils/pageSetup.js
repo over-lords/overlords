@@ -429,6 +429,9 @@ async function restoreUIFromState(state) {
     if (saved) {
         console.log("=== RESUMING SAVED GAME ===");
         Object.assign(gameState, saved);
+
+        restoreDropdownContentFromState(gameState);
+
         restoreUIFromState(gameState);
         restoreCapturedBystandersIntoCardData(saved);
 
@@ -700,7 +703,11 @@ async function restoreUIFromState(state) {
             </div>
         `;
 
-        document.getElementById("dropdown-content").appendChild(container);
+        const dropdown = document.getElementById("dropdown-content");
+        if (!dropdown.querySelector(".dropdown-container")) {
+            dropdown.appendChild(container);
+        }
+        persistDropdownContentToState(gameState);
     } catch (e) {
         console.error('Failed to decrypt data:', e);
         document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">Invalid or corrupted data.</p>');
@@ -2217,5 +2224,22 @@ export function clearHeroKOMarkers(heroId) {
         slot.querySelectorAll(".hero-ko-overlay, .hero-ko-icon").forEach(el => el.remove());
     } catch (err) {
         console.warn("[clearHeroKOMarkers] Failed for hero", heroId, err);
+    }
+}
+
+function persistDropdownContentToState(state = gameState) {
+    const dropdown = document.getElementById("dropdown-content");
+    if (!dropdown) return;
+
+    state.dropdownContentHTML = dropdown.innerHTML;
+    saveGameState(state);
+}
+
+function restoreDropdownContentFromState(state = gameState) {
+    const dropdown = document.getElementById("dropdown-content");
+    if (!dropdown) return;
+
+    if (typeof state.dropdownContentHTML === "string") {
+        dropdown.innerHTML = state.dropdownContentHTML;
     }
 }

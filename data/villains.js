@@ -1422,7 +1422,7 @@ export const villains = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`drawEnemy(2)`]
+        effect: [`enemyDraw(2,nextEnemy)`]
       }
     ],
   },

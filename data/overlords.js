@@ -272,7 +272,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `drawEnemy(1)`
+        effect: `enemyDraw(1,nextEnemy)`
       }
     ],
     bonusNamePrint: [

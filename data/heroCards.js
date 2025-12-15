@@ -191,9 +191,9 @@ export const heroCards = [
         effect: [`increaseCardDamageBy(3)`]
       },
       {
-        type: `quick`,
+        type: `optional`,
         condition: [`activeHero(Bat)`,`activeHero(Wonder)`],
-        effect: [`enemyDraw(1,optional)`]
+        effect: [`enemyDraw(1)`]
       },
     ]
   },
@@ -1557,8 +1557,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        effect: [`enemyDraw(1,optional)`]
+        type: `optional`,
+        effect: [`enemyDraw(1)`]
       },
       {
         type: `quick`,
