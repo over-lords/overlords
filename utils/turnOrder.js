@@ -3107,51 +3107,85 @@ function refreshAllCityOutlines(gameState, options = {}) {
         slot.style.cursor = "default";
     });
 
-    if (clearOnly) {
-        return;
-    }
+    if (clearOnly) return;
 
-    // 2) Figure out the active hero
-    const heroIds = gameState.heroes || [];
+    // 2) Determine the active (turn) hero
+    const heroIds = Array.isArray(gameState.heroes) ? gameState.heroes : [];
     const activeIdx = gameState.heroTurnIndex ?? 0;
-    const heroId = heroIds[activeIdx];
+    const activeHeroId = heroIds[activeIdx];
 
-    if (heroId == null) {
-        return;
+    if (activeHeroId == null) return;
+
+    const activeHeroState = gameState.heroData?.[activeHeroId];
+    if (!activeHeroState) return;
+
+    // ------------------------------------------------------------
+    // A) Outline occupied cities (by OTHER heroes) in RED
+    // ------------------------------------------------------------
+    const occupiedByOther = new Set();
+    for (const hid of heroIds) {
+        if (String(hid) === String(activeHeroId)) continue;
+
+        const hs = gameState.heroData?.[hid];
+        const idx = hs?.cityIndex;
+
+        if (typeof idx === "number") occupiedByOther.add(idx);
     }
 
-    const heroState = gameState.heroData?.[heroId];
-    if (!heroState) {
-        return;
+    occupiedByOther.forEach(idx => {
+        const slot = citySlots[idx];
+        if (!slot) return;
+        slot.style.outline = "4px solid red";
+        // cursor stays default unless it is also a legal target (set below)
+    });
+
+    // ------------------------------------------------------------
+    // B) Outline the TURN HERO’S current city in BLUE
+    // ------------------------------------------------------------
+    const activeCityIdx = activeHeroState.cityIndex;
+    if (typeof activeCityIdx === "number") {
+        const slot = citySlots[activeCityIdx];
+        if (slot) {
+            slot.style.outline = "4px solid blue";
+        }
     }
 
-    // If the hero is already in a city, no starting-travel outlines.
-    //if (heroState.cityIndex !== null && heroState.cityIndex !== undefined) {
-        //return;
-    //}
-
-    // Compute their current travel pool
+    // ------------------------------------------------------------
+    // C) If the hero can travel, outline legal targets in YELLOW
+    //    (but do NOT override red/blue)
+    // ------------------------------------------------------------
     const currentTravel =
-        typeof heroState.currentTravel === "number"
-            ? heroState.currentTravel
-            : (typeof heroState.travel === "number" ? heroState.travel : 0);
+        typeof activeHeroState.currentTravel === "number"
+            ? activeHeroState.currentTravel
+            : (typeof activeHeroState.travel === "number" ? activeHeroState.travel : 0);
 
     if (currentTravel <= 0) {
+        // Keep red/blue informational outlines, but no travel targets
         return;
     }
 
-    // Facing the Overlord is still allowed to travel; we just treat it
-    // as "not in a city" above.
-
-    const targets = computeHeroTravelLegalTargets(gameState, heroId);
+    const targets = computeHeroTravelLegalTargets(gameState, activeHeroId) || [];
     targets.forEach(target => {
-        const lowerSlot = target.lowerSlot;
+        const lowerSlot = target?.lowerSlot;
+        const lowerIdx = Number(target?.lowerIndex);
+
         if (!lowerSlot) return;
 
-        lowerSlot.style.outline = "4px solid yellow";
+        // If this target is occupied by another hero, keep it RED.
+        // If it's the active hero’s city, keep it BLUE.
+        // Otherwise, make it YELLOW.
+        const isActiveCity = (typeof activeCityIdx === "number" && lowerIdx === activeCityIdx);
+        const isOccupiedByOther = occupiedByOther.has(lowerIdx);
+
+        if (!isActiveCity && !isOccupiedByOther) {
+            lowerSlot.style.outline = "4px solid yellow";
+        }
+
+        // Still clickable if it's a legal target (your travel click handler decides what happens)
         lowerSlot.style.cursor = "pointer";
     });
 }
+
 
 setInterval(() => {
     try {
@@ -3197,8 +3231,8 @@ function recomputeCurrentHeroTravelDestinations(gameState) {
             `[TRAVEL] ${heroName} has run out of travel. ` +
             `Clearing travel destinations and disabling travel.`
         );
-        clearCityHighlights();    // removes outlines / pointer cursors
-        hideTravelHighlights();   // removes any .travel-highlight classes
+        hideTravelHighlights();
+        refreshAllCityOutlines(gameState);
         return null;
     }
 
