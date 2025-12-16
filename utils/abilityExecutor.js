@@ -1723,53 +1723,91 @@ export async function enemyDraw(count = 1, limit = null) {
         gameState.enemyAllyDiscard = [];
     }
 
+    const deck = gameState.enemyAllyDeck;
+    const discard = gameState.enemyAllyDiscard;
+
     const drawnCards = [];
 
-    for (let n = 0; n < count; n++) {
+    // Local Fisher–Yates shuffle for reshuffling the discard into a new deck
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
 
+    // Ensure there is at least one card available in the deck.
+    // If the deck is empty but there is a discard pile, reshuffle it into the deck.
+    function ensureDeckHasCards() {
+        if (deck.length > 0) return true;
+
+        if (!discard.length) {
+            console.warn("[enemyDraw] Deck and discard exhausted.");
+            return false;
+        }
+
+        // Move all discard cards back into the deck and shuffle
+        while (discard.length) {
+            deck.push(discard.pop());
+        }
+        shuffleArray(deck);
+
+        // Reset pointer to top-of-deck semantics
+        gameState.enemyAllyDeckPointer = 0;
+
+        console.log("[enemyDraw] Reshuffled enemy+ally discard into deck:", deck);
+        return true;
+    }
+
+    for (let n = 0; n < count; n++) {
         let cardId = null;
         let deckIndexUsed = null;
 
-        // -------------------------------------------------
-        // NORMAL DRAW (advances pointer)
-        // -------------------------------------------------
-        if (!limit || (limit !== "nextEnemy" && limit !== "nextAlly")) {
-
-            const ptr = gameState.enemyAllyDeckPointer ?? 0;
-
-            if (ptr >= gameState.enemyAllyDeck.length) {
-                console.warn("[enemyDraw] Deck exhausted.");
-                break;
-            }
-
-            cardId = gameState.enemyAllyDeck[ptr];
-            deckIndexUsed = ptr;
-
-            gameState.enemyAllyDeckPointer += 1;
+        // Make sure we have cards to draw (may reshuffle from discard)
+        if (!ensureDeckHasCards()) {
+            break;
         }
 
         // -------------------------------------------------
-        // FILTERED DRAW (does NOT move pointer)
+        // NORMAL DRAW – draw the top card and remove it
+        // -------------------------------------------------
+        if (!limit || (limit !== "nextEnemy" && limit !== "nextAlly")) {
+            cardId = deck.shift();   // remove top-of-deck
+            deckIndexUsed = 0;
+        }
+
+        // -------------------------------------------------
+        // FILTERED DRAW (nextEnemy / nextAlly) – scan from top and remove match
         // -------------------------------------------------
         else {
             const wantType = limit === "nextEnemy" ? "Enemy" : "Ally";
 
-            for (let i = gameState.enemyAllyDeckPointer; i < gameState.enemyAllyDeck.length; i++) {
-                const id = gameState.enemyAllyDeck[i];
+            let foundIndex = -1;
+
+            for (let i = 0; i < deck.length; i++) {
+                const id = deck[i];
                 const card = findCardInAllSources(id);
 
                 if (card?.type === wantType) {
+                    foundIndex = i;
                     cardId = id;
-                    deckIndexUsed = i;
                     break;
                 }
             }
 
-            if (!cardId) {
+            if (foundIndex === -1 || !cardId) {
                 console.warn(`[enemyDraw] No ${wantType} found in remaining deck.`);
                 break;
             }
+
+            // Remove the found card from the deck so it cannot be drawn again
+            deck.splice(foundIndex, 1);
+            deckIndexUsed = foundIndex;
         }
+
+        // Keep pointer consistent with "top-of-deck at index 0" semantics
+        gameState.enemyAllyDeckPointer = 0;
 
         if (!cardId) continue;
 
@@ -1780,9 +1818,9 @@ export async function enemyDraw(count = 1, limit = null) {
         }
 
         // -------------------------------------------------
-        // DISCARD HANDLING
+        // DISCARD HANDLING – every path moves drawn card to discard pile
         // -------------------------------------------------
-        gameState.enemyAllyDiscard.push(cardId);
+        discard.push(cardId);
 
         drawnCards.push(cardData);
 

@@ -1990,19 +1990,45 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     if (beforeTravel > 0) {
         heroState.currentTravel = beforeTravel - 1;
     } else {
-        // No travel left; we still allow this to go through for now but log that it hit zero
         heroState.currentTravel = beforeTravel;
     }
 
     const afterTravel = heroState.currentTravel;
 
     console.log(
-        `[TRAVEL] ${heroName} traveling to city ${cityIndex}. `
-        + `currentTravel before=${beforeTravel}, after=${afterTravel}.`
+        `[TRAVEL] ${heroName} traveling to city ${cityIndex}. ` +
+        `currentTravel before=${beforeTravel}, after=${afterTravel}.`
     );
 
-    // Remember where they were before this travel (if anywhere)
+    // Remember where they were before this travel
     const previousIndex = heroState.cityIndex ?? null;
+
+    // =========================================================
+    // EXITING A CITY COUNTS AS A RETREAT — MAY TAKE DAMAGE
+    // =========================================================
+    if (typeof previousIndex === "number" && previousIndex !== cityIndex) {
+        console.log(
+            `[EXIT-RETREAT] ${heroName} is leaving city ${previousIndex} to travel to city ${cityIndex}.`
+        );
+
+        const okToLeave = attemptLeaveCityAsRetreat(
+            gameState,
+            heroId,
+            previousIndex,
+            "travel->city"
+        );
+
+        if (!okToLeave) {
+            console.log(
+                `[EXIT-RETREAT] ${heroName} was KO'd while attempting to leave city ${previousIndex}. Travel aborted.`
+            );
+            hideTravelHighlights();
+            clearCityHighlights();
+            renderHeroHandBar(gameState);
+            saveGameState(gameState);
+            return;
+        }
+    }
 
     // Record hero location in the model
     heroState.cityIndex = cityIndex;
@@ -2010,26 +2036,20 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     // === CLEAN UP ANY EXISTING COPIES OF THIS HERO ON THE BOARD ===
     const citySlots = document.querySelectorAll(".city-slot");
 
-    // 1) Clear the old city slot (if they were in one)
     if (previousIndex !== null && citySlots[previousIndex]) {
         const prevArea = citySlots[previousIndex].querySelector(".city-card-area");
-        if (prevArea) {
-            prevArea.innerHTML = "";
-        }
+        if (prevArea) prevArea.innerHTML = "";
     }
 
-    // 2) Brute-force remove any wrapper in any city whose card id matches this hero
     const allWrappers = document.querySelectorAll(".city-slot .card-wrapper");
 
     allWrappers.forEach(wrapper => {
-        // try on the wrapper first
         const wrapperId =
             wrapper.getAttribute("data-card-id") ||
             wrapper.dataset.cardId ||
             wrapper.getAttribute("data-id") ||
             wrapper.dataset.id;
 
-        // then look inside for a .card element in case renderCard attached it there
         const innerCard = wrapper.querySelector(".card");
         const innerId = innerCard
             ? (
@@ -2054,28 +2074,21 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     const area = slot.querySelector(".city-card-area");
     if (!area) return;
 
-    // Remove anything already inside this destination (just in case)
     area.innerHTML = "";
 
-    // Build wrapper for hero card
     const wrapper = document.createElement("div");
     wrapper.classList.add("card-wrapper");
     wrapper.style.cursor = "pointer";
 
-    // Render hero
     const rendered = renderCard(heroId, wrapper);
     wrapper.appendChild(rendered);
-
-    // Optionally set the id on the wrapper, so future cleanup is trivial
     wrapper.setAttribute("data-card-id", String(heroId));
-
-    // Insert into DOM
     area.appendChild(wrapper);
 
-     const heroData = heroes.find(h => String(h.id) === String(heroId));
-     if (heroData) {
-         bindCityHeroClick(wrapper, heroData, heroId, cityIndex);
-     }
+    const heroData = heroes.find(h => String(h.id) === String(heroId));
+    if (heroData) {
+        bindCityHeroClick(wrapper, heroData, heroId, cityIndex);
+    }
 
     showRetreatButtonForCurrentHero(gameState);
 
@@ -2083,19 +2096,18 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
         showHeroTopPreview(heroId, gameState);
         heroState.hasDrawnThisTurn = true;
     }
+
     renderHeroHandBar(gameState);
 
-    // After spending travel and moving, recompute destinations for the CURRENT hero.
-    // If they are out of travel, this returns null and clears highlights.
     const remainingDestinations = recomputeCurrentHeroTravelDestinations(gameState);
     console.log(
         "[performHeroStartingTravel] remaining destinations after move:",
         remainingDestinations
     );
 
-    // Persist travel + location changes
     saveGameState(gameState);
 }
+
 
 let turnTimerInterval = null;
 
@@ -2818,13 +2830,11 @@ function performHeroTravelToOverlord(gameState, heroId) {
     const heroObj  = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
-    // Already facing the overlord, nothing to do
     if (heroState.isFacingOverlord) {
         console.log(`[OVERLORD] ${heroName} is already facing the Overlord.`);
         return;
     }
 
-    // Compute current travel
     const currentTravel = typeof heroState.currentTravel === "number"
         ? heroState.currentTravel
         : (typeof heroState.travel === "number" ? heroState.travel : 0);
@@ -2836,43 +2846,63 @@ function performHeroTravelToOverlord(gameState, heroId) {
         return;
     }
 
-    // If they are currently in a city, remove them from that city (DOM + model)
     const prevCityIndex = heroState.cityIndex;
+
+    // =========================================================
+    // EXITING A CITY TO FACE THE OVERLORD COUNTS AS A RETREAT
+    // =========================================================
+    if (typeof prevCityIndex === "number") {
+        console.log(
+            `[EXIT-RETREAT] ${heroName} is leaving city ${prevCityIndex} to face the Overlord.`
+        );
+
+        const okToLeave = attemptLeaveCityAsRetreat(
+            gameState,
+            heroId,
+            prevCityIndex,
+            "travel->overlord"
+        );
+
+        if (!okToLeave) {
+            console.log(
+                `[EXIT-RETREAT] ${heroName} was KO'd while attempting to leave city ${prevCityIndex}. Overlord travel aborted.`
+            );
+            hideTravelHighlights();
+            clearCityHighlights();
+            renderHeroHandBar(gameState);
+            saveGameState(gameState);
+            return;
+        }
+    }
+
+    // Remove hero from the city (DOM + model)
     if (typeof prevCityIndex === "number") {
         const citySlots = document.querySelectorAll(".city-slot");
-        const slot      = citySlots[prevCityIndex];
+        const slot = citySlots[prevCityIndex];
 
         if (slot) {
             const area = slot.querySelector(".city-card-area");
-            if (area) {
-                area.innerHTML = "";   // remove hero card DOM
-            }
+            if (area) area.innerHTML = "";
         }
 
-        heroState.cityIndex = null;     // hero leaves the city
+        heroState.cityIndex = null;
         console.log(
             `[OVERLORD] ${heroName} leaves city index ${prevCityIndex} and travels to face the Overlord.`
         );
     }
 
-    // Spend 1 travel
-    const newTravel = currentTravel - 1;
-    heroState.currentTravel = newTravel;
+    heroState.currentTravel = currentTravel - 1;
 
     console.log(
-        `[OVERLORD] ${heroName} spends 1 travel to face the Overlord. `
-        + `currentTravel ${currentTravel} → ${newTravel}.`,
-        { heroId, heroState }
+        `[OVERLORD] ${heroName} spends 1 travel to face the Overlord. ` +
+        `currentTravel ${currentTravel} → ${heroState.currentTravel}.`
     );
 
-    // Mark them as facing the overlord
     heroState.isFacingOverlord = true;
 
-    // Clean up travel UI
     hideTravelHighlights();
     clearCityHighlights();
 
-    // Rebuild turn UI and travel UI as usual
     if (typeof window.recalculateHeroTravel === "function") {
         try {
             window.recalculateHeroTravel(gameState);
@@ -2881,10 +2911,6 @@ function performHeroTravelToOverlord(gameState, heroId) {
         }
     }
 
-    // Explicitly recompute travel destinations for the CURRENT turn hero.
-    // Since we just spent 1 travel to face the Overlord, this will either:
-    //   - return null and clear highlights if travel is now 0, OR
-    //   - keep the travel highlights in sync if there's still travel.
     const remainingDestinations = recomputeCurrentHeroTravelDestinations(gameState);
     console.log(
         "[performHeroTravelToOverlord] remaining destinations after move:",
@@ -2895,6 +2921,7 @@ function performHeroTravelToOverlord(gameState, heroId) {
         showHeroTopPreview(heroId, gameState);
         heroState.hasDrawnThisTurn = true;
     }
+
     renderHeroHandBar(gameState);
     saveGameState(gameState);
 }
@@ -3317,6 +3344,34 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
   // Remember where the active hero was (if any)
   const previousIndex = (typeof activeState.cityIndex === "number") ? activeState.cityIndex : null;
 
+  // =========================================================
+  // EXITING A CITY VIA SHOVE COUNTS AS A RETREAT
+  // =========================================================
+  if (typeof previousIndex === "number") {
+    const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
+    const heroName = heroObj?.name || `Hero ${activeHeroId}`;
+
+    console.log(
+      `[EXIT-RETREAT] ${heroName} is leaving city ${previousIndex} to shove another hero.`
+    );
+
+    const okToLeave = attemptLeaveCityAsRetreat(
+      state,
+      activeHeroId,
+      previousIndex,
+      "shove->city"
+    );
+
+    if (!okToLeave) {
+      console.log(
+        `[EXIT-RETREAT] ${heroName} was KO'd while attempting to leave city ${previousIndex}. Shove aborted.`
+      );
+      renderHeroHandBar(state);
+      saveGameState(state);
+      return;
+    }
+  }
+
   // Shoved hero goes to HQ; this does NOT spend their travel
   targetState.cityIndex = null;
   targetState.isFacingOverlord = false;
@@ -3351,7 +3406,6 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
 
     const heroData = heroes.find(h => String(h.id) === String(activeHeroId));
     if (heroData) {
-      // use the helper you added earlier
       bindCityHeroClick(wrapper, heroData, activeHeroId, dest);
     }
   }
@@ -3372,7 +3426,9 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
 
       if (foeDamage >= dt && foeDamage > 0) {
         activeState.hp = Number(activeState.hp || 0) - foeDamage;
-        console.log(`[Shove Entry] ${heroObj.name} took ${foeDamage} Damage for forcing a Hero from the fight.`);
+        console.log(
+          `[SHOVE-ENTRY] ${heroObj.name} took ${foeDamage} damage for forcing a hero from the fight.`
+        );
         flashScreenRed();
 
         updateHeroHPDisplays(activeHeroId);
@@ -3388,7 +3444,6 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
     console.warn("[SHOVE] entry damage calculation failed", err);
   }
 
-  // After shove: proceed to draw if this was pre-draw; otherwise continue normally
   showRetreatButtonForCurrentHero(state);
 
   if (!activeState.hasDrawnThisTurn) {
@@ -3681,4 +3736,116 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
 
     // Check "all heroes KO'd" loss condition (and any others)
     checkGameEndConditions(effectiveState);
+}
+
+// ================================================================
+// CITY EXIT "RETREAT" CHECK (used when leaving a city via travel)
+// ================================================================
+function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabel = "") {
+    const heroState = gameState?.heroData?.[heroId];
+    if (!heroState) return true;
+
+    // Only applies when leaving a city and NOT when already facing the Overlord
+    if (heroState.isFacingOverlord) {
+        console.log(
+            `[EXIT-RETREAT] Skipping exit-retreat check (already facing Overlord).`,
+            { heroId, fromCityIndex, contextLabel }
+        );
+        return true;
+    }
+
+    if (typeof fromCityIndex !== "number") {
+        console.log(
+            `[EXIT-RETREAT] Skipping exit-retreat check (not in a city).`,
+            { heroId, fromCityIndex, contextLabel }
+        );
+        return true;
+    }
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    // City layout: foe is in the upper slot immediately above the hero slot
+    const heroIdx = fromCityIndex;
+    const foeIdx  = heroIdx - 1;
+
+    if (foeIdx < 0) {
+        console.log(
+            `[EXIT-RETREAT] ${heroName} is leaving city ${heroIdx} (${contextLabel}). No upper foe slot exists; no roll.`
+        );
+        return true;
+    }
+
+    const slotEntry = gameState.cities?.[foeIdx];
+    if (!slotEntry || !slotEntry.id) {
+        console.log(
+            `[EXIT-RETREAT] ${heroName} is leaving city ${heroIdx} (${contextLabel}). No foe above; no roll.`
+        );
+        return true;
+    }
+
+    const foeId = String(slotEntry.id);
+    const foe =
+        henchmen.find(h => String(h.id) === foeId) ||
+        villains.find(v => String(v.id) === foeId);
+
+    if (!foe) {
+        console.log(
+            `[EXIT-RETREAT] ${heroName} is leaving city ${heroIdx} (${contextLabel}). Found foe id=${foeId} but could not resolve to Henchman/Villain; no roll.`
+        );
+        return true;
+    }
+
+    const retreatTarget = Number(heroObj?.retreat || 0);
+    const roll = Math.floor(Math.random() * 6) + 1; // 1–6
+
+    console.log(
+        `[EXIT-RETREAT] ${heroName} attempts to leave city ${heroIdx} (${contextLabel}) while ${foe.name} is above them. `
+        + `Roll=${roll}, needs >= ${retreatTarget}.`
+    );
+
+    // Only do anything special on a FAILED roll
+    if (roll < retreatTarget) {
+        const foeDamage = Number(foe.damage || 0);
+        const dt = Number(heroObj?.damageThreshold || 0);
+
+        // Match end-of-turn damage behavior: only if foeDamage >= DT
+        if (foeDamage >= dt) {
+            heroState.hp -= foeDamage;
+            flashScreenRed();
+
+            if (heroState.hp <= 0) {
+                heroState.hp = 0;
+                updateHeroHPDisplays(heroId);
+                updateBoardHeroHP(heroId);
+
+                console.log(
+                    `[EXIT-RETREAT] ${heroName} FAILS exit roll and takes ${foeDamage} damage from ${foe.name}. `
+                    + `(DT=${dt}, new HP=${heroState.hp}) → KO!`
+                );
+
+                handleHeroKnockout(heroId, heroState, gameState, { source: "exitRetreatFail" });
+                return false; // abort whatever action was trying to leave the city
+            }
+
+            updateHeroHPDisplays(heroId);
+            updateBoardHeroHP(heroId);
+
+            console.log(
+                `[EXIT-RETREAT] ${heroName} FAILS exit roll and takes ${foeDamage} damage from ${foe.name}. `
+                + `(DT=${dt}, new HP=${heroState.hp}).`
+            );
+        } else {
+            console.log(
+                `[EXIT-RETREAT] ${heroName} FAILS exit roll but ignores `
+                + `${foe.name}'s damage (foeDamage=${foeDamage} < DT=${dt}).`
+            );
+        }
+    } else {
+        console.log(
+            `[EXIT-RETREAT] ${heroName} SUCCEEDS exit roll and takes no damage from ${foe.name}.`
+        );
+    }
+
+    return true;
 }
