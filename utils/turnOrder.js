@@ -2000,6 +2000,8 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
         `currentTravel before=${beforeTravel}, after=${afterTravel}.`
     );
 
+    initializeTurnUI(gameState);
+
     // Remember where they were before this travel
     const previousIndex = heroState.cityIndex ?? null;
 
@@ -2900,6 +2902,8 @@ function performHeroTravelToOverlord(gameState, heroId) {
 
     heroState.isFacingOverlord = true;
 
+    initializeTurnUI(gameState);
+
     hideTravelHighlights();
     clearCityHighlights();
 
@@ -3343,6 +3347,8 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
 
   // Remember where the active hero was (if any)
   const previousIndex = (typeof activeState.cityIndex === "number") ? activeState.cityIndex : null;
+
+  initializeTurnUI(state);
 
   // =========================================================
   // EXITING A CITY VIA SHOVE COUNTS AS A RETREAT
