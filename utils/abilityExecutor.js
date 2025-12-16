@@ -1517,8 +1517,80 @@ export function damageOverlord(amount, state = gameState) {
 // =======================================================================
 // DAMAGE A HENCHMAN / VILLAIN IN THE CITY
 // =======================================================================
-export function damageFoe(amount, flag, foeSummary, heroId = null, state = gameState) {
+export function damageFoe(amount, foeSummary, heroId = null, state = gameState, options = {}) {
     const s = state;
+
+    const {
+        flag = "single",
+    } = options;
+
+        // ============================================================
+    // FLAG: "all" → damage ALL active henchmen & villains in cities
+    // ============================================================
+    if (flag === "all") {
+        if (!Array.isArray(s.cities)) {
+            console.warn("[damageFoe] No cities array; cannot apply 'all' damage.");
+            return;
+        }
+
+        console.log(
+            `[damageFoe] Applying ${amount} damage to ALL city foes.`
+        );
+
+        // Collect valid foe summaries from city model
+        const allFoes = [];
+
+        for (let slotIndex = 0; slotIndex < s.cities.length; slotIndex++) {
+            const entry = s.cities[slotIndex];
+            if (!entry || entry.id == null) continue;
+
+            const foeIdStr = String(entry.id);
+
+            const foeCard =
+                villains.find(v => String(v.id) === foeIdStr) ||
+                henchmen.find(h => String(h.id) === foeIdStr);
+
+            if (!foeCard) continue;
+
+            allFoes.push({
+                foeType: foeCard.type || "Enemy",
+                foeId: foeIdStr,
+                instanceId: entry.instanceId,
+                foeName: foeCard.name,
+                currentHP: entry.currentHP ?? foeCard.hp,
+                slotIndex,
+                source: "city-upper"
+            });
+        }
+
+        if (!allFoes.length) {
+            console.log("[damageFoe] No active city foes to damage.");
+            return;
+        }
+
+        // Apply damage individually so KO logic, bystanders, etc. still work
+        for (const foe of allFoes) {
+            damageFoe(
+                amount,
+                foe,
+                heroId,
+                s,
+                { flag: "single" } // prevent recursion
+            );
+        }
+
+        return;
+    }
+
+    if (
+        foeSummary?.slotIndex != null &&
+        Array.isArray(s.cities)
+    ) {
+        const e = s.cities[foeSummary.slotIndex];
+        if (!e || String(e.id) !== String(foeSummary.foeId)) {
+            return;
+        }
+    }
 
     if (!foeSummary) {
         console.warn("[damageFoe] Called with no foeSummary.");
@@ -1579,7 +1651,9 @@ export function damageFoe(amount, flag, foeSummary, heroId = null, state = gameS
     }
 
     let currentHP = entry.currentHP;
-    const savedHP = s.villainHP[foeIdStr];
+    const savedHP = foeSummary.instanceId
+        ? s.villainHP[foeSummary.instanceId]
+        : undefined;
 
     if (typeof currentHP !== "number") {
         if (typeof savedHP === "number") {
