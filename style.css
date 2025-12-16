@@ -759,6 +759,7 @@ html, body {
   display: flex;
   z-index: 9000;
   transform: translate(-4px, 4px);
+  align-items: flex-start;
 }
 
 .hero-slot {
@@ -970,19 +971,68 @@ html, body {
     }
 }
 
-.turn-indicator-circle {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    border: 2px solid #ffea00;
-    background: rgba(255, 255, 0, 0.15);
-    background-color: black;
-    pointer-events: none;
-    z-index: 550;
+/* === ACTIVE TURN HIGHLIGHT (NO LAYOUT SHIFT) ======================= */
+
+/* Ensure the glow can extend outside the slot without affecting cropping */
+.hero-slot {
+  position: relative;      /* already true in your CSS; keep */
+  overflow: visible;       /* glow can spill outside the 60x60 slot */
 }
+
+/* Under-glow layer (behind everything in the slot) */
+.hero-slot.active-turn-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0px;
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 0;
+
+  box-shadow:
+    0 0 10px 4px var(--turn-glow-color, rgba(255,255,255,0.8)),
+    0 0 18px 8px rgba(255,255,255,0.25);
+
+  opacity: 0.55;
+  animation: hero-turn-glow 1.8s ease-in-out infinite;
+}
+
+/* Keep the portrait/border visually above the under-glow */
+.hero-slot.active-turn-slot .hero-border-wrapper {
+  /* DO NOT touch 'position' here; keep whatever it already is */
+  z-index: 1;
+
+  transform-origin: 50% 50%;
+  will-change: transform, filter;
+  animation: hero-turn-breath 1.8s ease-in-out infinite;
+
+  /* Glow without changing layout */
+  filter:
+    drop-shadow(0 0 6px var(--turn-glow-color, rgba(255,255,255,0.8)))
+    drop-shadow(0 0 14px rgba(255,255,255,0.35));
+}
+
+/* Keep HP overlay above glow; IMPORTANT: do not override its 'position:absolute' */
+.hero-slot.active-turn-slot .hero-hp-display {
+  z-index: 2;
+}
+
+/* If KO overlay exists, keep it above everything */
+.hero-slot.active-turn-slot .hero-ko-overlay,
+.hero-slot.active-turn-slot .hero-ko-icon {
+  z-index: 3;
+}
+
+@keyframes hero-turn-breath {
+  0%, 100% { transform: scale(1.08); }
+  50%      { transform: scale(1.14); }
+}
+
+@keyframes hero-turn-glow {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.90; }
+}
+
+
 
 #start-game-btn {
     position: fixed;

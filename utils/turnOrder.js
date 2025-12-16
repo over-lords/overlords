@@ -1597,16 +1597,16 @@ export function initializeTurnUI(gameState) {
         topVillainBtn.style.display = gameState.revealedTopVillain ? "flex" : "none";
     }
 
-    // 1. Who has the indicator?
-    const indicator = document.querySelector(".turn-indicator-circle");
-    if (!indicator) {
+    // 1. Find the active turn slot
+    const activeSlot = document.querySelector("#heroes-row .hero-slot.active-turn-slot");
+    if (!activeSlot) {
         endTurnBtn.style.display = "none";
         return;
     }
 
     // 2. Find its index in the heroes-row
     const slots = [...document.querySelectorAll("#heroes-row .hero-slot")];
-    const slotIndex = slots.findIndex(slot => slot.contains(indicator));
+    const slotIndex = slots.indexOf(activeSlot);
     if (slotIndex === -1) {
         endTurnBtn.style.display = "none";
         return;
@@ -2162,7 +2162,10 @@ function showTravelPopup(gameState, heroId, cityIndex) {
 
     const cityName = getCityNameFromIndex(cityIndex);
 
-    text.textContent = `Travel to ${cityName}?`;
+    const heroObj  = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    text.textContent = `${heroName}: Travel to ${cityName}?`;
 
     overlay.style.display = "flex";
 
@@ -2194,6 +2197,18 @@ function showFaceOverlordPopup(gameState, heroId) {
         console.warn("[OVERLORD] face-overlord-popup-overlay not found; falling back to direct travel.");
         performHeroTravelToOverlord(gameState, heroId);
         return;
+    }
+
+    const heroList = (typeof window !== "undefined" && Array.isArray(window.heroes))
+        ? window.heroes
+        : (typeof heroes !== "undefined" ? heroes : []);
+
+    const heroObj  = heroList.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    const titleEl = overlay.querySelector("#face-overlord-popup-box > div");
+    if (titleEl) {
+        titleEl.textContent = `${heroName}: Engage the Overlord?`;
     }
 
     overlay.style.display = "flex";
@@ -2800,6 +2815,18 @@ function retreatHeroToHQ(gameState, heroId) {
 function openRetreatConfirm(gameState, heroId) {
     const overlay = document.getElementById("retreat-popup-overlay");
     if (!overlay) return;
+
+    const heroList = (typeof window !== "undefined" && Array.isArray(window.heroes))
+        ? window.heroes
+        : (typeof heroes !== "undefined" ? heroes : []);
+
+    const heroObj  = heroList.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    const textEl = document.getElementById("retreat-popup-text");
+    if (textEl) {
+        textEl.textContent = `${heroName}: Retreat back to HQ?`;
+    }
 
     overlay.style.display = "flex";
 
@@ -3638,7 +3665,7 @@ function showShoveConfirm({ activeHeroName, targetHeroName, cityIndex, onYes, on
 
   const cityName = getCityNameFromLowerIndex(cityIndex);
 
-  text.textContent = `Shove ${targetHeroName} out of ${cityName}?`;
+  text.textContent = `${activeHeroName}: Shove ${targetHeroName} out of ${cityName}?`;
 
   // Clear previous handlers
   yesBtn.onclick = null;

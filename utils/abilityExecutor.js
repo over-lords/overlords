@@ -147,6 +147,15 @@ EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
   try { updateBoardHeroHP(heroId); } catch (e) { console.warn("[regainLife] updateBoardHeroHP failed", e); }
 };
 
+EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
+    const amount = Number(args?.[0]) || 1;
+
+    // Prefer the passed state (consistent with other handlers), fall back to global.
+    const state = selectedData?.state || gameState;
+
+    damageOverlord(amount, state);
+};
+
 EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
     const count = Number(args?.[0]) || 1;
 
@@ -407,8 +416,11 @@ export function currentTurn(turnIndex, selectedHeroIds) {
         const slots = row.querySelectorAll(".hero-slot");
         if (!slots.length) return;
 
-        // Remove any existing indicator circles
-        row.querySelectorAll(".turn-indicator-circle").forEach(el => el.remove());
+        // Remove any existing active-turn styling
+        slots.forEach(slot => {
+            slot.classList.remove("active-turn-slot");
+            slot.style.removeProperty("--turn-glow-color");
+        });
 
         // Validate index
         if (typeof turnIndex !== "number") return;
@@ -427,15 +439,10 @@ export function currentTurn(turnIndex, selectedHeroIds) {
         // EXTRACT THE COLOR
         const heroColor = heroObj.color || "white";
 
-        // CREATE THE INDICATOR CIRCLE
-        const circle = document.createElement("div");
-        circle.className = "turn-indicator-circle";
-
-        // APPLY COLOR BORDER
-        circle.style.borderColor = heroColor;
-
-        // INSERT INTO CORRECT SLOT
-        slots[turnIndex].appendChild(circle);
+        // APPLY ACTIVE TURN STYLING TO THE SLOT
+        const activeSlot = slots[turnIndex];
+        activeSlot.classList.add("active-turn-slot");
+        activeSlot.style.setProperty("--turn-glow-color", heroColor);
 
     } catch (err) {
         console.warn("[currentTurn] Failed:", err);
