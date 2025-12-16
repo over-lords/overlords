@@ -2994,7 +2994,7 @@ export function showHeroTopPreview(heroId, state, count = 3) {
             activateBtn.className = "hero-preview-activate-btn";
 
             const activateImg = document.createElement("img");
-            activateImg.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/drawCard.png";
+            activateImg.src = "https://raw.githubusercontent.com/over-lords/overlords/929e24644681d3c05e38bfc769b04b0e22e072c6/Public/Images/Site%20Assets/drawCard.png";
 
             activateBtn.appendChild(activateImg);
             activateBtn.addEventListener("click", (e) => {
