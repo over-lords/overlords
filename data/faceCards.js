@@ -65,7 +65,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `damageVillain(all,2)`
+        effect: `damageFoe(2,all)`
       }
     ]
   },
@@ -306,14 +306,14 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `damageVillain(Choice(Any),6)`
+        effect: `damageFoe(6,any)`
       },
       {
         type: `standard`,
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `koFromTopRegainHP(4,4)`
+        effect: [`koFromDecktop(4)`,`regainLife(4)`]
       }
     ]
   },
@@ -611,7 +611,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `damageVillain(Choice(Any),5)`
+        effect: `damageFoe(5,any)`
       }
     ]
   },
@@ -654,7 +654,7 @@ export const heroes = [
         condition: `hasDamagedVillain`,
         uses: `3`,
         shared: `no`,
-        effect: `regainHPEqualToDamage`
+        effect: `regainLife(getLastDamageAmount)`
       }
     ]
   },
@@ -760,7 +760,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `damageVillain(Choice(Coastal),5)`
+        effect: `damageFoe(5,anyCoastal)`
       }
     ]
   },
@@ -1101,7 +1101,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `damageVillain(Choice(Coastal),2)`
+        effect: `damageFoe(2,anyCoastal)`
       }
     ]
   },
@@ -1478,7 +1478,7 @@ export const heroes = [
         condition: `beforeTravel`,
         uses: `1`,
         shared: `no`,
-        effect: `damageVillain(all,3),damageOverlord(3),preventVillainDeckDraw,sleepHero(2)`
+        effect: [`damageFoe(3,all)`,`damageOverlord(3)`,`preventVillainDeckDraw`,`sleepHero(2)`]
       }
     ]
   },
@@ -1580,7 +1580,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `damageVillain(Choice(Any),7)`
+        effect: `damageFoe(7,any)`
       },
       {
         type: `quick`,
@@ -1906,7 +1906,7 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `damageVillainLock(Coastal,2)`
+        effect: [`damageFoe(2,anyCoastal)`,`lockLastDamagedVillain`]
       }
     ]
   },
@@ -2174,7 +2174,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `damageVillain(Choice(Any),2)`
+        effect: `damageFoe(2,any)`
       }
     ]
   },
@@ -2452,7 +2452,7 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `damageVillainLock(Choice,1)`
+        effect: [`damageFoe(1,anyCoastal)`,`lockLastDamagedVillain`]
       }
     ]
   },
@@ -2687,7 +2687,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `damageVillain(all,3)`
+        effect: `damageFoe(3,all)`
       }
     ]
   },

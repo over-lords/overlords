@@ -1473,7 +1473,7 @@ export function damageOverlord(amount, state = gameState) {
 // =======================================================================
 // DAMAGE A HENCHMAN / VILLAIN IN THE CITY
 // =======================================================================
-export function damageFoe(amount, foeSummary, heroId = null, state = gameState) {
+export function damageFoe(amount, flag, foeSummary, heroId = null, state = gameState) {
     const s = state;
 
     if (!foeSummary) {
