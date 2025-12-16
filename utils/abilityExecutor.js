@@ -18,7 +18,7 @@ import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot } from "./pageSetup.js";
-import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck,
+import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
          enterVillainFromEffect, checkGameEndConditions, villainDraw } from "./turnOrder.js";
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
@@ -1711,6 +1711,11 @@ function sendHeroHomeFromBoard(heroId, state = gameState) {
     // Reset hero's city position and facing
     heroState.cityIndex = null;
     heroState.isFacingOverlord = false;
+    try {
+        showRetreatButtonForCurrentHero(state);
+    } catch (err) {
+        console.warn("[sendHeroHomeFromBoard] Failed to refresh Retreat button UI.", err);
+    }
 }
 
 export async function enemyDraw(count = 1, limit = null) {
