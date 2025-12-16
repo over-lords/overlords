@@ -506,7 +506,7 @@
         </div>
     </div>
 
-    <!-- OPTIONAL ABILITY POPUP -->
+    <!-- OPTIONAL ABILITY POPUP (RETREAT STYLE) -->
     <div id="optional-ability-overlay" style="
         display:none;
         position:fixed;
@@ -519,16 +519,16 @@
     ">
         <div id="optional-ability-box" style="
             width:80%;
-            max-width:420px;
+            max-width:360px;
             background:white;
             border-radius:12px;
-            padding:22px;
+            padding:20px;
             font-family:'Racing Sans One', sans-serif;
             text-align:center;
             box-shadow:0 4px 12px rgba(0,0,0,0.4);
         ">
             <div id="optional-ability-text" style="
-                font-size:26px;
+                font-size:32px;
                 margin-bottom:20px;
             ">
                 Optional ability?
@@ -538,29 +538,99 @@
                 display:flex;
                 justify-content:center;
                 align-items:center;
-                gap:40px;
+                gap:50px;
+                margin-top:10px;
             ">
                 <button id="optional-ability-yes" style="
                     padding:14px 26px;
-                    font-size:22px;
+                    font-size:24px;
                     font-weight:bold;
+                    border:none;
                     border-radius:10px;
                     background:#26a626;
                     border:4px solid black;
+                    color:black;
                     cursor:pointer;
-                    min-width:120px;
                 ">Yes</button>
 
                 <button id="optional-ability-no" style="
                     padding:14px 26px;
-                    font-size:22px;
+                    font-size:24px;
                     font-weight:bold;
+                    border:none;
                     border-radius:10px;
-                    background:#a62626;
+                    background:#c92222;
                     border:4px solid black;
+                    color:black;
                     cursor:pointer;
-                    min-width:120px;
                 ">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHOOSE OPTION POPUP (RETREAT STYLE, FORCED ROW) -->
+    <div id="choose-ability-overlay" style="
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100vw; height:100vh;
+        background:rgba(0,0,0,0.6);
+        z-index:999999;
+        justify-content:center;
+        align-items:center;
+    ">
+        <div id="choose-ability-box" style="
+            width:80%;
+            max-width:360px;
+            background:white;
+            border-radius:12px;
+            padding:20px;
+            font-family:'Racing Sans One', sans-serif;
+            text-align:center;
+            box-shadow:0 4px 12px rgba(0,0,0,0.4);
+            display:flex;
+            flex-direction:column;
+        ">
+
+            <div id="choose-ability-header" style="
+                font-size:32px;
+                margin-bottom:20px;
+            ">
+                Choose
+            </div>
+
+            <!-- OPTION BUTTONS (FORCED ROW, SHRINKABLE) -->
+            <div id="choose-ability-tabs" style="
+                display:flex;
+                flex-direction:row;
+                justify-content:space-between;
+                align-items:stretch;
+                gap:12px;
+                margin-bottom:20px;
+                flex-wrap:nowrap;
+                width:100%;
+            ">
+                <!-- buttons injected dynamically -->
+            </div>
+
+            <div style="
+                display:flex;
+                justify-content:center;
+                margin-top:10px;
+            ">
+                <button id="choose-ability-confirm" style="
+                    padding:14px 26px;
+                    font-size:24px;
+                    font-weight:bold;
+                    border:none;
+                    border-radius:10px;
+                    background:#26a626;
+                    border:4px solid black;
+                    color:black;
+                    cursor:pointer;
+                ">
+                    Choose
+                </button>
             </div>
         </div>
     </div>

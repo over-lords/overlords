@@ -1226,9 +1226,25 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             const eff = cardData.abilitiesEffects[i];
 
             // ---------- CONDITION ----------
-            const cond = eff.condition?.trim() || "none";
+            let cond = "none";
+
+            if (eff.condition != null) {
+                if (typeof eff.condition === "string") {
+                    cond = eff.condition.trim();
+                } else {
+                    console.warn(
+                        "[AbilityExecutor] Invalid condition type:",
+                        eff.condition,
+                        "on effect",
+                        eff
+                    );
+                }
+            }
+
             if (cond !== "none") {
-                console.log(`[AbilityExecutor] Condition '${cond}' not yet implemented, skipping.`);
+                console.log(
+                    `[AbilityExecutor] Condition '${cond}' not yet implemented, skipping.`
+                );
                 continue;
             }
 
@@ -1248,6 +1264,63 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 }
 
                 console.log(`[AbilityExecutor] Optional ability accepted.`);
+            }
+
+            // ------------------------------------------------------
+            // CHOOSE OPTION HANDLING
+            // ------------------------------------------------------
+            if (eff.type === "chooseOption") {
+
+                const headerText =
+                    cardData.abilitiesNamePrint?.[i]?.text || "Choose";
+
+                const options = [];
+                const optionEffects = [];
+
+                let j = i + 1;
+
+                while (
+                    j < cardData.abilitiesEffects.length &&
+                    /^chooseOption\(\d+\)$/.test(cardData.abilitiesEffects[j].type)
+                ) {
+                    const m = cardData.abilitiesEffects[j].type.match(/^chooseOption\((\d+)\)$/);
+                    const optionNumber = m ? Number(m[1]) : null;
+
+                    const label =
+                        cardData.abilitiesNamePrint?.[j]?.text ||
+                        `Option ${options.length + 1}`;
+
+                    options.push({ label });
+                    optionEffects.push(cardData.abilitiesEffects[j]);
+                    j++;
+                }
+
+                if (options.length === 0) {
+                    console.warn("[AbilityExecutor] chooseOption has no options.");
+                    continue;
+                }
+
+                const chosenIndex = await window.showChooseAbilityPrompt({
+                    header: headerText,
+                    options
+                });
+
+                const chosenEffectBlock = optionEffects[chosenIndex];
+
+                console.log(`[AbilityExecutor] Chose option ${chosenIndex + 1}.`);
+
+                // Execute ONLY the chosen option’s effects
+                const effectsArray = Array.isArray(chosenEffectBlock.effect)
+                    ? chosenEffectBlock.effect
+                    : [chosenEffectBlock.effect];
+
+                for (const effectString of effectsArray) {
+                    await executeParsedEffect(effectString, cardData, heroId, gameState);
+                }
+
+                // Skip past all chooseOption(n) entries
+                i = j - 1;
+                continue;
             }
 
             // ---------- NORMALIZE EFFECT LIST ----------
@@ -1296,6 +1369,26 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     }
 
     console.log(`[AbilityExecutor] Completed effect execution for ${cardName}.`);
+}
+
+async function executeParsedEffect(effectString, cardData, heroId, gameState) {
+    const match = effectString.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
+    if (!match) return;
+
+    const fnName = match[1];
+    const argsRaw = match[2].split(",").map(x => x.trim()).filter(Boolean);
+
+    const handler = EFFECT_HANDLERS[fnName];
+    if (!handler) return;
+
+    const parsedArgs = argsRaw.map(a => {
+        if (/^\d+$/.test(a)) return Number(a);
+        if (a === "true") return true;
+        if (a === "false") return false;
+        return a;
+    });
+
+    executeEffectSafely(effectString, cardData, { currentHeroId: heroId, state: gameState });
 }
 
 // =======================================================================
@@ -2046,5 +2139,79 @@ window.showOptionalAbilityPrompt = function (questionText) {
 
         yesBtn.onclick = () => cleanup(true);
         noBtn.onclick  = () => cleanup(false);
+    });
+};
+
+window.showChooseAbilityPrompt = function ({ header, options }) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById("choose-ability-overlay");
+        const headerEl = document.getElementById("choose-ability-header");
+        const tabsEl = document.getElementById("choose-ability-tabs");
+        const confirmBtn = document.getElementById("choose-ability-confirm");
+
+        if (!overlay || !headerEl || !tabsEl || !confirmBtn) {
+            console.warn("[ChooseAbility] Modal elements missing.");
+            resolve(0);
+            return;
+        }
+
+        let selectedIndex = 0;
+
+        headerEl.innerHTML = header;
+        tabsEl.innerHTML = "";
+
+        options.forEach((opt, idx) => {
+            const btn = document.createElement("button");
+            btn.textContent = opt.label;
+            btn.style.cssText = `
+                padding:8px 10px;
+                font-weight:bold;
+                border:none;
+                border-radius:10px;
+                border:4px solid black;
+                background:${idx === 0 ? "#ffd800" : "#ddd"};
+                color:black;
+                cursor:pointer;
+
+                flex: 1 1 0;
+                min-width: 0;
+
+                white-space: nowrap;
+                overflow: hidden;
+                text-align: center;
+            `;
+
+            btn.onclick = () => {
+                selectedIndex = idx;
+                [...tabsEl.children].forEach(b => b.style.background = "#ddd");
+                btn.style.background = "#ffd800";
+            };
+
+            tabsEl.appendChild(btn);
+            overlay.style.display = "flex";
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const buttons = tabsEl.querySelectorAll("button");
+
+                    buttons.forEach(btn => {
+                        let size = 22;
+                        btn.style.fontSize = size + "px";
+
+                        while (btn.scrollWidth > btn.clientWidth && size > 8) {
+                            size -= 1;
+                            btn.style.fontSize = size + "px";
+                        }
+                    });
+                });
+            });
+        });
+
+        overlay.style.display = "flex";
+
+        confirmBtn.onclick = () => {
+            overlay.style.display = "none";
+            confirmBtn.onclick = null;
+            resolve(selectedIndex);
+        };
     });
 };

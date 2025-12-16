@@ -986,7 +986,7 @@ export const heroes = [
     color: "red",
     teams: ["Wonder","Justice"],
     hp: "16",
-    damageThreshold: "3",
+    damageThreshold: "2",
     retreat: "4",
     travel: "2",
     abilitiesText: [

@@ -2956,18 +2956,51 @@ export function showHeroTopPreview(heroId, state, count = 3) {
         }
 
         const heroState = state.heroData[heroId];
-        if (!heroState || !Array.isArray(heroState.deck) || heroState.deck.length === 0) {
+        if (!heroState || !Array.isArray(heroState.deck)) {
             console.log("[HERO PREVIEW] No deck found for hero id", heroId);
             if (bar)      bar.style.display = "none";
             if (backdrop) backdrop.style.display = "none";
             return;
         }
 
+        heroState.discard = Array.isArray(heroState.discard)
+            ? heroState.discard
+            : [];
+
+        const safeCount = Number.isFinite(Number(count)) ? Number(count) : 3;
+
+        // If deck is short, extend it by shuffling discard underneath
+        if (heroState.deck.length < safeCount && heroState.discard.length > 0) {
+
+            console.log(
+                `[HERO PREVIEW] Deck short (${heroState.deck.length}/${safeCount}). ` +
+                `Shuffling discard (${heroState.discard.length}) underneath deck.`
+            );
+
+            // Shuffle discard (Fisher–Yates)
+            const shuffledDiscard = [...heroState.discard];
+            for (let i = shuffledDiscard.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledDiscard[i], shuffledDiscard[j]] = [shuffledDiscard[j], shuffledDiscard[i]];
+            }
+
+            // Append underneath deck (preserve existing top order)
+            heroState.deck.push(...shuffledDiscard);
+
+            // Clear discard
+            heroState.discard = [];
+
+            // Persist immediately so refresh doesn’t revert deck shape
+            if (typeof saveGameState === "function") {
+                saveGameState(state);
+            }
+        }
+
+
         const heroObj    = heroes.find(h => String(h.id) === String(heroId));
         const heroName   = heroObj?.name  || `Hero ${heroId}`;
         const glowColor  = heroObj?.color || "#ffffff";
 
-        const safeCount  = Number.isFinite(Number(count)) ? Number(count) : 3;
         const topCards   = heroState.deck.slice(0, safeCount);
 
         console.log(
