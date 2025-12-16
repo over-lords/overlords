@@ -1541,7 +1541,7 @@ export const heroCards = [
     hero: "Batman",
     image: `${cardArtFolder}/Batman/Secret Weapon.jpg`,
     perDeck: "1",
-    damage: "0",
+    damage: "1",
     abilitiesText: [
       {
         text: `OPTIONAL : Draw from the E&A. <span class="line-gap"></span> If Discarded: Scan 3 from E&A. <span class="line-gap"></span> CHOOSE: Activate. <span class="line-gap"></span> OR <span class="line-gap"></span> KO your choice of the revealed cards.`

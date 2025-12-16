@@ -1027,7 +1027,7 @@ export async function rallyNextHenchVillains(count) {
     saveGameState(gameState);
 }
 
-export function onHeroCardActivated(cardId, meta = {}) {
+export async function onHeroCardActivated(cardId, meta = {}) {
     if (gameState.gameOver) {
         console.log("[GameOver] Ignoring hero card activation; game is already over.");
         return;
@@ -1215,53 +1215,53 @@ export function onHeroCardActivated(cardId, meta = {}) {
     }
 
     // ------------------------------------------------------
-    // EFFECT EXECUTION PIPELINE
+    // EFFECT EXECUTION PIPELINE (WITH OPTIONAL SUPPORT)
     // ------------------------------------------------------
     console.log(`[AbilityExecutor] Beginning effect execution for ${cardName}.`);
 
     if (Array.isArray(cardData?.abilitiesEffects)) {
 
-        for (const eff of cardData.abilitiesEffects) {
+        for (let i = 0; i < cardData.abilitiesEffects.length; i++) {
 
-            // 1. CONDITION CHECK
+            const eff = cardData.abilitiesEffects[i];
+
+            // ---------- CONDITION ----------
             const cond = eff.condition?.trim() || "none";
-            let allow = false;
-
-            if (cond === "none") {
-                allow = true;
-            } else {
-                // This is where additional conditions will go later.
+            if (cond !== "none") {
                 console.log(`[AbilityExecutor] Condition '${cond}' not yet implemented, skipping.`);
                 continue;
             }
 
-            if (!allow) {
-                console.log(`[AbilityExecutor] Condition '${cond}' failed for ${cardName}, skipping effect.`);
-                continue;
-            }
+            // ---------- OPTIONAL ----------
+            if (eff.type === "optional") {
 
-            // 2. NORMALIZE effect field
-            let effectsArray = [];
-            if (Array.isArray(eff.effect)) {
-                effectsArray = eff.effect;
-            } else if (typeof eff.effect === "string") {
-                effectsArray = [eff.effect];
-            } else {
-                console.warn("[AbilityExecutor] Invalid effect field:", eff.effect);
-                continue;
-            }
+                const promptText =
+                    cardData.abilitiesNamePrint?.[i]?.text
+                        ? `${cardData.abilitiesNamePrint[i].text}?`
+                        : "Use optional ability?";
 
-            // 3. EXECUTE EACH EFFECT
-            for (const effectString of effectsArray) {
-                if (typeof effectString !== "string") {
-                    console.warn("[AbilityExecutor] Skipping invalid effect value:", effectString);
+                const allow = await window.showOptionalAbilityPrompt(promptText);
+
+                if (!allow) {
+                    console.log(`[AbilityExecutor] Optional ability declined.`);
                     continue;
                 }
 
-                // Parse functionName(args)
+                console.log(`[AbilityExecutor] Optional ability accepted.`);
+            }
+
+            // ---------- NORMALIZE EFFECT LIST ----------
+            const effectsArray = Array.isArray(eff.effect)
+                ? eff.effect
+                : [eff.effect];
+
+            for (const effectString of effectsArray) {
+
+                if (typeof effectString !== "string") continue;
+
                 const match = effectString.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
                 if (!match) {
-                    console.warn(`[AbilityExecutor] Could not parse effect '${effectString}' on ${cardName}.`);
+                    console.warn(`[AbilityExecutor] Could not parse effect '${effectString}'.`);
                     continue;
                 }
 
@@ -1269,32 +1269,27 @@ export function onHeroCardActivated(cardId, meta = {}) {
                 const argsRaw = match[2]
                     .split(",")
                     .map(x => x.trim())
-                    .filter(x => x.length > 0);
-
-                console.log(`[AbilityExecutor] → Found effect '${fnName}' on ${cardName}. Args:`, argsRaw);
+                    .filter(Boolean);
 
                 const handler = EFFECT_HANDLERS[fnName];
-
                 if (!handler) {
-                    console.warn(`[AbilityExecutor] No EFFECT_HANDLERS entry for '${fnName}'.`);
+                    console.warn(`[AbilityExecutor] No handler for '${fnName}'.`);
                     continue;
                 }
 
-                // Convert args
                 const parsedArgs = argsRaw.map(a => {
                     if (/^\d+$/.test(a)) return Number(a);
-                    if (a.toLowerCase() === "true") return true;
-                    if (a.toLowerCase() === "false") return false;
+                    if (a === "true") return true;
+                    if (a === "false") return false;
                     return a;
                 });
 
-                console.log(`[AbilityExecutor] Executing effect handler '${fnName}'…`);
+                console.log(`[AbilityExecutor] Executing '${fnName}'`, parsedArgs);
 
                 try {
                     handler(parsedArgs, cardData, { currentHeroId: heroId, state: gameState });
-                    console.log(`[AbilityExecutor] '${fnName}' executed successfully.`);
                 } catch (err) {
-                    console.warn(`[AbilityExecutor] Handler '${fnName}' failed: ${err.message}`);
+                    console.warn(`[AbilityExecutor] Effect '${fnName}' failed:`, err);
                 }
             }
         }
@@ -2025,3 +2020,31 @@ export async function enemyDraw(count = 1, limit = null) {
 
     saveGameState(gameState);
 }
+
+window.showOptionalAbilityPrompt = function (questionText) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById("optional-ability-overlay");
+        const textEl  = document.getElementById("optional-ability-text");
+        const yesBtn  = document.getElementById("optional-ability-yes");
+        const noBtn   = document.getElementById("optional-ability-no");
+
+        if (!overlay || !textEl || !yesBtn || !noBtn) {
+            console.warn("[OptionalAbility] Modal elements missing.");
+            resolve(false);
+            return;
+        }
+
+        textEl.innerHTML = questionText;
+        overlay.style.display = "flex";
+
+        const cleanup = (result) => {
+            overlay.style.display = "none";
+            yesBtn.onclick = null;
+            noBtn.onclick = null;
+            resolve(result);
+        };
+
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick  = () => cleanup(false);
+    });
+};
