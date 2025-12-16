@@ -170,7 +170,7 @@ import { scenarios } from '../data/scenarios.js';
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
 import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, 
          buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
-         renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers } from './pageSetup.js';
+         renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -2635,6 +2635,7 @@ function resetHeroCurrentTravelAtTurnStart(gameState) {
 
     heroState.currentTravel = baseTravel;
     heroState.isFacingOverlord = false;
+    refreshOverlordFacingGlow(gameState);
 
     heroState.hasDrawnThisTurn = false;
     const heroName = heroObj?.name || `Hero ${activeHeroId}`;
@@ -2789,6 +2790,7 @@ function retreatHeroToHQ(gameState, heroId) {
     // ------------------------------------------------------
     heroState.cityIndex = null;
     heroState.isFacingOverlord = false;
+    refreshOverlordFacingGlow(gameState);
 
     // Remove hero DOM from the previous city slot if any
     if (typeof currentIdx === "number") {
@@ -2928,6 +2930,7 @@ function performHeroTravelToOverlord(gameState, heroId) {
     );
 
     heroState.isFacingOverlord = true;
+    refreshOverlordFacingGlow(gameState);
 
     initializeTurnUI(gameState);
 
@@ -3780,6 +3783,7 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
 
         heroState.cityIndex = null;
         heroState.isFacingOverlord = false;
+        refreshOverlordFacingGlow(gameState);
     }
 
     // 3) Update HP UI

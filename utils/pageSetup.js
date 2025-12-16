@@ -962,6 +962,25 @@ function applyOverlordFrame(overlord) {
     }
 
     frameEl.style.filter = tint;
+
+    const box = document.getElementById("overlord-frame-box");
+    if (box) {
+        box.style.setProperty("--overlord-frame-filter", (tint && tint !== "none") ? tint : "none");
+    }
+}
+
+export function refreshOverlordFacingGlow(state) {
+    const box = document.getElementById("overlord-frame-box");
+    if (!box) return;
+
+    const anyFacing = Object.values(state?.heroData || {})
+        .some(h => h && h.isFacingOverlord);
+
+    if (anyFacing) {
+        box.classList.add("overlord-facing-glow");
+    } else {
+        box.classList.remove("overlord-facing-glow");
+    }
 }
 
 export function setCurrentOverlord(overlord) {
