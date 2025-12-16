@@ -16,6 +16,7 @@ import { scenarios } from "../data/scenarios.js";
 import { tactics } from '../data/tactics.js';
 import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
+import { bystanders } from "../data/bystanders.js";
 
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot } from "./pageSetup.js";
 
@@ -171,6 +172,49 @@ EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
     }
 
     saveGameState(gameState);
+};
+
+EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
+    const count = Math.max(1, Number(args?.[0]) || 1);
+
+    const heroId = selectedData?.currentHeroId ?? null;
+    if (!heroId) {
+        console.warn("[rescueBystander] No currentHeroId available.");
+        return;
+    }
+
+    const heroState = gameState.heroData?.[heroId];
+    if (!heroState) {
+        console.warn("[rescueBystander] No heroState for heroId:", heroId);
+        return;
+    }
+
+    if (!Array.isArray(heroState.hand)) heroState.hand = [];
+
+    if (!Array.isArray(bystanders) || bystanders.length === 0) {
+        console.warn("[rescueBystander] No bystanders available.");
+        return;
+    }
+
+    console.log(`[rescueBystander] Rescuing ${count} bystander(s) for hero ${heroId}.`);
+
+    for (let i = 0; i < count; i++) {
+        const picked = bystanders[Math.floor(Math.random() * bystanders.length)];
+
+        if (!picked?.id) {
+            console.warn("[rescueBystander] Picked invalid bystander:", picked);
+            continue;
+        }
+
+        heroState.hand.push(String(picked.id));
+
+        console.log(
+            `[rescueBystander] → Rescued bystander '${picked.name ?? picked.id}'.`
+        );
+    }
+
+    saveGameState(gameState);
+    renderHeroHandBar(gameState);
 };
 
 EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {

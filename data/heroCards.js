@@ -1423,7 +1423,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `optional`,
-        effect: [`discard(1)`,`healHero(2)`]
+        effect: [`discard(1)`,`regainLife(2)`]
       },
       {
         type: `quick`,
