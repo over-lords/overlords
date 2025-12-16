@@ -26,10 +26,6 @@ export const bystanders = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `draw(1)`
             }
         ]
@@ -51,10 +47,6 @@ export const bystanders = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `enemyDraw(1)`
             }
         ]
@@ -76,10 +68,6 @@ export const bystanders = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `regainLife(2)`
             }
         ]
@@ -101,10 +89,6 @@ export const bystanders = [
         ],
         abilitiesEffects: [
             {
-                type: `standard`,
-                condition: `none`,
-                uses: `1`,
-                shared: `no`,
                 effect: `gainSidekick(1)`
             }
         ]

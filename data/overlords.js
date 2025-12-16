@@ -85,7 +85,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `1`,
         shared: `no`,
         effect: `gainLife(3*count(Bat))`
@@ -174,7 +174,7 @@ export const overlords = [
         condition: `heroKOd`,
         uses: `0`,
         shared: `no`,
-        effect: `disableScan()`
+        effect: `disableScan`
       }
     ]
   },
@@ -216,7 +216,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `villainDraw(1),damage(2,Super)`
+        effect: [`villainDraw(1)`,`damage(2,Super)`]
       }
     ],
     bonusNamePrint: [
@@ -283,7 +283,7 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `1`,
         shared: `no`,
         effect: `addNextOverlord(5004)`
@@ -341,10 +341,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: [`used_abilitiesEffects(1)`,`foeEscapes()`],
+        condition: [`used_abilitiesEffects(1)`,`foeEscapes`],
         uses: `999`,
         shared: `no`,
-        effect: `gainMaxHP()`
+        effect: `gainMaxHP`
       }
     ]
   },
@@ -371,7 +371,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `1`,
         shared: `no`,
         effect: `damageHero(aqua,1)`
@@ -398,7 +398,7 @@ export const overlords = [
         condition: `cityEmpty(coastal)`,
         uses: `999`,
         shared: `no`,
-        effect: `destroyNextCity()`
+        effect: `destroyNextCity`
       }
     ],
     bonusNamePrint: [
@@ -409,7 +409,7 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `gothamDestroyed()`,
+        condition: `gothamDestroyed`,
         uses: `0`,
         shared: `no`,
         effect: `increaseRetreat(all,1)`
@@ -439,7 +439,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `999`,
         shared: `no`,
         effect: `gainLife(3*count(Titans))`
@@ -467,10 +467,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `3TitansGameStart()`,
+        condition: `3TitansGameStart`,
         uses: `0`,
         shared: `no`,
-        effect: `disableVillainDeckKO()`
+        effect: `disableVillainDeckKO`
       }
     ]
   },
@@ -526,7 +526,7 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `overlordKoHero()`,
+        condition: `overlordKoHero`,
         uses: `0`,
         shared: `no`,
         effect: `healOverlord(10)`
@@ -556,7 +556,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `overlordKoBystander()`,
+        condition: `overlordKoBystander`,
         uses: `999`,
         shared: `no`,
         effect: `gainLife(5)`
@@ -584,7 +584,7 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: `firstTimePerTurnIsAttacked()`,
+        condition: `firstTimePerTurnIsAttacked`,
         uses: `999`,
         shared: `no`,
         effect: `attackerGainCorruptionCounter(1)`
@@ -613,7 +613,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `firstTimePerTurnIsAttacked()`,
+        condition: `firstTimePerTurnIsAttacked`,
         uses: `999`,
         shared: `no`,
         effect: `villainDraw(1)`
@@ -671,7 +671,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `kodVillain()`,
+        condition: `kodVillain`,
         uses: `999`,
         shared: `no`,
         effect: `healOrHurt(current,5)`
@@ -729,10 +729,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `trackPlayersBystandersVillains()`,
+        condition: `trackPlayersBystandersVillains`,
         uses: `0`,
         shared: `no`,
-        effect: `overlordCannotDie()`
+        effect: `overlordCannotDie`
       }
     ],
     mightNamePrint: [
@@ -787,7 +787,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `1`,
         shared: `no`,
         effect: `lowerDT(Lantern,1)`
@@ -845,7 +845,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `1`,
         shared: `no`,
         effect: `lowerDT(Flash,1)`
@@ -903,10 +903,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `0`,
         shared: `no`,
-        effect: `disableScan()`
+        effect: `disableScan`
       }
     ],
     mightNamePrint: [
@@ -961,7 +961,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `chargeVillainDrawn()`,
+        condition: `chargeVillainDrawn`,
         uses: `999`,
         shared: `no`,
         effect: `extraCharge(1)`
@@ -978,7 +978,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `reduceAllFoesByHalfDoubleDamage()`
+        effect: `reduceAllFoesByHalfDoubleDamage`
       }
     ],
     bonusNamePrint: [
@@ -989,10 +989,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: `wouldBeKod()`,
+        condition: `wouldBeKod`,
         uses: `1`,
         shared: `no`,
-        effect: [`surviveAt(1)`,`endHeroTurn()`,`damageHero(all,5)`]
+        effect: [`surviveAt(1)`,`endHeroTurn`,`damageHero(all,5)`]
       }
     ]
   },
@@ -1019,7 +1019,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `0`,
         shared: `no`,
         effect: `disableRetreat(all)`
@@ -1047,10 +1047,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `heroBlocks()`,
+        condition: `heroBlocks`,
         uses: `0`,
         shared: `no`,
-        effect: `appendKO2CardsToBlock()`
+        effect: `appendKO2CardsToBlock`
       }
     ]
   },
@@ -1077,7 +1077,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `firstTimePerTurnIsAttacked()`,
+        condition: `firstTimePerTurnIsAttacked`,
         uses: `999`,
         shared: `no`,
         effect: `healOverlord(5)`
@@ -1105,7 +1105,7 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: `heroKod()`,
+        condition: `heroKod`,
         uses: `999`,
         shared: `no`,
         effect: `healOverlord(20)`
@@ -1135,7 +1135,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `overlordKosBystander()`,
+        condition: `overlordKosBystander`,
         uses: `999`,
         shared: `no`,
         effect: `healOverlord(5)`
@@ -1193,10 +1193,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `1`,
         shared: `no`,
-        effect: `overlordGainLife(5*countActiveHeroes())`
+        effect: `overlordGainLife(5*countActiveHeroes)`
       }
     ],
     mightNamePrint: [
@@ -1210,7 +1210,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`drawVillainIgnoreMights(5)`,`doubleDrawnVillainsHP()`]
+        effect: [`drawVillainIgnoreMights(5)`,`doubleDrawnVillainsHP`]
       }
     ],
     bonusNamePrint: [
@@ -1221,10 +1221,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `heroKOd()`,
+        condition: `heroKOd`,
         uses: `0`,
         shared: `no`,
-        effect: `drawExtraEaA()`
+        effect: `drawExtraEaA`
       }
     ]
   },
@@ -1251,7 +1251,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `0`,
         shared: `no`,
         effect: `disableRetreat(all)`
@@ -1279,10 +1279,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `heroBlocks()`,
+        condition: `heroBlocks`,
         uses: `0`,
         shared: `no`,
-        effect: `appendKO2CardsToBlock()`
+        effect: `appendKO2CardsToBlock`
       }
     ]
   },
@@ -1309,10 +1309,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `heroKOd()`,
+        condition: `heroKOd`,
         uses: `0`,
         shared: `no`,
-        effect: `returnHeroAsVillain()`
+        effect: `returnHeroAsVillain`
       }
     ],
     mightNamePrint: [
@@ -1337,10 +1337,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `villainousHeroKOd()`,
+        condition: `villainousHeroKOd`,
         uses: `0`,
         shared: `no`,
-        effect: `permanentlyKOhero()`
+        effect: `permanentlyKOhero`
       }
     ]
   },
@@ -1368,10 +1368,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `villainDrawn()`,
+        condition: `villainDrawn`,
         uses: `0`,
         shared: `no`,
-        effect: `villainTeleports()`
+        effect: `villainTeleports`
       }
     ],
     mightNamePrint: [
@@ -1406,7 +1406,7 @@ export const overlords = [
       },
       {
         type: `quick`,
-        condition: `cityDestroyed()`,
+        condition: `cityDestroyed`,
         uses: `999`,
         shared: `no`,
         effect: `healOverlord(10)`
@@ -1436,10 +1436,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `heroKOd()`,
+        condition: `heroKOd`,
         uses: `0`,
         shared: `no`,
-        effect: `returnHeroAsVillain()`
+        effect: `returnHeroAsVillain`
       }
     ],
     mightNamePrint: [
@@ -1453,7 +1453,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `resurrectKOdHenchVillains(countActiveHeroes())`
+        effect: `resurrectKOdHenchVillains(countActiveHeroes)`
       }
     ],
     bonusNamePrint: [
@@ -1464,10 +1464,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: `bystanderKOd()`,
+        condition: `bystanderKOd`,
         uses: `999`,
         shared: `no`,
-        effect: `spawnBystanderZombie()`
+        effect: `spawnBystanderZombie`
       }
     ]
   },
@@ -1494,10 +1494,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `1`,
         shared: `no`,
-        effect: `destroyCity()`
+        effect: `destroyCity`
       }
     ],
     mightNamePrint: [
@@ -1522,10 +1522,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `gameStart()`,
+        condition: `gameStart`,
         uses: `0`,
         shared: `no`,
-        effect: `disableRestoration()`
+        effect: `disableRestoration`
       }
     ]
   },
@@ -1552,10 +1552,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `bystanderDrawnOnEmpty()`,
+        condition: `bystanderDrawnOnEmpty`,
         uses: `999`,
         shared: `no`,
-        effect: `spawnBystanderHenchman()`
+        effect: `spawnBystanderHenchman`
       }
     ],
     mightNamePrint: [
@@ -1569,7 +1569,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `reverseBoardPositions()`
+        effect: `reverseBoardPositions`
       }
     ],
     evilWinsNamePrint: [

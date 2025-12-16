@@ -2233,7 +2233,7 @@ function getCityNameFromIndex(idx) {
     }
 }
 
-function updateHeroHPDisplays(heroId) {
+export function updateHeroHPDisplays(heroId) {
     const hState = gameState.heroData?.[heroId];
     if (!hState) return;
 

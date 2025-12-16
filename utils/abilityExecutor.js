@@ -18,8 +18,10 @@ import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot } from "./pageSetup.js";
+
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
-         enterVillainFromEffect, checkGameEndConditions, villainDraw } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP } from "./turnOrder.js";
+
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
 import { saveGameState } from "./stateManager.js";
@@ -106,39 +108,42 @@ EFFECT_HANDLERS.enemyDraw = function(args, card, selectedData) {
 };
 
 EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
-    const amount = Number(args?.[0]) || 1;
+  const amount = Number(args?.[0]) || 1;
 
-    const heroId = selectedData?.currentHeroId ?? null;
-    if (!heroId) {
-        console.warn("[regainLife] No currentHeroId available.");
-        return;
-    }
+  const heroId = selectedData?.currentHeroId ?? null;
+  if (!heroId) {
+    console.warn("[regainLife] No currentHeroId available.");
+    return;
+  }
 
-    const heroState = gameState.heroData?.[heroId];
-    if (!heroState) {
-        console.warn("[regainLife] No heroState found for heroId:", heroId);
-        return;
-    }
+  const heroState = gameState.heroData?.[heroId];
+  if (!heroState) {
+    console.warn("[regainLife] No heroState found for heroId:", heroId);
+    return;
+  }
 
-    const heroCard = heroes.find(h => String(h.id) === String(heroId));
-    if (!heroCard) {
-        console.warn("[regainLife] Could not find hero card for heroId:", heroId);
-        return;
-    }
+  const heroCard = heroes.find(h => String(h.id) === String(heroId));
+  if (!heroCard) {
+    console.warn("[regainLife] Could not find hero card for heroId:", heroId);
+    return;
+  }
 
-    const baseHP = Number(heroCard.hp || heroCard.baseHP || 0);
-    if (!heroState.hp && heroState.hp !== 0) {
-        heroState.hp = baseHP; // initialize if missing
-    }
+  const baseHP = Number(heroCard.hp || heroCard.baseHP || 0);
+  if (heroState.hp == null) heroState.hp = baseHP;
 
-    const before = heroState.hp;
-    heroState.hp = Math.min(baseHP, heroState.hp + amount);
+  const before = heroState.hp;
+  heroState.hp = Math.min(baseHP, heroState.hp + amount);
 
-    console.log(
-        `[regainLife] ${heroCard.name} regains ${amount} HP (${before} → ${heroState.hp}).`
-    );
+  // Optional but helpful: keep runtime hero object in sync for any renderers that read it
+  heroCard.currentHP = heroState.hp;
 
-    saveGameState(gameState);
+  console.log(`[regainLife] ${heroCard.name} regains ${amount} HP (${before} → ${heroState.hp}).`);
+
+  saveGameState(gameState);
+
+  // IMPORTANT: refresh the other two UI locations
+  try { updateHeroHPDisplays(heroId); } catch (e) { console.warn("[regainLife] updateHeroHPDisplays failed", e); }
+  try { updateBoardHeroHP(heroId); } catch (e) { console.warn("[regainLife] updateBoardHeroHP failed", e); }
 };
 
 EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
@@ -282,7 +287,7 @@ export function executeEffectSafely(effectString, card, selectedData) {
 
 export function runGameStartAbilities(selectedData) {
 
-    //console.log("%c[AbilityExecutor] Checking for gameStart() abilities…", "color: purple; font-weight:bold;");
+    //console.log("%c[AbilityExecutor] Checking for gameStart abilities…", "color: purple; font-weight:bold;");
 
     // Gather all loaded card IDs from loadout
     const heroIds      = selectedData.heroes        || [];
@@ -319,11 +324,11 @@ export function runGameStartAbilities(selectedData) {
             if (!eff.condition) continue;
 
             // Must match EXACT condition format from your data:
-            if (eff.condition.trim() === "gameStart()") {
+            if (eff.condition.trim() === "gameStart") {
 
                 const effectString = eff.effect;
 
-                //console.log(`%c[AbilityExecutor] Triggering gameStart() on ${card.name}: ${effectString}`,
+                //console.log(`%c[AbilityExecutor] Triggering gameStart on ${card.name}: ${effectString}`,
                     //"color: green; font-weight:bold;");
 
                 try {
@@ -347,7 +352,7 @@ export function runGameStartAbilities(selectedData) {
         }
     }
 
-    //console.log("%c[AbilityExecutor] Completed gameStart() ability scan.", "color: purple; font-weight:bold;");
+    //console.log("%c[AbilityExecutor] Completed gameStart ability scan.", "color: purple; font-weight:bold;");
 }
 
 export function currentTurn(turnIndex, selectedHeroIds) {
