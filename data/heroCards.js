@@ -121,11 +121,11 @@ export const heroCards = [
       },
       {
         type: `chooseOption(1)`,
-        effect: [`setCardDamageTo(0)`,`koAnyFoe`,`takeSelectedFoeDamage`]
+        effect: [`setCardDamageTo(0)`,`damageFoe(99,any)`,`damageHero(lastDamagedFoe)`]
       },
       {
         type: `chooseOption(2)`,
-        effect: `increaseTravel(current,1)`
+        effect: `travelPlus(1)`
       }
     ]
   },
@@ -151,7 +151,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `atXorLessHP(5)`,
-        effect: [`increaseCardDamageBy(3)`]
+        effect: [`increaseCardDamage(3)`]
       },
     ]
   },
@@ -188,7 +188,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `activeHero(Wonder)`,
-        effect: [`increaseCardDamageBy(3)`]
+        effect: [`increaseCardDamage(3)`]
       },
       {
         type: `optional`,
@@ -217,8 +217,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: [`checkAdjacentCities`],
+        type: `optional`,
         effect: [`useAgainstAdjacent`]
       }
     ]
@@ -247,7 +246,6 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: [`none`],
         effect: [`gainSidekick`]
       },
       {
@@ -277,7 +275,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(damagedVillain,endCurrentNext)`
+        effect: `lockVillain(lastDamagedFoe,next)`
       }
     ]
   },
@@ -712,7 +710,7 @@ export const heroCards = [
       },
       {
         type: `chooseOption(2)`,
-        effect: [`withdraw`]
+        effect: [`retreatHeroToHQ`]
       }
     ]
   },
@@ -738,7 +736,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `damagedAtTurnEnd`,
-        effect: [`damageVillain(current,2)`]
+        effect: [`damageFoe(2,lastDamageCauser)`]
       },
     ]
   },
@@ -786,7 +784,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `increaseCardDamage(getHeroDamage(current))`
+        effect: `increaseCardDamage(getHeroDamage)`
       }
     ]
   },
@@ -810,7 +808,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(damagedVillain,endCurrentNext)`
+        effect: `lockVillain(lastDamagedFoe,next)`
       }
     ]
   },
@@ -905,7 +903,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: `giveVillainPassive(current,Curse(1))`
+        effect: `giveVillainPassive(curse(1),current)`
       }
     ]
   },
@@ -937,7 +935,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: `giveHeroPassiveTemp(Withdraw(1))`
+        effect: `giveHeroPassiveTemp(retreatHeroToHQ(1))`
       },
     ]
   },
@@ -1324,12 +1322,12 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: `giveHeroPassiveTemp(atWillTravelTo(Gotham))`
+        effect: `giveHeroPassiveTemp(atWillTravelTo(11))`
       },
       {
         type: `quick`,
         condition: `ifDiscarded`,
-        effect: `koFoeIn(Gotham)`
+        effect: `koFoeIn(10)`
       },
     ]
   },
@@ -1491,7 +1489,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(damagedVillain,endCurrentNext)`
+        effect: `lockVillain(lastDamagedFoe,next)`
       }
     ]
   },
@@ -1563,7 +1561,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `ifDiscarded`,
-        effect: [`scanDeck(enemy,3)`,`applyActivateKoCancel(scanned(enemy))`]
+        effect: [`scanDeck(enemy,3)`,`applyActivateKoCancel(scannedBuffer)`]
       },
     ]
   },
@@ -1666,7 +1664,7 @@ export const heroCards = [
       },
       {
         type: `optional`,
-        effect: `damageFoeIn(Gotham,2)`
+        effect: `damageFoe(2,10)`
       }
     ]
   },

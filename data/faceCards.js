@@ -332,7 +332,7 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: After damaging them, Lock a Henchman or Villain in their City. Then, Donna Troy can Retreat without rolling.`
+        text: `3/Game: After damaging them, Lock a Henchman or Villain in their City. OPTIONAL: Donna Troy can then Withdraw.`
       }
     ],
     abilitiesNamePrint: [
@@ -346,14 +346,14 @@ export const heroes = [
         condition: `hasDamagedVillain`,
         uses: `3`,
         shared: `no`,
-        effect: `lockVillain(999)`
+        effect: `lockVillain(lastDamagedFoe)`
       },
       {
-        type: `quick`,
+        type: `optional`,
         condition: `usedOtherFaceAbility`,
         uses: `999`,
         shared: `no`,
-        effect: `retreatFree`
+        effect: `retreatHeroToHQ`
       }
     ]
   },
@@ -1008,10 +1008,10 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `lockVillain(any,999)`
+        effect: `lockVillain(any)`
       },
       {
-        type: `quick`,
+        type: `optional`,
         condition: `wouldUseDamageCard`,
         uses: `1`,
         shared: `no`,
@@ -1594,7 +1594,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `lockVillain(999)`
+        effect: `lockVillain(any)`
       }
     ]
   },
@@ -1853,7 +1853,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `lockVillain(999)`
+        effect: `lockVillain(any)`
       }
     ]
   },
@@ -2002,7 +2002,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `withdrawHero(current)`
+        effect: `retreatHeroToHQ`
       },
     ]
   },
@@ -2045,7 +2045,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `retreatFree`
+        effect: `retreatHeroToHQ`
       },
     ]
   },
@@ -2653,12 +2653,12 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `1/Game: Zatanna can Travel or Retreat without rolling. <span class="line-gap"></span> 1/Game: Zatanna can ignore taking Damage. <span class="line-gap"></span> 1/Game: Deal 3 Damage to all Henchmen, Villains, and the Overlord.`
+        text: `1/Game: Zatanna can Withdraw. <span class="line-gap"></span> 1/Game: Zatanna can ignore taking Damage. <span class="line-gap"></span> 1/Game: Deal 3 Damage to all Henchmen, Villains, and the Overlord.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Travel or Retreat without Rolling`
+        text: `Withdraw`
       },
       {
         text: `Ignoring an attack`
@@ -2673,7 +2673,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `travel(Choice)`
+        effect: `retreatHeroToHQ`
       },
       {
         type: `quick`,
@@ -2765,7 +2765,7 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> If Harley Retreats, the Henchman or Villain left behind takes 1 Damage. <span class="line-gap"></span> 2/Game: Without rolling, Harley Quinn can Retreat and take no Damage.`
+        text: `Permanent KO. <span class="line-gap"></span> If Harley Retreats, the Henchman or Villain left behind takes 1 Damage. <span class="line-gap"></span> 2/Game: Without rolling, Harley Quinn can Withdraw.`
       }
     ],
     abilitiesNamePrint: [
@@ -2773,7 +2773,7 @@ export const heroes = [
         text: `Permanently KO's all Henchmen and Villains`
       },
       {
-        text: `Retreat without rolling`
+        text: `Withdraw`
       },
       {
         text: `Burn on retreat`
@@ -2792,7 +2792,7 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `retreatFree`
+        effect: `retreatHeroToHQ`
       },
       {
         type: `passive`,
