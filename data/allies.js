@@ -43,7 +43,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `protectHero(current,1)`
+                effect: `protectHero(1,current)`
             }
         ]
     },
@@ -65,7 +65,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `protectHero(current,1)`
+                effect: `protectHero(1,current)`
             }
         ]
     },
@@ -85,7 +85,7 @@ export const allies = [
                 text: `Choose`
             },
             {
-                text: `KO a Henchman or Villain`
+                text: `KO a Foe in Star City`
             },
             {
                 text: `Damage the Overlord`
@@ -97,7 +97,7 @@ export const allies = [
             },
             {
                 type: `chooseOption(1)`,
-                effect: [`koVillain(Star)`]
+                effect: [`koFoeIn(0)`]
             },
             {
                 type: `chooseOption(2)`,
@@ -123,7 +123,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `doubleHeroDamage(current,1)`
+                effect: `doubleDamage(current,next)`
             }
         ]
     },
@@ -145,7 +145,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: ["draw(1)","travelPlus(1)"]
+                effect: [`draw(1)`,`travelPlus(1)`]
             }
         ]
     },
@@ -189,7 +189,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageVillain(all,1)`
+                effect: `damageFoe(1,all)`
             }
         ]
     },
@@ -211,7 +211,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `increaseHeroDT(bat,1,1)`
+                effect: `increaseHeroDT(bat,1,next)`
             }
         ]
     },
@@ -233,7 +233,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `heroRetrieveFromDiscard(all,1)`
+                effect: `heroRetrieveFromDiscard(1,all)`
             }
         ]
     },
@@ -255,7 +255,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `doubleDamageAgainst(overlord,1)`
+                effect: `doubleDamageAgainst(overlord,next)`
             }
         ]
     },
@@ -277,7 +277,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `koVillain(all)`
+                effect: `damageFoe(999,all)`
             }
         ]
     },
@@ -321,7 +321,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `gainTravel(all,1,1)`
+                effect: `travelPlus(1,allHeroes)`
             }
         ]
     },
@@ -365,7 +365,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `add(any,1)`
+                effect: `add(1,any)`
             }
         ]
     },
@@ -387,7 +387,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `reduceTo(any,1,1)`
+                effect: `reduceTo(1,any)`
             }
         ]
     },
@@ -423,7 +423,7 @@ export const allies = [
             },
             {
                 type: `chooseOption(2)`,
-                effect: [`lockVillain(any,999)`]
+                effect: [`lockVillain(any)`]
             }
         ]
     },
@@ -467,7 +467,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `heroRegainHP(all,1)`
+                effect: `regainLife(1,all)`
             }
         ]
     },
@@ -489,7 +489,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `shoveVillains(all,-99)`
+                effect: `shoveVillain(all,-99)`
             }
         ]
     },
@@ -501,7 +501,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Reduce a Henchman or Villain's Damage to 1 and negate all of their abilities.`
+                text: `Reduce a Henchman or Villain's Damage to 0 and negate all of their abilities.`
             }
         ],
         abilitiesNamePrint: [
@@ -511,7 +511,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `disableVillain(any,1)`
+                effect: `disableVillain(any)`
             }
         ]
     },
@@ -577,7 +577,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `doubleNextCardDamage`
+                effect: `doubleDamage(current,nextCardOnly)`
             }
         ]
     },
@@ -643,7 +643,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageVillain(any,10)`
+                effect: `damageFoe(10,any)`
             }
         ]
     },
@@ -687,7 +687,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `reduceVillainHPto(all,1)`
+                effect: `reduceTo(1,all)`
             }
         ]
     },

@@ -238,7 +238,7 @@ export const tactics = [
     abilitiesText: [
       {
         text: `Henchmen enter the map with 1 additional HP. <span class="line-gap"></span>
-               Might of the Overlord: Play the next 2 Henchmen or Villains from the Villain Deck.`
+               Might of the Overlord: Play the next Henchman or Villain from the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -249,10 +249,10 @@ export const tactics = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `henchmenRallied()`,
+        condition: `henchmanRallied`,
         uses: `999`,
         shared: `no`,
-        effect: `ralliedHenchGainLife(1)`
+        effect: `henchGainLife(1,lastRallied)`
       }
     ],
     mightNamePrint: [

@@ -27,7 +27,7 @@ export const henchmen = [
         condition: `uponDefeat`,
         uses: `1`,
         shared: `no`,
-        effect: `rescueBystander(1,random)`
+        effect: `rescueBystander(1)`
       }
     ]
   },

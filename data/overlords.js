@@ -216,7 +216,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`villainDraw(1)`,`damage(2,Super)`]
+        effect: [`villainDraw(1)`,`damageHero(2,Super)`]
       }
     ],
     bonusNamePrint: [

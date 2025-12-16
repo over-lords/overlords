@@ -26,7 +26,7 @@ export const scenarios = [
                 condition: `none`,
                 uses: `0`,
                 shared: `no`,
-                effect: `halfDamage(Justice)`
+                effect: `halfDamage(Justice,passive)`
             }
         ]
     },

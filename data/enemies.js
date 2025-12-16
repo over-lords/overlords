@@ -21,7 +21,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `setHeroDTtoXforX(1,1)`
+                effect: `setHeroDTtoXforX(current,1,1)`
             }
         ]
     },
@@ -43,7 +43,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `doubleDamageAgainst(wonder,1)`
+                effect: `doubleDamageAgainst(wonder,next)`
             }
         ]
     },
@@ -109,7 +109,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageHero(all,2)`
+                effect: `damageHero(2,all)`
             }
         ]
     },
@@ -131,7 +131,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `overlordGainLife(25)`
+                effect: `damageOverlord(-25)`
             }
         ]
     },
@@ -197,7 +197,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageHero(leftmost,1)`
+                effect: `damageHero(1,leftmostEngaged)`
             }
         ]
     },
@@ -263,7 +263,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `disableRetreat(current,1)`
+                effect: `disableRetreat(current,next)`
             }
         ]
     },
@@ -285,7 +285,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `halveDamage(current,1)`
+                effect: `halveDamage(current,next)`
             }
         ]
     },
@@ -307,7 +307,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `disableExtraDraw(current,1)`
+                effect: `disableExtraDraw(all,next)`
             }
         ]
     },
@@ -329,7 +329,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageHero(current,3)`
+                effect: `damageHero(3,current)`
             }
         ]
     },
@@ -351,7 +351,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageHero(coastal,1)`
+                effect: `damageHero(1,coastal)`
             }
         ]
     },
@@ -373,7 +373,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `disableExtraTraval(all,1)`
+                effect: `disableExtraTraval(all,next)`
             }
         ]
     },
@@ -395,7 +395,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `disableIconAbilities(all,1)`
+                effect: `disableIconAbilities(all,next)`
             }
         ]
     },
@@ -417,7 +417,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `halfDamage(Super,1)`
+                effect: `halfDamage(Super,next)`
             }
         ]
     },
@@ -434,7 +434,7 @@ export const enemies = [
         ],
         abilitiesNamePrint: [
             {
-                text: `No cheating!`
+                text: `No stacking!`
             }
         ],
         abilitiesEffects: [

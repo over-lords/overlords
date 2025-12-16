@@ -127,7 +127,7 @@ export const villains = [
       },
       {
           type: `chooseOption(2)`,
-          effect: [`damageVillain(any,2)`]
+          effect: [`damageFoe(2,any)`]
       }
     ]
   },
@@ -274,7 +274,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: [`damageVillain(any,3)`,`damageVillain(any,3)`]
+        effect: [`damageFoe(3,any)`,`damageFoe(3,any)`]
       }
     ]
   },
@@ -527,8 +527,8 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Takeover 1 <span class="line-gap"></span> 
-                Might of the Overlord: Play the Henchmen and Villains amongst the next 5 cards in the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
+        text: `Takeover 1 <span class="line-gap"></span>
+                Might of the Overlord: Play the next 2 Henchmen or Villains from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
                   Reward: KO all Henchmen.`
       }
     ],
@@ -549,7 +549,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `koVillain(henchman,all)`
+        effect: `koHenchman(all)`
       }
     ],
     mightNamePrint: [
@@ -563,7 +563,7 @@ export const villains = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`drawOnlyHenchVillains(5)`]
+        effect: [`rallyNextHenchVillains(2)`]
       }
     ],
   },
@@ -628,7 +628,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `turnEndNotEngaged`,
-        effect: `damageHero(random,2)`
+        effect: `damageHero(2,random)`
       },
       {
         type: `quick`,
@@ -703,7 +703,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `lockVillain(any,1)`
+        effect: `lockVillain(any,next)`
       }
     ]
   },
@@ -741,7 +741,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `turnEndNotEngaged`,
-        effect: `damageHero(random,2)`
+        effect: `damageHero(2,random)`
       },
       {
         type: `quick`,
@@ -900,7 +900,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `lockVillain(any,999)`
+        effect: `lockVillain(any)`
       }
     ]
   },
@@ -937,7 +937,7 @@ export const villains = [
       },
       {
         type: `quick`,
-        condition: `travelsTo(Keystone)`,
+        condition: `travelsTo(4)`,
         uses: `1`,
         effect: `doubleVillainLife`
       },
@@ -981,7 +981,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `damageVillain(all,2)`
+        effect: `damageFoe(2,all)`
       }
     ],
     mightNamePrint: [
@@ -1283,7 +1283,7 @@ export const villains = [
       },
       {
           type: `chooseOption(1)`,
-          effect: [`restoreCity`]
+          effect: [`restoreCity(1)`]
       },
       {
           type: `chooseOption(2)`,
@@ -1360,7 +1360,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: [`halfDamage(Bat)`,`halfDamage(Arrow)`,`halfDamage(Hawk)`]
+        effect: [`halveIncomingDamageFrom(Bat)`,`halveIncomingDamageFrom(Arrow)`,`halveIncomingDamageFrom(Hawk)`]
       },
       {
         type: `quick`,
@@ -1385,7 +1385,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Where Did She Go?`
+        text: `Where'd She Go?`
       },
       {
         text: `My Reign Begins!`
@@ -1452,7 +1452,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `turnEndNotEngaged`,
-        effect: `damageHero(random,1)`
+        effect: `damageHero(1,random)`
       },
       {
         type: `optional`,
@@ -1511,7 +1511,7 @@ export const villains = [
         type: `quick`,
         condition: `onEscape`,
         uses: `999`,
-        effect: `damageHero(all,3)`
+        effect: `damageHero(3,all)`
       }
     ]
   },
