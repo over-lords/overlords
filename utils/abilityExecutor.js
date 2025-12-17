@@ -108,6 +108,43 @@ EFFECT_HANDLERS.enemyDraw = function(args, card, selectedData) {
     return enemyDraw(count, limit);
 };
 
+EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
+    const amount = Number(args?.[0]) || 0;
+    if (amount <= 0) {
+        console.warn("[damageFoe] Invalid damage amount:", args);
+        return;
+    }
+
+    // Optional second argument:
+    //  - "all"
+    //  - numeric city index (0,2,4,6,8,10)
+    //  - omitted → normal single-target (selected foe)
+    let flag = "single";
+
+    if (args?.length > 1) {
+        const raw = args[1];
+
+        if (raw === "all") {
+            flag = "all";
+        } else if (!Number.isNaN(Number(raw))) {
+            flag = Number(raw);
+        }
+    }
+
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    // Selected foe (only required for true single-target damage)
+    const foeSummary = selectedData?.selectedFoeSummary ?? null;
+
+    damageFoe(
+        amount,
+        foeSummary,
+        heroId,
+        gameState,
+        { flag }
+    );
+};
+
 EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
   const amount = Number(args?.[0]) || 1;
 
@@ -1619,7 +1656,61 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         flag = "single",
     } = options;
 
-        // ============================================================
+    // ============================================================
+    // FLAG: 0/2/4/6/8/10 → damage the foe in that UPPER city index
+    // (Upper city slots are the even indices: 0..10.)
+    // ============================================================
+    const flagNum =
+        (typeof flag === "number")
+            ? flag
+            : (typeof flag === "string" && flag.trim() !== "" && !Number.isNaN(Number(flag)))
+                ? Number(flag)
+                : null;
+
+    const UPPER_CITY_TARGETS = new Set([0, 2, 4, 6, 8, 10]);
+
+    if (Number.isInteger(flagNum) && UPPER_CITY_TARGETS.has(flagNum)) {
+        if (!Array.isArray(s.cities)) {
+            console.warn("[damageFoe] No cities array; cannot apply numeric city flag damage.");
+            return;
+        }
+
+        const slotIndex = flagNum;
+        const entry = s.cities[slotIndex];
+
+        if (!entry || entry.id == null) {
+            console.log(`[damageFoe] No foe in city slot ${slotIndex}; no damage applied.`);
+            return;
+        }
+
+        const foeIdStr = String(entry.id);
+
+        const foeCard =
+            villains.find(v => String(v.id) === foeIdStr) ||
+            henchmen.find(h => String(h.id) === foeIdStr);
+
+        if (!foeCard) {
+            console.warn("[damageFoe] No card data found for foe id at slot:", slotIndex, foeIdStr);
+            return;
+        }
+
+        // Reuse the normal single-target pipeline so KO logic, bystanders, etc. still work.
+        const cityFoeSummary = {
+            foeType: foeCard.type || "Enemy",
+            foeId: foeIdStr,
+            instanceId: entry.instanceId,
+            foeName: foeCard.name,
+            currentHP: entry.currentHP ?? foeCard.hp,
+            slotIndex,
+            source: "city-upper"
+        };
+
+        damageFoe(amount, cityFoeSummary, heroId, s, { flag: "single" }); // prevent recursion
+        return;
+    }
+
+
+    // ============================================================
     // FLAG: "all" → damage ALL active henchmen & villains in cities
     // ============================================================
     if (flag === "all") {
