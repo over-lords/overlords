@@ -1170,7 +1170,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                         foeSummary = {
                             foeType: foeCard.type || "Enemy",
                             foeId:   foeIdStr,
-                            instanceId: foeCard.instanceId,
+                            instanceId: entry.instanceId,
                             foeName: foeCard.name || `Enemy ${foeIdStr}`,
                             currentHP: hp,
                             slotIndex: upperIdx,
@@ -1654,18 +1654,21 @@ export function damageOverlord(amount, state = gameState) {
 
 
 // =======================================================================
-// DAMAGE A HENCHMAN / VILLAIN IN THE CITY
+// DAMAGE A HENCHMAN / VILLAIN IN THE CITY (PER-INSTANCE SAFE)
 // =======================================================================
 export function damageFoe(amount, foeSummary, heroId = null, state = gameState, options = {}) {
     const s = state;
 
-    const {
-        flag = "single",
-    } = options;
+    const { flag = "single" } = options;
+
+    // Helper: unified per-instance key (supports either property name)
+    const getInstanceKey = (obj) => {
+        const k = obj?.instanceId ?? obj?.uniqueId ?? null;
+        return (k == null) ? null : String(k);
+    };
 
     // ============================================================
     // FLAG: 0/2/4/6/8/10 → damage the foe in that UPPER city index
-    // (Upper city slots are the even indices: 0..10.)
     // ============================================================
     const flagNum =
         (typeof flag === "number")
@@ -1701,11 +1704,13 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             return;
         }
 
-        // Reuse the normal single-target pipeline so KO logic, bystanders, etc. still work.
         const cityFoeSummary = {
             foeType: foeCard.type || "Enemy",
             foeId: foeIdStr,
-            instanceId: entry.instanceId,
+
+            // IMPORTANT: take instance key from the ENTRY
+            instanceId: getInstanceKey(entry),
+
             foeName: foeCard.name,
             currentHP: entry.currentHP ?? foeCard.hp,
             slotIndex,
@@ -1716,7 +1721,6 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         return;
     }
 
-
     // ============================================================
     // FLAG: "all" → damage ALL active henchmen & villains in cities
     // ============================================================
@@ -1726,11 +1730,8 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             return;
         }
 
-        console.log(
-            `[damageFoe] Applying ${amount} damage to ALL city foes.`
-        );
+        console.log(`[damageFoe] Applying ${amount} damage to ALL city foes.`);
 
-        // Collect valid foe summaries from city model
         const allFoes = [];
 
         for (let slotIndex = 0; slotIndex < s.cities.length; slotIndex++) {
@@ -1748,7 +1749,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             allFoes.push({
                 foeType: foeCard.type || "Enemy",
                 foeId: foeIdStr,
-                instanceId: entry.instanceId,
+                instanceId: getInstanceKey(entry),
                 foeName: foeCard.name,
                 currentHP: entry.currentHP ?? foeCard.hp,
                 slotIndex,
@@ -1761,30 +1762,16 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             return;
         }
 
-        // Apply damage individually so KO logic, bystanders, etc. still work
         for (const foe of allFoes) {
-            damageFoe(
-                amount,
-                foe,
-                heroId,
-                s,
-                { flag: "single" } // prevent recursion
-            );
+            damageFoe(amount, foe, heroId, s, { flag: "single" }); // prevent recursion
         }
 
         return;
     }
 
-    if (
-        foeSummary?.slotIndex != null &&
-        Array.isArray(s.cities)
-    ) {
-        const e = s.cities[foeSummary.slotIndex];
-        if (!e || String(e.id) !== String(foeSummary.foeId)) {
-            return;
-        }
-    }
-
+    // ------------------------------------------------------------
+    // Validation / input normalization
+    // ------------------------------------------------------------
     if (!foeSummary) {
         console.warn("[damageFoe] Called with no foeSummary.");
         return;
@@ -1801,33 +1788,65 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         return;
     }
 
-    // Locate the city entry for this foe
-    let slotIndex = (typeof foeSummary.slotIndex === "number")
-        ? foeSummary.slotIndex
-        : null;
+    // If caller provides slotIndex, trust it as the primary disambiguator
+    let slotIndex = (typeof foeSummary.slotIndex === "number") ? foeSummary.slotIndex : null;
 
-    let entry = s.cities.find(e =>
-        e && e.instanceId === foeSummary.instanceId
-    );
-    if (!entry || String(entry.id) !== foeIdStr) {
-        // Fallback: search city entries by id
-        entry = null;
-        for (let i = 0; i < s.cities.length; i++) {
-            const e = s.cities[i];
-            if (e && String(e.id) === foeIdStr) {
-                entry = e;
-                slotIndex = i;
-                break;
-            }
+    // Fast safety check (prevents damaging a slot that no longer contains that foe)
+    if (slotIndex != null) {
+        const e = s.cities[slotIndex];
+        if (!e || String(e.id) !== foeIdStr) {
+            return;
         }
     }
 
+    // ------------------------------------------------------------
+    // Locate the exact city entry
+    // Priority: slotIndex -> instanceId/uniqueId -> fallback by id
+    // ------------------------------------------------------------
+    let entry = null;
+
+    if (slotIndex != null) {
+        entry = s.cities[slotIndex];
+    }
+
+    const wantedKey = getInstanceKey(foeSummary);
+
+    if (!entry && wantedKey != null) {
+        entry = s.cities.find(e => e && getInstanceKey(e) === wantedKey) || null;
+        if (entry) slotIndex = entry.slotIndex ?? slotIndex;
+    }
+
     if (!entry) {
-        console.warn("[damageFoe] Could not find city entry for foe id:", foeIdStr);
+        // Fallback: find by id (ambiguous if duplicates exist)
+        let found = null;
+        let count = 0;
+
+        for (let i = 0; i < s.cities.length; i++) {
+            const e = s.cities[i];
+            if (e && String(e.id) === foeIdStr) {
+                found = e;
+                slotIndex = i;
+                count++;
+            }
+        }
+
+        if (count > 1) {
+            console.warn(
+                "[damageFoe] Multiple copies found for foe id; per-instance key missing. " +
+                "Damage may target the wrong copy. Ensure foeSummary.instanceId is set from the city entry.",
+                { foeIdStr, count, foeSummary }
+            );
+        }
+
+        entry = found;
+    }
+
+    if (!entry) {
+        console.warn("[damageFoe] Could not find city entry for foe id:", foeIdStr, foeSummary);
         return;
     }
 
-    // Lookup the full card data
+    // Lookup immutable template card data
     const foeCard =
         villains.find(v => String(v.id) === foeIdStr) ||
         henchmen.find(h => String(h.id) === foeIdStr);
@@ -1839,38 +1858,39 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     const baseHP = Number(foeCard.hp || 0) || 0;
 
-    if (!s.villainHP) {
-        s.villainHP = {};
+    if (!s.villainHP) s.villainHP = {};
+
+    // Ensure the entry has an instance key. If you already store uniqueId, we mirror it into instanceId.
+    let entryKey = getInstanceKey(entry);
+    if (entryKey == null) {
+        // Last resort: generate a key (better than collapsing copies onto base id)
+        const gen = `inst_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        entry.instanceId = gen;
+        entryKey = String(gen);
+    } else {
+        // Normalize: if entry used uniqueId only, also set instanceId so other code can rely on it
+        if (entry.instanceId == null && entry.uniqueId != null) {
+            entry.instanceId = entry.uniqueId;
+        }
     }
 
+    // Pull current HP strictly from per-instance storage (entry -> villainHP -> base)
     let currentHP = entry.currentHP;
-    const savedHP = foeSummary.instanceId
-        ? s.villainHP[foeSummary.instanceId]
-        : undefined;
+    const savedHP = s.villainHP[entryKey];
 
     if (typeof currentHP !== "number") {
-        if (typeof savedHP === "number") {
-            currentHP = savedHP;
-        } else if (typeof foeCard.currentHP === "number") {
-            currentHP = foeCard.currentHP;
-        } else {
-            currentHP = baseHP;
-        }
+        if (typeof savedHP === "number") currentHP = savedHP;
+        else currentHP = baseHP;
     }
 
     const newHP = Math.max(0, currentHP - amount);
 
-    // Sync all representations
-    entry.maxHP     = baseHP;
+    // Sync per-instance representations (DO NOT mutate foeCard.currentHP)
+    entry.maxHP = baseHP;
     entry.currentHP = newHP;
+    s.villainHP[entryKey] = newHP;
 
-    const instId = entry.instanceId;
-    if (instId) s.villainHP[instId] = newHP;
-
-    console.log(
-        `[damageFoe] ${foeCard.name} took ${amount} damage `
-        + `(${currentHP} -> ${newHP}).`
-    );
+    console.log(`[damageFoe] ${foeCard.name} took ${amount} damage (${currentHP} -> ${newHP}).`);
 
     // Re-render the foe card in its city slot so board shows updated HP
     try {
@@ -1885,12 +1905,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
                 wrapper.appendChild(renderCard(foeIdStr, wrapper));
                 area.appendChild(wrapper);
 
-                // Keep villain clickable for the panel
                 wrapper.style.cursor = "pointer";
                 wrapper.addEventListener("click", (e) => {
                     e.stopPropagation();
-                    if (typeof window !== "undefined" &&
-                        typeof window.buildVillainPanel === "function") {
+                    if (typeof window !== "undefined" && typeof window.buildVillainPanel === "function") {
                         window.buildVillainPanel(foeCard);
                     }
                 });
@@ -1900,7 +1918,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         console.warn("[damageFoe] Failed to re-render foe card on board.", err);
     }
 
-    // If the foe is not KO'd, just persist and exit
+    // If not KO'd, persist and exit
     if (newHP > 0) {
         saveGameState(s);
         return;
@@ -1912,57 +1930,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
     showMightBanner(`${foeCard.name} has been KO'd.`, 2000);
 
-    runUponDefeatEffects(foeCard, heroId, s, {
-        selectedFoeSummary: foeSummary
-    });
-
-    // ===================================================================
-    // 1) RESCUE CAPTURED BYSTANDERS (NEW LOGIC)
-    // ===================================================================
-    if (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) {
-        const captured = entry.capturedBystanders;
-
-        if (heroId != null && s.heroData && s.heroData[heroId]) {
-            // Give to the hero who KO'd the foe
-            const heroState = s.heroData[heroId];
-            if (!Array.isArray(heroState.hand)) heroState.hand = [];
-
-            captured.forEach(b => {
-                // b is a full card object
-                heroState.hand.push(String(b.id));
-            });
-
-            console.log(
-                `[damageFoe] Hero ${heroId} rescues bystanders:`,
-                captured.map(b => b.name)
-            );
-        } else {
-            // No hero credited: KO them so they don't vanish
-            if (!Array.isArray(s.koCards)) {
-                s.koCards = [];
-            }
-            s.koCards.push({
-                id: foeCard.id,
-                name: foeCard.name,
-                type: foeCard.type || "Enemy",
-                source: "hero-attack"
-            });
-
-            if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
-                window.renderKOBar(s);
-            }
-        }
-
-        // Clear captured bystanders on the city entry
-        entry.capturedBystanders = [];
-    }
-
-    // ===================================================================
-    // 2) REMOVE FOE FROM MODEL AND DOM
-    // ===================================================================
+    // 1) REMOVE FOE FROM MODEL AND DOM IMMEDIATELY (prevents ghost foes)
     if (slotIndex != null && Array.isArray(s.cities)) {
         const e = s.cities[slotIndex];
-        if (e && e.instanceId === foeSummary.instanceId) {
+        if (e && String(e.id) === foeIdStr) {
             s.cities[slotIndex] = null;
         }
     }
@@ -1978,12 +1949,45 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         console.warn("[damageFoe] Failed to clear foe card from DOM.", err);
     }
 
-    // ===================================================================
-    // 3) APPEND FOE TO KO ARRAY
-    // ===================================================================
-    if (!Array.isArray(s.koCards)) {
-        s.koCards = [];
+    // Clean per-instance HP entry
+    delete s.villainHP[entryKey];
+
+    // 2) RESCUE CAPTURED BYSTANDERS
+    if (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) {
+        const captured = entry.capturedBystanders;
+
+        if (heroId != null && s.heroData && s.heroData[heroId]) {
+            const heroState = s.heroData[heroId];
+            if (!Array.isArray(heroState.hand)) heroState.hand = [];
+
+            captured.forEach(b => heroState.hand.push(String(b.id)));
+
+            console.log(`[damageFoe] Hero ${heroId} rescues bystanders:`, captured.map(b => b.name));
+        } else {
+            if (!Array.isArray(s.koCards)) s.koCards = [];
+
+            captured.forEach(b => {
+                s.koCards.push({
+                    id: b.id,
+                    name: b.name,
+                    type: b.type || "Bystander",
+                    source: "rescued-none"
+                });
+            });
+
+            if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
+                window.renderKOBar(s);
+            }
+        }
+
+        entry.capturedBystanders = [];
     }
+
+    // 3) RUN uponDefeat (after removal so other systems can't see the foe)
+    runUponDefeatEffects(foeCard, heroId, s, { selectedFoeSummary: foeSummary });
+
+    // 4) APPEND FOE TO KO ARRAY
+    if (!Array.isArray(s.koCards)) s.koCards = [];
     s.koCards.push({
         id: foeCard.id,
         name: foeCard.name,
@@ -1991,12 +1995,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         source: "hero-attack"
     });
 
-    // Clean up villainHP entry
-    delete s.villainHP[foeSummary.instanceId];
-
-    // ===================================================================
-    // 4) RETURN HERO TO HQ
-    // ===================================================================
+    // 5) RETURN HERO TO HQ (if applicable)
     if (heroId != null) {
         maybeSendHeroHomeAfterLaneClears(heroId, slotIndex, s);
     }
@@ -2004,6 +2003,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     renderHeroHandBar(s);
     saveGameState(s);
 }
+
 
 // =======================================================================
 // HELPER: SEND A HERO BACK TO HQ (REMOVE FROM BOARD)
@@ -2343,7 +2343,7 @@ function collectUponDefeatEffects(cardData) {
 
     const eff = entry?.effect;
 
-    // OPTIONAL uponDefeat
+    // OPTIONAL
     if (entry.type === "optional") {
       out.push({
         type: "optional",
@@ -2353,7 +2353,16 @@ function collectUponDefeatEffects(cardData) {
       continue;
     }
 
-    // NON-OPTIONAL (existing behavior)
+    // CHOOSE
+    if (entry.type === "chooseOption") {
+      out.push({
+        kind: "choose",
+        abilityIndex: i
+      });
+      continue;
+    }
+
+    // NON-OPTIONAL
     if (Array.isArray(eff)) {
       for (const e of eff) {
         if (typeof e === "string" && e.trim()) out.push(e.trim());
@@ -2387,25 +2396,70 @@ function runUponDefeatEffects(cardData, heroId, state, extraSelectedData = {}) {
       // OPTIONAL uponDefeat effect
       if (typeof eff === "object" && eff.type === "optional") {
 
-        const label =
-          cardData.abilitiesNamePrint?.[eff.abilityIndex]?.text
-            ? `${cardData.abilitiesNamePrint[eff.abilityIndex].text}?`
-            : "Use optional ability?";
+            const label =
+            cardData.abilitiesNamePrint?.[eff.abilityIndex]?.text
+                ? `${cardData.abilitiesNamePrint[eff.abilityIndex].text}?`
+                : "Use optional ability?";
 
-        window.showOptionalAbilityPrompt(label).then(allow => {
-          if (!allow) {
-            console.log("[uponDefeat] Optional reward declined.");
-            return;
-          }
+            window.showOptionalAbilityPrompt(label).then(allow => {
+                if (!allow) return;
 
-          executeEffectSafely(eff.effect, cardData, {
-            ...extraSelectedData,
-            currentHeroId: heroId,
-            state
-          });
+                executeEffectSafely(eff.effect, cardData, {
+                    ...extraSelectedData,
+                    currentHeroId: heroId,
+                    state
+                });
+            });
+
+            continue; // 🔴 REQUIRED
+        }
+
+    if (eff?.kind === "choose") {
+
+        const header =
+            cardData.abilitiesNamePrint?.[eff.abilityIndex]?.text || "Choose";
+
+        const options = [];
+        const optionEffects = [];
+
+        let j = eff.abilityIndex + 1;
+
+        while (
+            j < cardData.abilitiesEffects.length &&
+            /^chooseOption\(\d+\)$/.test(cardData.abilitiesEffects[j].type)
+        ) {
+            const label =
+            cardData.abilitiesNamePrint?.[j]?.text ||
+            `Option ${options.length + 1}`;
+
+            options.push({ label });
+            optionEffects.push(cardData.abilitiesEffects[j]);
+            j++;
+        }
+
+        window.showChooseAbilityPrompt({
+            header,
+            options
+        }).then(chosenIndex => {
+
+            const chosen = optionEffects[chosenIndex];
+            if (!chosen) return;
+
+            const effectsArray = Array.isArray(chosen.effect)
+            ? chosen.effect
+            : [chosen.effect];
+
+            for (const effectString of effectsArray) {
+            executeEffectSafely(effectString, cardData, {
+                ...extraSelectedData,
+                currentHeroId: heroId,
+                state
+            });
+            }
         });
 
-      }
+        continue;
+        }
 
       // NON-OPTIONAL uponDefeat effect
       else {
