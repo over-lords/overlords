@@ -823,6 +823,20 @@ koClose.addEventListener("click", () => {
     }, 450);
 });
 
+const pivotBtn   = document.getElementById("discard-pivot-button");
+const slidePanel = document.getElementById("discard-slide-panel");
+const closeBtn   = document.getElementById("discard-slide-close");
+const cardsRow   = document.getElementById("discard-slide-cards");
+
+pivotBtn.onclick = () => {
+  slidePanel.classList.add("open");
+  renderDiscardSlide();
+};
+
+closeBtn.onclick = () => {
+  slidePanel.classList.remove("open");
+};
+
 const menuBtn = document.getElementById("gameMenu-box");
 const sideMenu = document.getElementById("sideMenu");
 const menuHeader = document.getElementById("menuHeader");
@@ -2424,7 +2438,7 @@ export function renderKOBar(state = gameState) {
 
                 scaleWrapper.addEventListener("click", (e) => {
                     e.stopPropagation();
-                    console.log("[KO click] opening panel for:", fullCardData);
+                    //console.log("[KO click] opening panel for:", fullCardData);
                     openPanelForCard(fullCardData);
                 });
 
@@ -2489,4 +2503,69 @@ function openPanelForCard(cardData) {
         default:
             console.warn("[KO click] No panel handler for type:", cardData.type);
     }
+}
+
+function renderDiscardSlide(state = gameState) {
+  const heroIds     = state.heroes || [];
+  const activeIndex = state.heroTurnIndex ?? 0;
+  const heroId      = heroIds[activeIndex];
+  if (!heroId) return;
+
+  const heroState = state.heroData?.[heroId];
+  if (!heroState || !Array.isArray(heroState.discard)) return;
+
+  cardsRow.innerHTML = "";
+  const ordered = [...heroState.discard].reverse();
+
+  for (const id of ordered) {
+    const cardDiv = document.createElement("div");
+    cardDiv.className = "ko-card";
+    cardDiv.style.height = "160px";
+    cardDiv.style.marginRight = "-70px";
+    cardDiv.style.marginLeft = "-30px";
+    cardDiv.style.flex = "0 0 auto";
+
+    const scaleWrapper = document.createElement("div");
+    scaleWrapper.style.transform = "scale(0.48)";
+    scaleWrapper.style.transformOrigin = "top center";
+
+    scaleWrapper.appendChild(renderCard(String(id)));
+    wireCardToMainPanel(scaleWrapper, id);
+    cardDiv.appendChild(scaleWrapper);
+    cardsRow.appendChild(cardDiv);
+  }
+}
+
+function wireCardToMainPanel(wrapperEl, cardId) {
+  if (!wrapperEl) return;
+
+  wrapperEl.style.cursor = "pointer";
+  wrapperEl.setAttribute("data-card-id", String(cardId));
+
+  // Capture-phase so inner card handlers can't swallow the click (same pattern you use elsewhere)
+  wrapperEl.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const idStr = String(cardId);
+
+    // Prefer resolving full card data (you already import this)
+    const cardData = (typeof findCardInAllSources === "function")
+      ? findCardInAllSources(idStr)
+      : null;
+
+    // Call buildMainCardPanel (supports either module import or window global)
+    const openPanel = (typeof buildMainCardPanel === "function")
+      ? buildMainCardPanel
+      : (typeof window !== "undefined" ? window.buildMainCardPanel : null);
+
+    if (typeof openPanel !== "function") {
+      console.warn("[wireCardToMainPanel] buildMainCardPanel not found");
+      return;
+    }
+
+    // If your buildMainCardPanel expects an ID, pass idStr instead of cardData
+    openPanel(cardData || idStr);
+  }, true);
 }

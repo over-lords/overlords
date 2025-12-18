@@ -1712,3 +1712,78 @@ html, body {
     color: black;
     text-shadow: 0 0 4px rgba(255,255,255,0.5);
 }
+
+/* ===============================
+   Discard Pivot Button
+================================ */
+
+#discard-pivot-button {
+  position: fixed;
+  top: 25%;
+  right: 17.5px;
+  width: 56px;
+  height: 56px;
+  background-image: url("https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/discardPivotRight.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  z-index: 990;
+}
+
+/* ===============================
+   Sliding Discard Panel
+================================ */
+
+#discard-slide-panel {
+  position: fixed;
+  top: 10%;
+  bottom: 10%;
+  right: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.85);
+  transform: translateX(100%);
+  transition: transform 0.45s ease;
+  z-index: 9600;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+}
+
+#discard-slide-panel.open {
+  transform: translateX(0);
+}
+
+/* Close Button */
+#discard-slide-close {
+  position: fixed;
+  top: 5px;
+  right: 15px;
+  width: 40px;
+  height: 40px;
+  background-color: red;
+  color: white;
+  font-family: 'Racing Sans One', sans-serif;
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 40px;
+  border: 4px solid black;      /* hard black outline */
+  border-radius: 50%;           /* optional: makes it circular */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  z-index: 9999;                /* stays on top */
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* ===============================
+   Card Row
+================================ */
+
+#discard-slide-cards {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  overflow-x: auto;
+  pointer-events: auto;
+}
