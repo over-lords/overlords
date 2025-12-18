@@ -1912,6 +1912,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
     showMightBanner(`${foeCard.name} has been KO'd.`, 2000);
 
+    runUponDefeatEffects(foeCard, heroId, s, {
+        selectedFoeSummary: foeSummary
+    });
+
     // ===================================================================
     // 1) RESCUE CAPTURED BYSTANDERS (NEW LOGIC)
     // ===================================================================
@@ -2324,3 +2328,59 @@ window.showChooseAbilityPrompt = function ({ header, options }) {
         };
     });
 };
+
+function collectUponDefeatEffects(cardData) {
+  const out = [];
+
+  const list = Array.isArray(cardData?.abilitiesEffects)
+    ? cardData.abilitiesEffects
+    : [];
+
+  for (const entry of list) {
+    const cond = String(entry?.condition || "").trim().toLowerCase();
+    if (cond !== "upondefeat") continue;
+
+    const eff = entry?.effect;
+
+    if (Array.isArray(eff)) {
+      for (const e of eff) {
+        if (typeof e === "string" && e.trim()) out.push(e.trim());
+      }
+    } else if (typeof eff === "string" && eff.trim()) {
+      out.push(eff.trim());
+    }
+  }
+
+  return out;
+}
+
+function runUponDefeatEffects(cardData, heroId, state, extraSelectedData = {}) {
+  if (!cardData) return;
+  if (heroId == null) return;
+
+  const heroState = state?.heroData?.[heroId];
+  if (!heroState) return;
+
+  const effects = collectUponDefeatEffects(cardData);
+  if (!effects.length) return;
+
+  console.log(
+    `[uponDefeat] Running ${effects.length} reward effect(s) for ${cardData.name}.`,
+    effects
+  );
+
+  for (const effStr of effects) {
+    try {
+      executeEffectSafely(effStr, cardData, {
+        ...extraSelectedData,
+        currentHeroId: heroId,
+        state
+      });
+    } catch (err) {
+      console.warn(
+        `[uponDefeat] Effect '${effStr}' failed on ${cardData.name}:`,
+        err
+      );
+    }
+  }
+}

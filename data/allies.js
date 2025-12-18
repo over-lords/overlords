@@ -196,7 +196,7 @@ export const allies = [
     {
         id: "4559",
         name: "Bat-Mite",
-        image: `${cardArtFolder}/batMite.jpg`,
+        image: `${cardArtFolder}/batmite.jpg`,
         type: "Ally",
         doNotShow: "false",
         abilitiesText: [
