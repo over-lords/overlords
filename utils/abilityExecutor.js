@@ -2336,12 +2336,24 @@ function collectUponDefeatEffects(cardData) {
     ? cardData.abilitiesEffects
     : [];
 
-  for (const entry of list) {
+  for (let i = 0; i < list.length; i++) {
+    const entry = list[i];
     const cond = String(entry?.condition || "").trim().toLowerCase();
     if (cond !== "upondefeat") continue;
 
     const eff = entry?.effect;
 
+    // OPTIONAL uponDefeat
+    if (entry.type === "optional") {
+      out.push({
+        type: "optional",
+        effect: eff,
+        abilityIndex: i
+      });
+      continue;
+    }
+
+    // NON-OPTIONAL (existing behavior)
     if (Array.isArray(eff)) {
       for (const e of eff) {
         if (typeof e === "string" && e.trim()) out.push(e.trim());
@@ -2369,16 +2381,44 @@ function runUponDefeatEffects(cardData, heroId, state, extraSelectedData = {}) {
     effects
   );
 
-  for (const effStr of effects) {
+  for (const eff of effects) {
     try {
-      executeEffectSafely(effStr, cardData, {
-        ...extraSelectedData,
-        currentHeroId: heroId,
-        state
-      });
+
+      // OPTIONAL uponDefeat effect
+      if (typeof eff === "object" && eff.type === "optional") {
+
+        const label =
+          cardData.abilitiesNamePrint?.[eff.abilityIndex]?.text
+            ? `${cardData.abilitiesNamePrint[eff.abilityIndex].text}?`
+            : "Use optional ability?";
+
+        window.showOptionalAbilityPrompt(label).then(allow => {
+          if (!allow) {
+            console.log("[uponDefeat] Optional reward declined.");
+            return;
+          }
+
+          executeEffectSafely(eff.effect, cardData, {
+            ...extraSelectedData,
+            currentHeroId: heroId,
+            state
+          });
+        });
+
+      }
+
+      // NON-OPTIONAL uponDefeat effect
+      else {
+        executeEffectSafely(eff, cardData, {
+          ...extraSelectedData,
+          currentHeroId: heroId,
+          state
+        });
+      }
+
     } catch (err) {
       console.warn(
-        `[uponDefeat] Effect '${effStr}' failed on ${cardData.name}:`,
+        `[uponDefeat] Effect failed on ${cardData.name}:`,
         err
       );
     }

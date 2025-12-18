@@ -109,7 +109,7 @@ export const henchmen = [
         text: `Become my thrall`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -143,7 +143,7 @@ export const henchmen = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -173,7 +173,7 @@ export const henchmen = [
         text: `From Hell they Come!`
       },
       {
-        text: `Reward!`
+        text: `Return a Henchman or Villain`
       }
     ],
     abilitiesEffects: [
@@ -266,7 +266,7 @@ export const henchmen = [
         text: `Death From Above!`
       },
       {
-        text: `Reward!`
+        text: `Permanently KO a KO'd Henchman or Villain`
       }
     ],
     abilitiesEffects: [
@@ -275,6 +275,7 @@ export const henchmen = [
         effect: `teleport`
       },
       {
+        type: `optional`,
         condition: `uponDefeat`,
         effect: `koFromKO(1)`
       }
@@ -370,7 +371,7 @@ export const henchmen = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -554,7 +555,7 @@ export const henchmen = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Reward!`
+        text: `KO the top card of your Deck to deal 5 Damage to the Overlord`
       }
     ],
     abilitiesEffects: [

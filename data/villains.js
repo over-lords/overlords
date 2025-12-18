@@ -60,7 +60,7 @@ export const villains = [
         text: `Move Over!`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -112,7 +112,7 @@ export const villains = [
           text: `Draw 1`
       },
       {
-          text: `Damage a Henchman or Villain`
+          text: `Deal 2 Damage to a Henchman or Villain`
       }
   ],
   abilitiesEffects: [
@@ -147,7 +147,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -329,7 +329,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -360,7 +360,7 @@ export const villains = [
         text: `Calculated for that`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -395,7 +395,7 @@ export const villains = [
         text: `Glide`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -430,7 +430,7 @@ export const villains = [
         text: `Charge!`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -926,7 +926,7 @@ export const villains = [
         text: `Time to Grow!`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -1121,7 +1121,7 @@ export const villains = [
         text: `Clash!`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
@@ -1445,7 +1445,7 @@ export const villains = [
         text: `Got You!`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
