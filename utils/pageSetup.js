@@ -2100,6 +2100,8 @@ export function buildMainCardPanel(cardData) {
     panel.classList.add("open");
 }
 
+window.buildMainCardPanel = buildMainCardPanel;
+
 export function renderHeroHandBar(state) {
         console.log("[renderHeroHandBar] called", {
             heroTurnIndex: state.heroTurnIndex,
@@ -2572,7 +2574,7 @@ function renderDiscardSlide(state = gameState) {
     cardDiv.style.flex = "0 0 auto";
 
     const scaleWrapper = document.createElement("div");
-    scaleWrapper.style.transform = "scale(0.48)";
+    scaleWrapper.style.transform = "scale(0.46)";
     scaleWrapper.style.transformOrigin = "top center";
     scaleWrapper.style.cursor = "pointer";
 

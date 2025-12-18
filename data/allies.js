@@ -93,7 +93,8 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `chooseOption`
+                type: `chooseOption`,
+                effect: `chooseYourEffect`,
             },
             {
                 type: `chooseOption(1)`,
@@ -415,7 +416,8 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                type: `chooseOption`
+                type: `chooseOption`,
+                effect: `chooseYourEffect`,
             },
             {
                 type: `chooseOption(1)`,
