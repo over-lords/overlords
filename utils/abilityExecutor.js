@@ -1998,7 +1998,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     // 4) RETURN HERO TO HQ
     // ===================================================================
     if (heroId != null) {
-        sendHeroHomeFromBoard(heroId, s);
+        maybeSendHeroHomeAfterLaneClears(heroId, slotIndex, s);
     }
 
     renderHeroHandBar(s);
@@ -2382,5 +2382,43 @@ function runUponDefeatEffects(cardData, heroId, state, extraSelectedData = {}) {
         err
       );
     }
+  }
+}
+
+function isCityOccupied(state, idx) {
+  const e = Array.isArray(state.cities) ? state.cities[idx] : null;
+  return !!(e && e.id != null);
+}
+
+function maybeSendHeroHomeAfterLaneClears(heroId, defeatedSlotIndex, state = gameState) {
+  const heroState = state.heroData?.[heroId];
+  if (!heroState) return;
+
+  // If facing the Overlord, do not apply “city lane clears → go home” logic
+  if (heroState.isFacingOverlord) return;
+
+  const heroLower = heroState.cityIndex;
+  if (typeof heroLower !== "number") return;
+
+  // Heroes stand in LOWER slots; their lane’s UPPER slot is directly above
+  const heroUpper = heroLower - 1;
+
+  // Map that upper slot to the corresponding glide slot via your existing order arrays
+  const pos = UPPER_ORDER.indexOf(heroUpper);
+  const heroGlide = (pos >= 0) ? GLIDE_ORDER[pos] : null;
+
+  // Only send this hero home if the KO happened in THEIR lane (upper or glide)
+  const koInMyLane =
+    defeatedSlotIndex === heroUpper ||
+    (heroGlide != null && defeatedSlotIndex === heroGlide);
+
+  if (!koInMyLane) return;
+
+  // Lane is “clear” only when BOTH upper and glide are empty
+  const upperEmpty = !isCityOccupied(state, heroUpper);
+  const glideEmpty = (heroGlide == null) ? true : !isCityOccupied(state, heroGlide);
+
+  if (upperEmpty && glideEmpty) {
+    sendHeroHomeFromBoard(heroId, state);
   }
 }
