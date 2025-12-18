@@ -2550,8 +2550,9 @@ function renderDiscardSlide(state = gameState) {
   bar.style.display = "flex";
   bar.style.flexWrap = "nowrap";
   bar.style.overflowX = "auto";
+  bar.style.overflowY = "hidden";
   bar.style.gap = "0";
-  bar.style.marginTop = "30px";
+  bar.style.marginTop = "24px";
   bar.style.padding = "8px";
   bar.style.alignItems = "center";
   bar.style.pointerEvents = "auto";
@@ -2573,17 +2574,29 @@ function renderDiscardSlide(state = gameState) {
     return;
   }
 
+  const sizeLabel = document.createElement("div");
+  sizeLabel.textContent = `${heroName}'s Discard Pile: ${heroState.discard.length} cards`;
+  sizeLabel.style.marginTop = "14px";
+  sizeLabel.style.marginRight = "10px";
+  sizeLabel.style.marginBottom = "-4px";
+  sizeLabel.style.marginLeft = "10px";
+  sizeLabel.style.color = "#fff";
+  sizeLabel.style.fontSize = "26px";
+  sizeLabel.style.fontWeight = "bold";
+  sizeLabel.style.textAlign = "left";
+  cardsRow.appendChild(sizeLabel);
+
   // Render cards + click-to-open panel (inline, no wireCardToMainPanel)
   for (const id of discardList) {
     const cardDiv = document.createElement("div");
     cardDiv.className = "ko-card";
     cardDiv.style.height = "160px";
-    cardDiv.style.marginRight = "-70px";
-    cardDiv.style.marginLeft = "-30px";
+    cardDiv.style.marginRight = "-80px";
+    cardDiv.style.marginLeft = "-40px";
     cardDiv.style.flex = "0 0 auto";
 
     const scaleWrapper = document.createElement("div");
-    scaleWrapper.style.transform = "scale(0.46)";
+    scaleWrapper.style.transform = "scale(0.45)";
     scaleWrapper.style.transformOrigin = "top center";
     scaleWrapper.style.cursor = "pointer";
 
@@ -2618,10 +2631,11 @@ function renderDiscardSlide(state = gameState) {
 
   // Label under the row (KO style)
   const label = document.createElement("div");
-  label.textContent = `${heroName}'s discard pile. Left is latest.`;
-  label.style.marginTop = "18px";
+  label.textContent = `Left is latest.`;
+  label.style.marginTop = "12px";
+  label.style.marginBottom = "10px";
   label.style.marginLeft = "30px";
-  label.style.fontSize = "24px";
+  label.style.fontSize = "20px";
   label.style.fontStyle = "italic";
   label.style.color = "#fff";
   label.style.textAlign = "left";
