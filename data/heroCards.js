@@ -1327,7 +1327,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `ifDiscarded`,
-        effect: `koFoeIn(10)`
+        effect: `damageFoe(999,10)`
       },
     ]
   },

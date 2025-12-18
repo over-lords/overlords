@@ -700,7 +700,10 @@ img {
             import { scenarios } from './data/scenarios.js';
             import { henchmen } from './data/henchmen.js';
             import { villains } from './data/villains.js';
+
             import { renderAbilityText } from './utils/cardRenderer.js';
+            import { clearGameState } from "./utils/stateManager.js";
+
             import { supabase } from "./supabaseClient.js";
 
             window.GAME_MODE = "single";
@@ -857,6 +860,7 @@ img {
 
             startButton.addEventListener("click", async () => {
               if (!startButton.classList.contains("active")) return;
+              clearGameState();
 
               window.fetchUsername = async function() {
                 const uid = localStorage.getItem("session_user_id");

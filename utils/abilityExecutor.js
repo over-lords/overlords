@@ -623,7 +623,17 @@ export async function handleVillainEscape(entry, state) {
         }
 
         const total = captured.length;
-        const msg = total === 1 ? "1 Bystander KO'd" : `${total} Bystanders KO'd`;
+
+        let nameList = captured
+        .map(b => (b && b.name ? String(b.name) : "Bystander"))
+        .join(", ");
+
+        if (!nameList) nameList = "Bystander";
+
+        const msg =
+        total === 1
+            ? `${nameList} KO'd`
+            : `Bystanders KO'd: ${nameList}`;
 
         try {
             await showMightBanner(msg, 2000);

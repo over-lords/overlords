@@ -1182,8 +1182,19 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
     });
 
     // Count total KO'd bystanders for messaging
-    const totalKOd = state.koCards.filter(c => c.type === "Bystander").length;
-    const text = totalKOd === 1 ? "1 Bystander KO'd" : `${totalKOd} Bystanders KO'd`;
+    const koBystanders = state.koCards.filter(c => c && c.type === "Bystander");
+    const totalKOd = koBystanders.length;
+
+    let nameList = koBystanders
+    .map(c => (c && c.name ? String(c.name) : "Bystander"))
+    .join(", ");
+
+    if (!nameList) nameList = byName;
+
+    const text =
+    totalKOd === 1
+        ? `${nameList} KO'd`
+        : `Bystanders KO'd: ${nameList}`;
 
     // Use the existing Might banner for the announcement
     try {
