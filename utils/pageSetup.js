@@ -801,6 +801,28 @@ dropdownClose.addEventListener("click", () => {
     }, 450);
 });
 
+const koPanel = document.getElementById("ko-panel");
+const koTab = document.getElementById("ko-tab");
+const koClose = document.getElementById("ko-close");
+
+koTab.addEventListener("click", () => {
+    if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
+        window.renderKOBar(gameState);
+    }
+
+    koPanel.style.maxHeight = "85vh";
+    koTab.style.display = "none";
+    koClose.style.display = "flex";
+});
+
+koClose.addEventListener("click", () => {
+    koPanel.style.maxHeight = "0";
+    koClose.style.display = "none";
+    setTimeout(() => {
+        koTab.style.display = "flex";
+    }, 450);
+});
+
 const menuBtn = document.getElementById("gameMenu-box");
 const sideMenu = document.getElementById("sideMenu");
 const menuHeader = document.getElementById("menuHeader");
@@ -2319,5 +2341,152 @@ export function establishEnemyAllyDeckFromLoadout(selectedData, state = gameStat
         return combined;
     } catch (err) {
         console.error("Error establishing enemy+ally deck:", err);
+    }
+}
+
+// ================================================================
+// RENDER KO'D FOES BAR (HENCHMEN & VILLAINS)
+// ================================================================
+export function renderKOBar(state = gameState) {
+    //console.log("[renderKOBar] called", state);
+
+    const panel = document.getElementById("ko-content");
+    //console.log("[renderKOBar] ko-content element:", panel);
+
+    if (!panel) {
+        console.warn("[renderKOBar] ABORT: #ko-content not found in DOM");
+        return;
+    }
+
+    //console.log("[renderKOBar] clearing panel");
+    panel.innerHTML = "";
+
+    const bar = document.createElement("div");
+    bar.style.display = "flex";
+    bar.style.flexWrap = "nowrap";
+    bar.style.overflowX = "auto";
+    bar.style.gap = "0";
+    bar.style.padding = "8px";
+    bar.style.alignItems = "center";
+
+    const hasKoArray = Array.isArray(state.koCards);
+    //console.log("[renderKOBar] state.koCards exists:", hasKoArray, state.koCards);
+
+    const koList = hasKoArray ? [...state.koCards].reverse() : [];
+    //console.log("[renderKOBar] koList (after reverse):", koList);
+
+    if (!koList.length) {
+        console.warn("[renderKOBar] koList EMPTY — rendering placeholder");
+
+        const emptyMsg = document.createElement("div");
+        emptyMsg.textContent = "No KO'd foes.";
+        emptyMsg.style.padding = "16px";
+        bar.appendChild(emptyMsg);
+        panel.appendChild(bar);
+
+        //console.log("[renderKOBar] placeholder appended");
+        return;
+    }
+
+    //console.log("[renderKOBar] renderCard typeof:", typeof renderCard);
+
+    for (const cardInfo of koList) {
+        //console.log("[renderKOBar] processing cardInfo:", cardInfo);
+
+        const { id, name } = cardInfo;
+
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "ko-card";
+        cardDiv.style.minWidth = "0px";
+        cardDiv.style.height = "160px";
+        cardDiv.style.flex = "0 0 auto";
+        cardDiv.style.marginRight = "-60px";
+        cardDiv.style.marginLeft = "-60px";
+        cardDiv.style.display = "flex";
+        cardDiv.style.justifyContent = "center";
+        cardDiv.style.alignItems = "center";
+
+        if (typeof renderCard === "function") {
+            try {
+                //console.log("[renderKOBar] calling renderCard with id:", id);
+
+                const scaleWrapper = document.createElement("div");
+                scaleWrapper.style.transform = "scale(0.48)";
+                scaleWrapper.style.transformOrigin = "center";
+                scaleWrapper.style.cursor = "pointer";
+
+                const card = renderCard(String(id));
+                //console.log("[renderKOBar] renderCard returned:", card);
+
+                const fullCardData = findCardInAllSources(String(id));
+
+                scaleWrapper.appendChild(card);
+
+                scaleWrapper.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    console.log("[KO click] opening panel for:", fullCardData);
+                    openPanelForCard(fullCardData);
+                });
+
+                cardDiv.appendChild(scaleWrapper);
+
+            } catch (e) {
+                console.error("[renderKOBar] renderCard threw error for", name, e);
+                cardDiv.textContent = name;
+            }
+        } else {
+            console.warn("[renderKOBar] renderCard is NOT a function");
+            cardDiv.textContent = name;
+        }
+
+        bar.appendChild(cardDiv);
+        //console.log("[renderKOBar] appended cardDiv for:", name);
+    }
+
+    panel.appendChild(bar);
+    //console.log("[renderKOBar] bar appended to panel");
+
+    const label = document.createElement("div");
+    label.textContent = "KO'd cards in order. Left is latest.";
+    label.style.marginTop = "12px";
+    label.style.marginLeft = "30px";
+    label.style.fontSize = "24px";
+    label.style.fontStyle = "italic";
+    label.style.color = "#000";
+    label.style.textAlign = "left";
+    label.style.pointerEvents = "none";
+
+    panel.appendChild(label);
+}
+
+window.renderKOBar = renderKOBar;
+
+function openPanelForCard(cardData) {
+    if (!cardData || !cardData.type) return;
+
+    switch (cardData.type) {
+        case "Villain":
+        case "Henchman":
+            if (typeof window.buildVillainPanel === "function") {
+                window.buildVillainPanel(cardData);
+            }
+            break;
+
+        case "Overlord":
+            if (typeof window.buildOverlordPanel === "function") {
+                window.buildOverlordPanel(cardData);
+            }
+            break;
+
+        case "Main":
+        case "Bystander":
+        case "Hero":
+            if (typeof window.buildHeroPanel === "function") {
+                window.buildHeroPanel(cardData);
+            }
+            break;
+
+        default:
+            console.warn("[KO click] No panel handler for type:", cardData.type);
     }
 }

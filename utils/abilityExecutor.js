@@ -1937,15 +1937,19 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             );
         } else {
             // No hero credited: KO them so they don't vanish
-            if (!Array.isArray(s.koCards)) s.koCards = [];
-            captured.forEach(b => {
-                s.koCards.push({
-                    id: b.id,
-                    name: b.name,
-                    type: "Bystander",
-                    source: "foe-ko-no-hero"
-                });
+            if (!Array.isArray(s.koCards)) {
+                s.koCards = [];
+            }
+            s.koCards.push({
+                id: foeCard.id,
+                name: foeCard.name,
+                type: foeCard.type || "Enemy",
+                source: "hero-attack"
             });
+
+            if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
+                window.renderKOBar(s);
+            }
         }
 
         // Clear captured bystanders on the city entry
