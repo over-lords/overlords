@@ -2615,16 +2615,14 @@ export async function startTravelPrompt(gameState) {
         return;
     }
 
-    // Show a "Where are you traveling?" banner
-    showMightBanner("Travel Where?");
+    setTimeout(() => {
+        showMightBanner("Travel Where?");
+    }, 700);
 
     console.log(
         `[TRAVEL] Prompting ${heroName} to choose a travel destination. `
         + `currentTravel=${currentTravel}.`
     );
-
-    // No await here: actual travel happens when a city is clicked,
-    // via setupStartingTravelOptions → showTravelPopup → performHeroStartingTravel.
 }
 
 function resetHeroCurrentTravelAtTurnStart(gameState) {

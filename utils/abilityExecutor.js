@@ -490,15 +490,22 @@ async function runCharge(cardId, distance) {
 
     const entryIndex = CITY_ENTRY_UPPER;
 
-    // STEP 1 — Simulate a blank shove (shift all villains left one)
-    // (exactly what you had before)
     await pushChain(entryIndex);
 
-    // STEP 2 — Now place the new villain into City 1 AFTER pushing
-    // (exactly what you had before)
     placeCardIntoCitySlot(cardId, entryIndex);
 
-    // STEP 3 — After a short delay, visually "charge" left
+    try {
+        const cardData = findCardInAllSources(cardId);
+
+        const bannerText =
+            cardData?.abilitiesNamePrint?.[0]?.text ||
+            "Charge!";
+
+        showMightBanner(bannerText, 1200);
+    } catch (e) {
+        console.warn("[runCharge] Could not show Charge banner:", e);
+    }
+
     setTimeout(async () => {
         addChargeRushLines(entryIndex);
 
@@ -512,19 +519,12 @@ async function runCharge(cardId, distance) {
 
         saveGameState(gameState);
 
-        //
-        // NEW FIX — Clear the cities behind the charging villain
-        //
         (function clearCitiesBehindCharge() {
             const citySlots = document.querySelectorAll(".city-slot");
 
-            // The destination position is the last value of fromPos + 1 after the loop.
-            // But since fromPos was decremented after shifts, the destination city is:
             const destinationPos = fromPos + 1;
             const destIndex = UPPER_ORDER[destinationPos];
 
-            // Clear all cities *between entryIndex and the destination*, EXCLUDING the destination itself.
-            // entryIndex is CITY_ENTRY_UPPER.
             const entryPos = UPPER_ORDER.indexOf(entryIndex);
 
             for (let pos = entryPos; pos > destinationPos; pos--) {
@@ -544,9 +544,6 @@ async function runCharge(cardId, distance) {
             }
         })();
 
-
-        // === NEW: FIX TRAVEL OFFSET AFTER CHARGE ===
-        // Force hero travel UI to recalculate AFTER all villain movement is done.
         setTimeout(() => {
             if (typeof window.recalculateHeroTravel === "function") {
                 window.recalculateHeroTravel();
