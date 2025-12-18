@@ -1512,18 +1512,23 @@ html, body {
 .might-banner {
     position: fixed;
     top: 150px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    transform: translateX(0);
     background: rgba(31, 31, 31, 0.85);
     padding: 18px 30px;
     border-radius: 8px;
     font-size: 30px;
+    font-family: 'Racing Sans One', sans-serif;
     z-index: 99999;
     opacity: 0;
     pointer-events: none;
     color: white;
-    font-weight: bold;
     transition: opacity .4s ease;
+    width: fit-content;
+    max-width: 90vw;
+    text-align: center;
 }
 
 .might-banner.fade-in {

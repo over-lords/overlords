@@ -195,8 +195,9 @@ EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
 
     // Prefer the passed state (consistent with other handlers), fall back to global.
     const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
 
-    damageOverlord(amount, state);
+    damageOverlord(amount, state, heroId);
 };
 
 EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
@@ -1217,7 +1218,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
 
         if (foeSummary.source === "overlord") {
             // Overlord damage uses the existing damageOverlord helper
-            damageOverlord(damageAmount, gameState);
+            damageOverlord(damageAmount, gameState, heroId);
         } else if (foeSummary.source === "city-upper") {
             // Henchmen / Villain damage goes through the new damageFoe helper
             damageFoe(damageAmount, foeSummary, heroId, gameState);
@@ -1451,7 +1452,7 @@ async function executeParsedEffect(effectString, cardData, heroId, gameState) {
 // =======================================================================
 // DAMAGE THE CURRENT OVERLORD
 // =======================================================================
-export function damageOverlord(amount, state = gameState) {
+export function damageOverlord(amount, state = gameState, heroId = null) {
     const s = state;
 
     // If game is over, ignore further damage
@@ -1469,7 +1470,13 @@ export function damageOverlord(amount, state = gameState) {
     const ovId      = info.id;
     const ovCard    = info.card;
     const currentHP = info.currentHP;
+    const actualDamage = Math.max(0, Math.min(amount, currentHP));
     const newHP     = Math.max(0, currentHP - amount);
+
+    if (heroId != null) {
+        if (!s.heroDamageToOverlord) s.heroDamageToOverlord = {};
+        s.heroDamageToOverlord[heroId] = (s.heroDamageToOverlord[heroId] || 0) + actualDamage;
+    }
 
     // ===================================================================
     // SCENARIO BRANCH: damage active Scenario HP, do NOT touch overlordHP
@@ -1934,6 +1941,15 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     // FOE KO'D
     // ===================================================================
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
+    if (heroId != null) {
+        if (!s.heroFoesKOd) s.heroFoesKOd = {};
+        const heroSlot = s.heroData?.[heroId]?.cityIndex ?? null;
+        const current = s.heroFoesKOd[heroId] || { count: 0, slotIndex: heroSlot };
+        s.heroFoesKOd[heroId] = {
+            count: (current.count || 0) + 1,
+            slotIndex: heroSlot
+        };
+    }
     showMightBanner(`${foeCard.name} has been KO'd.`, 2000);
 
     // 1) REMOVE FOE FROM MODEL AND DOM IMMEDIATELY (prevents ghost foes)

@@ -2228,6 +2228,16 @@ export function renderHeroHandBar(state) {
                 if (!shouldRemoveFromGame) {
                     heroState.discard.push(cardId);
                 } else {
+                    if (cardData && String(cardData.type || "").toLowerCase() === "bystander") {
+                        if (!gameState.heroBystandersRescued) gameState.heroBystandersRescued = {};
+                        const rescues = gameState.heroBystandersRescued;
+                        const key = String(activeHeroId);
+                        const current = rescues[key] || { count: 0, slotIndex: activeIndex };
+                        rescues[key] = {
+                            count: (current.count || 0) + 1,
+                            slotIndex: activeIndex
+                        };
+                    }
                     console.log(`[HeroActivate] Removed ${cardName} (ID ${cardId}) from the game instead of discarding.`);
                     try { wrap.remove(); } catch (err) {}
                 }
