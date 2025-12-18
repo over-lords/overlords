@@ -23,10 +23,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `rescueBystander(1)`
       }
     ]
@@ -51,10 +48,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `draw(1)`
       }
     ]
@@ -83,17 +77,11 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `onEntry`,
-        uses: `1`,
-        shared: `no`,
         effect: `teleport`
       },
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: ["travelPlus(1)"]
       }
     ]
@@ -126,24 +114,16 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `onEntry`,
-        uses: `1`,
-        shared: `no`,
         effect: `teleport`
       },
       {
-        type: `quick`,
         condition: `KOHero`,
-        uses: `999`,
-        shared: `no`,
         effect: `returnHeroAsVillain`
       },
       {
         type: `optional`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `enemyDraw(1)`
       }
     ]
@@ -170,8 +150,6 @@ export const henchmen = [
       {
         type: `optional`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `enemyDraw(1)`
       }
     ]
@@ -200,17 +178,12 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `onEntry`,
-        uses: `1`,
-        shared: `no`,
         effect: `teleport`
       },
       {
         type: `optional`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `returnHenchOrVillain(1)`
       }
     ]
@@ -240,16 +213,11 @@ export const henchmen = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `isEngaged()`,
-        uses: `0`,
-        shared: `no`,
-        effect: `disableRetreat()`
+        condition: `isEngaged`,
+        effect: `disableRetreat`
       },
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `regainLife(1)`
       }
     ]
@@ -274,10 +242,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `damageOverlord(1)`
       }
     ]
@@ -306,17 +271,11 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: `onEntry()`,
-        uses: `0`,
-        shared: `no`,
+        condition: `onEntry`,
         effect: `teleport`
       },
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `koFromKO(1)`
       }
     ]
@@ -341,10 +300,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `regainLife(1)`
       }
     ]
@@ -369,10 +325,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `damageOverlord(2)`
       }
     ]
@@ -397,10 +350,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `draw(2)`
       }
     ]
@@ -427,8 +377,6 @@ export const henchmen = [
       {
         type: `optional`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `enemyDraw(1)`
       }
     ]
@@ -457,17 +405,11 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `KOHero`,
-        uses: `999`,
-        shared: `no`,
         effect: `returnHeroAsVillain`
       },
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: ["draw(2)","travelPlus(1)"]
       }
     ]
@@ -492,10 +434,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `drawUseOverlord(1)`
       }
     ]
@@ -520,10 +459,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `revealAndStopVillainDraw(1)`
       }
     ]
@@ -548,10 +484,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `scanKoMights(3)`
       }
     ]
@@ -576,10 +509,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: ["draw(1)","travelPlus(1)"]
       }
     ]
@@ -604,10 +534,7 @@ export const henchmen = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `rescueBystander(2)`
       }
     ]
@@ -634,8 +561,6 @@ export const henchmen = [
       {
         type: `optional`,
         condition: `uponDefeat`,
-        uses: `1`,
-        shared: `no`,
         effect: `koTopHeroCardDamageOverlord(1,5)`
       }
     ]
