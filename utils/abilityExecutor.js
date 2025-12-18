@@ -105,7 +105,7 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
 EFFECT_HANDLERS.enemyDraw = function(args, card, selectedData) {
     const count = Number(args?.[0]) || 1;
     const limit = args?.[1] ?? null;
-    return enemyDraw(count, limit);
+    return enemyDraw(count, limit, selectedData);
 };
 
 EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
@@ -143,6 +143,12 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
         gameState,
         { flag }
     );
+};
+
+EFFECT_HANDLERS.chooseYourEffect = async function (cardData, context = {}) {
+  const { currentHeroId, state } = context;
+  console.log(`[chooseYourEffect] Resolving CHOOSE block for ${cardData.name}`);
+  await runAbilitiesEffectsByCondition(cardData, currentHeroId, state, "none", context);
 };
 
 EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
@@ -2042,7 +2048,10 @@ function sendHeroHomeFromBoard(heroId, state = gameState) {
     }
 }
 
-export async function enemyDraw(count = 1, limit = null) {
+export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
+    const heroId = selectedData?.currentHeroId ?? null;
+    const state = selectedData?.state ?? gameState;
+
     if (!Array.isArray(gameState.enemyAllyDeck)) {
         console.warn("[enemyDraw] enemyAllyDeck missing or invalid.");
         return;
@@ -2202,23 +2211,123 @@ export async function enemyDraw(count = 1, limit = null) {
         }
 
         // -------------------------------------------------
-        // SAFE EFFECT EXECUTION
+        // SAFE EFFECT EXECUTION (OPTIONAL + CHOOSE SUPPORT)
+        // Mirrors hero-card choose/optional handling.
         // -------------------------------------------------
         if (Array.isArray(cardData.abilitiesEffects)) {
-            for (const eff of cardData.abilitiesEffects) {
-                if (!eff?.effect) continue;
 
-                console.log(
-                    `[enemyDraw] Executing effect '${eff.effect}' from ${cardData.name}`
-                );
+            for (let i = 0; i < cardData.abilitiesEffects.length; i++) {
 
-                try {
-                    executeEffectSafely(eff.effect, cardData, {});
-                } catch (err) {
-                    console.warn(
-                        `[enemyDraw] Effect failed on ${cardData.name}:`,
-                        err
+                const eff = cardData.abilitiesEffects[i];
+                if (!eff) continue;
+
+                // ---------- OPTIONAL ----------
+                if (eff.type === "optional") {
+
+                    const promptText =
+                        cardData.abilitiesNamePrint?.[i]?.text
+                            ? `${cardData.abilitiesNamePrint[i].text}?`
+                            : "Use optional ability?";
+
+                    const allow = await window.showOptionalAbilityPrompt(promptText);
+
+                    if (!allow) {
+                        console.log(`[enemyDraw] Optional ability declined for ${cardData.name}.`);
+                        continue;
+                    }
+
+                    console.log(`[enemyDraw] Optional ability accepted for ${cardData.name}.`);
+                }
+
+                // ---------- CHOOSE OPTION ----------
+                if (eff.type === "chooseOption") {
+
+                    const headerText =
+                        cardData.abilitiesNamePrint?.[i]?.text || "Choose";
+
+                    const options = [];
+                    const optionEffects = [];
+
+                    let j = i + 1;
+
+                    while (
+                        j < cardData.abilitiesEffects.length &&
+                        /^chooseOption\(\d+\)$/.test(cardData.abilitiesEffects[j].type)
+                    ) {
+                        const label =
+                            cardData.abilitiesNamePrint?.[j]?.text ||
+                            `Option ${options.length + 1}`;
+
+                        options.push({ label });
+                        optionEffects.push(cardData.abilitiesEffects[j]);
+                        j++;
+                    }
+
+                    if (options.length === 0) {
+                        console.warn(`[enemyDraw] chooseOption has no options on ${cardData.name}.`);
+                        continue;
+                    }
+
+                    const chosenIndex = await window.showChooseAbilityPrompt({
+                        header: headerText,
+                        options
+                    });
+
+                    const chosenEffectBlock = optionEffects[chosenIndex];
+                    if (!chosenEffectBlock) {
+                        console.warn(`[enemyDraw] Invalid chosen option index ${chosenIndex} on ${cardData.name}.`);
+                        i = j - 1;
+                        continue;
+                    }
+
+                    console.log(`[enemyDraw] Chose option ${chosenIndex + 1} for ${cardData.name}.`);
+
+                    const effectsArray = Array.isArray(chosenEffectBlock.effect)
+                        ? chosenEffectBlock.effect
+                        : [chosenEffectBlock.effect];
+
+                    for (const effectString of effectsArray) {
+                        if (typeof effectString !== "string") continue;
+
+                        console.log(
+                            `[enemyDraw] Executing effect '${effectString}' from ${cardData.name}`
+                        );
+
+                        try {
+                            executeEffectSafely(effectString, cardData, { ...selectedData, currentHeroId: heroId, state });
+                        } catch (err) {
+                            console.warn(
+                                `[enemyDraw] Effect failed on ${cardData.name}:`,
+                                err
+                            );
+                        }
+                    }
+
+                    // Skip past all chooseOption(n) entries we consumed
+                    i = j - 1;
+                    continue;
+                }
+
+                // ---------- NORMAL EFFECTS ----------
+                const effectsArray = Array.isArray(eff.effect)
+                    ? eff.effect
+                    : [eff.effect];
+
+                for (const effectString of effectsArray) {
+                    if (typeof effectString !== "string") continue;
+
+                    console.log(
+                        `[enemyDraw] Executing effect '${effectString}' from ${cardData.name}`
                     );
+
+                    try {
+                        executeEffectSafely(effectString, cardData, { ...selectedData, currentHeroId: heroId, state });
+                    } catch (err) {
+                        console.warn(
+                            `[enemyDraw] Effect failed on ${cardData.name}:`,
+                            err
+                        );
+                    }
                 }
             }
         }

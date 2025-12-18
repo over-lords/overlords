@@ -1313,7 +1313,7 @@ export const villains = [
         text: `Caught Off-Guard!`
       },
       {
-        text: `Reward!`
+        text: `Draw 3 and Travel to the Overlord`
       }
     ],
     abilitiesEffects: [
@@ -1330,7 +1330,7 @@ export const villains = [
       {
         type: `optional`,
         condition: `uponDefeat`,
-        effect: ["draw(3)","travelTo(Overlord)"]
+        effect: [`draw(3)`,`travelTo(Overlord)`]
       }
     ]
   },

@@ -98,11 +98,11 @@ export const allies = [
             },
             {
                 type: `chooseOption(1)`,
-                effect: [`koFoeIn(0)`]
+                effect: `damageFoe(999,0)`
             },
             {
                 type: `chooseOption(2)`,
-                effect: [`damageOverlord(3)`]
+                effect: `damageOverlord(3)`
             }
         ]
     },
@@ -421,11 +421,11 @@ export const allies = [
             },
             {
                 type: `chooseOption(1)`,
-                effect: [`damageOverlord(3)`]
+                effect: `damageOverlord(3)`
             },
             {
                 type: `chooseOption(2)`,
-                effect: [`lockVillain(any)`]
+                effect: `lockVillain(any)`
             }
         ]
     },
@@ -535,7 +535,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: ["draw(1)","travelPlus(1)"]
+                effect: [`draw(1)`,`travelPlus(1)`]
             }
         ]
     },
@@ -557,7 +557,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: ["draw(1)","regainLife(1)"]
+                effect: [`draw(1)`,`regainLife(1)`]
             }
         ]
     },

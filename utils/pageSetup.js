@@ -2220,8 +2220,17 @@ export function renderHeroHandBar(state) {
                     heroState.hand.splice(handIndex, 1);
                 }
 
-                // Add it to discard
-                heroState.discard.push(cardId);
+                // Add it to discard (unless it should be removed from the game)
+                const shouldRemoveFromGame =
+                    (String(cardId) === "0") ||
+                    (cardData && String(cardData.type || "").toLowerCase() === "bystander");
+
+                if (!shouldRemoveFromGame) {
+                    heroState.discard.push(cardId);
+                } else {
+                    console.log(`[HeroActivate] Removed ${cardName} (ID ${cardId}) from the game instead of discarding.`);
+                    try { wrap.remove(); } catch (err) {}
+                }
 
                 saveGameState(state || gameState);
 
