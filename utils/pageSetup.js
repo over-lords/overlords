@@ -2494,6 +2494,11 @@ function openPanelForCard(cardData) {
 
         case "Main":
         case "Bystander":
+            if (typeof window.buildMainCardPanel === "function") {
+                window.buildMainCardPanel(cardData);
+            }
+            break;
+
         case "Hero":
             if (typeof window.buildHeroPanel === "function") {
                 window.buildHeroPanel(cardData);
@@ -2511,13 +2516,54 @@ function renderDiscardSlide(state = gameState) {
   const heroId      = heroIds[activeIndex];
   if (!heroId) return;
 
+  const heroObj  = (typeof heroes !== "undefined" && Array.isArray(heroes))
+    ? heroes.find(h => String(h.id) === String(heroId))
+    : null;
+  const heroName = heroObj?.name || `Hero ${heroId}`;
+
   const heroState = state.heroData?.[heroId];
   if (!heroState || !Array.isArray(heroState.discard)) return;
 
+  if (!cardsRow) return;
   cardsRow.innerHTML = "";
-  const ordered = [...heroState.discard].reverse();
 
-  for (const id of ordered) {
+  // Layout container so we can put a label under the horizontal scroller
+  cardsRow.style.display = "flex";
+  cardsRow.style.flexDirection = "column";
+  cardsRow.style.alignItems = "stretch";
+  cardsRow.style.justifyContent = "flex-start";
+  cardsRow.style.overflow = "hidden";
+
+  // Horizontal scroll row (KO-bar style)
+  const bar = document.createElement("div");
+  bar.style.display = "flex";
+  bar.style.flexWrap = "nowrap";
+  bar.style.overflowX = "auto";
+  bar.style.gap = "0";
+  bar.style.marginTop = "30px";
+  bar.style.padding = "8px";
+  bar.style.alignItems = "center";
+  bar.style.pointerEvents = "auto";
+
+  const discardList = [...heroState.discard].reverse(); // left is latest
+
+  // Empty placeholder (KO style)
+  if (!discardList.length) {
+    const emptyMsg = document.createElement("div");
+    emptyMsg.textContent = `${heroName} has no discarded cards.`;
+    emptyMsg.style.marginTop = "80px";
+    emptyMsg.style.padding = "16px";
+    emptyMsg.style.fontSize = "24px";
+    emptyMsg.style.fontStyle = "italic";
+    emptyMsg.style.color = "#fff";
+    bar.appendChild(emptyMsg);
+
+    cardsRow.appendChild(bar);
+    return;
+  }
+
+  // Render cards + click-to-open panel (inline, no wireCardToMainPanel)
+  for (const id of discardList) {
     const cardDiv = document.createElement("div");
     cardDiv.className = "ko-card";
     cardDiv.style.height = "160px";
@@ -2528,44 +2574,47 @@ function renderDiscardSlide(state = gameState) {
     const scaleWrapper = document.createElement("div");
     scaleWrapper.style.transform = "scale(0.48)";
     scaleWrapper.style.transformOrigin = "top center";
+    scaleWrapper.style.cursor = "pointer";
 
-    scaleWrapper.appendChild(renderCard(String(id)));
-    wireCardToMainPanel(scaleWrapper, id);
+    const idStr = String(id);
+
+    // Render the card
+    const cardEl = renderCard(idStr);
+    scaleWrapper.appendChild(cardEl);
+
+    // Resolve full card data once, then open correct panel on click (KO-bar style)
+    const fullCardData =
+      (typeof findCardInAllSources === "function") ? findCardInAllSources(idStr) : null;
+
+    scaleWrapper.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      // fall back: if lookup failed, try again at click-time
+      const data = fullCardData || (
+        (typeof findCardInAllSources === "function") ? findCardInAllSources(idStr) : null
+      );
+
+      openPanelForCard(data);
+    }, true); // capture-phase to prevent inner handlers swallowing it
+
     cardDiv.appendChild(scaleWrapper);
-    cardsRow.appendChild(cardDiv);
+    bar.appendChild(cardDiv);
   }
-}
 
-function wireCardToMainPanel(wrapperEl, cardId) {
-  if (!wrapperEl) return;
+  cardsRow.appendChild(bar);
 
-  wrapperEl.style.cursor = "pointer";
-  wrapperEl.setAttribute("data-card-id", String(cardId));
+  // Label under the row (KO style)
+  const label = document.createElement("div");
+  label.textContent = `${heroName}'s discard pile. Left is latest.`;
+  label.style.marginTop = "18px";
+  label.style.marginLeft = "30px";
+  label.style.fontSize = "24px";
+  label.style.fontStyle = "italic";
+  label.style.color = "#fff";
+  label.style.textAlign = "left";
+  label.style.pointerEvents = "none";
 
-  // Capture-phase so inner card handlers can't swallow the click (same pattern you use elsewhere)
-  wrapperEl.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-
-    const idStr = String(cardId);
-
-    // Prefer resolving full card data (you already import this)
-    const cardData = (typeof findCardInAllSources === "function")
-      ? findCardInAllSources(idStr)
-      : null;
-
-    // Call buildMainCardPanel (supports either module import or window global)
-    const openPanel = (typeof buildMainCardPanel === "function")
-      ? buildMainCardPanel
-      : (typeof window !== "undefined" ? window.buildMainCardPanel : null);
-
-    if (typeof openPanel !== "function") {
-      console.warn("[wireCardToMainPanel] buildMainCardPanel not found");
-      return;
-    }
-
-    // If your buildMainCardPanel expects an ID, pass idStr instead of cardData
-    openPanel(cardData || idStr);
-  }, true);
+  cardsRow.appendChild(label);
 }

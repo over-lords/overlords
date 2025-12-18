@@ -1748,6 +1748,7 @@ html, body {
   display: flex;
   flex-direction: column;
   pointer-events: auto;
+  font-family: 'Racing Sans One', sans-serif;
 }
 
 #discard-slide-panel.open {
