@@ -93,6 +93,17 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
 
+    // atXorLessHP(n) / atXorGreaterHP(n) — apply to current hero
+    const hpMatch = condStr.match(/^atxor(less|greater)hp\((\d+)\)$/i);
+    if (hpMatch) {
+        const dir = hpMatch[1].toLowerCase();
+        const threshold = Number(hpMatch[2]);
+        if (heroId == null) return false;
+        const hState = s.heroData?.[heroId];
+        if (!hState || typeof hState.hp !== "number") return false;
+        return dir === "less" ? hState.hp <= threshold : hState.hp >= threshold;
+    }
+
     const activeHeroMatch = condStr.match(/^activehero\(([^)]+)\)$/i);
     if (activeHeroMatch) {
         const teamName = activeHeroMatch[1];
