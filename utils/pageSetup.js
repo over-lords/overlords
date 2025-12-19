@@ -9,7 +9,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, refreshFrozenOverlays } from './abilityExecutor.js';
+import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, refreshFrozenOverlays, runIfDiscardedEffects } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
@@ -2411,6 +2411,12 @@ export function renderHeroHandBar(state) {
         // Show button when hero is in a city OR is facing the overlord
         const canShowActivateButtons = inCity || isFacingOverlord;
 
+        const discardMode = state.discardMode;
+        const discardActive =
+            discardMode &&
+            String(discardMode.heroId) === String(heroId) &&
+            discardMode.remaining > 0;
+
         // Clear old cards
         handBar.innerHTML = "";
 
@@ -2432,15 +2438,20 @@ export function renderHeroHandBar(state) {
                 cardData && String(cardData.type || "").toLowerCase() === "bystander";
 
             const shouldShowActivateButton =
-                isBystanderCard || canShowActivateButtons;
+                discardActive || isBystanderCard || canShowActivateButtons;
 
             if (shouldShowActivateButton) {
                 activateBtn.className = "hero-hand-activate-btn";
                 activateBtn.type = "button";
 
                 const icon = document.createElement("img");
-                icon.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/activate.png";
-                icon.alt = "Activate";
+                if (discardActive) {
+                    icon.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/discardPivotLeft.png";
+                    icon.alt = "Discard";
+                } else {
+                    icon.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/activate.png";
+                    icon.alt = "Activate";
+                }
                 activateBtn.appendChild(icon);
             }
 
@@ -2448,7 +2459,6 @@ export function renderHeroHandBar(state) {
                 e.stopPropagation();
 
                 const cardName = cardData?.name || `Card ${cardId}`;
-                //console.log(`Activated ${cardName}`);
 
                 // Resolve the active hero correctly
                 const heroIds       = state.heroes || [];
@@ -2473,6 +2483,50 @@ export function renderHeroHandBar(state) {
                         heroState,
                         state
                     });
+                    return;
+                }
+
+                const discardMode = state.discardMode;
+                const discardActive =
+                    discardMode &&
+                    String(discardMode.heroId) === String(activeHeroId) &&
+                    discardMode.remaining > 0;
+
+                if (discardActive) {
+                    if (!Array.isArray(heroState.hand)) heroState.hand = [];
+                    if (!Array.isArray(heroState.discard)) heroState.discard = [];
+
+                    // Remove this card from hand
+                    const handIndex = heroState.hand.indexOf(cardId);
+                    if (handIndex !== -1) {
+                        heroState.hand.splice(handIndex, 1);
+                    }
+
+                    // Always discard (do not remove from game for bystanders here)
+                    heroState.discard.push(cardId);
+
+                    // Trigger any ifDiscarded effects on this card
+                    if (cardData) {
+                        try {
+                            if (typeof runIfDiscardedEffects === "function") {
+                                runIfDiscardedEffects(cardData, activeHeroId, state);
+                            }
+                        } catch (err) {
+                            console.warn("[discard] Failed to run ifDiscarded effects.", err);
+                        }
+                    }
+
+                    // Count toward "discarded this turn"
+                    heroState.discardedThisTurn = (heroState.discardedThisTurn || 0) + 1;
+
+                    // Decrement remaining discards
+                    discardMode.remaining = Math.max(0, (discardMode.remaining || 0) - 1);
+                    if (discardMode.remaining <= 0) {
+                        state.discardMode = null;
+                    }
+
+                    saveGameState(state || gameState);
+                    renderHeroHandBar(state);
                     return;
                 }
 

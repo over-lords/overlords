@@ -165,7 +165,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `[ICON:Bat]: Draw 2. <span class="line-gap"></span> [ICON:Wonder]: Increase this card’s Damage by 2. <span class="line-gap"></span> [ICON:Bat] + [ICON:Wonder]: OPTIONAL : Draw from the E&A.`
+        text: `[ICON:Bat]: Draw 2. <span class="line-gap"></span> [ICON:Wonder]: Increase this card’s Damage by 3. <span class="line-gap"></span> [ICON:Bat] + [ICON:Wonder]: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
@@ -173,7 +173,7 @@ export const heroCards = [
         text: `Draw 2`
       },
       {
-        text: `Increase Card Damage by 2`
+        text: `Increase Card Damage by 3`
       },
       {
         text: `Draw from the Enemies and Allies Deck`
@@ -246,7 +246,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: [`gainSidekick`]
+        effect: [`gainSidekick(1)`]
       },
       {
         type: `quick`,
@@ -275,6 +275,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
+        condition: `afterDamage`,
         effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]
@@ -698,17 +699,20 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        type: `shoveDamaged(5)`
+        effect: `shoveDamaged(5)`
       },
       {
+        condition: `afterDamage`,
         type: `chooseOption`,
         effect: `chooseYourEffect`
       },
       {
+        condition: `afterDamage`,
         type: `chooseOption(1)`,
         effect: [`travelTo(lastShovedVillain)`]
       },
       {
+        condition: `afterDamage`,
         type: `chooseOption(2)`,
         effect: [`retreatHeroToHQ`]
       }
@@ -808,6 +812,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
+        condition: `afterDamage`,
         effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]
@@ -903,6 +908,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
+        condition: `afterDamage`,
         effect: `giveVillainPassive(curse(1),current)`
       }
     ]
@@ -935,6 +941,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
+        condition: `afterDamage`,
         effect: `giveHeroPassiveTemp(retreatHeroToHQ(1))`
       },
     ]
@@ -1489,6 +1496,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
+        condition: `afterDamage`,
         effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]

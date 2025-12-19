@@ -1064,6 +1064,9 @@ export async function villainDraw(count = 1) {
             break;
         }
 
+        // Any successful draw should clear prior "top card revealed" state
+        gameState.revealedTopVillain = false;
+
         const data = findCardInAllSources(villainId);
         const kind = classifyVillainCard(villainId, data);
 
@@ -1319,6 +1322,12 @@ export async function startHeroTurn(state, opts = {}) {
         return;
     }
 
+    // Reset per-turn discard counter for the active hero
+    const activeHeroId = heroIds[state.heroTurnIndex ?? 0];
+    if (activeHeroId && state.heroData?.[activeHeroId]) {
+        state.heroData[activeHeroId].discardedThisTurn = 0;
+    }
+
     try { refreshFrozenOverlays(state); } catch (e) {}
 
     // Update coastal city tracking at the start of each hero turn
@@ -1407,7 +1416,6 @@ export async function startHeroTurn(state, opts = {}) {
 
     await startTravelPrompt(state);
 
-    const activeHeroId = heroIds[heroTurnIndex];
     const activeHeroState = state.heroData?.[activeHeroId];
 
     if (activeHeroState && typeof activeHeroState.cityIndex === "number") {
@@ -1744,17 +1752,6 @@ function isChargeBlockedByFrozen(distance, state = gameState) {
             const exitOcc = snapshot[CITY_EXIT_UPPER];
             if (entryIsFrozen(exitOcc, CITY_EXIT_UPPER, state)) return true;
         }
-    }
-
-    // Now check the actual charge path (distance steps to the left)
-    let currentPos = UPPER_ORDER.indexOf(entryIdx);
-    for (let step = 0; step < distance; step++) {
-        const nextPos = currentPos - 1;
-        if (nextPos < 0) break;
-        const targetIdx = UPPER_ORDER[nextPos];
-        const occ = snapshot[targetIdx];
-        if (entryIsFrozen(occ, targetIdx, state)) return true;
-        currentPos = nextPos;
     }
 
     return false;

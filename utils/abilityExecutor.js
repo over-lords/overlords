@@ -62,6 +62,69 @@ const GLIDE_ORDER = [
 
 const EFFECT_HANDLERS = {};
 
+function findKOdHeroes(state = gameState) {
+    const s = state || gameState;
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    if (!heroIds.length || !s.heroData) return 0;
+    const count = heroIds.reduce((acc, hid) => {
+        const h = s.heroData[hid];
+        if (!h) return acc;
+        return acc + ((h.hp != null && h.hp <= 0) || h.isKO ? 1 : 0);
+    }, 0);
+    console.log(`[findKOdHeroes] Found ${count} KO'd heroes.`);
+    return count;
+}
+
+function heroMatchesTeam(heroObj, teamNameRaw) {
+    if (!heroObj || !teamNameRaw) return false;
+    const teamName = String(teamNameRaw).toLowerCase();
+    const props = [
+        heroObj.team,
+        heroObj.heroTeam,
+        heroObj.faction
+    ].filter(Boolean).map(v => String(v).toLowerCase());
+    const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
+    const all = props.concat(list);
+    return all.some(t => t === teamName);
+}
+
+function evaluateCondition(condStr, heroId, state = gameState) {
+    if (!condStr || condStr.toLowerCase() === "none") return true;
+    const s = state || gameState;
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+
+    const activeHeroMatch = condStr.match(/^activehero\(([^)]+)\)$/i);
+    if (activeHeroMatch) {
+        const teamName = activeHeroMatch[1];
+        let activeTeams = new Set();
+
+        heroIds.forEach(id => {
+            const hObj = heroes.find(h => String(h.id) === String(id));
+            if (!hObj) return;
+
+            const hState = s.heroData?.[id];
+            const alive = hState ? (hState.hp == null ? true : hState.hp > 0) : true;
+            if (!alive) return;
+
+            // Exclude the activating hero from counting toward activeHero(team)
+            if (heroId != null && String(heroId) === String(id)) return;
+
+            const teams = [
+                hObj.team,
+                hObj.heroTeam,
+                hObj.faction
+            ].filter(Boolean).map(v => String(v).toLowerCase());
+            const list = Array.isArray(hObj.teams) ? hObj.teams.map(t => String(t).toLowerCase()) : [];
+            teams.concat(list).forEach(t => activeTeams.add(t));
+        });
+
+        return activeTeams.has(String(teamName).toLowerCase());
+    }
+
+    // Fallback: unknown condition -> false
+    return false;
+}
+
 // Shared helper to get per-instance key
 function getEntryKey(obj) {
     const k = obj?.instanceId ?? obj?.uniqueId ?? null;
@@ -429,6 +492,59 @@ EFFECT_HANDLERS.villainDraw = function(args) {
     villainDraw(count);
 };
 
+EFFECT_HANDLERS.increaseCardDamage = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    const raw = args?.[0];
+    let delta = 0;
+
+    if (typeof raw === "number") {
+        delta = raw;
+    } else if (typeof raw === "string") {
+        const val = raw.trim().toLowerCase();
+        if (val === "getcardsdiscarded") {
+            delta = getCardsDiscarded(heroId, state);
+        } else if (val === "findkodheroes") {
+            delta = findKOdHeroes(state);
+        }
+    }
+
+    if (!state._pendingDamage) state._pendingDamage = 0;
+    state._pendingDamage += Number(delta) || 0;
+};
+
+EFFECT_HANDLERS.discard = function(args = [], card, selectedData = {}) {
+    const count = Math.max(1, Number(args?.[0]) || 1);
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    if (!heroId) {
+        console.warn("[discard] No currentHeroId available.");
+        return;
+    }
+
+    const heroState = state.heroData?.[heroId];
+    if (!heroState || !Array.isArray(heroState.hand)) {
+        console.warn("[discard] No heroState/hand for heroId:", heroId);
+        return;
+    }
+
+    state.discardMode = {
+        heroId,
+        remaining: count
+    };
+
+    try {
+        showMightBanner(`Discard ${count} card(s)`, 1500);
+    } catch (e) {
+        console.warn("[discard] Could not show discard banner.", e);
+    }
+
+    renderHeroHandBar(state);
+    saveGameState(state);
+};
+
 EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
     const who = (args?.[0] ?? "any") || "any";
     const howLong = (args?.[1] ?? "forever") || "forever";
@@ -443,15 +559,19 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
             console.warn("[freezeVillain] No lastDamagedFoe recorded.");
             return;
         }
+        const instId = info.instanceId;
+        if (!instId) {
+            console.warn("[freezeVillain] lastDamagedFoe missing instanceId; skipping.");
+            return;
+        }
         const entry = Array.isArray(state.cities)
-            ? state.cities.find(e => e && getEntryKey(e) === info.instanceId)
+            ? state.cities.find(e => e && getEntryKey(e) === instId)
             : null;
-        const slotIndex = entry?.slotIndex ?? info.slotIndex ?? null;
-        if (!entry || slotIndex == null) {
+        if (!entry || typeof entry.slotIndex !== "number") {
             console.warn("[freezeVillain] Could not locate lastDamagedFoe entry.");
             return;
         }
-        applyFreezeToEntry(entry, slotIndex, state, { howLong, heroId });
+        applyFreezeToEntry(entry, entry.slotIndex, state, { howLong, heroId });
         return;
     }
 
@@ -1371,6 +1491,9 @@ export async function onHeroCardActivated(cardId, meta = {}) {
         return;
     }
 
+    // Reset pending damage accumulator for this activation
+    gameState._pendingDamage = 0;
+
     const idStr    = String(cardId);
     const action   = meta.action || "activated";
     const heroId   = meta.heroId ?? null;
@@ -1489,35 +1612,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
 
     const rawDamage =
         (cardData && (cardData.damage ?? cardData.dmg ?? cardData.attack)) ?? 0;
-    const damageAmount = Number(rawDamage) || 0;
-
-    if (foeSummary && damageAmount > 0) {
-        console.log(
-            `[AbilityExecutor] ${heroName} is dealing ${damageAmount} damage to ${foeSummary.foeName}.`
-        );
-
-        if (foeSummary.source === "overlord") {
-            // Overlord damage uses the existing damageOverlord helper
-            damageOverlord(damageAmount, gameState, heroId);
-        } else if (foeSummary.source === "city-upper") {
-            // Henchmen / Villain damage goes through the new damageFoe helper
-            damageFoe(damageAmount, foeSummary, heroId, gameState);
-        } else {
-            console.log(
-                "[AbilityExecutor] Foe summary has unknown source; no damage applied.",
-                foeSummary
-            );
-        }
-    } else {
-        if (!foeSummary) {
-            console.log("[AbilityExecutor] No foe to damage for this hero activation.");
-        } else {
-            console.log(
-                "[AbilityExecutor] Hero card has no positive damage value; skipping damage.",
-                { rawDamage, damageAmount }
-            );
-        }
-    }
+    const baseDamageAmount = Number(rawDamage) || 0;
 
     if (Array.isArray(cardData?.abilitiesEffects) && cardData.abilitiesEffects.length > 0) {
         console.log(`[AbilityExecutor] Abilities Effects for ${cardName}:`);
@@ -1557,18 +1652,19 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     // ------------------------------------------------------
     console.log(`[AbilityExecutor] Beginning effect execution for ${cardName}.`);
 
-    if (Array.isArray(cardData?.abilitiesEffects)) {
+    const postEffects = [];
 
-        for (let i = 0; i < cardData.abilitiesEffects.length; i++) {
-
-            const eff = cardData.abilitiesEffects[i];
-
-            // ---------- CONDITION ----------
+    async function executeEffectBlock(eff, i, { skipCondition = false } = {}) {
+        // ---------- CONDITION ----------
+        if (!skipCondition) {
             let cond = "none";
+            let condList = [];
 
             if (eff.condition != null) {
                 if (typeof eff.condition === "string") {
                     cond = eff.condition.trim();
+                } else if (Array.isArray(eff.condition)) {
+                    condList = eff.condition.map(c => String(c).trim());
                 } else {
                     console.warn(
                         "[AbilityExecutor] Invalid condition type:",
@@ -1579,129 +1675,237 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 }
             }
 
-            if (cond !== "none") {
-                console.log(
-                    `[AbilityExecutor] Condition '${cond}' not yet implemented, skipping.`
-                );
-                continue;
+            const allConds = condList.length ? condList : (cond !== "none" ? [cond] : []);
+            let condFailed = false;
+            for (const c of allConds) {
+                if (!evaluateCondition(c, heroId, gameState)) {
+                    condFailed = true;
+                    break;
+                }
+            }
+            if (condFailed) {
+                console.log(`[AbilityExecutor] Condition failed; skipping effect.`, { effect: eff });
+                return;
+            }
+        }
+
+        // ---------- OPTIONAL ----------
+        if (eff.type === "optional") {
+
+            const promptText =
+                cardData.abilitiesNamePrint?.[i]?.text
+                    ? `${cardData.abilitiesNamePrint[i].text}?`
+                    : "Use optional ability?";
+
+            const allow = await window.showOptionalAbilityPrompt(promptText);
+
+            if (!allow) {
+                console.log(`[AbilityExecutor] Optional ability declined.`);
+                return;
             }
 
-            // ---------- OPTIONAL ----------
-            if (eff.type === "optional") {
+            console.log(`[AbilityExecutor] Optional ability accepted.`);
+        }
 
-                const promptText =
-                    cardData.abilitiesNamePrint?.[i]?.text
-                        ? `${cardData.abilitiesNamePrint[i].text}?`
-                        : "Use optional ability?";
+        // ------------------------------------------------------
+        // CHOOSE OPTION HANDLING
+        // ------------------------------------------------------
+        if (eff.type === "chooseOption") {
 
-                const allow = await window.showOptionalAbilityPrompt(promptText);
+            const headerText =
+                cardData.abilitiesNamePrint?.[i]?.text || "Choose";
 
-                if (!allow) {
-                    console.log(`[AbilityExecutor] Optional ability declined.`);
-                    continue;
-                }
+            const options = [];
+            const optionEffects = [];
 
-                console.log(`[AbilityExecutor] Optional ability accepted.`);
+            let j = i + 1;
+
+            while (
+                j < cardData.abilitiesEffects.length &&
+                /^chooseOption\(\d+\)$/.test(cardData.abilitiesEffects[j].type)
+            ) {
+                const m = cardData.abilitiesEffects[j].type.match(/^chooseOption\((\d+)\)$/);
+                const optionNumber = m ? Number(m[1]) : null;
+
+                const label =
+                    cardData.abilitiesNamePrint?.[j]?.text ||
+                    `Option ${options.length + 1}`;
+
+                options.push({ label });
+                optionEffects.push(cardData.abilitiesEffects[j]);
+                j++;
             }
 
-            // ------------------------------------------------------
-            // CHOOSE OPTION HANDLING
-            // ------------------------------------------------------
-            if (eff.type === "chooseOption") {
-
-                const headerText =
-                    cardData.abilitiesNamePrint?.[i]?.text || "Choose";
-
-                const options = [];
-                const optionEffects = [];
-
-                let j = i + 1;
-
-                while (
-                    j < cardData.abilitiesEffects.length &&
-                    /^chooseOption\(\d+\)$/.test(cardData.abilitiesEffects[j].type)
-                ) {
-                    const m = cardData.abilitiesEffects[j].type.match(/^chooseOption\((\d+)\)$/);
-                    const optionNumber = m ? Number(m[1]) : null;
-
-                    const label =
-                        cardData.abilitiesNamePrint?.[j]?.text ||
-                        `Option ${options.length + 1}`;
-
-                    options.push({ label });
-                    optionEffects.push(cardData.abilitiesEffects[j]);
-                    j++;
-                }
-
-                if (options.length === 0) {
-                    console.warn("[AbilityExecutor] chooseOption has no options.");
-                    continue;
-                }
-
-                const chosenIndex = await window.showChooseAbilityPrompt({
-                    header: headerText,
-                    options
-                });
-
-                const chosenEffectBlock = optionEffects[chosenIndex];
-
-                console.log(`[AbilityExecutor] Chose option ${chosenIndex + 1}.`);
-
-                // Execute ONLY the chosen option’s effects
-                const effectsArray = Array.isArray(chosenEffectBlock.effect)
-                    ? chosenEffectBlock.effect
-                    : [chosenEffectBlock.effect];
-
-                for (const effectString of effectsArray) {
-                    await executeParsedEffect(effectString, cardData, heroId, gameState);
-                }
-
-                // Skip past all chooseOption(n) entries
-                i = j - 1;
-                continue;
+            if (options.length === 0) {
+                console.warn("[AbilityExecutor] chooseOption has no options.");
+                return;
             }
 
-            // ---------- NORMALIZE EFFECT LIST ----------
-            const effectsArray = Array.isArray(eff.effect)
-                ? eff.effect
-                : [eff.effect];
+            const chosenIndex = await window.showChooseAbilityPrompt({
+                header: headerText,
+                options
+            });
+
+            const chosenEffectBlock = optionEffects[chosenIndex];
+
+            console.log(`[AbilityExecutor] Chose option ${chosenIndex + 1}.`);
+
+            // Execute ONLY the chosen option’s effects
+            const effectsArray = Array.isArray(chosenEffectBlock.effect)
+                ? chosenEffectBlock.effect
+                : [chosenEffectBlock.effect];
 
             for (const effectString of effectsArray) {
+                await executeParsedEffect(effectString, cardData, heroId, gameState);
+            }
 
-                if (typeof effectString !== "string") continue;
+            // Skip past all chooseOption(n) entries
+            return { skipTo: j - 1 };
+        }
 
-                const match = effectString.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
-                if (!match) {
-                    console.warn(`[AbilityExecutor] Could not parse effect '${effectString}'.`);
-                    continue;
+        // ---------- NORMALIZE EFFECT LIST ----------
+        const effectsArray = Array.isArray(eff.effect)
+            ? eff.effect
+            : [eff.effect];
+
+        for (const effectString of effectsArray) {
+
+            if (typeof effectString !== "string") continue;
+
+            const match = effectString.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
+            if (!match) {
+                console.warn(`[AbilityExecutor] Could not parse effect '${effectString}'.`);
+                continue;
+            }
+
+            const fnName = match[1];
+            const argsRaw = match[2]
+                .split(",")
+                .map(x => x.trim())
+                .filter(Boolean);
+
+            const handler = EFFECT_HANDLERS[fnName];
+            if (!handler) {
+                console.warn(`[AbilityExecutor] No handler for '${fnName}'.`);
+                continue;
+            }
+
+            const parsedArgs = argsRaw.map(a => {
+                if (/^\d+$/.test(a)) return Number(a);
+                if (a === "true") return true;
+                if (a === "false") return false;
+                // Allow nested numeric helpers
+                const val = a.trim().toLowerCase();
+                if (val === "getcardsdiscarded") return getCardsDiscarded(heroId, gameState);
+                if (val === "findkodheroes") return findKOdHeroes(gameState);
+                return a;
+            });
+
+            console.log(`[AbilityExecutor] Executing '${fnName}'`, parsedArgs);
+
+            try {
+                handler(parsedArgs, cardData, { currentHeroId: heroId, state: gameState });
+            } catch (err) {
+                console.warn(`[AbilityExecutor] Effect '${fnName}' failed:`, err);
+            }
+        }
+
+        return {};
+    }
+
+    if (Array.isArray(cardData?.abilitiesEffects)) {
+
+        for (let i = 0; i < cardData.abilitiesEffects.length; i++) {
+
+            const eff = cardData.abilitiesEffects[i];
+
+            // ---------- CONDITION ----------
+            let cond = "none";
+            let condList = [];
+
+            if (eff.condition != null) {
+                if (typeof eff.condition === "string") {
+                    cond = eff.condition.trim();
+                } else if (Array.isArray(eff.condition)) {
+                    condList = eff.condition.map(c => String(c).trim());
+                } else {
+                    console.warn(
+                        "[AbilityExecutor] Invalid condition type:",
+                        eff.condition,
+                        "on effect",
+                        eff
+                    );
                 }
+            }
 
-                const fnName = match[1];
-                const argsRaw = match[2]
-                    .split(",")
-                    .map(x => x.trim())
-                    .filter(Boolean);
+            const allConds = condList.length ? condList : (cond !== "none" ? [cond] : []);
+            const isAfterDamage = allConds.some(c => c.toLowerCase() === "afterdamage");
+            if (isAfterDamage) {
+                postEffects.push({ eff, index: i });
+                continue;
+            }
 
-                const handler = EFFECT_HANDLERS[fnName];
-                if (!handler) {
-                    console.warn(`[AbilityExecutor] No handler for '${fnName}'.`);
-                    continue;
+            let condFailed = false;
+            for (const c of allConds) {
+                if (!evaluateCondition(c, heroId, gameState)) {
+                    condFailed = true;
+                    break;
                 }
+            }
+            if (condFailed) {
+                console.log(`[AbilityExecutor] Condition failed; skipping effect.`, { effect: eff });
+                continue;
+            }
 
-                const parsedArgs = argsRaw.map(a => {
-                    if (/^\d+$/.test(a)) return Number(a);
-                    if (a === "true") return true;
-                    if (a === "false") return false;
-                    return a;
-                });
+            const res = await executeEffectBlock(eff, i, { skipCondition: true });
+            if (res && res.skipTo != null) {
+                i = res.skipTo;
+            }
+        }
+    }
 
-                console.log(`[AbilityExecutor] Executing '${fnName}'`, parsedArgs);
+    // ------------------------------------------------------
+    // APPLY BASE DAMAGE AFTER EFFECTS
+    // ------------------------------------------------------
+    const bonusDamage = Number(gameState._pendingDamage || 0);
+    const damageAmount = baseDamageAmount + bonusDamage;
+    gameState._pendingDamage = 0;
 
-                try {
-                    handler(parsedArgs, cardData, { currentHeroId: heroId, state: gameState });
-                } catch (err) {
-                    console.warn(`[AbilityExecutor] Effect '${fnName}' failed:`, err);
-                }
+    if (foeSummary && damageAmount > 0) {
+        console.log(
+            `[AbilityExecutor] ${heroName} is dealing ${damageAmount} damage to ${foeSummary.foeName}.`
+        );
+
+        if (foeSummary.source === "overlord") {
+            damageOverlord(damageAmount, gameState, heroId);
+        } else if (foeSummary.source === "city-upper") {
+            damageFoe(damageAmount, foeSummary, heroId, gameState);
+        } else {
+            console.log(
+                "[AbilityExecutor] Foe summary has unknown source; no damage applied.",
+                foeSummary
+            );
+        }
+    } else {
+        if (!foeSummary) {
+            console.log("[AbilityExecutor] No foe to damage for this hero activation.");
+        } else {
+            console.log(
+                "[AbilityExecutor] Hero card has no positive damage value; skipping damage.",
+                { rawDamage, damageAmount }
+            );
+        }
+    }
+
+    // ------------------------------------------------------
+    // POST-DAMAGE EFFECTS (e.g., afterDamage)
+    // ------------------------------------------------------
+    if (postEffects.length) {
+        for (let k = 0; k < postEffects.length; k++) {
+            const { eff, index } = postEffects[k];
+            const res = await executeEffectBlock(eff, index, { skipCondition: true });
+            if (res && res.skipTo != null) {
+                k = res.skipTo;
             }
         }
     }
@@ -2250,12 +2454,14 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         else currentHP = baseHP;
     }
 
-    // Track last damaged foe for follow-up effects
-    s.lastDamagedFoe = {
-        foeId: foeIdStr,
-        instanceId: entryKey,
-        slotIndex
-    };
+    // Track last damaged foe for follow-up effects (only if we have a stable instance key)
+    if (entryKey) {
+        s.lastDamagedFoe = {
+            foeId: foeIdStr,
+            instanceId: entryKey,
+            slotIndex
+        };
+    }
 
     const newHP = Math.max(0, currentHP - amount);
 
@@ -2424,6 +2630,56 @@ export function refreshFrozenOverlays(state = gameState) {
             removeFrozenOverlay(idx);
         }
     });
+}
+
+export function getCardsDiscarded(heroId, state = gameState) {
+    const s = state || gameState;
+    if (!heroId) return 0;
+    const hState = s.heroData?.[heroId];
+    if (!hState) return 0;
+    return Number(hState.discardedThisTurn || 0);
+}
+
+export function runIfDiscardedEffects(cardData, heroId, state) {
+    if (!cardData) return;
+    const effects = Array.isArray(cardData.abilitiesEffects) ? cardData.abilitiesEffects : [];
+    if (!effects.length) return;
+
+    const abilityNames = Array.isArray(cardData.abilitiesNamePrint) ? cardData.abilitiesNamePrint : [];
+
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        const cond = String(eff?.condition || "").trim().toLowerCase();
+        if (cond !== "ifdiscarded") continue;
+
+        const effType = String(eff?.type || "").toLowerCase();
+        const effVal = eff?.effect;
+
+        // OPTIONAL
+        if (effType === "optional") {
+            const label =
+                abilityNames[i]?.text
+                    ? `${abilityNames[i].text}?`
+                    : "Use optional ability?";
+
+            window.showOptionalAbilityPrompt(label).then(allow => {
+                if (!allow) return;
+                const list = Array.isArray(effVal) ? effVal : [effVal];
+                list.forEach(effectString => {
+                    if (typeof effectString !== "string") return;
+                    executeEffectSafely(effectString, cardData, { currentHeroId: heroId, state });
+                });
+            });
+            continue;
+        }
+
+        // CHOOSE (basic support: treat as normal effects)
+        const list = Array.isArray(effVal) ? effVal : [effVal];
+        list.forEach(effectString => {
+            if (typeof effectString !== "string") return;
+            executeEffectSafely(effectString, cardData, { currentHeroId: heroId, state });
+        });
+    }
 }
 
 
