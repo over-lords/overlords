@@ -633,25 +633,28 @@ export function renderCard(cardId, container) {
     bottomBar.style.display = 'flex';
     bottomBar.style.alignItems = 'center';
     bottomBar.style.justifyContent = 'center';
-    bottomBar.style.padding = '8px';
+    bottomBar.style.padding = '0';
     bottomBar.style.textAlign = 'center';
     bottomBar.style.fontSize = '14px';
     bottomBar.style.lineHeight = '1.2em';
     bottomBar.style.overflow = 'hidden';
+    bottomBar.style.boxSizing = 'border-box';
     card.appendChild(bottomBar);
 
     const textBox = document.createElement('div');
     textBox.style.width = '100%';
     textBox.style.maxHeight = '100%';
     textBox.style.overflow = 'hidden';
+    textBox.style.textAlign = "center";
+    textBox.style.margin = "0 auto";
+    textBox.style.padding = "0 10px";
 
     if (Array.isArray(cardData.abilitiesText)) {
         cardData.abilitiesText.forEach(a => {
             const line = document.createElement('div');
             line.innerHTML = renderAbilityText(a.text);
-            line.style.display = "flex";
             line.style.textAlign = "center";
-            line.style.width = "92.5%";
+            line.style.width = "100%";
             textBox.appendChild(line);
         });
     }
@@ -1165,9 +1168,10 @@ export function renderCard(cardId, container) {
     bottom.style.display = 'flex';
     bottom.style.alignItems = 'center';
     bottom.style.justifyContent = 'center';
-    bottom.style.padding = '6px';
+    bottom.style.padding = '0';
     bottom.style.textAlign = 'center';
     bottom.style.overflow = 'hidden';
+    bottom.style.boxSizing = 'border-box';
     card.appendChild(bottom);
 
     const textBox = document.createElement('div');
@@ -1176,6 +1180,8 @@ export function renderCard(cardId, container) {
     textBox.style.lineHeight = '1.2em';
     textBox.style.textAlign = 'center';
     textBox.style.overflow = 'hidden';
+    textBox.style.margin = '0 auto';
+    textBox.style.padding = '0 10px';
 
     if (Array.isArray(cardData.abilitiesText)) {
         cardData.abilitiesText.forEach(a => {
