@@ -121,7 +121,7 @@ export const heroCards = [
       },
       {
         type: `chooseOption(1)`,
-        effect: [`setCardDamageTo(0)`,`damageFoe(99,any)`,`damageHero(lastDamagedFoe)`]
+        effect: [`setCardDamageTo(0)`,`damageFoe(999,any)`,`damageHero(lastDamagedFoe)`]
       },
       {
         type: `chooseOption(2)`,

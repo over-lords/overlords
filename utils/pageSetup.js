@@ -9,7 +9,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities, currentTurn, onHeroCardActivated } from './abilityExecutor.js';
+import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
@@ -1320,8 +1320,174 @@ function getFoeCurrentAndMaxHP(foeCard) {
     return { currentHP, maxHP };
 }
 
+const getInstanceKey = (obj) => {
+    const k = obj?.instanceId ?? obj?.uniqueId ?? null;
+    return (k == null) ? null : String(k);
+};
+
+function showDamageSelectConfirm({ amount, foeName }) {
+    return new Promise(resolve => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        `;
+
+        const box = document.createElement("div");
+        box.style.cssText = `
+            background: #fff;
+            color: #111;
+            border-radius: 14px;
+            border: 4px solid #000;
+            width: min(420px, 100%);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+            padding: 18px;
+            text-align: center;
+            font-family: 'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif;
+        `;
+
+        const title = document.createElement("div");
+        title.style.cssText = "font-size: 28px; font-weight: 800; margin-bottom: 10px;";
+        title.textContent = "Confirm Damage";
+
+        const msg = document.createElement("div");
+        msg.style.cssText = "font-size: 22px; line-height: 1.35; margin-bottom: 16px;";
+        const isKO = Number(amount) === 999;
+        msg.textContent = isKO
+            ? `KO ${foeName}?`
+            : `Deal ${amount} damage to ${foeName}?`;
+
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex; gap:10px; justify-content:center; flex-wrap:wrap;";
+
+        const makeBtn = (label, bg, fg) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.style.cssText = `
+                flex: 1 1 120px;
+                padding: 12px 14px;
+                font-size: 16px;
+                font-weight: 800;
+                border: 3px solid #000;
+                border-radius: 12px;
+                background: ${bg};
+                color: ${fg};
+                cursor: pointer;
+            `;
+            return b;
+        };
+
+        const yesBtn = makeBtn("Yes", "#ffd800", "#000");
+        const noBtn  = makeBtn("No", "#e3e3e3", "#000");
+
+        const cleanup = (result) => {
+            try { overlay.remove(); } catch (e) {}
+            resolve(result);
+        };
+
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick  = () => cleanup(false);
+
+        btnRow.appendChild(yesBtn);
+        btnRow.appendChild(noBtn);
+
+        box.appendChild(title);
+        box.appendChild(msg);
+        box.appendChild(btnRow);
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+}
+
+function findCityEntryForVillainCard(villainCard, state = gameState) {
+    const cities = state?.cities;
+    if (!Array.isArray(cities)) return { entry: null, slotIndex: null };
+
+    const idStr = String(villainCard.baseId ?? villainCard.id ?? "");
+    const key = getInstanceKey(villainCard);
+
+    // 1) Prefer a direct instanceId/uniqueId match
+    if (key) {
+        const idx = cities.findIndex(c => c && getInstanceKey(c) === key);
+        if (idx !== -1) {
+            return { entry: cities[idx], slotIndex: idx };
+        }
+    }
+
+    // 2) Fallback by base id (ambiguous if multiple copies exist)
+    let found = null;
+    let foundIndex = null;
+    let count = 0;
+
+    cities.forEach((c, i) => {
+        if (c && String(c.id) === idStr) {
+            found = c;
+            foundIndex = i;
+            count += 1;
+        }
+    });
+
+    if (count > 1) {
+        console.warn(
+            "[buildVillainPanel] Multiple city entries share this foe id; selection may target the first match.",
+            { idStr, count }
+        );
+    }
+
+    return { entry: found, slotIndex: foundIndex };
+}
+
 export function buildVillainPanel(villainCard) {
     if (!villainCard) return;
+
+    // If a damageFoe(any) is pending, hijack the click to a confirm modal instead of opening the panel UI.
+    const pendingSelect = (typeof window !== "undefined") ? window.__damageFoeSelectMode : null;
+    if (pendingSelect && typeof pendingSelect.amount === "number") {
+        const stateForDamage = pendingSelect.state || gameState;
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForDamage);
+
+        if (!entry) {
+            console.warn("[buildVillainPanel] No matching city entry found for selection target.");
+            return;
+        }
+
+        showDamageSelectConfirm({
+            amount: pendingSelect.amount,
+            foeName: villainCard.name
+        }).then(allow => {
+            if (!allow) return;
+
+            const summary = {
+                foeType: villainCard.type || "Enemy",
+                foeId: String(villainCard.baseId ?? villainCard.id ?? ""),
+                instanceId: getInstanceKey(entry) || getInstanceKey(villainCard),
+                foeName: villainCard.name,
+                currentHP: entry.currentHP ?? villainCard.currentHP ?? villainCard.hp,
+                slotIndex,
+                source: "city-upper"
+            };
+
+            damageFoe(
+                pendingSelect.amount,
+                summary,
+                pendingSelect.heroId ?? null,
+                stateForDamage,
+                { flag: "single", fromAny: true }
+            );
+
+            window.__damageFoeSelectMode = null;
+        });
+
+        return;
+    }
 
     const panel = document.getElementById("villain-panel");
     const content = document.getElementById("villain-panel-content");

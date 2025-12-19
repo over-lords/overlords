@@ -126,6 +126,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
 
         if (raw === "all") {
             flag = "all";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "any") {
+            flag = "any";
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
@@ -1685,7 +1687,33 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
 export function damageFoe(amount, foeSummary, heroId = null, state = gameState, options = {}) {
     const s = state;
 
-    const { flag = "single" } = options;
+    const { flag = "single", fromAny = false, fromAll = false } = options;
+
+    // ============================================================
+    // FLAG: "any" — enable UI target selection via villain panel
+    // ============================================================
+    if (flag === "any") {
+        if (typeof window === "undefined") {
+            console.warn("[damageFoe] 'any' flag requires the browser UI; no window found.");
+            return;
+        }
+
+        // Store the pending selection info for buildVillainPanel to consume once the player clicks a foe.
+        window.__damageFoeSelectMode = {
+            amount,
+            heroId,
+            state: s,
+            fromAny: true
+        };
+
+        try {
+            showMightBanner(`Choose a foe to take ${amount} damage`, 1800);
+        } catch (err) {
+            console.warn("[damageFoe] Could not show selection banner.", err);
+        }
+
+        return;
+    }
 
     // Helper: unified per-instance key (supports either property name)
     const getInstanceKey = (obj) => {
@@ -1789,7 +1817,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         }
 
         for (const foe of allFoes) {
-            damageFoe(amount, foe, heroId, s, { flag: "single" }); // prevent recursion
+            damageFoe(amount, foe, heroId, s, { flag: "single", fromAll: true }); // prevent recursion
         }
 
         return;
@@ -2031,7 +2059,17 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     });
 
     // 5) RETURN HERO TO HQ (if applicable)
-    if (heroId != null) {
+    if (fromAny || fromAll) {
+        // Prefer the acting hero when provided
+        if (heroId != null) {
+            maybeSendHeroHomeAfterLaneClears(heroId, slotIndex, s);
+        } else if (slotIndex != null && s.heroData) {
+            // Fallback: check all heroes to see whose lane just cleared
+            Object.keys(s.heroData).forEach(hId => {
+                maybeSendHeroHomeAfterLaneClears(hId, slotIndex, s);
+            });
+        }
+    } else if (heroId != null) {
         maybeSendHeroHomeAfterLaneClears(heroId, slotIndex, s);
     }
 
