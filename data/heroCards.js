@@ -666,7 +666,7 @@ export const heroCards = [
       },
       {
         type: `chooseOption(2)`,
-        effect: [`koHenchman(all)`]
+        effect: [`damageFoe(999,allHenchmen)`]
       }
     ]
   },

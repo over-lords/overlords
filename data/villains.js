@@ -549,7 +549,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `koHenchman(all)`
+        effect: `damageFoe(999,allHenchmen)`
       }
     ],
     mightNamePrint: [

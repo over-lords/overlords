@@ -1339,7 +1339,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `koHenchman`
+        effect: `damageFoe(999,anyHenchman)`
       }
     ]
   },
@@ -2584,7 +2584,7 @@ export const heroes = [
         condition: `beforeDraw`,
         uses: `2`,
         shared: `no`,
-        effect: `reduceTravelKOHenchman`
+        effect: [`travelMinus(1)`,`damageFoe(999,anyHenchman)`]
       },
       {
         type: `passive`,

@@ -1567,7 +1567,17 @@ export function buildVillainPanel(villainCard) {
         // If selection is restricted to certain slots, ignore foes outside that set.
         if (Array.isArray(pendingSelect.allowedSlots) && !pendingSelect.allowedSlots.includes(slotIndex)) {
             console.log("[buildVillainPanel] Selection mode active but this foe is not in an allowed slot; ignoring.");
-        } else {
+            return;
+        }
+
+        // If selection is restricted to certain types, ignore foes outside that set.
+        if (Array.isArray(pendingSelect.allowedTypes) && pendingSelect.allowedTypes.length) {
+            if (!pendingSelect.allowedTypes.includes(villainCard.type)) {
+                console.log("[buildVillainPanel] Selection mode active but this foe is not an allowed type; ignoring.");
+                return;
+            }
+        }
+
         showDamageSelectConfirm({
             amount: pendingSelect.amount,
             foeName: villainCard.name
@@ -1596,7 +1606,6 @@ export function buildVillainPanel(villainCard) {
         });
 
         return;
-        }
     }
 
     const panel = document.getElementById("villain-panel");

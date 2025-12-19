@@ -88,6 +88,74 @@ function heroMatchesTeam(heroObj, teamNameRaw) {
     return all.some(t => t === teamName);
 }
 
+function getActiveTeamCount(teamName, heroId = null, state = gameState) {
+    if (!teamName) return 0;
+    const s = state || gameState;
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    let count = 0;
+
+    heroIds.forEach(id => {
+        if (heroId != null && String(id) === String(heroId)) return; // exclude activating hero
+        const hObj = heroes.find(h => String(h.id) === String(id));
+        if (!hObj) return;
+        const hState = s.heroData?.[id];
+        const alive = hState ? (typeof hState.hp === "number" ? hState.hp > 0 : true) : true;
+        if (!alive) return;
+        if (heroMatchesTeam(hObj, teamName)) count += 1;
+    });
+
+    console.log(`[getActiveTeamCount] Team ${teamName} active count (excluding hero ${heroId ?? "n/a"}): ${count}`);
+    return count;
+}
+
+function getKOdTeamCount(teamName, heroId = null, state = gameState) {
+    if (!teamName) return 0;
+    const s = state || gameState;
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    let count = 0;
+
+    heroIds.forEach(id => {
+        if (heroId != null && String(id) === String(heroId)) return; // exclude activating hero
+        const hObj = heroes.find(h => String(h.id) === String(id));
+        if (!hObj) return;
+        const hState = s.heroData?.[id];
+        const isKO = hState ? ((typeof hState.hp === "number" && hState.hp <= 0) || hState.isKO) : false;
+        if (!isKO) return;
+        if (heroMatchesTeam(hObj, teamName)) count += 1;
+    });
+
+    console.log(`[getKOdTeamCount] Team ${teamName} KO count (excluding hero ${heroId ?? "n/a"}): ${count}`);
+    return count;
+}
+
+function resolveNumericValue(raw, heroId = null, state = gameState) {
+    if (typeof raw === "number") return raw;
+    if (typeof raw !== "string") return 0;
+
+    const val = raw.trim();
+    const lower = val.toLowerCase();
+
+    if (lower === "getcardsdiscarded") {
+        return getCardsDiscarded(heroId, state);
+    }
+    if (lower === "findkodheroes") {
+        return findKOdHeroes(state);
+    }
+
+    const activeMatch = val.match(/^getactiveteamcount\(([^)]+)\)$/i);
+    if (activeMatch) {
+        return getActiveTeamCount(activeMatch[1], heroId, state);
+    }
+
+    const koMatch = val.match(/^getkodteamcount\(([^)]+)\)$/i);
+    if (koMatch) {
+        return getKOdTeamCount(koMatch[1], heroId, state);
+    }
+
+    const num = Number(raw);
+    return Number.isFinite(num) ? num : 0;
+}
+
 function evaluateCondition(condStr, heroId, state = gameState) {
     if (!condStr || condStr.toLowerCase() === "none") return true;
     const s = state || gameState;
@@ -255,9 +323,10 @@ EFFECT_HANDLERS.charge = function (args, card, selectedData) {
 };
 
 EFFECT_HANDLERS.draw = function(args, card, selectedData) {
-    const count = Number(args?.[0]) || 1;
-
     const heroId = selectedData?.currentHeroId ?? null;
+    const rawCount = resolveNumericValue(args?.[0] ?? 1, heroId, gameState);
+    const count = Math.max(0, Number(rawCount) || 0);
+
     if (!heroId) {
         console.warn("[draw] No currentHeroId available.");
         return;
@@ -266,6 +335,11 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) {
         console.warn("[draw] No heroState for heroId:", heroId);
+        return;
+    }
+
+    if (count <= 0) {
+        console.log("[draw] Count resolved to 0; no cards drawn.");
         return;
     }
 
@@ -313,8 +387,12 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
 
         if (raw === "all") {
             flag = "all";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "allhenchmen") {
+            flag = "allHenchmen";
         } else if (typeof raw === "string" && raw.toLowerCase() === "any") {
             flag = "any";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "anyhenchman") {
+            flag = "anyHenchman";
         } else if (typeof raw === "string" && raw.toLowerCase() === "anycoastal") {
             flag = "anyCoastal";
         } else if (!Number.isNaN(Number(raw))) {
@@ -508,18 +586,7 @@ EFFECT_HANDLERS.setCardDamageTo = function(args = [], card, selectedData = {}) {
     const heroId = selectedData?.currentHeroId ?? null;
 
     const raw = args?.[0];
-    let val = 0;
-
-    if (typeof raw === "number") {
-        val = raw;
-    } else if (typeof raw === "string") {
-        const lowered = raw.trim().toLowerCase();
-        if (lowered === "getcardsdiscarded") {
-            val = getCardsDiscarded(heroId, state);
-        } else if (lowered === "findkodheroes") {
-            val = findKOdHeroes(state);
-        }
-    }
+    const val = resolveNumericValue(raw, heroId, state);
 
     if (!state._pendingSetDamage) state._pendingSetDamage = null;
     state._pendingSetDamage = Number(val) || 0;
@@ -530,18 +597,7 @@ EFFECT_HANDLERS.increaseCardDamage = function(args = [], card, selectedData = {}
     const heroId = selectedData?.currentHeroId ?? null;
 
     const raw = args?.[0];
-    let delta = 0;
-
-    if (typeof raw === "number") {
-        delta = raw;
-    } else if (typeof raw === "string") {
-        const val = raw.trim().toLowerCase();
-        if (val === "getcardsdiscarded") {
-            delta = getCardsDiscarded(heroId, state);
-        } else if (val === "findkodheroes") {
-            delta = findKOdHeroes(state);
-        }
-    }
+    const delta = resolveNumericValue(raw, heroId, state);
 
     if (!state._pendingDamage) state._pendingDamage = 0;
     state._pendingDamage += Number(delta) || 0;
@@ -2226,6 +2282,36 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     }
 
     // ============================================================
+    // FLAG: "anyHenchman" — enable UI selection limited to Henchmen
+    // ============================================================
+    if (flag === "anyHenchman") {
+        if (typeof window === "undefined") {
+            console.warn("[damageFoe] 'anyHenchman' flag requires the browser UI; no window found.");
+            return;
+        }
+
+        window.__damageFoeSelectMode = {
+            amount,
+            heroId,
+            state: s,
+            fromAny: true,
+            allowedTypes: ["Henchman"]
+        };
+
+        try {
+            const isKO = Number(amount) === 999;
+            const text = isKO
+                ? "Choose a Henchman to KO"
+                : `Choose a Henchman to take ${amount} damage`;
+            showMightBanner(text, 1800);
+        } catch (err) {
+            console.warn("[damageFoe] Could not show selection banner.", err);
+        }
+
+        return;
+    }
+
+    // ============================================================
     // FLAG: "anyCoastal" — like "any" but limited to coastal cities
     // ============================================================
     if (flag === "anyCoastal") {
@@ -2372,6 +2458,53 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
         for (const foe of allFoes) {
             damageFoe(amount, foe, heroId, s, { flag: "single", fromAll: true }); // prevent recursion
+        }
+
+        return;
+    }
+
+    // ============================================================
+    // FLAG: "allHenchmen" — damage ALL Henchmen in cities
+    // ============================================================
+    if (flag === "allHenchmen") {
+        if (!Array.isArray(s.cities)) {
+            console.warn("[damageFoe] No cities array; cannot apply 'allHenchmen' damage.");
+            return;
+        }
+
+        console.log(`[damageFoe] Applying ${amount} damage to ALL Henchmen in cities.`);
+
+        const allH = [];
+
+        for (let slotIndex = 0; slotIndex < s.cities.length; slotIndex++) {
+            const entry = s.cities[slotIndex];
+            if (!entry || entry.id == null) continue;
+
+            const foeIdStr = String(entry.id);
+            const foeCard =
+                henchmen.find(h => String(h.id) === foeIdStr) ||
+                null;
+
+            if (!foeCard || (foeCard.type && foeCard.type !== "Henchman")) continue;
+
+            allH.push({
+                foeType: foeCard.type || "Enemy",
+                foeId: foeIdStr,
+                instanceId: getInstanceKey(entry),
+                foeName: foeCard.name,
+                currentHP: entry.currentHP ?? foeCard.hp,
+                slotIndex,
+                source: "city-upper"
+            });
+        }
+
+        if (!allH.length) {
+            console.log("[damageFoe] No Henchmen in cities to damage.");
+            return;
+        }
+
+        for (const foe of allH) {
+            damageFoe(amount, foe, heroId, s, { flag: "single", fromAll: true });
         }
 
         return;
@@ -2569,6 +2702,26 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         if (e && String(e.id) === foeIdStr) {
             s.cities[slotIndex] = null;
         }
+    }
+
+    // If a hero was engaged beneath this foe, send them back to HQ (cityIndex -> null)
+    if (Number.isInteger(slotIndex) && Array.isArray(s.heroes) && s.heroData) {
+        const lowerSlot = slotIndex + 1;
+        s.heroes.forEach(hid => {
+            const hState = s.heroData[hid];
+            if (!hState) return;
+            if (hState.cityIndex === lowerSlot) {
+                hState.cityIndex = null;
+                try {
+                    const citySlots = document.querySelectorAll(".city-slot");
+                    const slot = citySlots?.[lowerSlot];
+                    const area = slot?.querySelector(".city-card-area");
+                    if (area) area.innerHTML = "";
+                } catch (err) {
+                    console.warn("[damageFoe] Failed to clear engaged hero UI after foe KO.", err);
+                }
+            }
+        });
     }
 
     try {
