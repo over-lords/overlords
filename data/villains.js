@@ -11,7 +11,7 @@ export const villains = [
     doNotShow: "false",
     hero: "Superman",
     hp: "16",
-    damage: "2",
+    damage: "3",
     abilitiesText: [
       {
         text: `Charge 1 <span class="line-gap"></span> 
@@ -419,7 +419,7 @@ export const villains = [
     doNotShow: "false",
     hero: "Superman",
     hp: "18",
-    damage: "2",
+    damage: "3",
     abilitiesText: [
       {
         text: `Charge 1 <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`

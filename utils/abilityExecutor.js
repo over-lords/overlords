@@ -395,6 +395,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "anyHenchman";
         } else if (typeof raw === "string" && raw.toLowerCase() === "anycoastal") {
             flag = "anyCoastal";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "anywithbystander") {
+            flag = "anyWithBystander";
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
@@ -2273,6 +2275,56 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             const text = isKO
                 ? "Choose a foe to KO"
                 : `Choose a foe to take ${amount} damage`;
+            showMightBanner(text, 1800);
+        } catch (err) {
+            console.warn("[damageFoe] Could not show selection banner.", err);
+        }
+
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // Ensure any pending selection is cleared at hero end-of-turn
+    // ------------------------------------------------------------
+    if (typeof window !== "undefined") {
+        window.__damageFoeSelectCleanupHero = heroId ?? null;
+    }
+
+    // ============================================================
+    // FLAG: "anyWithBystander" — like "any" but only foes holding bystanders
+    // ============================================================
+    if (flag === "anyWithBystander") {
+        if (typeof window === "undefined") {
+            console.warn("[damageFoe] 'anyWithBystander' flag requires the browser UI; no window found.");
+            return;
+        }
+
+        // If no foes currently have captured bystanders, bail out immediately.
+        const hasCaptured = Array.isArray(s.cities) && s.cities.some(e =>
+            e &&
+            (
+                (Array.isArray(e.capturedBystanders) && e.capturedBystanders.length > 0) ||
+                (Number(e.capturedBystanders) > 0)
+            )
+        );
+        if (!hasCaptured) {
+            console.log("[damageFoe] No foes with captured bystanders; skipping anyWithBystander selection.");
+            return;
+        }
+
+        window.__damageFoeSelectMode = {
+            amount,
+            heroId,
+            state: s,
+            fromAny: true,
+            requireBystanders: true
+        };
+
+        try {
+            const isKO = Number(amount) === 999;
+            const text = isKO
+                ? "Choose a foe with a bystander to KO"
+                : `Choose a foe with a bystander to take ${amount} damage`;
             showMightBanner(text, 1800);
         } catch (err) {
             console.warn("[damageFoe] Could not show selection banner.", err);

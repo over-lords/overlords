@@ -1895,6 +1895,9 @@ export function endCurrentHeroTurn(gameState) {
         }
     }
 
+    // Clear any pending damageFoe selection at end of turn
+    try { if (typeof window !== "undefined") window.__damageFoeSelectMode = null; } catch (e) {}
+
     if (typeof heroState.cityIndex === "number") {
 
         // Heroes are in LOWER slots; villains are in the UPPER slot above

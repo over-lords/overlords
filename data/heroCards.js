@@ -339,7 +339,7 @@ export const heroCards = [
       },
       {
         type: `chooseOption(2)`,
-        effect: [`koVillainWithBystander(1)`]
+        effect: [`damageFoe(999,anyWithBystander)`]
       }
     ]
   },
@@ -699,6 +699,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
+        condition: `afterDamage`,
         effect: `shoveDamaged(5)`
       },
       {
@@ -709,7 +710,7 @@ export const heroCards = [
       {
         condition: `afterDamage`,
         type: `chooseOption(1)`,
-        effect: [`travelTo(lastShovedVillain)`]
+        effect: [`travelTo(lastShovedVillainDestination)`]
       },
       {
         condition: `afterDamage`,

@@ -1578,6 +1578,17 @@ export function buildVillainPanel(villainCard) {
             }
         }
 
+        // If selection requires captured bystanders, ensure this foe has any.
+        if (pendingSelect.requireBystanders) {
+            const hasCaptured =
+                (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) ||
+                (Number(entry.capturedBystanders) > 0);
+            if (!hasCaptured) {
+                console.log("[buildVillainPanel] Selection mode requires a foe with captured bystander(s); ignoring.");
+                return;
+            }
+        }
+
         showDamageSelectConfirm({
             amount: pendingSelect.amount,
             foeName: villainCard.name
