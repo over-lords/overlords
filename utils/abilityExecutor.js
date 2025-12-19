@@ -62,6 +62,119 @@ const GLIDE_ORDER = [
 
 const EFFECT_HANDLERS = {};
 
+// Shared helper to get per-instance key
+function getEntryKey(obj) {
+    const k = obj?.instanceId ?? obj?.uniqueId ?? null;
+    return (k == null) ? null : String(k);
+}
+
+function ensureFrozenOverlay(slotIndex) {
+    const citySlots = document.querySelectorAll(".city-slot");
+    const slot = citySlots?.[slotIndex];
+    if (!slot) return;
+    const area = slot.querySelector(".city-card-area");
+    if (!area) return;
+    if (area.querySelector(".frozen-overlay")) return;
+
+    const img = document.createElement("img");
+    img.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/locked.png";
+    img.className = "frozen-overlay";
+    img.style.position = "absolute";
+    img.style.top = "0";
+    img.style.left = "0";
+    img.style.right = "0";
+    img.style.bottom = "0";
+    img.style.margin = "auto";
+    img.style.pointerEvents = "none";
+    img.style.zIndex = "50";
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "contain";
+    img.style.opacity = "0.92";
+
+    // Make sure area can host overlay
+    if (getComputedStyle(area).position === "static") {
+        area.style.position = "relative";
+    }
+
+    area.appendChild(img);
+}
+
+function removeFrozenOverlay(slotIndex) {
+    const citySlots = document.querySelectorAll(".city-slot");
+    const slot = citySlots?.[slotIndex];
+    if (!slot) return;
+    const area = slot.querySelector(".city-card-area");
+    if (!area) return;
+    const img = area.querySelector(".frozen-overlay");
+    if (img) img.remove();
+}
+
+function applyFreezeToEntry(entry, slotIndex, state = gameState, opts = {}) {
+    if (!entry || slotIndex == null) return;
+
+    entry.isFrozen = true;
+    ensureFrozenOverlay(slotIndex);
+
+    const s = state || gameState;
+    if (!s.tempFrozen) s.tempFrozen = {};
+
+    const key = getEntryKey(entry) || String(entry.id || slotIndex);
+
+    const howLong = String(opts.howLong || "forever").toLowerCase();
+    const heroId = opts.heroId ?? null;
+
+    if (howLong === "next" && heroId != null) {
+        s.tempFrozen[key] = {
+            heroId,
+            armed: false
+        };
+    } else {
+        // forever: ensure any temp marker cleared
+        delete s.tempFrozen[key];
+    }
+
+    // Also mirror on the base card for panels if desired
+    const foeCard =
+        henchmen.find(h => String(h.id) === String(entry.id)) ||
+        villains.find(v => String(v.id) === String(entry.id));
+    if (foeCard) foeCard.isFrozen = true;
+}
+
+function unfreezeByKey(key, state = gameState) {
+    if (!key) return;
+    const s = state || gameState;
+    if (!Array.isArray(s.cities)) return;
+
+    for (let i = 0; i < s.cities.length; i++) {
+        const e = s.cities[i];
+        if (!e) continue;
+        const ek = getEntryKey(e);
+        if (ek && ek === key) {
+            e.isFrozen = false;
+            removeFrozenOverlay(i);
+            break;
+        }
+    }
+    delete s.tempFrozen?.[key];
+}
+
+export function processTempFreezesForHero(heroId, state = gameState) {
+    const s = state || gameState;
+    if (!s.tempFrozen) return;
+
+    Object.entries({ ...s.tempFrozen }).forEach(([k, meta]) => {
+        if (!meta || meta.heroId == null) return;
+        if (String(meta.heroId) !== String(heroId)) return;
+
+        if (meta.armed) {
+            unfreezeByKey(k, s);
+        } else {
+            s.tempFrozen[k] = { ...meta, armed: true };
+        }
+    });
+}
+
 EFFECT_HANDLERS.charge = function (args, card, selectedData) {
     const distance = Number(args[0]) || 1;
     runCharge(card.id, distance);
@@ -314,6 +427,63 @@ EFFECT_HANDLERS.rallyNextHenchVillains = function(args) {
 EFFECT_HANDLERS.villainDraw = function(args) {
     const count = Number(args[0]) || 1;
     villainDraw(count);
+};
+
+EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
+    const who = (args?.[0] ?? "any") || "any";
+    const howLong = (args?.[1] ?? "forever") || "forever";
+
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    // lastDamagedFoe
+    if (String(who).toLowerCase() === "lastdamagedfoe") {
+        const info = state.lastDamagedFoe;
+        if (!info) {
+            console.warn("[freezeVillain] No lastDamagedFoe recorded.");
+            return;
+        }
+        const entry = Array.isArray(state.cities)
+            ? state.cities.find(e => e && getEntryKey(e) === info.instanceId)
+            : null;
+        const slotIndex = entry?.slotIndex ?? info.slotIndex ?? null;
+        if (!entry || slotIndex == null) {
+            console.warn("[freezeVillain] Could not locate lastDamagedFoe entry.");
+            return;
+        }
+        applyFreezeToEntry(entry, slotIndex, state, { howLong, heroId });
+        return;
+    }
+
+    // default: any (selection)
+    if (String(who).toLowerCase() === "any") {
+        if (typeof window === "undefined") {
+            console.warn("[freezeVillain] 'any' selection requires browser UI.");
+            return;
+        }
+        window.__freezeSelectMode = {
+            state,
+            heroId,
+            howLong
+        };
+        try {
+            showMightBanner("Choose a foe to freeze", 1800);
+        } catch (err) {
+            console.warn("[freezeVillain] Could not show selection banner.", err);
+        }
+        return;
+    }
+
+    // fallback: if a foe summary is provided in selectedData, freeze that
+    const foeSummary = selectedData?.selectedFoeSummary ?? null;
+    if (foeSummary && Array.isArray(state.cities)) {
+        const idx = (typeof foeSummary.slotIndex === "number") ? foeSummary.slotIndex : null;
+        const entry = (idx != null) ? state.cities[idx] : null;
+        if (entry && String(entry.id) === String(foeSummary.foeId || foeSummary.id)) {
+            const slotIndex = idx != null ? idx : entry.slotIndex;
+            applyFreezeToEntry(entry, slotIndex, state, { howLong, heroId });
+        }
+    }
 };
 
 // END OF EFFECT HANDLERS
@@ -947,6 +1117,9 @@ function moveCardModelAndDOM(fromIndex, toIndex) {
     gameState.cities[toIndex] = gameState.cities[fromIndex];
     if (gameState.cities[toIndex]) {
         gameState.cities[toIndex].slotIndex = toIndex;
+        if (gameState.cities[toIndex].isFrozen) {
+            ensureFrozenOverlay(toIndex);
+        }
     }
     gameState.cities[fromIndex] = null;
 
@@ -1012,7 +1185,10 @@ function moveHeroesWithVillain(fromUpperIndex, toUpperIndex) {
 function isFrozen(entryOrId) {
     // Per-instance flag wins if present
     if (entryOrId && typeof entryOrId === "object") {
-        if (entryOrId.isFrozen === true) return true;
+        if (entryOrId.isFrozen === true) {
+            ensureFrozenOverlay(entryOrId.slotIndex);
+            return true;
+        }
 
         // Clash: foe is frozen only while a hero is in the lower slot beneath it
         const clashId = entryOrId.id ?? entryOrId.baseId ?? entryOrId.foeId;
@@ -1033,7 +1209,12 @@ function isFrozen(entryOrId) {
                 const lowerIdx = upperIdx + 1;
                 const heroIds = gameState.heroes || [];
                 const engaged = heroIds.some(hid => gameState.heroData?.[hid]?.cityIndex === lowerIdx);
-                if (engaged) return true;
+                if (engaged) {
+                    ensureFrozenOverlay(upperIdx);
+                    return true;
+                } else {
+                    removeFrozenOverlay(upperIdx);
+                }
             }
         }
 
@@ -1050,7 +1231,13 @@ function isFrozen(entryOrId) {
         villains.find(v => v.id === cardId);
 
     // Template-level frozen flag
-    return data?.isFrozen === true;
+    const frozen = data?.isFrozen === true;
+    if (frozen && typeof entryOrId === "object" && entryOrId.slotIndex != null) {
+        ensureFrozenOverlay(entryOrId.slotIndex);
+    } else if (!frozen && typeof entryOrId === "object" && entryOrId.slotIndex != null) {
+        removeFrozenOverlay(entryOrId.slotIndex);
+    }
+    return frozen;
 }
 
 function cardHasClash(cardId) {
@@ -2063,6 +2250,13 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         else currentHP = baseHP;
     }
 
+    // Track last damaged foe for follow-up effects
+    s.lastDamagedFoe = {
+        foeId: foeIdStr,
+        instanceId: entryKey,
+        slotIndex
+    };
+
     const newHP = Math.max(0, currentHP - amount);
 
     // Sync per-instance representations (DO NOT mutate foeCard.currentHP)
@@ -2092,6 +2286,13 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
                         window.buildVillainPanel(foeCard);
                     }
                 });
+
+                // Re-apply freeze overlay if this entry is frozen (including clash-engaged)
+                if (entry.isFrozen || isFrozen({ ...entry, slotIndex })) {
+                    ensureFrozenOverlay(slotIndex);
+                } else {
+                    removeFrozenOverlay(slotIndex);
+                }
             }
         }
     } catch (err) {
@@ -2201,6 +2402,28 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     renderHeroHandBar(s);
     saveGameState(s);
+}
+
+export function freezeFoe(entry, slotIndex, state = gameState, options = {}) {
+    applyFreezeToEntry(entry, slotIndex, state, options);
+}
+
+export function refreshFrozenOverlays(state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(s.cities)) return;
+
+    s.cities.forEach((entry, idx) => {
+        if (!entry) {
+            removeFrozenOverlay(idx);
+            return;
+        }
+
+        if (isFrozen({ ...entry, slotIndex: idx })) {
+            ensureFrozenOverlay(idx);
+        } else {
+            removeFrozenOverlay(idx);
+        }
+    });
 }
 
 

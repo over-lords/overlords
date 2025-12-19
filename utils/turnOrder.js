@@ -171,7 +171,7 @@ import { renderCard, findCardInAllSources } from './cardRenderer.js';
 import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, 
          buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
          renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow } from './pageSetup.js';
-import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain } from './abilityExecutor.js';
+import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, refreshFrozenOverlays } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -1319,6 +1319,8 @@ export async function startHeroTurn(state, opts = {}) {
         return;
     }
 
+    try { refreshFrozenOverlays(state); } catch (e) {}
+
     // Update coastal city tracking at the start of each hero turn
     checkCoastalCities(state);
 
@@ -1979,11 +1981,16 @@ export function endCurrentHeroTurn(gameState) {
         heroState.discard
     );
 
+    // Handle temporary freezes tied to this hero (remove after their next turn)
+    processTempFreezesForHero(heroId, gameState);
+
     const nextIdx = (currentIdx + 1) % heroCount;
 
     gameState.heroTurnIndex = nextIdx;
 
     saveGameState(gameState);
+
+    try { refreshFrozenOverlays(gameState); } catch (e) {}
 
     if (!gameState.gameOver) {
         startHeroTurn(gameState);
