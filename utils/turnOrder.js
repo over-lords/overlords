@@ -595,6 +595,38 @@ const GLIDE_ORDER = [
   CITY_ENTRY_GLIDE
 ];
 
+function entryIsFrozen(entry, upperIdx = null, state = gameState) {
+    if (!entry) return false;
+    if (entry.isFrozen === true) return true;
+
+    const id = entry.id ?? entry.baseId ?? entry.foeId;
+    if (id == null) return false;
+
+    const data =
+        henchmen.find(h => String(h.id) === String(id)) ||
+        villains.find(v => String(v.id) === String(id));
+
+    // Clash: frozen only while a hero is in the lower slot
+    const hasClash =
+        data?.hasClash === true ||
+        (Array.isArray(data?.abilitiesEffects) &&
+            data.abilitiesEffects.some(eff => {
+                const raw = eff?.effect;
+                const list = Array.isArray(raw) ? raw : [raw];
+                return list.some(txt => typeof txt === "string" && txt.trim().toLowerCase() === "hasclash");
+            }));
+
+    if (hasClash && typeof upperIdx === "number") {
+        const lowerIdx = upperIdx + 1;
+        const heroesArr = state?.heroes || [];
+        if (heroesArr.some(hid => state?.heroData?.[hid]?.cityIndex === lowerIdx)) {
+            return true;
+        }
+    }
+
+    return data?.isFrozen === true;
+}
+
 // --- VILLAIN DECK HELPERS & CENTRAL VILLAIN DRAW --------------------------
 
 /**
@@ -966,12 +998,47 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false }
     }
 
     if (chargeDist > 0) {
+        if (fromDeck) {
+            const blocked = isChargeBlockedByFrozen(chargeDist, state);
+            if (blocked) {
+                console.warn("[VILLAIN DRAW] Charge blocked by frozen foe; revealing top card instead.");
+                const ptr = state.villainDeckPointer ?? 0;
+                if (ptr > 0) {
+                    state.villainDeckPointer = ptr - 1;
+                }
+                state.revealedTopVillain = true;
+                try {
+                    await showMightBanner("Top Card Revealed", 2000);
+                } catch (err) {
+                    console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
+                }
+                return;
+            }
+        }
+
         await executeEffectSafely(`charge(${chargeDist})`, cardData, {});
         return;
     }
 
     // NORMAL ENTRY: shove into city 1 using existing shoveUpper logic
-    await shoveUpper(villainId);
+    const shoveResult = await shoveUpper(villainId);
+
+    if (shoveResult && shoveResult.blockedFrozen) {
+        console.warn("[VILLAIN DRAW] Shove blocked by frozen foe; revealing top card instead.");
+        if (fromDeck) {
+            const ptr = state.villainDeckPointer ?? 0;
+            if (ptr > 0) {
+                state.villainDeckPointer = ptr - 1;
+            }
+            state.revealedTopVillain = true;
+            try {
+                await showMightBanner("Top Card Revealed", 2000);
+            } catch (err) {
+                console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
+            }
+        }
+        return;
+    }
 }
 
 /**
@@ -1386,6 +1453,7 @@ export async function shoveUpper(newCardId) {
 
     // moveMap: fromUpperIdx -> destUpperIdx (or null for off-board)
     const moveMap = {};
+    let blockedFrozen = false;
 
     // Recursive shove, based entirely on the snapshot:
     // - We only push something if it was there at the start of the shove.
@@ -1393,6 +1461,11 @@ export async function shoveUpper(newCardId) {
     function shoveFrom(idx) {
         const snap = snapshot[idx];
         if (!snap || !snap.cardNode) return false;
+
+        if (entryIsFrozen(snap.model, idx, gameState)) {
+            blockedFrozen = true;
+            return false;
+        }
 
         const nextIdx = getNextLeft(idx);
 
@@ -1408,15 +1481,21 @@ export async function shoveUpper(newCardId) {
         // SPECIAL: If nextIdx is the EXIT, we DO NOT recursively shove the EXIT city.
         // We only target EXIT as the *destination* for this card.
         if (nextIdx === EXIT_IDX) {
-            // Move this card into EXIT.
-            moveMap[idx] = EXIT_IDX;
-            return true;
-        }
+            const exitSnap = snapshot[EXIT_IDX];
+            if (exitSnap && exitSnap.cardNode && entryIsFrozen(exitSnap.model, EXIT_IDX, gameState)) {
+                blockedFrozen = true;
+                return false;
+            }
+        // Move this card into EXIT.
+        moveMap[idx] = EXIT_IDX;
+        return true;
+    }
 
         // For all other intermediate cities:
         // If there was a card at nextIdx in the snapshot, shove that one first.
         if (nextSnap && nextSnap.cardNode) {
-            shoveFrom(nextIdx);
+            const ok = shoveFrom(nextIdx);
+            if (!ok && blockedFrozen) return false;
         }
 
         // Now move this card into nextIdx.
@@ -1436,10 +1515,6 @@ export async function shoveUpper(newCardId) {
         // That shove may propagate, but only through cities that had
         // cards in the snapshot; it stops at the first empty city.
         shoveFrom(ENTRY_IDX);
-    }
-
-    if (entryHadCard) {
-        shoveFrom(ENTRY_IDX);
 
         // If the row was completely full, the shove will push something into EXIT.
         // In that case, the *original* card at EXIT escapes off-board.
@@ -1453,6 +1528,11 @@ export async function shoveUpper(newCardId) {
         if (exitWasOccupied && someoneMovedIntoExit) {
             moveMap[EXIT_IDX] = null;   // mark original EXIT card as escaping off-board
         }
+    }
+
+    // If frozen blockage detected, abort the shove and signal up.
+    if (blockedFrozen) {
+        return { placed: false, blockedFrozen: true };
     }
 
     // --------------------------------------------------------
@@ -1631,6 +1711,51 @@ export async function shoveUpper(newCardId) {
     setTimeout(() => {
         wrapper.classList.remove("city-card-enter");
     }, 650);
+
+    return { placed: true, blockedFrozen: false };
+}
+
+// Check if a charge draw from the deck would be blocked by a frozen foe.
+function isChargeBlockedByFrozen(distance, state = gameState) {
+    const cities = Array.isArray(state.cities) ? state.cities : [];
+    const entryIdx = CITY_ENTRY_UPPER;
+
+    // Simulate the shove needed to clear ENTRY
+    const snapshot = {};
+    UPPER_ORDER.forEach(idx => snapshot[idx] = cities[idx] || null);
+
+    // First, see if we can make room in ENTRY without moving a frozen card
+    if (snapshot[entryIdx]) {
+        if (entryIsFrozen(snapshot[entryIdx], entryIdx, state)) return true;
+
+        // Walk left until an empty slot; block if any frozen is encountered on the way
+        const entryPos = UPPER_ORDER.indexOf(entryIdx);
+        let emptyPos = -1;
+        for (let pos = entryPos - 1; pos >= 0; pos--) {
+            const idx = UPPER_ORDER[pos];
+            const occ = snapshot[idx];
+            if (!occ) { emptyPos = pos; break; }
+            if (entryIsFrozen(occ, idx, state)) return true;
+        }
+        if (emptyPos === -1) {
+            // No empties; shove would push off EXIT; if EXIT is frozen, blocked
+            const exitOcc = snapshot[CITY_EXIT_UPPER];
+            if (entryIsFrozen(exitOcc, CITY_EXIT_UPPER, state)) return true;
+        }
+    }
+
+    // Now check the actual charge path (distance steps to the left)
+    let currentPos = UPPER_ORDER.indexOf(entryIdx);
+    for (let step = 0; step < distance; step++) {
+        const nextPos = currentPos - 1;
+        if (nextPos < 0) break;
+        const targetIdx = UPPER_ORDER[nextPos];
+        const occ = snapshot[targetIdx];
+        if (entryIsFrozen(occ, targetIdx, state)) return true;
+        currentPos = nextPos;
+    }
+
+    return false;
 }
 
 export function initializeTurnUI(gameState) {

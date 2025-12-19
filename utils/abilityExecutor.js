@@ -501,7 +501,11 @@ async function runCharge(cardId, distance) {
 
     const entryIndex = CITY_ENTRY_UPPER;
 
-    await pushChain(entryIndex);
+    const shoveResult = await pushChain(entryIndex);
+    if (shoveResult?.blockedFrozen) {
+        console.log("[runCharge] Charge blocked by frozen foe in shove path; aborting placement.");
+        return;
+    }
 
     placeCardIntoCitySlot(cardId, entryIndex);
 
@@ -591,13 +595,14 @@ async function attemptSingleLeftShift(fromPos) {
     const fromIndex = UPPER_ORDER[fromPos];
     const toIndex   = UPPER_ORDER[fromPos - 1];
 
-    // frozen check
+    // frozen check (per-instance first, then template flag)
     const leftEntry = gameState.cities[toIndex];
-    if (leftEntry && isFrozen(leftEntry.id)) {
+    if (leftEntry && isFrozen(leftEntry)) {
         return false;
     }
 
-    await pushChain(toIndex);
+    const result = await pushChain(toIndex);
+    if (result?.blockedFrozen) return false;
     moveCardModelAndDOM(fromIndex, toIndex);
 
     return true;
@@ -877,20 +882,36 @@ async function pushChain(targetIndex) {
     const pos = UPPER_ORDER.indexOf(targetIndex);
     if (pos <= 0) {
         const exiting = gameState.cities[targetIndex];
-        if (!exiting) return;
+        if (!exiting) return { blockedFrozen: false };
+        // Only block if we would actually move a frozen foe off the board
+        if (isFrozen(exiting)) {
+            console.log("[pushChain] Blocked by frozen foe at exit.", exiting);
+            return { blockedFrozen: true };
+        }
 
         await handleVillainEscape(exiting, gameState);
         resolveExitForVillain(exiting);
-        return;
+        return { blockedFrozen: false };
     }
 
     const nextLeft = UPPER_ORDER[pos - 1];
 
     // If occupied, push that one further left (recursively)
     if (gameState.cities[targetIndex]) {
-        await pushChain(nextLeft);
+        // Only block if we need to move a frozen foe
+        const occupant = gameState.cities[targetIndex];
+        if (isFrozen(occupant)) {
+            console.log("[pushChain] Blocked by frozen foe; cannot shove.", occupant);
+            return { blockedFrozen: true };
+        }
+        const result = await pushChain(nextLeft);
+        if (result?.blockedFrozen) {
+            return { blockedFrozen: true };
+        }
         moveCardModelAndDOM(targetIndex, nextLeft);
     }
+
+    return { blockedFrozen: false };
 }
 
 function moveCardModelAndDOM(fromIndex, toIndex) {
@@ -988,13 +1009,68 @@ function moveHeroesWithVillain(fromUpperIndex, toUpperIndex) {
     });
 }
 
-function isFrozen(cardId) {
-    // Expand this if your freeze rules differ
+function isFrozen(entryOrId) {
+    // Per-instance flag wins if present
+    if (entryOrId && typeof entryOrId === "object") {
+        if (entryOrId.isFrozen === true) return true;
+
+        // Clash: foe is frozen only while a hero is in the lower slot beneath it
+        const clashId = entryOrId.id ?? entryOrId.baseId ?? entryOrId.foeId;
+        if (clashId != null && cardHasClash(clashId)) {
+            // Find this foe's upper slot index
+            let upperIdx = (typeof entryOrId.slotIndex === "number") ? entryOrId.slotIndex : null;
+            if (upperIdx == null && Array.isArray(gameState.cities)) {
+                // Try to locate by object reference first, then by id
+                const byRef = gameState.cities.findIndex(e => e === entryOrId);
+                if (byRef !== -1) upperIdx = byRef;
+                if (upperIdx == null || upperIdx === -1) {
+                    const byId = gameState.cities.findIndex(e => e && String(e.id) === String(clashId));
+                    if (byId !== -1) upperIdx = byId;
+                }
+            }
+
+            if (typeof upperIdx === "number") {
+                const lowerIdx = upperIdx + 1;
+                const heroIds = gameState.heroes || [];
+                const engaged = heroIds.some(hid => gameState.heroData?.[hid]?.cityIndex === lowerIdx);
+                if (engaged) return true;
+            }
+        }
+
+        // Some callers might still pass the id property; fall through to template check
+        const id = entryOrId.id ?? entryOrId.baseId ?? entryOrId.foeId;
+        if (id != null) {
+            entryOrId = id;
+        }
+    }
+
+    const cardId = entryOrId;
     const data =
         henchmen.find(h => h.id === cardId) ||
         villains.find(v => v.id === cardId);
 
+    // Template-level frozen flag
     return data?.isFrozen === true;
+}
+
+function cardHasClash(cardId) {
+    const card =
+        henchmen.find(h => String(h.id) === String(cardId)) ||
+        villains.find(v => String(v.id) === String(cardId));
+    if (!card) return false;
+
+    if (card.hasClash === true) return true;
+
+    const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
+    for (const eff of effects) {
+        const raw = eff?.effect;
+        const list = Array.isArray(raw) ? raw : [raw];
+        for (const e of list) {
+            if (typeof e !== "string") continue;
+            if (e.trim().toLowerCase() === "hasclash") return true;
+        }
+    }
+    return false;
 }
 
 export function resolveExitForVillain(entry) {
@@ -1709,7 +1785,11 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         };
 
         try {
-            showMightBanner(`Choose a foe to take ${amount} damage`, 1800);
+            const isKO = Number(amount) === 999;
+            const text = isKO
+                ? "Choose a foe to KO"
+                : `Choose a foe to take ${amount} damage`;
+            showMightBanner(text, 1800);
         } catch (err) {
             console.warn("[damageFoe] Could not show selection banner.", err);
         }
