@@ -660,12 +660,25 @@ export async function handleVillainEscape(entry, state) {
         return;
     }
 
-    // Establish villain.currentHP if missing
-    const vMax = Number(foeCard.hp || 0);
-    if (typeof foeCard.currentHP !== "number") {
-        foeCard.currentHP = vMax;
-    }
-    const vCur = foeCard.currentHP;
+    // Pull per-instance HP first; fall back to tracked villainHP or base card HP
+    const getInstanceKey = (obj) => {
+        const k = obj?.instanceId ?? obj?.uniqueId ?? null;
+        return (k == null) ? null : String(k);
+    };
+
+    const vMax = Number(entry?.maxHP ?? foeCard.hp ?? 0);
+    const entryKey = getInstanceKey(entry);
+    const storedHP =
+        (entryKey && state.villainHP && typeof state.villainHP[entryKey] === "number")
+            ? state.villainHP[entryKey]
+            : null;
+
+    let vCur = entry && typeof entry.currentHP === "number"
+        ? entry.currentHP
+        : (storedHP != null ? storedHP : vMax);
+
+    // Keep the card's currentHP in sync for any UI that still reads it
+    foeCard.currentHP = vCur;
 
     // ---------------------------------------------------------------------
     // 3. SCENARIO BRANCH:
