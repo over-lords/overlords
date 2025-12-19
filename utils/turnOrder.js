@@ -2284,6 +2284,8 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
         remainingDestinations
     );
 
+    try { refreshFrozenOverlays(gameState); } catch (e) {}
+
     saveGameState(gameState);
 }
 
@@ -3030,6 +3032,8 @@ function retreatHeroToHQ(gameState, heroId) {
     if (typeof window.recalculateHeroTravel === "function") {
         window.recalculateHeroTravel();
     }
+
+    try { refreshFrozenOverlays(gameState); } catch (e) {}
 }
 
 function openRetreatConfirm(gameState, heroId) {
@@ -3741,6 +3745,7 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
   renderHeroHandBar(state);
   recomputeCurrentHeroTravelDestinations(state);
   refreshAllCityOutlines(state);
+  try { refreshFrozenOverlays(state); } catch (e) {}
   saveGameState(state);
 }
 
