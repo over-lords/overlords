@@ -42,11 +42,12 @@ export const bystanders = [
         ],
         abilitiesNamePrint: [
             {
-                text: `Friend or Foe?!`
+                text: `Draw from the E&A`
             }
         ],
         abilitiesEffects: [
             {
+                type: `optional`,
                 effect: `enemyDraw(1)`
             }
         ]
