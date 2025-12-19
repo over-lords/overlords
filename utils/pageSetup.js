@@ -1945,7 +1945,7 @@ export function showMightBanner(text, duration = 1400) {
     return new Promise(resolve => {
         const banner = document.createElement("div");
         banner.className = "might-banner";
-        banner.textContent = text;
+        banner.innerHTML = text;
 
         document.body.appendChild(banner);
         banner.classList.add("fade-in");

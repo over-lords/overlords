@@ -2561,7 +2561,50 @@ export function checkGameEndConditions(state) {
     }
 
     const outcomeText = (outcome === "win") ? "You Won!" : "You Lost!";
-    const bannerText = `${outcomeText} – ${reason}`;
+
+    const heroNameForId = (hid) => {
+        const h = heroes.find(x => String(x.id) === String(hid));
+        return h?.name || `Hero ${hid}`;
+    };
+
+    const getTopStat = (map, getter) => {
+        if (!map || typeof map !== "object") return null;
+        let topId = null;
+        let topVal = -Infinity;
+        for (const [hid, val] of Object.entries(map)) {
+            const c = getter(val);
+            if (typeof c !== "number") continue;
+            if (c > topVal) {
+                topVal = c;
+                topId = hid;
+            }
+        }
+        if (topId == null || topVal < 0) return null;
+        return { id: topId, count: topVal };
+    };
+
+    const bystanderLeader = getTopStat(s.heroBystandersRescued, v => (v && typeof v.count === "number") ? v.count : 0);
+    const koLeader        = getTopStat(s.heroFoesKOd,          v => (v && typeof v.count === "number") ? v.count : 0);
+    const dmgLeader       = getTopStat(s.heroDamageToOverlord, v => (typeof v === "number") ? v : 0);
+
+    const bystanderLine = bystanderLeader && bystanderLeader.count > 0
+        ? `${heroNameForId(bystanderLeader.id)} rescued the most Bystanders!`
+        : "No Bystanders were rescued.";
+
+    const koLine = koLeader && koLeader.count > 0
+        ? `${heroNameForId(koLeader.id)} KO'd the most Henchmen and Villains!`
+        : "No Henchmen or Villains were KO'd.";
+
+    const dmgLine = dmgLeader && dmgLeader.count > 0
+        ? `${heroNameForId(dmgLeader.id)} dealt the most Damage to the Overlord!`
+        : "No damage was dealt to the Overlord.";
+
+    const bannerText = `
+        <div class="might-banner-main">${outcomeText} - ${reason}</div>
+        <div class="might-banner-sub">${bystanderLine}</div>
+        <div class="might-banner-sub">${koLine}</div>
+        <div class="might-banner-sub">${dmgLine}</div>
+    `;
 
     try {
         // Very long duration as requested

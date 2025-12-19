@@ -1530,6 +1530,16 @@ html, body {
     max-width: 90vw;
     text-align: center;
 }
+.might-banner-main {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.might-banner-sub {
+    font-size: 20px;
+    font-weight: 600;
+    margin-top: 2px;
+}
 
 .might-banner.fade-in {
     opacity: 1;
