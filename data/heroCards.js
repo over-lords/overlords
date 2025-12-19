@@ -1654,7 +1654,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2, then Discard 1. <span class="line-gap"></span><span class="line-gap"></span> OPTIONAL : Deal 2 Damage to a Henchman or Villain in Gotham.`
+        text: `Draw 2, then Discard 1. <span class="line-gap"></span><span class="line-gap"></span> Deal 2 Damage to a Henchman or Villain in Gotham.`
       }
     ],
     abilitiesNamePrint: [
@@ -1671,7 +1671,7 @@ export const heroCards = [
         effect: [`draw(2)`,`discard(1)`]
       },
       {
-        type: `optional`,
+        type: `quick`,
         effect: `damageFoe(2,10)`
       }
     ]

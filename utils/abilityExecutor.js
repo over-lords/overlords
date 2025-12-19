@@ -492,6 +492,28 @@ EFFECT_HANDLERS.villainDraw = function(args) {
     villainDraw(count);
 };
 
+EFFECT_HANDLERS.setCardDamageTo = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    const raw = args?.[0];
+    let val = 0;
+
+    if (typeof raw === "number") {
+        val = raw;
+    } else if (typeof raw === "string") {
+        const lowered = raw.trim().toLowerCase();
+        if (lowered === "getcardsdiscarded") {
+            val = getCardsDiscarded(heroId, state);
+        } else if (lowered === "findkodheroes") {
+            val = findKOdHeroes(state);
+        }
+    }
+
+    if (!state._pendingSetDamage) state._pendingSetDamage = null;
+    state._pendingSetDamage = Number(val) || 0;
+};
+
 EFFECT_HANDLERS.increaseCardDamage = function(args = [], card, selectedData = {}) {
     const state = selectedData?.state || gameState;
     const heroId = selectedData?.currentHeroId ?? null;
@@ -1868,8 +1890,12 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     // APPLY BASE DAMAGE AFTER EFFECTS
     // ------------------------------------------------------
     const bonusDamage = Number(gameState._pendingDamage || 0);
-    const damageAmount = baseDamageAmount + bonusDamage;
+    let damageAmount = baseDamageAmount + bonusDamage;
+    if (gameState._pendingSetDamage != null) {
+        damageAmount = Number(gameState._pendingSetDamage) || 0;
+    }
     gameState._pendingDamage = 0;
+    gameState._pendingSetDamage = null;
 
     if (foeSummary && damageAmount > 0) {
         console.log(
