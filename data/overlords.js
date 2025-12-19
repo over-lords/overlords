@@ -188,7 +188,7 @@ export const overlords = [
     doNotShow: "true",
     abilitiesText: [
       {
-        text: `Might of the Overlord: Draw once from the Villain Deck and all active [ICON:Super] Heroes take 2 Damage.`
+        text: `Might of the Overlord: Draw once from the Villain Deck and all active [ICON:Super] Heroes take 3 Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -216,7 +216,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`villainDraw(1)`,`damageHero(2,Super)`]
+        effect: [`villainDraw(1)`,`damageHero(3,Super)`]
       }
     ],
     bonusNamePrint: [
