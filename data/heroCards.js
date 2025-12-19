@@ -275,7 +275,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(lastDamagedFoe,next)`
+        effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]
   },
@@ -808,7 +808,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(lastDamagedFoe,next)`
+        effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]
   },
@@ -1489,7 +1489,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `lockVillain(lastDamagedFoe,next)`
+        effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]
   },

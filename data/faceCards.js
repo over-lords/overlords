@@ -346,7 +346,7 @@ export const heroes = [
         condition: `hasDamagedVillain`,
         uses: `3`,
         shared: `no`,
-        effect: `lockVillain(lastDamagedFoe)`
+        effect: `freezeVillain(lastDamagedFoe)`
       },
       {
         type: `optional`,
@@ -1008,7 +1008,7 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `lockVillain(any)`
+        effect: `freezeVillain(any)`
       },
       {
         type: `optional`,
@@ -1594,7 +1594,7 @@ export const heroes = [
         condition: `none`,
         uses: `1`,
         shared: `no`,
-        effect: `lockVillain(any)`
+        effect: `freezeVillain(any)`
       }
     ]
   },
@@ -1853,7 +1853,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `lockVillain(any)`
+        effect: `freezeVillain(any)`
       }
     ]
   },

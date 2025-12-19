@@ -703,7 +703,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `lockVillain(any,next)`
+        effect: `freezeVillain(any,next)`
       }
     ]
   },
@@ -900,7 +900,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: `lockVillain(any)`
+        effect: `freezeVillain(any)`
       }
     ]
   },

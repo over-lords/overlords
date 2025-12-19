@@ -425,7 +425,7 @@ export const allies = [
             },
             {
                 type: `chooseOption(2)`,
-                effect: `lockVillain(any)`
+                effect: `freezeVillain(any)`
             }
         ]
     },
