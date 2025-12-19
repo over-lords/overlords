@@ -1448,7 +1448,7 @@ function findCityEntryForVillainCard(villainCard, state = gameState) {
 export function buildVillainPanel(villainCard) {
     if (!villainCard) return;
 
-    // If a damageFoe(any) is pending, hijack the click to a confirm modal instead of opening the panel UI.
+    // If a damageFoe(any/anyCoastal) is pending, hijack the click to a confirm modal instead of opening the panel UI.
     const pendingSelect = (typeof window !== "undefined") ? window.__damageFoeSelectMode : null;
     if (pendingSelect && typeof pendingSelect.amount === "number") {
         const stateForDamage = pendingSelect.state || gameState;
@@ -1459,6 +1459,10 @@ export function buildVillainPanel(villainCard) {
             return;
         }
 
+        // If selection is restricted to certain slots, ignore foes outside that set.
+        if (Array.isArray(pendingSelect.allowedSlots) && !pendingSelect.allowedSlots.includes(slotIndex)) {
+            console.log("[buildVillainPanel] Selection mode active but this foe is not in an allowed slot; ignoring.");
+        } else {
         showDamageSelectConfirm({
             amount: pendingSelect.amount,
             foeName: villainCard.name
@@ -1487,6 +1491,7 @@ export function buildVillainPanel(villainCard) {
         });
 
         return;
+        }
     }
 
     const panel = document.getElementById("villain-panel");

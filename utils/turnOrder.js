@@ -267,6 +267,37 @@ function markCityDestroyed(upperIdx, gameState) {
     checkGameEndConditions(gameState);
 }
 
+// ---------------------------------------------------------------------------
+// Coastal city helper: returns current left/right non-destroyed upper indices
+// ---------------------------------------------------------------------------
+export function checkCoastalCities(state = gameState) {
+    const s = state || gameState;
+    const destroyed = s?.destroyedCities || {};
+
+    const UPPER_ORDER = [
+        CITY_EXIT_UPPER,
+        CITY_5_UPPER,
+        CITY_4_UPPER,
+        CITY_3_UPPER,
+        CITY_2_UPPER,
+        CITY_ENTRY_UPPER
+    ];
+
+    const remaining = UPPER_ORDER.filter(idx => !destroyed[idx]);
+
+    if (remaining.length === 0) {
+        console.log("[Coastal] Left coastal city: none, Right coastal city: none");
+        return { left: null, right: null };
+    }
+
+    const left = remaining[0];
+    const right = remaining[remaining.length - 1];
+
+    console.log(`[Coastal] Left coastal city: ${left}, Right coastal city: ${right}`);
+
+    return { left, right };
+}
+
 function applyCountdownLandingEffects(upperIdx, gameState) {
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
@@ -1220,6 +1251,9 @@ export async function startHeroTurn(state, opts = {}) {
     if (!heroIds.length) {
         return;
     }
+
+    // Update coastal city tracking at the start of each hero turn
+    checkCoastalCities(state);
 
     // 1) VILLAIN DRAW for this "turn slot"
     if (!skipVillainDraw) {

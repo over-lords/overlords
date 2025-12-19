@@ -21,7 +21,7 @@ import { bystanders } from "../data/bystanders.js";
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
-         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities } from "./turnOrder.js";
 
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
@@ -128,6 +128,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "all";
         } else if (typeof raw === "string" && raw.toLowerCase() === "any") {
             flag = "any";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "anycoastal") {
+            flag = "anyCoastal";
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
@@ -1708,6 +1710,50 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
         try {
             showMightBanner(`Choose a foe to take ${amount} damage`, 1800);
+        } catch (err) {
+            console.warn("[damageFoe] Could not show selection banner.", err);
+        }
+
+        return;
+    }
+
+    // ============================================================
+    // FLAG: "anyCoastal" — like "any" but limited to coastal cities
+    // ============================================================
+    if (flag === "anyCoastal") {
+        if (typeof window === "undefined") {
+            console.warn("[damageFoe] 'anyCoastal' flag requires the browser UI; no window found.");
+            return;
+        }
+
+        const { left, right } = checkCoastalCities(s);
+        const allowedSlots = [left, right].filter(v => Number.isInteger(v));
+
+        if (!allowedSlots.length || !Array.isArray(s.cities)) {
+            console.log("[damageFoe] No coastal cities available for selection; skipping.");
+            return;
+        }
+
+        const hasTarget = allowedSlots.some(idx => {
+            const entry = s.cities[idx];
+            return entry && entry.id != null;
+        });
+
+        if (!hasTarget) {
+            console.log("[damageFoe] No foes in coastal cities; skipping selection.");
+            return;
+        }
+
+        window.__damageFoeSelectMode = {
+            amount,
+            heroId,
+            state: s,
+            fromAny: true,
+            allowedSlots
+        };
+
+        try {
+            showMightBanner(`Choose a COASTAL foe to take ${amount} damage`, 1800);
         } catch (err) {
             console.warn("[damageFoe] Could not show selection banner.", err);
         }
