@@ -241,7 +241,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `moveUnengaged(1)`
+                effect: `shoveVillain(allUnengaged,1)`
             }
         ]
     },

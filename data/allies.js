@@ -491,7 +491,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `shoveVillain(all,-99)`
+                effect: `shoveVillain(allUnengaged,-6)`
             }
         ]
     },

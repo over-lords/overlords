@@ -1548,6 +1548,7 @@ export function buildVillainPanel(villainCard) {
                 });
 
                 window.__freezeSelectMode = null;
+                try { if (typeof window !== "undefined" && typeof window.__clearDamageFoeHighlights === "function") window.__clearDamageFoeHighlights(); } catch (e) {}
             });
             return;
         }

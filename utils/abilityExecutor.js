@@ -62,6 +62,46 @@ const GLIDE_ORDER = [
 
 const EFFECT_HANDLERS = {};
 
+// Helpers to highlight and clear special target outlines (used by damageFoe selection UIs)
+function clearDamageFoeTargetHighlights() {
+    try {
+        const slots = document.querySelectorAll(".city-slot.bystander-target-highlight");
+        slots.forEach(slot => {
+            slot.classList.remove("bystander-target-highlight");
+            slot.style.outline = "";
+        });
+    } catch (e) {
+        // Ignore DOM errors (e.g., SSR/no window)
+    }
+}
+
+function highlightBystanderTargetSlots(state = gameState) {
+    clearDamageFoeTargetHighlights();
+
+    if (typeof document === "undefined") return;
+
+    const citySlots = document.querySelectorAll(".city-slot");
+    if (!citySlots.length || !Array.isArray(state.cities)) return;
+
+    state.cities.forEach((entry, idx) => {
+        if (!entry) return;
+        const hasBystanders =
+            (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) ||
+            (Number(entry.capturedBystanders) > 0);
+
+        if (!hasBystanders) return;
+
+        const slot = citySlots[idx];
+        if (!slot) return;
+        slot.classList.add("bystander-target-highlight");
+        slot.style.outline = "4px solid yellow";
+    });
+}
+
+if (typeof window !== "undefined") {
+    window.__clearDamageFoeHighlights = clearDamageFoeTargetHighlights;
+}
+
 function findKOdHeroes(state = gameState) {
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
@@ -134,6 +174,15 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
 
     const val = raw.trim();
     const lower = val.toLowerCase();
+
+    // Simple multiplier support, e.g., "3*findKOdHeroes"
+    const multMatch = val.match(/^(\d+)\s*\*\s*([A-Za-z0-9_()]+)$/);
+    if (multMatch) {
+        const factor = Number(multMatch[1]) || 0;
+        const rhsRaw = multMatch[2];
+        const rhsVal = resolveNumericValue(rhsRaw, heroId, state);
+        return factor * rhsVal;
+    }
 
     if (lower === "getcardsdiscarded") {
         return getCardsDiscarded(heroId, state);
@@ -2319,6 +2368,9 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             fromAny: true,
             requireBystanders: true
         };
+
+        // Visually mark foes that have captured bystanders
+        highlightBystanderTargetSlots(s);
 
         try {
             const isKO = Number(amount) === 999;

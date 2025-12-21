@@ -36,7 +36,7 @@ export const heroCards = [
     damage: "5",
     abilitiesText: [
       {
-        text: `Increase this card's Damage by 1 for every KO'd Hero.`
+        text: `Increase this card's Damage by 3 for every KO'd Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -47,7 +47,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: `increaseCardDamage(findKOdHeroes)`
+        effect: `increaseCardDamage(3*findKOdHeroes)`
       }
     ]
   },
@@ -300,7 +300,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `otherHeroDraw(all,1)`
+        effect: `draw(1,allOtherHeroes)`
       }
     ]
   },
@@ -641,7 +641,7 @@ export const heroCards = [
     damage: "5",
     abilitiesText: [
       {
-        text: `CHOOSE: Deal 3 Damage to the Overlord. <span class="line-gap"></span> OR <span class="line-gap"></span> KO all Henchmen.`
+        text: `CHOOSE: Deal 5 Damage to the Overlord. <span class="line-gap"></span> OR <span class="line-gap"></span> KO all Henchmen.`
       }
     ],
     abilitiesNamePrint: [
@@ -649,7 +649,7 @@ export const heroCards = [
         text: `Choose`
       },
       {
-        text: `Deal 3 Damage to the Overlord`
+        text: `Deal 5 Damage to the Overlord`
       },
       {
         text: `KO all Henchmen`
@@ -662,7 +662,7 @@ export const heroCards = [
       },
       {
         type: `chooseOption(1)`,
-        effect: [`damageOverlord(3)`]
+        effect: [`damageOverlord(5)`]
       },
       {
         type: `chooseOption(2)`,
@@ -700,7 +700,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         condition: `afterDamage`,
-        effect: `shoveDamaged(5)`
+        effect: `shoveVillain(lastDamagedFoe,-5)`
       },
       {
         condition: `afterDamage`,
