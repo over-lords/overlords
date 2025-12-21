@@ -1275,27 +1275,27 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
     // 3) No foes and no Scenario → Overlord immediately KOs the bystander
     ensureKoCards(state);
 
-    state.koCards.push({
+    // Track only the bystanders KO'd in this resolution for messaging
+    const newlyKOd = [{
         id: String(bystanderId),
         name: byName,
         type: "Bystander",
         source: "villainDeck"
-    });
+    }];
 
-    // Count total KO'd bystanders for messaging
-    const koBystanders = state.koCards.filter(c => c && c.type === "Bystander");
-    const totalKOd = koBystanders.length;
+    state.koCards.push(...newlyKOd);
+    const totalKOd = state.koCards.filter(c => c && c.type === "Bystander").length;
 
-    let nameList = koBystanders
-    .map(c => (c && c.name ? String(c.name) : "Bystander"))
-    .join(", ");
+    let nameList = newlyKOd
+        .map(c => (c && c.name ? String(c.name) : "Bystander"))
+        .join(", ");
 
     if (!nameList) nameList = byName;
 
     const text =
-    totalKOd === 1
-        ? `${nameList} KO'd`
-        : `Bystanders KO'd: ${nameList}`;
+        newlyKOd.length === 1
+            ? `${nameList} KO'd`
+            : `Bystanders KO'd: ${nameList}`;
 
     // Use the existing Might banner for the announcement
     try {
@@ -2785,6 +2785,11 @@ export function checkGameEndConditions(state) {
 }
 
 export async function startTravelPrompt(gameState) {
+    if (gameState?.gameOver) {
+        console.log("[TRAVEL] Game is over; suppressing 'Travel Where?' prompt.");
+        return;
+    }
+
     const heroIds = gameState.heroes || [];
     const activeIdx = gameState.heroTurnIndex ?? 0;
     const heroId = heroIds[activeIdx];
