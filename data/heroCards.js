@@ -200,31 +200,6 @@ export const heroCards = [
   {
     id: "206",
     type: "Main",
-    name: "Heat Vision",
-    hero: "Superman",
-    image: `${cardArtFolder}/Superman/Heat Vision.jpg`,
-    perDeck: "2",
-    damage: "2",
-    abilitiesText: [
-      {
-        text: `This card can be used against a Henchman or Villain in an adjacent city.`
-      }
-    ],
-    abilitiesNamePrint: [
-      {
-        text: `Use against an adjacent foe`
-      }
-    ],
-    abilitiesEffects: [
-      {
-        type: `optional`,
-        effect: [`useAgainstAdjacent`]
-      }
-    ]
-  },
-  {
-    id: "207",
-    type: "Main",
     name: "Head of the Family",
     hero: "Superman",
     image: `${cardArtFolder}/Superman/Family.jpg`,
@@ -256,7 +231,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "208",
+    id: "207",
     type: "Main",
     name: "Freeze Breath",
     hero: "Superman",
@@ -281,7 +256,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "209",
+    id: "208",
     type: "Main",
     name: "Beacon of Hope",
     hero: "Superman",
@@ -301,6 +276,30 @@ export const heroCards = [
     abilitiesEffects: [
       {
         effect: `draw(1,allOtherHeroes)`
+      }
+    ]
+  },
+  {
+    id: "209",
+    type: "Main",
+    name: "Heat Vision",
+    hero: "Superman",
+    image: `${cardArtFolder}/Superman/Heat Vision.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Deal 3 Damage to an adjacent Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose your Target`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageFoe(3,adjacentFoes)`
       }
     ]
   },

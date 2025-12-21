@@ -511,6 +511,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "anyCoastal";
         } else if (typeof raw === "string" && raw.toLowerCase() === "anywithbystander") {
             flag = "anyWithBystander";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "adjacentfoes") {
+            flag = "adjacentFoes";
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
@@ -519,7 +521,55 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
     const heroId = selectedData?.currentHeroId ?? null;
 
     // Selected foe (only required for true single-target damage)
-    const foeSummary = selectedData?.selectedFoeSummary ?? null;
+    let foeSummary = selectedData?.selectedFoeSummary ?? null;
+
+    // If no foe was captured (or it is stale), derive the current foe at call time.
+    if (!foeSummary && flag === "single") {
+        const hState = gameState.heroData?.[heroId];
+        if (hState) {
+            if (hState.isFacingOverlord) {
+                const ovInfo = getCurrentOverlordInfo(gameState);
+                if (ovInfo?.card) {
+                    const ovHP =
+                        typeof ovInfo.currentHP === "number"
+                            ? ovInfo.currentHP
+                            : (typeof gameState.currentOverlordHP === "number"
+                                ? gameState.currentOverlordHP
+                                : ovInfo.card.hp);
+
+                    foeSummary = {
+                        foeType: ovInfo.card.type || "Overlord",
+                        foeId: ovInfo.id,
+                        foeName: ovInfo.card.name || `Overlord ${ovInfo.id}`,
+                        currentHP: ovHP,
+                        source: "overlord"
+                    };
+                }
+            } else if (typeof hState.cityIndex === "number") {
+                const upperIdx = hState.cityIndex - 1;
+                const entry = Array.isArray(gameState.cities) ? gameState.cities[upperIdx] : null;
+                if (entry && entry.id != null) {
+                    const foeIdStr = String(entry.id);
+                    const foeCard =
+                        henchmen.find(h => String(h.id) === foeIdStr) ||
+                        villains.find(v => String(v.id) === foeIdStr);
+
+                    if (foeCard) {
+                        const hp = (typeof entry.currentHP === "number") ? entry.currentHP : foeCard.hp;
+                        foeSummary = {
+                            foeType: foeCard.type || "Enemy",
+                            foeId: foeIdStr,
+                            instanceId: entry.instanceId,
+                            foeName: foeCard.name || `Enemy ${foeIdStr}`,
+                            currentHP: hp,
+                            slotIndex: upperIdx,
+                            source: "city-upper"
+                        };
+                    }
+                }
+            }
+        }
+    }
 
     damageFoe(
         amount,
@@ -2406,6 +2456,75 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             const text = isKO
                 ? "Choose a foe to KO"
                 : `Choose a foe to take ${amount} damage`;
+            showMightBanner(text, 1800);
+        } catch (err) {
+            console.warn("[damageFoe] Could not show selection banner.", err);
+        }
+
+        return;
+    }
+
+    // ============================================================
+    // FLAG: "adjacentFoes" ƒ?" like "any" but limited to upper cities
+    // adjacent to the hero's lower-row slot (center/left/right)
+    // ============================================================
+    if (flag === "adjacentFoes") {
+        if (typeof window === "undefined") {
+            console.warn("[damageFoe] 'adjacentFoes' flag requires the browser UI; no window found.");
+            return;
+        }
+
+        if (!heroId || !s.heroData?.[heroId]) {
+            console.warn("[damageFoe] 'adjacentFoes' flag needs a valid heroId with cityIndex.");
+            return;
+        }
+
+        const hState = s.heroData[heroId];
+        if (hState.isFacingOverlord) {
+            console.log("[damageFoe] Hero is facing overlord; no adjacent city targets.");
+            return;
+        }
+
+        const lowerIdx = hState.cityIndex;
+        if (typeof lowerIdx !== "number") {
+            console.warn("[damageFoe] Hero is not in a city; cannot target adjacent foes.");
+            return;
+        }
+
+        const upperCenter = lowerIdx - 1;
+        const upperLeft   = upperCenter - 2;
+        const upperRight  = upperCenter + 2;
+        const allowedSlots = [upperCenter, upperLeft, upperRight]
+            .filter(idx => Number.isInteger(idx) && idx >= 0 && idx <= 10);
+
+        if (!allowedSlots.length || !Array.isArray(s.cities)) {
+            console.log("[damageFoe] No adjacent slots available for selection.");
+            return;
+        }
+
+        const hasTarget = allowedSlots.some(idx => {
+            const entry = s.cities[idx];
+            return entry && entry.id != null;
+        });
+
+        if (!hasTarget) {
+            console.log("[damageFoe] No foes in adjacent slots; skipping selection.");
+            return;
+        }
+
+        window.__damageFoeSelectMode = {
+            amount,
+            heroId,
+            state: s,
+            fromAny: true,
+            allowedSlots
+        };
+
+        try {
+            const isKO = Number(amount) === 999;
+            const text = isKO
+                ? "Choose an adjacent foe to KO"
+                : `Choose an adjacent foe to take ${amount} damage`;
             showMightBanner(text, 1800);
         } catch (err) {
             console.warn("[damageFoe] Could not show selection banner.", err);
