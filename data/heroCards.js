@@ -729,7 +729,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `At the end of Wonder Woman's turn, if she takes Damage from a Villain, they take 2 Damage in return.`
+        text: `At the end of Wonder Woman's turn, if she takes Damage from a Villain, they take 3 Damage in return.`
       }
     ],
     abilitiesNamePrint: [
@@ -741,7 +741,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `damagedAtTurnEnd`,
-        effect: [`damageFoe(2,lastDamageCauser)`]
+        effect: [`damageFoe(3,lastDamageCauser)`]
       },
     ]
   },

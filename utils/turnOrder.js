@@ -2198,6 +2198,7 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     } else {
         heroState.currentTravel = beforeTravel;
     }
+    heroState.travelUsedThisTurn = (heroState.travelUsedThisTurn || 0) + 1;
 
     const afterTravel = heroState.currentTravel;
 
@@ -2888,6 +2889,7 @@ function resetHeroCurrentTravelAtTurnStart(gameState) {
         : faceTravel;
 
     heroState.currentTravel = baseTravel;
+    heroState.travelUsedThisTurn = 0;
     heroState.isFacingOverlord = false;
     refreshOverlordFacingGlow(gameState);
 
@@ -3179,6 +3181,7 @@ function performHeroTravelToOverlord(gameState, heroId) {
     }
 
     heroState.currentTravel = currentTravel - 1;
+    heroState.travelUsedThisTurn = (heroState.travelUsedThisTurn || 0) + 1;
 
     console.log(
         `[OVERLORD] ${heroName} spends 1 travel to face the Overlord. ` +
@@ -3667,6 +3670,7 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
 
   // Spend 1 travel (counts as travel for the shover only)
   activeState.currentTravel = currentTravel - 1;
+  activeState.travelUsedThisTurn = (activeState.travelUsedThisTurn || 0) + 1;
 
   // Remember where the active hero was (if any)
   const previousIndex = (typeof activeState.cityIndex === "number") ? activeState.cityIndex : null;

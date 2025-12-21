@@ -187,6 +187,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "getcardsdiscarded") {
         return getCardsDiscarded(heroId, state);
     }
+    if (lower === "gettravelused") {
+        return getTravelUsed(heroId, state);
+    }
     if (lower === "findkodheroes") {
         return findKOdHeroes(state);
     }
@@ -2932,6 +2935,18 @@ export function getCardsDiscarded(heroId, state = gameState) {
     const hState = s.heroData?.[heroId];
     if (!hState) return 0;
     return Number(hState.discardedThisTurn || 0);
+}
+
+export function getTravelUsed(heroId, state = gameState) {
+    const s = state || gameState;
+    if (!heroId) return 0;
+    const hState = s.heroData?.[heroId];
+    if (!hState) return 0;
+    const used = Number(hState.travelUsedThisTurn || 0);
+    try {
+        console.log(`[getTravelUsed] Hero ${heroId} travel used this turn: ${used}`);
+    } catch (e) {}
+    return used;
 }
 
 export function runIfDiscardedEffects(cardData, heroId, state) {
