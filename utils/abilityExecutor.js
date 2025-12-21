@@ -434,17 +434,36 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
 
     if (!Array.isArray(heroState.deck))   heroState.deck = [];
     if (!Array.isArray(heroState.hand))   heroState.hand = [];
+    if (!Array.isArray(heroState.discard)) heroState.discard = [];
+    if (typeof heroState.drawnThisTurn !== "number") heroState.drawnThisTurn = 0;
 
     console.log(`[draw] ${count} card(s) for hero ${heroId}.`);
 
     for (let i = 0; i < count; i++) {
         if (heroState.deck.length === 0) {
-            console.log("[draw] Deck empty – cannot draw further.");
-            break;
+            if (heroState.drawnThisTurn >= 5) {
+                console.log("[draw] Deck empty and 5+ cards already drawn this turn; no reshuffle.");
+                break;
+            }
+
+            if (heroState.discard.length > 0) {
+                console.log("[draw] Deck empty, shuffling discard under deck.");
+                const shuffled = [...heroState.discard];
+                for (let j = shuffled.length - 1; j > 0; j--) {
+                    const k = Math.floor(Math.random() * (j + 1));
+                    [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
+                }
+                heroState.deck.push(...shuffled);
+                heroState.discard = [];
+            } else {
+                console.log("[draw] Deck empty — cannot draw further (no discard).");
+                break;
+            }
         }
 
         const cardId = heroState.deck.shift();
         heroState.hand.push(cardId);
+        heroState.drawnThisTurn = (heroState.drawnThisTurn || 0) + 1;
         console.log(`[draw] → Drawn card ID ${cardId}`);
     }
 

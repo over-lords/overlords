@@ -1345,6 +1345,7 @@ export async function startHeroTurn(state, opts = {}) {
     let activeHeroId = heroIds[state.heroTurnIndex ?? 0];
     if (activeHeroId && state.heroData?.[activeHeroId]) {
         state.heroData[activeHeroId].discardedThisTurn = 0;
+        state.heroData[activeHeroId].drawnThisTurn = 0;
     }
 
     try { refreshFrozenOverlays(state); } catch (e) {}
