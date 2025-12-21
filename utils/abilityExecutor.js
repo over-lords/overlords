@@ -378,6 +378,7 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     const heroId = selectedData?.currentHeroId ?? null;
     const rawCount = resolveNumericValue(args?.[0] ?? 1, heroId, gameState);
     const count = Math.max(0, Number(rawCount) || 0);
+    const flag = (args?.[1] ?? "").toString().toLowerCase();
 
     if (!heroId) {
         console.warn("[draw] No currentHeroId available.");
@@ -392,6 +393,39 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
 
     if (count <= 0) {
         console.log("[draw] Count resolved to 0; no cards drawn.");
+        return;
+    }
+
+    // Special flag: allOtherHeroes → every other active hero draws `count`
+    if (flag === "allotherheroes") {
+        const heroIds = gameState.heroes || [];
+        heroIds.forEach(hid => {
+            if (String(hid) === String(heroId)) return;
+
+            const hState = gameState.heroData?.[hid];
+            if (!hState) return;
+            const hp = typeof hState.hp === "number" ? hState.hp : 1;
+            if (hp <= 0) return; // only active (non-KO) heroes
+
+            if (!Array.isArray(hState.deck)) hState.deck = [];
+            if (!Array.isArray(hState.hand)) hState.hand = [];
+
+            console.log(`[draw] ${count} card(s) for hero ${hid} (allOtherHeroes flag).`);
+
+            for (let i = 0; i < count; i++) {
+                if (hState.deck.length === 0) {
+                    console.log("[draw] Deck empty — cannot draw further.", { heroId: hid });
+                    break;
+                }
+
+                const cardId = hState.deck.shift();
+                hState.hand.push(cardId);
+                console.log(`[draw] → Drawn card ID ${cardId} for hero ${hid}`);
+            }
+        });
+
+        saveGameState(gameState);
+        renderHeroHandBar(gameState);
         return;
     }
 
