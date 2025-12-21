@@ -190,6 +190,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "gettravelused") {
         return getTravelUsed(heroId, state);
     }
+    if (lower === "getlastdamageamount") {
+        return getLastDamageAmount(heroId, state);
+    }
     if (lower === "findkodheroes") {
         return findKOdHeroes(state);
     }
@@ -510,6 +513,8 @@ EFFECT_HANDLERS.chooseYourEffect = async function (cardData, context = {}) {
 
 EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
   const amount = Number(args?.[0]) || 1;
+  const flagRaw = args?.[1] ?? "";
+  const flag = typeof flagRaw === "string" ? flagRaw.toLowerCase() : "";
 
   const heroId = selectedData?.currentHeroId ?? null;
   if (!heroId) {
@@ -517,34 +522,34 @@ EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
     return;
   }
 
-  const heroState = gameState.heroData?.[heroId];
-  if (!heroState) {
-    console.warn("[regainLife] No heroState found for heroId:", heroId);
-    return;
+  // Helper to heal a specific hero id
+  const healHero = (hid) => {
+    const hState = gameState.heroData?.[hid];
+    if (!hState) return;
+    const hCard = heroes.find(h => String(h.id) === String(hid));
+    if (!hCard) return;
+
+    const baseHP = Number(hCard.hp || hCard.baseHP || 0);
+    if (hState.hp == null) hState.hp = baseHP;
+
+    const before = hState.hp;
+    hState.hp = Math.min(baseHP, hState.hp + amount);
+    hCard.currentHP = hState.hp;
+
+    console.log(`[regainLife] ${hCard.name} regains ${amount} HP (${before} → ${hState.hp}).`);
+
+    try { updateHeroHPDisplays(hid); } catch (e) { console.warn("[regainLife] updateHeroHPDisplays failed", e); }
+    try { updateBoardHeroHP(hid); } catch (e) { console.warn("[regainLife] updateBoardHeroHP failed", e); }
+  };
+
+  if (flag === "all") {
+    const heroIds = gameState.heroes || [];
+    heroIds.forEach(healHero);
+  } else {
+    healHero(heroId);
   }
-
-  const heroCard = heroes.find(h => String(h.id) === String(heroId));
-  if (!heroCard) {
-    console.warn("[regainLife] Could not find hero card for heroId:", heroId);
-    return;
-  }
-
-  const baseHP = Number(heroCard.hp || heroCard.baseHP || 0);
-  if (heroState.hp == null) heroState.hp = baseHP;
-
-  const before = heroState.hp;
-  heroState.hp = Math.min(baseHP, heroState.hp + amount);
-
-  // Optional but helpful: keep runtime hero object in sync for any renderers that read it
-  heroCard.currentHP = heroState.hp;
-
-  console.log(`[regainLife] ${heroCard.name} regains ${amount} HP (${before} → ${heroState.hp}).`);
 
   saveGameState(gameState);
-
-  // IMPORTANT: refresh the other two UI locations
-  try { updateHeroHPDisplays(heroId); } catch (e) { console.warn("[regainLife] updateHeroHPDisplays failed", e); }
-  try { updateBoardHeroHP(heroId); } catch (e) { console.warn("[regainLife] updateBoardHeroHP failed", e); }
 };
 
 EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
@@ -2141,6 +2146,9 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
     if (heroId != null) {
         if (!s.heroDamageToOverlord) s.heroDamageToOverlord = {};
         s.heroDamageToOverlord[heroId] = (s.heroDamageToOverlord[heroId] || 0) + actualDamage;
+        if (s.heroData?.[heroId]) {
+            s.heroData[heroId].lastDamageAmount = Number(actualDamage) || 0;
+        }
     }
 
     // ===================================================================
@@ -2783,6 +2791,11 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     console.log(`[damageFoe] ${foeCard.name} took ${amount} damage (${currentHP} -> ${newHP}).`);
 
+    // Track last damage dealt by the acting hero (post-modifier amount)
+    if (heroId && s.heroData?.[heroId]) {
+        s.heroData[heroId].lastDamageAmount = Number(amount) || 0;
+    }
+
     // Re-render the foe card in its city slot so board shows updated HP
     try {
         const citySlots = document.querySelectorAll(".city-slot");
@@ -2981,6 +2994,14 @@ export function getTravelUsed(heroId, state = gameState) {
         console.log(`[getTravelUsed] Hero ${heroId} travel used this turn: ${used}`);
     } catch (e) {}
     return used;
+}
+
+export function getLastDamageAmount(heroId, state = gameState) {
+    const s = state || gameState;
+    if (!heroId) return 0;
+    const hState = s.heroData?.[heroId];
+    if (!hState) return 0;
+    return Number(hState.lastDamageAmount || 0);
 }
 
 export function runIfDiscardedEffects(cardData, heroId, state) {
