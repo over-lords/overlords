@@ -779,7 +779,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Increase this card's Damage by 1 for every 2 HP Wonder Woman has lost.`
+        text: `Increase this card's Damage by 2 for every 2 HP Wonder Woman has lost.`
       }
     ],
     abilitiesNamePrint: [
@@ -789,7 +789,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `increaseCardDamage(getHeroDamage)`
+        effect: `increaseCardDamage(2*getHeroDamage)`
       }
     ]
   },
@@ -910,7 +910,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `afterDamage`,
-        effect: `giveVillainPassive(curse(1),current)`
+        effect: `giveVillainPassive(curse(1),lastDamagedFoe)`
       }
     ]
   },
