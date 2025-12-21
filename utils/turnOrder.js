@@ -241,6 +241,15 @@ function markCityDestroyed(upperIdx, gameState) {
             slot.style.position = "relative";
         }
 
+        // Keep the card area above the destruction overlay so cards stay visible
+        const area = slot.querySelector(".city-card-area");
+        if (area) {
+            if (getComputedStyle(area).position === "static") {
+                area.style.position = "relative";
+            }
+            area.style.zIndex = "1";
+        }
+
         let overlay = slot.querySelector(".destroyed-city-overlay");
         if (!overlay) {
             overlay = document.createElement("div");
@@ -258,6 +267,7 @@ function markCityDestroyed(upperIdx, gameState) {
             overlay.style.fontWeight = "bold";
             overlay.style.color = "red";
             overlay.style.textShadow = "0 0 8px black";
+            overlay.style.zIndex = "0";
             overlay.textContent = "X";
             slot.appendChild(overlay);
         }
@@ -399,43 +409,46 @@ function applyCountdownLandingEffects(upperIdx, gameState) {
  * applying landing effects at the destination.
  */
 function advanceSingleCountdown(upperIdx, gameState) {
+    // Push a countdown one step left, cascading any countdowns ahead of it.
     const pos = UPPER_ORDER.indexOf(upperIdx);
     if (pos <= 0) {
-        // Already at EXIT; for now, nothing beyond this (game loss logic later)
-        console.log("[COUNTDOWN] Countdown reached the leftmost city; additional loss logic can plug in here.");
+        // Already at EXIT; nothing further left to move to.
         return;
     }
 
     const destIdx = UPPER_ORDER[pos - 1];
 
-    // Landing effects at destination city
-    applyCountdownLandingEffects(destIdx, gameState);
+    // If another countdown is already in the destination, push it further left first.
+    const destEntry = gameState.cities?.[destIdx];
+    if (destEntry && isCountdownId(destEntry.id)) {
+        advanceSingleCountdown(destIdx, gameState);
+    }
+
+    // Apply landing effects only once per new city (dest might already be destroyed).
+    if (!gameState.destroyedCities || !gameState.destroyedCities[destIdx]) {
+        applyCountdownLandingEffects(destIdx, gameState);
+    }
 
     // Move the countdown card DOM + model
     const citySlots = document.querySelectorAll(".city-slot");
     const fromSlot  = citySlots[upperIdx];
     const toSlot    = citySlots[destIdx];
 
-    if (!fromSlot || !toSlot) return;
+    const fromArea = fromSlot?.querySelector(".city-card-area");
+    const toArea   = toSlot?.querySelector(".city-card-area");
+    const node = fromArea?.querySelector(".card-wrapper");
 
-    const fromArea = fromSlot.querySelector(".city-card-area");
-    const toArea   = toSlot.querySelector(".city-card-area");
-    if (!fromArea || !toArea) return;
-
-    const node = fromArea.querySelector(".card-wrapper");
-    if (!node) return;
-
-    node.classList.remove("city-card-enter");
-    node.classList.remove("city-card-slide-left");
-    node.classList.add("city-card-slide-left");
-
-    toArea.innerHTML = "";
-    toArea.appendChild(node);
-    fromArea.innerHTML = "";
-
-    setTimeout(() => {
+    if (node && toArea && fromArea) {
+        node.classList.remove("city-card-enter");
         node.classList.remove("city-card-slide-left");
-    }, 650);
+        node.classList.add("city-card-slide-left");
+
+        toArea.innerHTML = "";
+        toArea.appendChild(node);
+        fromArea.innerHTML = "";
+
+        setTimeout(() => node.classList.remove("city-card-slide-left"), 650);
+    }
 
     if (!Array.isArray(gameState.cities)) {
         gameState.cities = new Array(12).fill(null);
@@ -452,21 +465,16 @@ function advanceSingleCountdown(upperIdx, gameState) {
 function shovePriorCountdownIfAny(gameState) {
     if (!Array.isArray(gameState.cities)) return;
 
-    // We expect at most one, but search in UPPER_ORDER, rightmost-first
-    let existingUpperIdx = null;
-    for (let i = 0; i < UPPER_ORDER.length; i++) {
-        const idx   = UPPER_ORDER[i];
+    // Move the rightmost countdown left to make room for the new one.
+    const countdownIdx = UPPER_ORDER.slice().reverse().find(idx => {
         const entry = gameState.cities[idx];
-        if (entry && isCountdownId(entry.id)) {
-            existingUpperIdx = idx;
-            break;
-        }
-    }
+        return entry && isCountdownId(entry.id);
+    });
 
-    if (existingUpperIdx === null) return;
+    if (countdownIdx == null) return;
 
-    console.log("[COUNTDOWN] Shoving prior countdown from", existingUpperIdx);
-    advanceSingleCountdown(existingUpperIdx, gameState);
+    console.log("[COUNTDOWN] Shoving prior countdown from", countdownIdx);
+    advanceSingleCountdown(countdownIdx, gameState);
 }
 
 /**
@@ -897,15 +905,16 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
 
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper city-card-enter";
+    wrapper.style.position = "relative";
+    wrapper.style.zIndex = "2"; // ensure card sits above destroyed-city overlay
 
     const rendered = renderCard(newCardId, wrapper);
     wrapper.appendChild(rendered);
 
     area.appendChild(wrapper);
 
-    const cardData =
-        henchmen.find(h => h.id === newCardId) ||
-        villains.find(v => v.id === newCardId);
+    // Use the shared resolver so Countdown (tactics) cards are found reliably
+    const cardData = findCardInAllSources(newCardId);
 
     if (cardData) {
         wrapper.style.cursor = "pointer";
@@ -1117,6 +1126,11 @@ export function takeNextHenchVillainsFromDeck(count) {
     while (ptr < deck.length && collected.length < target) {
         const id = deck[ptr];
 
+        // Never skip over countdown cards; stop scanning so villainDraw can pick them up
+        if (isCountdownId(id)) {
+            break;
+        }
+
         const idStr = String(id);
         const isHench = henchmen.some(h => String(h.id) === idStr);
         const isVill  = villains.some(v => String(v.id) === idStr);
@@ -1317,13 +1331,18 @@ export async function startHeroTurn(state, opts = {}) {
         return;
     }
 
+    // Clear any lingering discard requests from prior turns
+    if (state.discardMode) {
+        state.discardMode = null;
+    }
+
     const heroIds = state.heroes || [];
     if (!heroIds.length) {
         return;
     }
 
-    // Reset per-turn discard counter for the active hero
-    const activeHeroId = heroIds[state.heroTurnIndex ?? 0];
+    // Reset per-turn discard counter for the active hero (will be re-resolved below if index changes)
+    let activeHeroId = heroIds[state.heroTurnIndex ?? 0];
     if (activeHeroId && state.heroData?.[activeHeroId]) {
         state.heroData[activeHeroId].discardedThisTurn = 0;
     }
@@ -1399,6 +1418,7 @@ export async function startHeroTurn(state, opts = {}) {
 
     // Persist the (possibly advanced) index
     state.heroTurnIndex = heroTurnIndex;
+    activeHeroId = heroIds[heroTurnIndex]; // ensure active hero reflects any index skips
 
     // 3) Normal hero turn setup for the chosen hero
     if (typeof state.turnCounter !== "number") state.turnCounter = 0;
@@ -1867,6 +1887,11 @@ export function endCurrentHeroTurn(gameState) {
     }
 
     if (turnTimerInterval) clearInterval(turnTimerInterval);
+
+    // Clear any pending forced discards so they don't carry into the next hero's turn
+    if (gameState.discardMode) {
+        gameState.discardMode = null;
+    }
     const heroIds = gameState.heroes || [];
     const heroCount = heroIds.length;
     if (!heroCount) return;
@@ -1897,6 +1922,8 @@ export function endCurrentHeroTurn(gameState) {
 
     // Clear any pending damageFoe selection at end of turn
     try { if (typeof window !== "undefined") window.__damageFoeSelectMode = null; } catch (e) {}
+    // Clear any pending freezeVillain(any) selection at end of turn
+    try { if (typeof window !== "undefined") window.__freezeSelectMode = null; } catch (e) {}
 
     if (typeof heroState.cityIndex === "number") {
 
@@ -3408,6 +3435,7 @@ function computeHeroTravelLegalTargets(gameState, heroId) {
     const citySlots = document.querySelectorAll(".city-slot");
     if (!citySlots.length) return [];
 
+    const destroyed = gameState.destroyedCities || {};
     const upperIndices = [0, 2, 4, 6, 8, 10];
     const lowerIndices = [1, 3, 5, 7, 9, 11];
 
@@ -3416,6 +3444,9 @@ function computeHeroTravelLegalTargets(gameState, heroId) {
     for (let i = 0; i < upperIndices.length; i++) {
         const upperIdx = upperIndices[i];
         const lowerIdx = lowerIndices[i];
+
+        // Skip destroyed cities entirely
+        if (destroyed[upperIdx]) continue;
 
         const upperSlot = citySlots[upperIdx];
         const lowerSlot = citySlots[lowerIdx];
