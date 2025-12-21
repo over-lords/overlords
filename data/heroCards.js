@@ -699,7 +699,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         condition: `afterDamage`,
-        effect: `shoveVillain(lastDamagedFoe,-5)`
+        effect: `shoveVillain(lastDamagedFoe,10)`
       },
       {
         condition: `afterDamage`,
@@ -714,7 +714,7 @@ export const heroCards = [
       {
         condition: `afterDamage`,
         type: `chooseOption(2)`,
-        effect: [`retreatHeroToHQ`]
+        effect: [`retreatHeroToHQ()`]
       }
     ]
   },

@@ -483,6 +483,25 @@ EFFECT_HANDLERS.travelTo = function(args, card, selectedData) {
     travelHeroToDestination(dest, heroId, gameState);
 };
 
+EFFECT_HANDLERS.shoveVillain = function(args = [], card, selectedData = {}) {
+    const target = args?.[0] ?? "any";
+    const count = Number(args?.[1]) || 0;
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    if (count === 0) {
+        console.warn("[shoveVillain] Count is 0; nothing to do.");
+        return;
+    }
+
+    shoveVillain(target, count, state, heroId);
+};
+
+EFFECT_HANDLERS.retreatHeroToHQ = function(args = [], card, selectedData = {}) {
+    const heroId = selectedData?.currentHeroId ?? null;
+    retreatHeroToHQSafe(heroId, gameState);
+};
+
 EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
     const amount = Number(args?.[0]) || 0;
     if (amount <= 0) {
@@ -3181,12 +3200,28 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
     let destIndex = null;
 
     if (!toOverlord) {
-        const num = Number(destRaw);
-        if (!Number.isInteger(num) || num < 1 || num > 11 || num % 2 === 0) {
-            console.warn("[travelTo] Invalid city index:", destRaw);
-            return;
+        if (destStr === "lastshovedvillaindestination") {
+            const upper = s.lastShovedVillainDestination;
+            if (typeof upper === "number") {
+                const lowerIdx = upper + 1; // lower row directly beneath
+                if (Number.isInteger(lowerIdx) && lowerIdx >= 1 && lowerIdx <= 11 && lowerIdx % 2 === 1) {
+                    destIndex = lowerIdx;
+                } else {
+                    console.warn("[travelTo] lastShovedVillainDestination did not map to a valid lower city:", upper);
+                    return;
+                }
+            } else {
+                console.warn("[travelTo] No lastShovedVillainDestination recorded.");
+                return;
+            }
+        } else {
+            const num = Number(destRaw);
+            if (!Number.isInteger(num) || num < 1 || num > 11 || num % 2 === 0) {
+                console.warn("[travelTo] Invalid city index:", destRaw);
+                return;
+            }
+            destIndex = num;
         }
-        destIndex = num;
     }
 
     const citySlots = (typeof document !== "undefined") ? document.querySelectorAll(".city-slot") : [];
@@ -3233,6 +3268,195 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
     saveGameState(s);
 }
 
+function retreatHeroToHQSafe(heroId = null, state = gameState) {
+    const s = state || gameState;
+    const heroIds = s.heroes || [];
+    const resolvedHeroId = heroId ?? heroIds[s.heroTurnIndex ?? 0];
+    if (resolvedHeroId == null) {
+        console.warn("[retreatHeroToHQ] No heroId available.");
+        return;
+    }
+
+    const heroState = s.heroData?.[resolvedHeroId];
+    if (!heroState) return;
+
+    const prevIdx = heroState.cityIndex;
+    heroState.cityIndex = null;
+    heroState.isFacingOverlord = false;
+    try { refreshOverlordFacingGlow(s); } catch (e) {}
+
+    if (typeof prevIdx === "number" && typeof document !== "undefined") {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const slot = citySlots[prevIdx];
+        const area = slot?.querySelector(".city-card-area");
+        if (area) area.innerHTML = "";
+    }
+
+    showRetreatButtonForCurrentHero(s);
+    renderHeroHandBar(s);
+    saveGameState(s);
+}
+
+function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
+    const s = state || gameState;
+    if (!Array.isArray(s.cities)) {
+        console.warn("[shoveVillain] No cities array.");
+        return;
+    }
+
+    const dir = count > 0 ? 2 : -2;
+    const steps = Math.abs(count);
+    if (steps === 0 || dir === 0) return;
+
+    const heroIds = s.heroes || [];
+
+    const disengageHeroBelow = (slotIndex) => {
+        const lowerIdx = slotIndex + 1;
+        const heroIdBelow = heroIds.find(hid => {
+            const hState = s.heroData?.[hid];
+            return hState && hState.cityIndex === lowerIdx;
+        });
+        if (heroIdBelow == null) return;
+        const hState = s.heroData?.[heroIdBelow];
+        if (hState) {
+            hState.cityIndex = null;
+            hState.isFacingOverlord = false;
+        }
+        if (typeof document !== "undefined") {
+            const citySlots = document.querySelectorAll(".city-slot");
+            const slot = citySlots[lowerIdx];
+            const area = slot?.querySelector(".city-card-area");
+            if (area) area.innerHTML = "";
+        }
+    };
+
+    const moveEntry = (entry, fromIdx, toIdx) => {
+        const citySlots = (typeof document !== "undefined") ? document.querySelectorAll(".city-slot") : [];
+
+        if (typeof fromIdx === "number" && citySlots[fromIdx]) {
+            const prevArea = citySlots[fromIdx].querySelector(".city-card-area");
+            if (prevArea) prevArea.innerHTML = "";
+        }
+
+        if (toIdx != null && typeof toIdx === "number") {
+            s.cities[fromIdx] = null;
+            s.cities[toIdx] = entry;
+            entry.slotIndex = toIdx;
+
+            const slot = citySlots[toIdx];
+            const area = slot?.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";
+                const wrap = document.createElement("div");
+                wrap.className = "card-wrapper";
+                const rendered = renderCard(entry.id, wrap);
+                wrap.appendChild(rendered);
+                area.appendChild(wrap);
+            }
+            s.lastShovedVillainDestination = toIdx;
+        } else {
+            s.cities[fromIdx] = null;
+        }
+    };
+
+    const performShove = (entry, startIdx) => {
+        if (!entry || typeof startIdx !== "number") return;
+
+        let current = startIdx;
+        let remaining = steps;
+        let finalSlot = startIdx;
+
+        while (remaining > 0) {
+            const next = current + dir;
+            if (next < 0) {
+                // Off the board to the left -> escape
+                try { handleVillainEscape(entry, s); } catch (e) { console.warn("[shoveVillain] escape failed", e); }
+                moveEntry(entry, current, null);
+                s.lastShovedVillainDestination = null;
+                return;
+            }
+            if (next > 10) {
+                // Clamp at the far right; cannot go past 10
+                break;
+            }
+            const blocker = s.cities[next];
+            if (blocker && blocker.id != null) {
+                break;
+            }
+
+            current = next;
+            finalSlot = current;
+            remaining = Math.max(0, remaining - Math.abs(dir));
+            // Stop if we've reached the far right boundary
+            if (current === 10) break;
+        }
+
+        if (current === startIdx) {
+            s.lastShovedVillainDestination = startIdx;
+            return;
+        }
+
+        // Disengage any hero below the original slot
+        disengageHeroBelow(startIdx);
+        moveEntry(entry, startIdx, current);
+        s.lastShovedVillainDestination = finalSlot;
+    };
+
+    const addTarget = (list, entry, slotIndex) => {
+        if (!entry || entry.id == null || typeof slotIndex !== "number") return;
+        list.push({ entry, slotIndex });
+    };
+
+    const targets = [];
+    const targetStr = typeof targetRaw === "string" ? targetRaw.toLowerCase() : null;
+
+    if (targetStr === "all") {
+        s.cities.forEach((entry, idx) => addTarget(targets, entry, idx));
+    } else if (targetStr === "allunengaged") {
+        s.cities.forEach((entry, idx) => {
+            if (!entry) return;
+            const heroBelow = heroIds.some(hid => s.heroData?.[hid]?.cityIndex === idx + 1);
+            if (!heroBelow) addTarget(targets, entry, idx);
+        });
+    } else if (targetStr === "lastdamagedfoe") {
+        const info = s.lastDamagedFoe;
+        const instId = info?.instanceId;
+        if (!instId) {
+            console.warn("[shoveVillain] No lastDamagedFoe recorded.");
+        } else {
+            const entry = s.cities.find(e => e && getEntryKey(e) === instId);
+            const slotIndex = entry?.slotIndex ?? s.cities.indexOf(entry);
+            addTarget(targets, entry, slotIndex);
+        }
+    } else if (targetStr === "any") {
+        if (typeof window === "undefined") {
+            console.warn("[shoveVillain] 'any' selection requires browser UI.");
+            return;
+        }
+        window.__shoveVillainSelectMode = { count, heroId, state: s };
+        try { showMightBanner("Choose a foe to shove", 1800); } catch (e) {}
+        return;
+    } else if (targetRaw && typeof targetRaw === "object" && targetRaw.entry) {
+        addTarget(targets, targetRaw.entry, targetRaw.slotIndex);
+    } else {
+        console.warn("[shoveVillain] Unknown target:", targetRaw);
+    }
+
+    targets.forEach(t => performShove(t.entry, t.slotIndex));
+    // If no target moved but we had exactly one, preserve its slot as last destination
+    if (targets.length === 1 && s.lastShovedVillainDestination == null) {
+        const only = targets[0];
+        if (only && typeof only.slotIndex === "number") {
+            s.lastShovedVillainDestination = only.slotIndex;
+        }
+    }
+    saveGameState(s);
+}
+
+if (typeof window !== "undefined") {
+    window.__shoveVillainEffect = shoveVillain;
+}
+
 function adjustHeroTravelDelta(delta, opts = {}, heroId = null, state = gameState) {
     const s = state || gameState;
     const heroIds = s.heroes || [];
@@ -3251,10 +3475,12 @@ function adjustHeroTravelDelta(delta, opts = {}, heroId = null, state = gameStat
 
     const permanent = String(opts.flag || "").toLowerCase() === "permanent";
 
-    // Base travel (max) comes from heroCard.travel unless overridden
+    const printedBase = (typeof heroCard.travel === "number") ? heroCard.travel : 0;
+
+    // Base travel (max) comes from heroState.travel if set; otherwise heroCard.travel
     const base = typeof heroState.travel === "number"
         ? heroState.travel
-        : (typeof heroCard.travel === "number" ? heroCard.travel : 0);
+        : printedBase;
 
     // Current travel is the mutable per-turn budget
     const current = typeof heroState.currentTravel === "number"
@@ -3267,7 +3493,12 @@ function adjustHeroTravelDelta(delta, opts = {}, heroId = null, state = gameStat
     heroState.currentTravel = newCurrent;
 
     if (permanent) {
-        let newBase = base + delta;
+        // When permanently bumping, use at least the printed base as the starting point
+        const baseline = (typeof heroState.travel === "number" && heroState.travel >= printedBase)
+            ? heroState.travel
+            : printedBase;
+
+        let newBase = baseline + delta;
         if (newBase < 0) newBase = 0;
         heroState.travel = newBase;
     }

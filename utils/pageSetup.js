@@ -1487,6 +1487,85 @@ function showFreezeSelectConfirm({ foeName }) {
     });
 }
 
+function showShoveSelectConfirm({ foeName }) {
+    return new Promise(resolve => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        `;
+
+        const box = document.createElement("div");
+        box.style.cssText = `
+            background: #fff;
+            color: #111;
+            border-radius: 14px;
+            border: 4px solid #000;
+            width: min(420px, 100%);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+            padding: 18px;
+            text-align: center;
+            font-family: 'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif;
+        `;
+
+        const title = document.createElement("div");
+        title.style.cssText = "font-size: 22px; font-weight: 800; margin-bottom: 10px;";
+        title.textContent = "Shove Foe";
+
+        const msg = document.createElement("div");
+        msg.style.cssText = "font-size: 18px; line-height: 1.35; margin-bottom: 16px;";
+        msg.textContent = `Shove ${foeName}?`;
+
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex; gap:10px; justify-content:center; flex-wrap:wrap;";
+
+        const makeBtn = (label, bg, fg) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.style.cssText = `
+                flex: 1 1 120px;
+                padding: 12px 14px;
+                font-size: 16px;
+                font-weight: 800;
+                border: 3px solid #000;
+                border-radius: 12px;
+                background: ${bg};
+                color: ${fg};
+                cursor: pointer;
+            `;
+            return b;
+        };
+
+        const yesBtn = makeBtn("Yes", "#ffd800", "#000");
+        const noBtn  = makeBtn("No", "#e3e3e3", "#000");
+
+        const cleanup = (result) => {
+            try { overlay.remove(); } catch (e) {}
+            resolve(result);
+        };
+
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick  = () => cleanup(false);
+
+        btnRow.appendChild(yesBtn);
+        btnRow.appendChild(noBtn);
+
+        box.appendChild(title);
+        box.appendChild(msg);
+        box.appendChild(btnRow);
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+}
+
 function findCityEntryForVillainCard(villainCard, state = gameState) {
     const cities = state?.cities;
     if (!Array.isArray(cities)) return { entry: null, slotIndex: null };
@@ -1527,6 +1606,22 @@ function findCityEntryForVillainCard(villainCard, state = gameState) {
 
 export function buildVillainPanel(villainCard) {
     if (!villainCard) return;
+
+    // If a shoveVillain(any) is pending, hijack the click to a confirm modal instead of opening the panel UI.
+    const pendingShove = (typeof window !== "undefined") ? window.__shoveVillainSelectMode : null;
+    if (pendingShove && typeof window !== "undefined" && typeof window.__shoveVillainEffect === "function") {
+        const stateForShove = pendingShove.state || gameState;
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForShove);
+
+        if (entry) {
+            showShoveSelectConfirm({ foeName: villainCard.name }).then(allow => {
+                if (!allow) return;
+                window.__shoveVillainEffect({ entry, slotIndex }, pendingShove.count, stateForShove, pendingShove.heroId);
+                window.__shoveVillainSelectMode = null;
+            });
+            return;
+        }
+    }
 
     // If a freezeVillain(any) is pending, hijack the click to a confirm modal instead of opening the panel UI.
     const pendingFreeze = (typeof window !== "undefined") ? window.__freezeSelectMode : null;
