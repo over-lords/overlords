@@ -2584,7 +2584,7 @@ export const heroes = [
         condition: `beforeDraw`,
         uses: `2`,
         shared: `no`,
-        effect: [`travelMinus(1)`,`damageFoe(999,anyHenchman)`]
+        effect: [`travelPlus(-1)`,`damageFoe(999,anyHenchman)`]
       },
       {
         type: `passive`,

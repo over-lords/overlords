@@ -219,7 +219,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `villainDraw(3)`
+                effect: `rallyNextHenchVillains(3)`
             }
         ]
     },

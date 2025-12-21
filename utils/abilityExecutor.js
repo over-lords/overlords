@@ -458,6 +458,12 @@ EFFECT_HANDLERS.enemyDraw = function(args, card, selectedData) {
     return enemyDraw(count, limit, selectedData);
 };
 
+EFFECT_HANDLERS.travelTo = function(args, card, selectedData) {
+    const dest = args?.[0] ?? null;
+    const heroId = selectedData?.currentHeroId ?? null;
+    travelHeroToDestination(dest, heroId, gameState);
+};
+
 EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
     const amount = Number(args?.[0]) || 0;
     if (amount <= 0) {
@@ -587,6 +593,14 @@ EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
     }
 
     saveGameState(gameState);
+};
+
+EFFECT_HANDLERS.travelPlus = function(args = [], card, selectedData = {}) {
+    const delta = Number(args?.[0]) || 0;
+    const flag = args?.[1] ?? "";
+
+    const heroId = selectedData?.currentHeroId ?? null;
+    adjustHeroTravelDelta(delta, { flag }, heroId, gameState);
 };
 
 EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
@@ -791,6 +805,10 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
 // END OF EFFECT HANDLERS
 
 export function executeEffectSafely(effectString, card, selectedData) {
+    if (Array.isArray(effectString)) {
+        effectString.forEach(eff => executeEffectSafely(eff, card, selectedData));
+        return;
+    }
     if (!effectString || typeof effectString !== "string") {
         console.warn(`[executeEffectSafely] Invalid effect '${effectString}' on card '${card?.name}'.`);
         return;
@@ -3002,6 +3020,137 @@ export function getLastDamageAmount(heroId, state = gameState) {
     const hState = s.heroData?.[heroId];
     if (!hState) return 0;
     return Number(hState.lastDamageAmount || 0);
+}
+
+function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
+    const s = state || gameState;
+    const heroIds = s.heroes || [];
+    const resolvedHeroId = heroId ?? heroIds[s.heroTurnIndex ?? 0];
+    if (resolvedHeroId == null) {
+        console.warn("[travelTo] No heroId available for travel.");
+        return;
+    }
+
+    const heroState = s.heroData?.[resolvedHeroId];
+    const heroCard = heroes.find(h => String(h.id) === String(resolvedHeroId));
+    if (!heroState || !heroCard) {
+        console.warn("[travelTo] Missing hero state or card for", resolvedHeroId);
+        return;
+    }
+
+    const destStr = String(destRaw).toLowerCase();
+    const toOverlord = destStr === "overlord";
+    let destIndex = null;
+
+    if (!toOverlord) {
+        const num = Number(destRaw);
+        if (!Number.isInteger(num) || num < 1 || num > 11 || num % 2 === 0) {
+            console.warn("[travelTo] Invalid city index:", destRaw);
+            return;
+        }
+        destIndex = num;
+    }
+
+    const citySlots = (typeof document !== "undefined") ? document.querySelectorAll(".city-slot") : [];
+
+    // Clear previous city DOM if any
+    const prevIdx = heroState.cityIndex;
+    if (typeof prevIdx === "number" && citySlots[prevIdx]) {
+        const prevArea = citySlots[prevIdx].querySelector(".city-card-area");
+        if (prevArea) prevArea.innerHTML = "";
+    }
+
+    if (toOverlord) {
+        heroState.cityIndex = null;
+        heroState.isFacingOverlord = true;
+        showRetreatButtonForCurrentHero(s);
+        try {
+            const btn = document.getElementById("face-overlord-button");
+            if (btn) {
+                btn.style.display = "none";
+                btn.disabled = true;
+            }
+        } catch (e) {}
+        renderHeroHandBar(s);
+        saveGameState(s);
+        return;
+    }
+
+    heroState.cityIndex = destIndex;
+    heroState.isFacingOverlord = false;
+
+    const slot = citySlots[destIndex];
+    const area = slot?.querySelector(".city-card-area");
+    if (area) {
+        area.innerHTML = "";
+        const wrapper = document.createElement("div");
+        wrapper.className = "card-wrapper";
+        const rendered = renderCard(resolvedHeroId, wrapper);
+        wrapper.appendChild(rendered);
+        area.appendChild(wrapper);
+    }
+
+    showRetreatButtonForCurrentHero(s);
+    renderHeroHandBar(s);
+    saveGameState(s);
+}
+
+function adjustHeroTravelDelta(delta, opts = {}, heroId = null, state = gameState) {
+    const s = state || gameState;
+    const heroIds = s.heroes || [];
+    const resolvedHeroId = heroId ?? heroIds[s.heroTurnIndex ?? 0];
+    if (resolvedHeroId == null) {
+        console.warn("[travelPlus] No heroId available.");
+        return;
+    }
+
+    const heroState = s.heroData?.[resolvedHeroId];
+    const heroCard = heroes.find(h => String(h.id) === String(resolvedHeroId));
+    if (!heroState || !heroCard) {
+        console.warn("[travelPlus] Missing hero state or card for", resolvedHeroId);
+        return;
+    }
+
+    const permanent = String(opts.flag || "").toLowerCase() === "permanent";
+
+    // Base travel (max) comes from heroCard.travel unless overridden
+    const base = typeof heroState.travel === "number"
+        ? heroState.travel
+        : (typeof heroCard.travel === "number" ? heroCard.travel : 0);
+
+    // Current travel is the mutable per-turn budget
+    const current = typeof heroState.currentTravel === "number"
+        ? heroState.currentTravel
+        : base;
+
+    let newCurrent = current + delta;
+    if (newCurrent < 0) newCurrent = 0;
+
+    heroState.currentTravel = newCurrent;
+
+    if (permanent) {
+        let newBase = base + delta;
+        if (newBase < 0) newBase = 0;
+        heroState.travel = newBase;
+    }
+
+    console.log(
+        `[travelPlus] Hero ${resolvedHeroId} travel adjusted by ${delta} ` +
+        `(current: ${current} -> ${heroState.currentTravel}` +
+        (permanent ? `, base: ${base} -> ${heroState.travel}` : "") + ")."
+    );
+
+    saveGameState(s);
+    renderHeroHandBar(s);
+
+    // Refresh travel UI (includes engage Overlord button visibility)
+    try {
+        if (typeof window !== "undefined" && typeof window.recalculateHeroTravel === "function") {
+            window.recalculateHeroTravel(s);
+        }
+    } catch (e) {
+        console.warn("[travelPlus] recalculateHeroTravel failed", e);
+    }
 }
 
 export function runIfDiscardedEffects(cardData, heroId, state) {
