@@ -1608,7 +1608,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: [`scanDeck(villain,3)`,`applyKoCancel(scanned(villain))`]
+        effect: [`scanDeck(villain,1)`,`applyKoCancel(scanned(villain))`]
       },
     ]
   },

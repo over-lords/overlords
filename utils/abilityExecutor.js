@@ -844,6 +844,53 @@ EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData
     rescueCapturedBystander(flag, heroId, gameState);
 };
 
+function scanDeck(whichRaw, howMany = 1, selectedData = {}) {
+    const which = String(whichRaw || "").toLowerCase();
+    const count = Math.max(1, Number(howMany) || 1);
+
+    let deck = [];
+    let ptr = 0;
+    let label = which;
+
+    if (which === "villain") {
+        deck = Array.isArray(gameState.villainDeck) ? gameState.villainDeck : [];
+        ptr = typeof gameState.villainDeckPointer === "number" ? gameState.villainDeckPointer : 0;
+        label = "Villain deck";
+    } else if (which === "enemy") {
+        deck = Array.isArray(gameState.enemyAllyDeck) ? gameState.enemyAllyDeck : [];
+        ptr = typeof gameState.enemyAllyDeckPointer === "number" ? gameState.enemyAllyDeckPointer : 0;
+        label = "Enemy/Ally deck";
+    } else if (which === "self") {
+        const heroId = selectedData?.currentHeroId ?? (gameState.heroes?.[gameState.heroTurnIndex ?? 0]);
+        const heroState = heroId ? gameState.heroData?.[heroId] : null;
+        deck = (heroState && Array.isArray(heroState.deck)) ? heroState.deck : [];
+        ptr = 0;
+        label = `Hero ${heroId} deck`;
+    } else {
+        console.warn("[scanDeck] Unknown deck type:", whichRaw);
+        return;
+    }
+
+    if (!deck.length || ptr >= deck.length) {
+        console.log(`[scanDeck] ${label} is empty or pointer at end (ptr=${ptr}, len=${deck.length}).`);
+        return;
+    }
+
+    const slice = deck.slice(ptr, ptr + count);
+    const annotated = slice.map(id => {
+        const card = findCardInAllSources(id);
+        return card ? `${id} (${card.name})` : `${id} (unknown)`;
+    });
+
+    console.log(`[scanDeck] ${label} next ${annotated.length} from ptr ${ptr}:`, annotated);
+}
+
+EFFECT_HANDLERS.scanDeck = function(args = [], card, selectedData = {}) {
+    const which = args?.[0] ?? "";
+    const howMany = args?.[1] ?? 1;
+    scanDeck(which, howMany, selectedData);
+};
+
 EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {
 
     const newOverlordId = String(args[0]);
