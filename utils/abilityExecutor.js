@@ -412,6 +412,37 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
         return;
     }
 
+    // Special flag: all -> every active hero (including current) draws `count`
+    if (flag === "all") {
+        const heroIds = gameState.heroes || [];
+        heroIds.forEach(hid => {
+            const hState = gameState.heroData?.[hid];
+            if (!hState) return;
+            const hp = typeof hState.hp === "number" ? hState.hp : 1;
+            if (hp <= 0) return; // only active (non-KO) heroes
+
+            if (!Array.isArray(hState.deck)) hState.deck = [];
+            if (!Array.isArray(hState.hand)) hState.hand = [];
+
+            console.log(`[draw] ${count} card(s) for hero ${hid} (all flag).`);
+
+            for (let i = 0; i < count; i++) {
+                if (hState.deck.length === 0) {
+                    console.log("[draw] Deck empty — cannot draw further.", { heroId: hid });
+                    break;
+                }
+
+                const cardId = hState.deck.shift();
+                hState.hand.push(cardId);
+                console.log(`[draw] → Drawn card ID ${cardId} for hero ${hid}`);
+            }
+        });
+
+        saveGameState(gameState);
+        renderHeroHandBar(gameState);
+        return;
+    }
+
     // Special flag: allOtherHeroes → every other active hero draws `count`
     if (flag === "allotherheroes") {
         const heroIds = gameState.heroes || [];
@@ -747,6 +778,70 @@ EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
 
     saveGameState(gameState);
     renderHeroHandBar(gameState);
+};
+
+function rescueCapturedBystander(flag = "all", heroId = null, state = gameState) {
+    const s = state || gameState;
+    const hid = heroId ?? s.heroes?.[s.heroTurnIndex ?? 0];
+    if (!hid) {
+        console.warn("[rescueCapturedBystander] No heroId available.");
+        return;
+    }
+
+    const normFlag = String(flag || "").toLowerCase();
+    if (normFlag !== "all") {
+        console.warn("[rescueCapturedBystander] Unknown flag; only 'all' is supported. Received:", flag);
+        return;
+    }
+
+    const heroState = s.heroData?.[hid];
+    if (!heroState) {
+        console.warn("[rescueCapturedBystander] No heroState for heroId:", hid);
+        return;
+    }
+    if (!Array.isArray(heroState.hand)) heroState.hand = [];
+
+    if (!Array.isArray(s.cities)) {
+        console.warn("[rescueCapturedBystander] No cities array.");
+        return;
+    }
+
+    let rescuedCount = 0;
+
+    s.cities.forEach((entry, idx) => {
+        if (!entry) return;
+
+        const captured = entry.capturedBystanders;
+
+        if (Array.isArray(captured) && captured.length > 0) {
+            captured.forEach(b => {
+                const idStr = b?.id != null ? String(b.id) : null;
+                if (idStr) {
+                    heroState.hand.push(idStr);
+                    rescuedCount += 1;
+                }
+            });
+            entry.capturedBystanders = [];
+        } else if (Number(captured) > 0) {
+            // If stored as a number with no detail, log and clear
+            console.warn(`[rescueCapturedBystander] Captured bystanders stored as count (${captured}) in city ${idx}; clearing without card ids.`);
+            entry.capturedBystanders = [];
+        }
+    });
+
+    if (rescuedCount > 0) {
+        console.log(`[rescueCapturedBystander] Hero ${hid} rescued ${rescuedCount} captured bystander(s).`);
+        saveGameState(s);
+        renderHeroHandBar(s);
+    } else {
+        console.log("[rescueCapturedBystander] No captured bystanders found to rescue.");
+    }
+}
+
+EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData = {}) {
+    const flag = args?.[0] ?? "all";
+    const heroId = selectedData?.currentHeroId ?? null;
+    rescueCapturedBystander(flag, heroId, gameState);
 };
 
 EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {

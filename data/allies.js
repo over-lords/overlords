@@ -334,7 +334,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `All Heroes draw an extra card at the start of their next turns.`
+                text: `All Heroes draw 1.`
             }
         ],
         abilitiesNamePrint: [
@@ -344,7 +344,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `drawExtraAtStart(all,1)`
+                effect: `draw(1,all)`
             }
         ]
     },
