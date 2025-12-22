@@ -295,11 +295,18 @@ export const heroCards = [
     abilitiesNamePrint: [
       {
         text: `Choose your Target`
+      },
+      {
+        text: `Damage the Overlord`
       }
     ],
     abilitiesEffects: [
       {
         effect: `damageFoe(3,adjacentFoes)`
+      },
+      {
+        condition: `facingOverlord`,
+        effect: `damageOverlord(3)`
       }
     ]
   },
@@ -728,7 +735,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `At the end of Wonder Woman's turn, if she takes Damage from a Villain, they take 3 Damage in return.`
+        text: `At the end of Wonder Woman's turn, if she takes Damage from a Henchman or Villain, they take 3 Damage in return.`
       }
     ],
     abilitiesNamePrint: [
@@ -942,7 +949,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `afterDamage`,
-        effect: `giveHeroPassiveTemp(retreatHeroToHQ(1))`
+        effect: `giveHeroPassive(retreatHeroToHQ(1))`
       },
     ]
   },
@@ -1301,7 +1308,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: `giveHeroPassiveTemp(discardCardsAtWill)`
+        effect: `giveHeroPassive(discardCardsAtWill)`
       },
     ]
   },
@@ -1329,7 +1336,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: `giveHeroPassiveTemp(atWillTravelTo(11))`
+        effect: `giveHeroPassive(atWillTravelTo(11))`
       },
       {
         type: `quick`,
@@ -1532,7 +1539,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: `giveHeroPassiveTemp(discardCardsAtWill)`
+        effect: `giveHeroPassive(discardCardsAtWill)`
       },
       {
         type: `quick`,
@@ -1701,7 +1708,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: [`confirmActiveTeammates`],
-        effect: `giveTeammateExtraTurn`
+        effect: `giveTeammateExtraTurn()`
       },
       {
         type: `quick`,

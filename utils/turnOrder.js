@@ -1928,6 +1928,9 @@ export function endCurrentHeroTurn(gameState) {
     // Clear any target highlights for damage selection
     try { if (typeof window !== "undefined" && typeof window.__clearDamageFoeHighlights === "function") window.__clearDamageFoeHighlights(); } catch (e) {}
 
+    // Reset last damage causer at start of end-turn damage check
+    gameState.lastDamageCauser = null;
+
     if (typeof heroState.cityIndex === "number") {
 
         // Heroes are in LOWER slots; villains are in the UPPER slot above
@@ -1953,6 +1956,14 @@ export function endCurrentHeroTurn(gameState) {
 
                 // Only deal damage if foeDamage >= DT
                 if (foeDamage >= dt) {
+                    const entryKey = slotEntry?.instanceId ?? slotEntry?.uniqueId ?? null;
+                    gameState.lastDamageCauser = {
+                        foeId,
+                        slotIndex: foeIdx,
+                        instanceId: entryKey
+                    };
+                    console.log("[END TURN DAMAGE] Recorded lastDamageCauser", gameState.lastDamageCauser);
+
                     heroState.hp -= foeDamage;
                     flashScreenRed();
 
@@ -1976,14 +1987,50 @@ export function endCurrentHeroTurn(gameState) {
                             + ` (DT=${dt})`
                         );
                     }
+
+                    // Fire any pending end-of-turn damage triggers for this hero
+                    if (Array.isArray(heroState.pendingEndTurnDamageEffects) && heroState.pendingEndTurnDamageEffects.length) {
+                        console.log("[END TURN DAMAGE] Firing pending damagedAtTurnEnd effects", heroState.pendingEndTurnDamageEffects);
+                        const effectsToRun = [...heroState.pendingEndTurnDamageEffects];
+                        heroState.pendingEndTurnDamageEffects = [];
+                        effectsToRun.forEach(eff => {
+                            try {
+                                executeEffectSafely(eff.effect, heroes.find(h => String(h.id) === String(heroId)), {
+                                    currentHeroId: heroId,
+                                    state: gameState,
+                                    selectedFoeSummary: {
+                                        foeId,
+                                        slotIndex: foeIdx,
+                                        instanceId: entryKey,
+                                        foeName: foe?.name || `Enemy ${foeId}`,
+                                        foeType: foe?.type || "Enemy",
+                                        source: "city-upper"
+                                    }
+                                });
+                                console.log("[END TURN DAMAGE] Executed pending effect", eff);
+                            } catch (e) {
+                                console.warn("[END TURN DAMAGE] Failed to run pending damage effect", e);
+                            }
+                        });
+                    }
                 } else {
                     console.log(
                         `[END TURN] ${heroObj?.name} ignores ${foe.name}'s damage `
                         + `(foeDamage=${foeDamage} < DT=${dt}).`
                     );
                 }
+            } else {
+                gameState.lastDamageCauser = null;
             }
         }
+    }
+
+    // Clear any pending end-of-turn damage hooks if no damage was applied
+    if (Array.isArray(heroState.pendingEndTurnDamageEffects)) {
+        if (heroState.pendingEndTurnDamageEffects.length) {
+            console.log("[END TURN DAMAGE] Clearing pending end-of-turn damage effects without firing", heroState.pendingEndTurnDamageEffects);
+        }
+        heroState.pendingEndTurnDamageEffects = [];
     }
 
     heroState.hasDrawnThisTurn = false;

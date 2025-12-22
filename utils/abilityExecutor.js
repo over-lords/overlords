@@ -255,6 +255,19 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return activeTeams.has(String(teamName).toLowerCase());
     }
 
+    const lowerCond = condStr.toLowerCase();
+
+    if (lowerCond === "facingoverlord") {
+        if (heroId == null) return false;
+        const hState = s.heroData?.[heroId];
+        return !!hState?.isFacingOverlord;
+    }
+
+    if (lowerCond === "damagedatturnend") {
+        // Always allow registration; actual firing happens when end-of-turn damage occurs
+        return true;
+    }
+
     // Fallback: unknown condition -> false
     return false;
 }
@@ -532,6 +545,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "anyWithBystander";
         } else if (typeof raw === "string" && raw.toLowerCase() === "adjacentfoes") {
             flag = "adjacentFoes";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "lastdamagecauser") {
+            flag = "lastDamageCauser";
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
@@ -1943,10 +1958,39 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     const postEffects = [];
 
     async function executeEffectBlock(eff, i, { skipCondition = false } = {}) {
+        // Pre-read raw condition
+        const rawCond = eff?.condition;
+        const rawCondStr = typeof rawCond === "string" ? rawCond.trim() : "";
+
+        // Special-case: damagedAtTurnEnd should always register and defer execution
+        if (rawCondStr.toLowerCase() === "damagedatturnend") {
+            const hState = gameState.heroData?.[heroId];
+            if (!hState) {
+                console.warn("[AbilityExecutor] damagedAtTurnEnd condition with no hero state.");
+                return;
+            }
+            if (!Array.isArray(hState.pendingEndTurnDamageEffects)) {
+                hState.pendingEndTurnDamageEffects = [];
+            }
+            const payload = {
+                effect: eff.effect,
+                sourceCardId: cardData?.id,
+                sourceCardName: cardData?.name
+            };
+            hState.pendingEndTurnDamageEffects.push(payload);
+            console.log("[AbilityExecutor] Registered damagedAtTurnEnd watcher", {
+                heroId,
+                heroName: heroes.find(h => String(h.id) === String(heroId))?.name,
+                effect: payload
+            });
+            return;
+        }
+
         // ---------- CONDITION ----------
+        let cond = "none";
+        let condList = [];
+
         if (!skipCondition) {
-            let cond = "none";
-            let condList = [];
 
             if (eff.condition != null) {
                 if (typeof eff.condition === "string") {
@@ -1993,6 +2037,33 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             }
 
             console.log(`[AbilityExecutor] Optional ability accepted.`);
+        }
+
+        // ------------------------------------------------------
+        // SPECIAL CONDITION: damagedAtTurnEnd
+        // Register the effect to fire later if the hero takes end-of-turn damage.
+        // ------------------------------------------------------
+        if (typeof cond === "string" && cond.toLowerCase() === "damagedatturnend") {
+            const hState = gameState.heroData?.[heroId];
+            if (!hState) {
+                console.warn("[AbilityExecutor] damagedAtTurnEnd condition with no hero state.");
+                return;
+            }
+            if (!Array.isArray(hState.pendingEndTurnDamageEffects)) {
+                hState.pendingEndTurnDamageEffects = [];
+            }
+            const payload = {
+                effect: eff.effect,
+                sourceCardId: cardData?.id,
+                sourceCardName: cardData?.name
+            };
+            hState.pendingEndTurnDamageEffects.push(payload);
+            console.log("[AbilityExecutor] Registered damagedAtTurnEnd watcher", {
+                heroId,
+                heroName: heroes.find(h => String(h.id) === String(heroId))?.name,
+                effect: payload
+            });
+            return;
         }
 
         // ------------------------------------------------------
@@ -2549,6 +2620,48 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             console.warn("[damageFoe] Could not show selection banner.", err);
         }
 
+        return;
+    }
+
+    if (flag === "lastDamageCauser") {
+        const info = s.lastDamageCauser;
+        if (!info) {
+            console.warn("[damageFoe] No lastDamageCauser recorded.");
+            return;
+        }
+
+        const instKey = info.instanceId ?? null;
+        const entry = Array.isArray(s.cities)
+            ? s.cities.find(e => e && (getEntryKey(e) === instKey || String(e.id) === String(info.foeId)))
+            : null;
+        const slotIndex = entry?.slotIndex ?? (Array.isArray(s.cities) ? s.cities.indexOf(entry) : null);
+
+        if (!entry || slotIndex == null) {
+            console.warn("[damageFoe] Could not locate lastDamageCauser entry.");
+            return;
+        }
+
+        const foeIdStr = String(entry.id);
+        const foeCard =
+            villains.find(v => String(v.id) === foeIdStr) ||
+            henchmen.find(h => String(h.id) === foeIdStr);
+
+        if (!foeCard) {
+            console.warn("[damageFoe] No card data for lastDamageCauser id:", foeIdStr);
+            return;
+        }
+
+        const summary = {
+            foeType: foeCard.type || "Enemy",
+            foeId: foeIdStr,
+            instanceId: getEntryKey(entry),
+            foeName: foeCard.name || `Enemy ${foeIdStr}`,
+            currentHP: entry.currentHP ?? foeCard.hp,
+            slotIndex,
+            source: "city-upper"
+        };
+
+        damageFoe(amount, summary, heroId, s, { flag: "single" });
         return;
     }
 
