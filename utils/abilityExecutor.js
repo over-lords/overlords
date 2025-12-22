@@ -18,7 +18,7 @@ import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 import { bystanders } from "../data/bystanders.js";
 
-import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot } from "./pageSetup.js";
+import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
          enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities } from "./turnOrder.js";
@@ -192,6 +192,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     }
     if (lower === "getlastdamageamount") {
         return getLastDamageAmount(heroId, state);
+    }
+    if (lower === "getherodamage") {
+        return getHeroDamage(heroId, state);
     }
     if (lower === "findkodheroes") {
         return findKOdHeroes(state);
@@ -879,10 +882,23 @@ function scanDeck(whichRaw, howMany = 1, selectedData = {}) {
     const slice = deck.slice(ptr, ptr + count);
     const annotated = slice.map(id => {
         const card = findCardInAllSources(id);
-        return card ? `${id} (${card.name})` : `${id} (unknown)`;
+        return {
+            id: String(id),
+            name: card?.name || `Card ${id}`,
+            type: card?.type || "",
+            source: which,
+            heroId: which === "self" ? (selectedData?.currentHeroId ?? (gameState.heroes?.[gameState.heroTurnIndex ?? 0])) : null
+        };
     });
 
-    console.log(`[scanDeck] ${label} next ${annotated.length} from ptr ${ptr}:`, annotated);
+    // Populate shared buffer for later reference and persist
+    gameState.scannedBuffer = annotated;
+    saveGameState(gameState);
+
+    console.log(
+        `[scanDeck] ${label} next ${annotated.length} from ptr ${ptr}:`,
+        annotated.map(c => `${c.id} (${c.name})`)
+    );
 }
 
 EFFECT_HANDLERS.scanDeck = function(args = [], card, selectedData = {}) {
@@ -890,6 +906,493 @@ EFFECT_HANDLERS.scanDeck = function(args = [], card, selectedData = {}) {
     const howMany = args?.[1] ?? 1;
     scanDeck(which, howMany, selectedData);
 };
+
+function scanBuffer() {
+    const buf = Array.isArray(gameState.scannedBuffer) ? gameState.scannedBuffer : [];
+    console.log("[scanBuffer] Current scannedBuffer contents:", buf);
+}
+
+EFFECT_HANDLERS.scanBuffer = function(args = [], card, selectedData = {}) {
+    scanBuffer();
+};
+
+// Template stub for future scan effect application.
+// Accepts an options object (e.g., { activate: true, ko: false }) and returns
+// the cards currently in scannedBuffer in the order found.
+function applyScanEffects(opts = {}) {
+    const activate = !!opts.activate;
+    const ko = !!opts.ko;
+    const buf = Array.isArray(gameState.scannedBuffer) ? [...gameState.scannedBuffer] : [];
+
+    console.log("[applyScanEffects] Called with options", { activate, ko, raw: opts });
+    console.log("[applyScanEffects] scannedBuffer contents before clearing:", buf);
+
+    // Render the scanned cards using hero preview styling (no buttons)
+    renderScannedPreview(buf, { activate, ko });
+
+    // Persist the displayed set so it survives refresh
+    gameState.scannedDisplay = buf;
+    gameState.scannedDisplayOpts = { activate, ko };
+    saveGameState(gameState);
+
+    // Clear the buffer after reporting
+    gameState.scannedBuffer = [];
+
+    return buf;
+}
+
+EFFECT_HANDLERS.applyScanEffects = function(args = [], card, selectedData = {}) {
+    // Support call shapes like:
+    //   applyScanEffects(ko)
+    //   applyScanEffects(activate,ko)
+    //   applyScanEffects(true,false)
+    const opts = { activate: false, ko: false };
+
+    args.forEach((arg, idx) => {
+        if (typeof arg === "string") {
+            const lower = arg.toLowerCase();
+            if (lower === "activate") opts.activate = true;
+            if (lower === "ko") opts.ko = true;
+        } else if (typeof arg === "boolean") {
+            if (idx === 0) opts.activate = arg;
+            if (idx === 1) opts.ko = arg;
+        }
+    });
+
+    applyScanEffects(opts);
+};
+
+function handleScanKo(cardInfo) {
+    if (!cardInfo || !cardInfo.id) {
+        console.warn("[handleScanKo] No card info provided.");
+        return;
+    }
+
+    const source = (cardInfo.source || "").toLowerCase();
+    const cardId = String(cardInfo.id);
+    let removed = false;
+
+    if (source === "villain") {
+        const deck = Array.isArray(gameState.villainDeck) ? gameState.villainDeck : [];
+        const ptr = typeof gameState.villainDeckPointer === "number" ? gameState.villainDeckPointer : 0;
+        let idx = deck.indexOf(cardId, ptr);
+        if (idx === -1) idx = deck.indexOf(cardId);
+        if (idx >= 0) {
+            deck.splice(idx, 1);
+            if (gameState.villainDeckPointer != null && idx < gameState.villainDeckPointer) {
+                gameState.villainDeckPointer = Math.max(0, gameState.villainDeckPointer - 1);
+            }
+            removed = true;
+            if (!Array.isArray(gameState.koCards)) gameState.koCards = [];
+            const cardData = findCardInAllSources(cardId);
+            gameState.koCards.push({
+                id: cardId,
+                name: cardData?.name || `Card ${cardId}`,
+                type: cardData?.type || "Villain",
+                source: "scan-ko"
+            });
+        }
+    } else if (source === "enemy") {
+        const deck = Array.isArray(gameState.enemyAllyDeck) ? gameState.enemyAllyDeck : [];
+        const ptr = typeof gameState.enemyAllyDeckPointer === "number" ? gameState.enemyAllyDeckPointer : 0;
+        let idx = deck.indexOf(cardId, ptr);
+        if (idx === -1) idx = deck.indexOf(cardId);
+        if (idx >= 0) {
+            deck.splice(idx, 1);
+            if (gameState.enemyAllyDeckPointer != null && idx < gameState.enemyAllyDeckPointer) {
+                gameState.enemyAllyDeckPointer = Math.max(0, gameState.enemyAllyDeckPointer - 1);
+            }
+            removed = true;
+            if (!Array.isArray(gameState.enemyAllyDiscard)) gameState.enemyAllyDiscard = [];
+            gameState.enemyAllyDiscard.push(cardId);
+        }
+    } else if (source === "self") {
+        const heroId = cardInfo.heroId ?? (gameState.heroes?.[gameState.heroTurnIndex ?? 0]);
+        const heroState = heroId ? gameState.heroData?.[heroId] : null;
+        if (heroState && Array.isArray(heroState.deck)) {
+            let idx = heroState.deck.indexOf(cardId);
+            if (idx >= 0) {
+                heroState.deck.splice(idx, 1);
+                removed = true;
+                if (!Array.isArray(heroState.discard)) heroState.discard = [];
+                heroState.discard.push(cardId);
+            }
+        }
+    } else {
+        console.warn("[handleScanKo] Unknown source for card:", cardInfo);
+    }
+
+    // Always remove the card from the scanned display
+    const currentDisplay = Array.isArray(gameState.scannedDisplay) ? gameState.scannedDisplay : [];
+    const filteredDisplay = [];
+    let removedFromDisplay = false;
+    for (const entry of currentDisplay) {
+        if (!removedFromDisplay && entry && String(entry.id) === cardId) {
+            removedFromDisplay = true;
+            continue;
+        }
+        filteredDisplay.push(entry);
+    }
+    gameState.scannedDisplay = filteredDisplay;
+
+    if (removed) {
+        console.log(`[handleScanKo] Removed ${cardId} from ${source} deck.`);
+    } else {
+        console.log("[handleScanKo] Could not find card to remove in deck; removed from preview only:", cardInfo);
+    }
+
+    // Re-render or close preview based on remaining cards
+    const opts = gameState.scannedDisplayOpts || {};
+    renderScannedPreview(filteredDisplay, opts);
+
+    saveGameState(gameState);
+}
+
+function closeScanPreview() {
+    const bar = document.getElementById("scan-preview-bar");
+    const backdrop = document.getElementById("scan-preview-backdrop");
+    const inner = document.getElementById("scan-preview-inner");
+
+    if (bar) bar.style.display = "none";
+    if (backdrop) backdrop.style.display = "none";
+    if (inner) inner.innerHTML = "";
+
+    // Reset persisted preview state
+    gameState.scannedDisplay = [];
+    gameState.scannedDisplayOpts = {};
+    gameState.scannedBuffer = [];
+    saveGameState(gameState);
+}
+
+async function handleScanActivate(cardInfo = {}) {
+    const cardId = cardInfo?.id ? String(cardInfo.id) : null;
+    if (!cardId) {
+        console.warn("[handleScanActivate] No card id provided.", cardInfo);
+        return;
+    }
+
+    const source = (cardInfo.source || "").toLowerCase();
+    console.log("[handleScanActivate] Handling activate for", cardId, "from", source);
+
+    const currentHeroId = cardInfo.heroId ?? (gameState.heroes?.[gameState.heroTurnIndex ?? 0]);
+    let removedFromPreview = false;
+
+    const removeFromPreview = () => {
+        const currentDisplay = Array.isArray(gameState.scannedDisplay) ? gameState.scannedDisplay : [];
+        const filtered = [];
+        let removed = false;
+        for (const entry of currentDisplay) {
+            if (!removed && entry && String(entry.id) === cardId) {
+                removed = true;
+                continue;
+            }
+            filtered.push(entry);
+        }
+        if (removed) removedFromPreview = true;
+        gameState.scannedDisplay = filtered;
+        const opts = gameState.scannedDisplayOpts || {};
+        renderScannedPreview(filtered, opts);
+        saveGameState(gameState);
+    };
+
+    try {
+        if (source === "self") {
+            const heroState = currentHeroId ? gameState.heroData?.[currentHeroId] : null;
+            if (!heroState) {
+                console.warn("[handleScanActivate] No heroState for hero", currentHeroId);
+            } else {
+                if (!Array.isArray(heroState.deck)) heroState.deck = [];
+                if (!Array.isArray(heroState.hand)) heroState.hand = [];
+
+                // Remove one instance from the deck (preferring top)
+                let idx = heroState.deck.indexOf(cardId);
+                if (idx === -1 && heroState.deck.length > 0 && typeof heroState.deck[0] !== "string") {
+                    idx = heroState.deck.findIndex(c => String(c) === cardId);
+                }
+                if (idx >= 0) {
+                    heroState.deck.splice(idx, 1);
+                }
+
+                heroState.hand.push(cardId);
+                console.log(`[handleScanActivate] Added card ${cardId} to hero ${currentHeroId}'s hand.`);
+                renderHeroHandBar(gameState);
+                saveGameState(gameState);
+            }
+        } else if (source === "villain") {
+            await Promise.resolve(villainDraw(1));
+        } else if (source === "enemy") {
+            await enemyDraw(1, null, { currentHeroId });
+        } else {
+            console.warn("[handleScanActivate] Unknown source", source, cardInfo);
+        }
+    } catch (err) {
+        console.warn("[handleScanActivate] Failed to process activation for", cardId, err);
+    }
+
+    removeFromPreview();
+    if (!removedFromPreview) {
+        console.log("[handleScanActivate] Card not found in preview; state left unchanged.");
+    }
+}
+
+export function renderScannedPreview(cards = [], opts = {}) {
+    if (typeof document === "undefined") return;
+
+    const activateFlag = !!opts.activate;
+    const koFlag = !!opts.ko;
+
+    // Ensure container elements exist (similar styling to hero top preview)
+    let bar = document.getElementById("scan-preview-bar");
+    let inner = document.getElementById("scan-preview-inner");
+    let backdrop = document.getElementById("scan-preview-backdrop");
+    let closeBtn = document.getElementById("scan-preview-close");
+
+    if (!bar) {
+        bar = document.createElement("div");
+        bar.id = "scan-preview-bar";
+        bar.style.display = "none";
+        bar.className = "hero-deck-preview-bar";
+        document.body.appendChild(bar);
+    }
+    if (!backdrop) {
+        backdrop = document.createElement("div");
+        backdrop.id = "scan-preview-backdrop";
+        backdrop.className = "hero-deck-preview-backdrop";
+        backdrop.style.display = "none";
+        document.body.appendChild(backdrop);
+    }
+    if (!inner) {
+        inner = document.createElement("div");
+        inner.id = "scan-preview-inner";
+        inner.className = "hero-deck-preview-inner";
+        bar.appendChild(inner);
+    }
+    if (!closeBtn) {
+        closeBtn = document.createElement("div");
+        closeBtn.id = "scan-preview-close";
+        closeBtn.textContent = "X";
+        closeBtn.style.position = "absolute";
+        closeBtn.style.top = "16px";
+        closeBtn.style.right = "-160px";
+        closeBtn.style.width = "52px";
+        closeBtn.style.height = "52px";
+        closeBtn.style.borderRadius = "50%";
+        closeBtn.style.background = "red";
+        closeBtn.style.border = "4px solid black";
+        closeBtn.style.display = "flex";
+        closeBtn.style.alignItems = "center";
+        closeBtn.style.justifyContent = "center";
+        closeBtn.style.color = "white";
+        closeBtn.style.fontFamily = "'Racing Sans One', sans-serif";
+        closeBtn.style.fontSize = "28px";
+        closeBtn.style.fontWeight = "bold";
+        closeBtn.style.cursor = "pointer";
+        closeBtn.style.zIndex = "3";
+        closeBtn.style.pointerEvents = "auto";
+        closeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            console.log("[scan preview] Close clicked.");
+            closeScanPreview();
+        }, true);
+        bar.appendChild(closeBtn);
+    }
+    // Ensure delegated click handler for activate/KO buttons is registered once
+    if (!inner._scanDelegatedHandler) {
+        inner._scanDelegatedHandler = async (e) => {
+            const koEl = e.target.closest("[data-scan-ko]");
+            if (koEl) {
+                e.stopPropagation();
+                const info = {
+                    id: koEl.dataset.cardId,
+                    source: koEl.dataset.cardSource,
+                    heroId: koEl.dataset.cardHeroId || null
+                };
+                console.log(`[scan preview] ko clicked (delegate): ${koEl.dataset.cardName || info.id}`);
+                handleScanKo(info);
+                return;
+            }
+            const actEl = e.target.closest("[data-scan-activate]");
+            if (actEl) {
+                e.stopPropagation();
+                const info = {
+                    id: actEl.dataset.cardId,
+                    source: actEl.dataset.cardSource,
+                    heroId: actEl.dataset.cardHeroId || null,
+                    name: actEl.dataset.cardName || actEl.dataset.cardId
+                };
+                console.log(`[scan preview] activate clicked (delegate): ${info.name}`);
+                await handleScanActivate(info);
+                return;
+            }
+        };
+        inner.addEventListener("click", inner._scanDelegatedHandler, true);
+    }
+
+    // Fallback styling to mirror hero preview (centered, dim backdrop, small cards)
+    bar.style.position = "fixed";
+    bar.style.left = "50%";
+    bar.style.transform = "translate(-50%, 30px)";
+    bar.style.bottom = "20px";
+    bar.style.zIndex = "9500"; // keep below panels (~10000) but above most UI
+    bar.style.display = "flex";
+    bar.style.alignItems = "center";
+    bar.style.justifyContent = "center";
+    bar.style.gap = "10px";
+    bar.style.padding = "8px 12px";
+    bar.style.borderRadius = "10px";
+    bar.style.overflow = "visible";
+    bar.style.pointerEvents = "auto";
+
+    backdrop.style.position = "fixed";
+    backdrop.style.inset = "0";
+    backdrop.style.background = "rgba(0,0,0,0.55)";
+    backdrop.style.backdropFilter = "blur(1px)";
+    backdrop.style.zIndex = "9490";
+    backdrop.style.pointerEvents = "none";
+
+    inner.innerHTML = "";
+    inner.style.pointerEvents = "auto";
+    inner.style.display = "flex";
+    inner.style.flexDirection = "row";
+    inner.style.alignItems = "center";
+    inner.style.gap = "12px";
+
+    cards.forEach(cardInfo => {
+        const cardId = cardInfo?.id ?? cardInfo;
+        if (!cardId) return;
+        const cardData = findCardInAllSources(cardId);
+
+        const outer = document.createElement("div");
+        outer.className = "hero-preview-outer";
+        outer.style.position = "relative";
+        outer.style.display = "flex";
+        outer.style.flexDirection = "column";
+        outer.style.alignItems = "center";
+        outer.style.justifyContent = "center";
+        outer.style.gap = "0px";
+        outer.style.margin = "0 -90px";
+
+        const cardWrap = document.createElement("div");
+        cardWrap.className = "hero-preview-card";
+        cardWrap.appendChild(renderCard(cardId, cardWrap));
+        cardWrap.style.transform = "scale(0.45)";
+        cardWrap.style.transformOrigin = "center center";
+        cardWrap.style.marginTop = "0px";
+        cardWrap.style.pointerEvents = "auto";
+
+        // Click: open appropriate panel for supported types
+        cardWrap.style.cursor = "pointer";
+        cardWrap.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (!cardData) return;
+            const typeLower = (cardData.type || "").toLowerCase();
+            if (typeLower === "villain" || typeLower === "henchman") {
+                try { buildVillainPanel(cardData); } catch (err) { console.warn("[scan preview] buildVillainPanel failed", err); }
+            } else if (typeLower === "main" || typeLower === "bystander") {
+                try { buildMainCardPanel(cardData); } catch (err) { console.warn("[scan preview] buildMainCardPanel failed", err); }
+            }
+        }, true);
+
+        // Optional top/bottom action icons
+        if (activateFlag) {
+            const actBtn = document.createElement("img");
+            const sourceLower = (cardInfo?.source || "").toLowerCase();
+            if (sourceLower === "self") {
+                actBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/929e24644681d3c05e38bfc769b04b0e22e072c6/Public/Images/Site%20Assets/drawCard.png";
+                actBtn.alt = "Draw to hand";
+            } else {
+                actBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/activate.png";
+                actBtn.alt = "Activate";
+            }
+            actBtn.style.width = "70px";
+            actBtn.style.height = "70px";
+            actBtn.style.cursor = "pointer";
+            actBtn.style.display = "block";
+            actBtn.style.position = "absolute";
+            actBtn.style.top = "20px";
+            actBtn.style.left = "50%";
+            actBtn.style.transform = "translateX(-50%)";
+            actBtn.style.zIndex = "2";
+            actBtn.style.pointerEvents = "auto";
+            actBtn.dataset.scanActivate = "1";
+            actBtn.dataset.cardId = cardId;
+            actBtn.dataset.cardSource = cardInfo?.source || "";
+            actBtn.dataset.cardHeroId = cardInfo?.heroId ?? "";
+            actBtn.dataset.cardName = cardData?.name || cardId;
+            actBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                console.log(`[scan preview] activate clicked: ${cardData?.name || cardId}`);
+                handleScanActivate({
+                    id: cardId,
+                    source: cardInfo?.source || "",
+                    heroId: cardInfo?.heroId ?? "",
+                    name: cardData?.name || cardId
+                });
+            }, true);
+            outer.appendChild(actBtn);
+        }
+
+        // Insert card in the middle
+        outer.appendChild(cardWrap);
+
+        if (koFlag) {
+            const koBtn = document.createElement("img");
+            koBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/permanentKO.png";
+            koBtn.alt = "KO";
+            koBtn.style.width = "48px";
+            koBtn.style.height = "48px";
+            koBtn.style.cursor = "pointer";
+            koBtn.style.display = "block";
+            koBtn.style.objectFit = "contain";
+            koBtn.style.flexShrink = "0";
+            koBtn.style.pointerEvents = "auto";
+            koBtn.dataset.scanKo = "1";
+            koBtn.dataset.cardId = cardId;
+            koBtn.dataset.cardSource = cardInfo?.source || "";
+            koBtn.dataset.cardHeroId = cardInfo?.heroId ?? "";
+            koBtn.dataset.cardName = cardData?.name || cardId;
+            koBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                console.log(`[scan preview] ko clicked: ${cardData?.name || cardId}`);
+                handleScanKo(cardInfo);
+            }, true);
+            // wrap in a badge for styling
+            const badge = document.createElement("div");
+            badge.style.width = "60px";
+            badge.style.height = "60px";
+            badge.style.borderRadius = "50%";
+            badge.style.background = "red";
+            badge.style.border = "4px solid black";
+            badge.style.display = "flex";
+            badge.style.alignItems = "center";
+            badge.style.justifyContent = "center";
+            badge.style.position = "absolute";
+            badge.style.bottom = "24px";
+            badge.style.left = "50%";
+            badge.style.transform = "translateX(-50%)";
+            badge.style.zIndex = "2";
+            badge.style.boxSizing = "border-box";
+            badge.style.cursor = "pointer";
+            badge.style.pointerEvents = "auto";
+            badge.addEventListener("click", (e) => {
+                e.stopPropagation();
+                koBtn.click();
+            }, true);
+            badge.appendChild(koBtn);
+            outer.appendChild(badge);
+        }
+
+        inner.appendChild(outer);
+    });
+
+    if (inner.children.length === 0) {
+        bar.style.display = "none";
+        backdrop.style.display = "none";
+    } else {
+        bar.style.display = "flex";
+        backdrop.style.display = "block";
+    }
+}
 
 EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {
 
@@ -3432,6 +3935,25 @@ export function getLastDamageAmount(heroId, state = gameState) {
     const hState = s.heroData?.[heroId];
     if (!hState) return 0;
     return Number(hState.lastDamageAmount || 0);
+}
+
+export function getHeroDamage(heroId, state = gameState) {
+    const s = state || gameState;
+    if (!heroId) return 0;
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const baseHP = Number(heroObj?.hp || heroObj?.baseHP || 0);
+    if (!baseHP || baseHP <= 0) return 0;
+
+    const hState = s.heroData?.[heroId];
+    const currentHP = typeof hState?.hp === "number" ? hState.hp : baseHP;
+    const lost = Math.max(0, baseHP - currentHP);
+
+    try {
+        console.log(`[getHeroDamage] Hero ${heroId} HP lost: ${lost} (base ${baseHP}, current ${currentHP}).`);
+    } catch (e) {}
+
+    return lost;
 }
 
 function travelHeroToDestination(destRaw, heroId = null, state = gameState) {

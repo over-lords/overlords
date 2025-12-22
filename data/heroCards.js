@@ -785,7 +785,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Increase this card's Damage by 2 for every 2 HP Wonder Woman has lost.`
+        text: `Increase this card's Damage by 1 for every 1 HP Wonder Woman has lost.`
       }
     ],
     abilitiesNamePrint: [
@@ -795,7 +795,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `increaseCardDamage(2*getHeroDamage)`
+        effect: `increaseCardDamage(getHeroDamage)`
       }
     ]
   },
@@ -1576,7 +1576,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `ifDiscarded`,
-        effect: [`scanDeck(enemy,3)`,`applyActivateKoCancel(scannedBuffer)`]
+        effect: [`scanDeck(enemy,3)`,`applyScanEffects(activate,ko)`]
       },
     ]
   },
@@ -1608,7 +1608,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: [`scanDeck(villain,1)`,`applyKoCancel(scanned(villain))`]
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
       },
     ]
   },

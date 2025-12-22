@@ -9,7 +9,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, refreshFrozenOverlays, runIfDiscardedEffects } from './abilityExecutor.js';
+import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, refreshFrozenOverlays, runIfDiscardedEffects, renderScannedPreview } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
@@ -241,6 +241,15 @@ async function restoreUIFromState(state) {
         const backdrop = document.getElementById("hero-deck-preview-backdrop");
         if (bar)      bar.style.display = "none";
         if (backdrop) backdrop.style.display = "none";
+    }
+
+    // Restore scanned preview if present
+    if (Array.isArray(state.scannedDisplay) && state.scannedDisplay.length) {
+        try {
+            renderScannedPreview(state.scannedDisplay, state.scannedDisplayOpts || {});
+        } catch (err) {
+            console.warn("[RESTORE] Failed to restore scanned preview:", err);
+        }
     }
 
     /******************************************************

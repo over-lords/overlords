@@ -169,7 +169,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `[ICON:Super] Heroes deal half Damage against Metallo. <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+        text: `[ICON:Super] Heroes deal half Damage against Metallo. <span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [

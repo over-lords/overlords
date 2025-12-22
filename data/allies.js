@@ -601,7 +601,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: [`scanDeck(villain,1)`,`applyKoCancel(scanned(villain))`]
+                effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
             }
         ]
     },
