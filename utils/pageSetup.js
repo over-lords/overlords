@@ -36,6 +36,146 @@ import {    CITY_EXIT_UPPER,
             CITY_2_GLIDE,
             CITY_ENTRY_GLIDE } from '../data/gameState.js';
 
+const LOG_CONTAINER_ID = "game-log";
+let logAutoScrollEnabled = true;
+const heroColorCache = new Map();
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function createLogRow(text) {
+    const row = document.createElement("div");
+    row.className = "game-log-entry";
+
+    if (typeof text !== "string") {
+        row.textContent = "";
+        return row;
+    }
+
+    const trimmed = text.trim();
+
+    // Bold round start messages
+    if (/^start of round/i.test(trimmed)) {
+        row.innerHTML = `<strong>${escapeHtml(trimmed)}</strong>`;
+        return row;
+    }
+
+    // Color hero names for start/end turn messages
+    const heroTurnMatch = trimmed.match(/^(.+?)\s+(started|ended) their turn\.?$/i);
+    if (heroTurnMatch) {
+        const heroName = heroTurnMatch[1];
+        const action = heroTurnMatch[2];
+
+        let color = heroColorCache.get(heroName);
+        if (!color) {
+            const heroObj = heroes.find(h => h.name === heroName);
+            color = heroObj?.color || null;
+            if (color) heroColorCache.set(heroName, color);
+        }
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = heroName;
+        if (color) {
+            nameSpan.style.color = color;
+            nameSpan.style.fontWeight = "600";
+        }
+
+        const restSpan = document.createElement("span");
+        restSpan.textContent = ` ${action} their turn.`;
+
+        row.appendChild(nameSpan);
+        row.appendChild(restSpan);
+        return row;
+    }
+
+    row.textContent = trimmed;
+    return row;
+}
+
+function getDropdown() {
+    return document.getElementById("dropdown-content");
+}
+
+function bindLogScrollHandlers(logEl) {
+    if (!logEl || logEl.dataset.logScrollBound) return;
+    logEl.dataset.logScrollBound = "1";
+
+    logEl.addEventListener("scroll", () => {
+        const nearBottom = (logEl.scrollHeight - (logEl.scrollTop + logEl.clientHeight)) <= 12;
+        logAutoScrollEnabled = nearBottom;
+    });
+}
+
+function ensureGameLogContainer() {
+    const dropdown = getDropdown();
+    if (!dropdown) return null;
+
+    let log = dropdown.querySelector(`#${LOG_CONTAINER_ID}`);
+    if (!log) {
+        log = document.createElement("div");
+        log.id = LOG_CONTAINER_ID;
+        log.className = "game-log";
+        log.style.display = "flex";
+        log.style.flexDirection = "column";
+        log.style.gap = "6px";
+        log.style.padding = "12px";
+        log.style.fontSize = "18px";
+        log.style.lineHeight = "1.4";
+        log.style.overflowY = "auto";
+        log.style.maxHeight = "70vh";
+        log.style.background = "rgba(0,0,0,0.05)";
+        log.style.borderRadius = "10px";
+        log.style.textShadow = "0 0 2px rgba(0,0,0,0.18)";
+        dropdown.appendChild(log);
+    }
+
+    bindLogScrollHandlers(log);
+    return log;
+}
+
+export function renderGameLogFromState(state = gameState) {
+    const log = ensureGameLogContainer();
+    if (!log) return false;
+
+    log.innerHTML = "";
+    const entries = Array.isArray(state.gameLog) ? state.gameLog : [];
+
+    entries.forEach(text => {
+        const row = createLogRow(text);
+        log.appendChild(row);
+    });
+
+    if (logAutoScrollEnabled) {
+        log.scrollTop = log.scrollHeight;
+    }
+
+    return true;
+}
+
+export function appendGameLogEntry(text, state = gameState) {
+    if (!text) return;
+    const log = ensureGameLogContainer();
+    if (!log) return;
+
+    if (!Array.isArray(state.gameLog)) state.gameLog = [];
+    state.gameLog.push(text);
+
+    const row = createLogRow(text);
+    log.appendChild(row);
+
+    if (logAutoScrollEnabled) {
+        log.scrollTop = log.scrollHeight;
+    }
+
+    saveGameState(state);
+}
+
 const HERO_BORDER_URLS = {
     Striker: "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Site%20Assets/strikerBorder.png",
     Guardian: "https://raw.githubusercontent.com/over-lords/overlords/098924d9c777517d2ee76ad17b80c5f8014f3b30/Public/Images/Site%20Assets/guardianBorder.png",
@@ -731,7 +871,7 @@ async function restoreUIFromState(state) {
 
         const dropdown = document.getElementById("dropdown-content");
         if (!dropdown.querySelector(".dropdown-container")) {
-            dropdown.appendChild(container);
+            //dropdown.appendChild(container);
         }
         persistDropdownContentToState(gameState);
     } catch (e) {
@@ -2793,7 +2933,12 @@ function restoreDropdownContentFromState(state = gameState) {
     const dropdown = document.getElementById("dropdown-content");
     if (!dropdown) return;
 
-    if (typeof state.dropdownContentHTML === "string") {
+    // Prefer rebuilding from structured log data
+    const hasLog = Array.isArray(state.gameLog) && state.gameLog.length > 0;
+    renderGameLogFromState(state);
+
+    // Fallback to stored HTML if no log data existed
+    if (!hasLog && typeof state.dropdownContentHTML === "string") {
         dropdown.innerHTML = state.dropdownContentHTML;
     }
 }

@@ -170,7 +170,8 @@ import { scenarios } from '../data/scenarios.js';
 import { renderCard, findCardInAllSources } from './cardRenderer.js';
 import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, 
          buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
-         renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow } from './pageSetup.js';
+         renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow,
+         appendGameLogEntry } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, refreshFrozenOverlays } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -1369,6 +1370,7 @@ export async function startHeroTurn(state, opts = {}) {
     }
 
     let heroTurnIndex = state.heroTurnIndex; // local working copy
+    const startedAtIndexZero = heroTurnIndex === 0;
     let attempts = 0;
 
     // 2) Find the next hero who can actually act.
@@ -1420,6 +1422,15 @@ export async function startHeroTurn(state, opts = {}) {
     // Persist the (possibly advanced) index
     state.heroTurnIndex = heroTurnIndex;
     activeHeroId = heroIds[heroTurnIndex]; // ensure active hero reflects any index skips
+    const activeHeroName = heroes.find(h => String(h.id) === String(activeHeroId))?.name || `Hero ${activeHeroId}`;
+
+    if (typeof state.roundNumber !== "number") state.roundNumber = 1;
+    if (startedAtIndexZero) {
+        appendGameLogEntry(`Start of Round ${state.roundNumber}`, state);
+        state.roundNumber += 1;
+    }
+
+    appendGameLogEntry(`${activeHeroName} started their turn.`, state);
 
     // 3) Normal hero turn setup for the chosen hero
     if (typeof state.turnCounter !== "number") state.turnCounter = 0;
@@ -2057,6 +2068,9 @@ export function endCurrentHeroTurn(gameState) {
         `[END TURN] ${heroes.find(h => String(h.id) === String(heroId))?.name}'s discard pile:`,
         heroState.discard
     );
+
+    const endTurnHeroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+    appendGameLogEntry(`${endTurnHeroName} ended their turn.`, gameState);
 
     // Handle temporary freezes tied to this hero (remove after their next turn)
     processTempFreezesForHero(heroId, gameState);
