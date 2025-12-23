@@ -3030,6 +3030,10 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
     const currentHP = info.currentHP;
     const actualDamage = Math.max(0, Math.min(amount, currentHP));
     const newHP     = Math.max(0, currentHP - amount);
+    const heroName  = heroId != null
+        ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
+        : "Hero";
+    const overlordName = ovCard?.name || "Overlord";
 
     if (heroId != null) {
         if (!s.heroDamageToOverlord) s.heroDamageToOverlord = {};
@@ -3056,6 +3060,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
 
         // If Scenario not dead, update panel + persist and return
         if (newHP > 0) {
+            appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
             try {
                 if (ovCard) {
                     setCurrentOverlord(ovCard);
@@ -3073,6 +3078,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         // Scenario reduced to 0 HP → remove from stack, reveal what's under
         // ===============================================================
         console.log(`Scenario ${ovId} has been defeated.`);
+        appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
 
         if (!Array.isArray(s.koCards)) {
             s.koCards = [];
@@ -3135,6 +3141,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         s.overlordData.currentHP = newHP;
 
         console.log(`Overlord ${ovId} took ${amount} damage -> ${newHP} HP`);
+        appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
 
         // If not dead, update panel + persist and return
         if (newHP > 0) {
@@ -3782,6 +3789,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     }
 
     const newHP = Math.max(0, currentHP - amount);
+    const heroName = heroId != null
+        ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
+        : "Hero";
+    const appliedDamage = Math.max(0, Math.min(amount, currentHP));
 
     // Sync per-instance representations (DO NOT mutate foeCard.currentHP)
     entry.maxHP = baseHP;
@@ -3789,6 +3800,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     s.villainHP[entryKey] = newHP;
 
     console.log(`[damageFoe] ${foeCard.name} took ${amount} damage (${currentHP} -> ${newHP}).`);
+    appendGameLogEntry(`${heroName} dealt ${appliedDamage} damage to ${foeCard.name}.`, s);
 
     // Track last damage dealt by the acting hero (post-modifier amount)
     if (heroId && s.heroData?.[heroId]) {
