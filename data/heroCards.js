@@ -709,7 +709,7 @@ export const heroCards = [
         effect: `shoveVillain(lastDamagedFoe,10)`
       },
       {
-        condition: `afterDamage`,
+        condition: [`afterDamage`,`onlyOnShove`],
         type: `chooseOption`,
         effect: `chooseYourEffect`
       },

@@ -271,6 +271,10 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return true;
     }
 
+    if (lowerCond === "onlyonshove") {
+        return !!state?.lastShovedVillainDestination;
+    }
+
     // Fallback: unknown condition -> false
     return false;
 }
@@ -2845,7 +2849,8 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             const allConds = condList.length ? condList : (cond !== "none" ? [cond] : []);
             const isAfterDamage = allConds.some(c => c.toLowerCase() === "afterdamage");
             if (isAfterDamage) {
-                postEffects.push({ eff, index: i });
+                // Defer to post-damage queue, but remember non-afterDamage conditions.
+                postEffects.push({ eff, index: i, conds: allConds });
                 continue;
             }
 
@@ -2909,8 +2914,44 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     // POST-DAMAGE EFFECTS (e.g., afterDamage)
     // ------------------------------------------------------
     if (postEffects.length) {
+        let skipOptionBlocks = false;
+
         for (let k = 0; k < postEffects.length; k++) {
-            const { eff, index } = postEffects[k];
+            const { eff, index, conds = [] } = postEffects[k];
+
+            // Reset option skipping when we encounter non-option entries.
+            const isOptionBlock = typeof eff?.type === "string" && /^chooseOption\(\d+\)$/.test(eff.type);
+            const isChooseRoot = eff?.type === "chooseOption";
+            if (!isOptionBlock && !isChooseRoot) {
+                skipOptionBlocks = false;
+            }
+
+            // Evaluate any non-afterDamage conditions now (e.g., onlyOnShove).
+            const extraConds = conds.filter(c => c && c.toLowerCase() !== "afterdamage");
+            let condFailed = false;
+            for (const c of extraConds) {
+                if (!evaluateCondition(c, heroId, gameState)) {
+                    condFailed = true;
+                    break;
+                }
+            }
+
+            // If the choose root fails its condition, skip its option blocks.
+            if (condFailed && isChooseRoot) {
+                skipOptionBlocks = true;
+            }
+
+            // Skip orphaned option blocks when their choose root did not run.
+            if (isOptionBlock && skipOptionBlocks) {
+                console.log("[AbilityExecutor] Skipping choose option block because choose root was not executed.", eff);
+                continue;
+            }
+
+            if (condFailed) {
+                console.log("[AbilityExecutor] Post-damage condition failed; skipping effect.", eff);
+                continue;
+            }
+
             const res = await executeEffectBlock(eff, index, { skipCondition: true });
             if (res && res.skipTo != null) {
                 k = res.skipTo;
