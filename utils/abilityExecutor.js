@@ -4003,8 +4003,21 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
 
     const citySlots = (typeof document !== "undefined") ? document.querySelectorAll(".city-slot") : [];
 
-    // Clear previous city DOM if any
     const prevIdx = heroState.cityIndex;
+
+    // Avoid no-op travel requests that would leave the hero in place.
+    if (!toOverlord && typeof prevIdx === "number" && prevIdx === destIndex) {
+        console.log("[travelTo] Hero already at destination; skipping travel.");
+        return;
+    }
+
+    // If already facing the Overlord, skip redundant travel.
+    if (toOverlord && heroState.isFacingOverlord) {
+        console.log("[travelTo] Hero already facing Overlord; skipping travel.");
+        return;
+    }
+
+    // Clear previous city DOM if any
     if (typeof prevIdx === "number" && citySlots[prevIdx]) {
         const prevArea = citySlots[prevIdx].querySelector(".city-card-area");
         if (prevArea) prevArea.innerHTML = "";
@@ -4081,6 +4094,9 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
         return;
     }
 
+    // Clear previous shove destination; it will only be set when a move succeeds.
+    s.lastShovedVillainDestination = null;
+
     const dir = count > 0 ? 2 : -2;
     const steps = Math.abs(count);
     if (steps === 0 || dir === 0) return;
@@ -4137,11 +4153,12 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
     };
 
     const performShove = (entry, startIdx) => {
-        if (!entry || typeof startIdx !== "number") return;
+        if (!entry || typeof startIdx !== "number") return false;
 
         let current = startIdx;
         let remaining = steps;
         let finalSlot = startIdx;
+        let moved = false;
 
         while (remaining > 0) {
             const next = current + dir;
@@ -4150,7 +4167,7 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
                 try { handleVillainEscape(entry, s); } catch (e) { console.warn("[shoveVillain] escape failed", e); }
                 moveEntry(entry, current, null);
                 s.lastShovedVillainDestination = null;
-                return;
+                return true;
             }
             if (next > 10) {
                 // Clamp at the far right; cannot go past 10
@@ -4163,20 +4180,22 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
 
             current = next;
             finalSlot = current;
+            moved = true;
             remaining = Math.max(0, remaining - Math.abs(dir));
             // Stop if we've reached the far right boundary
             if (current === 10) break;
         }
 
-        if (current === startIdx) {
-            s.lastShovedVillainDestination = startIdx;
-            return;
+        // No available movement; leave state untouched.
+        if (!moved) {
+            return false;
         }
 
         // Disengage any hero below the original slot
         disengageHeroBelow(startIdx);
         moveEntry(entry, startIdx, current);
         s.lastShovedVillainDestination = finalSlot;
+        return true;
     };
 
     const addTarget = (list, entry, slotIndex) => {
@@ -4219,13 +4238,14 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
         console.warn("[shoveVillain] Unknown target:", targetRaw);
     }
 
-    targets.forEach(t => performShove(t.entry, t.slotIndex));
-    // If no target moved but we had exactly one, preserve its slot as last destination
-    if (targets.length === 1 && s.lastShovedVillainDestination == null) {
-        const only = targets[0];
-        if (only && typeof only.slotIndex === "number") {
-            s.lastShovedVillainDestination = only.slotIndex;
-        }
+    let anyMoved = false;
+    targets.forEach(t => {
+        if (performShove(t.entry, t.slotIndex)) anyMoved = true;
+    });
+
+    if (!anyMoved) {
+        console.log("[shoveVillain] No foes could be moved; effect skipped.");
+        s.lastShovedVillainDestination = null;
     }
     saveGameState(s);
 }
