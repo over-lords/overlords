@@ -709,6 +709,7 @@ EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
     hCard.currentHP = hState.hp;
 
     console.log(`[regainLife] ${hCard.name} regains ${amount} HP (${before} → ${hState.hp}).`);
+    appendGameLogEntry(`${hCard.name} gained ${hState.hp - before} HP.`, gameState);
 
     try { updateHeroHPDisplays(hid); } catch (e) { console.warn("[regainLife] updateHeroHPDisplays failed", e); }
     try { updateBoardHeroHP(hid); } catch (e) { console.warn("[regainLife] updateBoardHeroHP failed", e); }
@@ -3078,7 +3079,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         // Scenario reduced to 0 HP → remove from stack, reveal what's under
         // ===============================================================
         console.log(`Scenario ${ovId} has been defeated.`);
-        appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
+        appendGameLogEntry(`${heroName} KO'd ${overlordName}.`, s);
 
         if (!Array.isArray(s.koCards)) {
             s.koCards = [];
@@ -3162,6 +3163,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         // OVERLORD KO'D — REMOVE FROM INDEX & LOG INTO KO ARRAY
         // ===================================================================
         console.log(`Overlord ${ovId} has been defeated.`);
+        appendGameLogEntry(`${heroName} KO'd ${overlordName}.`, s);
 
         if (!Array.isArray(s.koCards)) {
             s.koCards = [];
@@ -3850,6 +3852,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     // FOE KO'D
     // ===================================================================
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
+    if (heroId != null) {
+        const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+        appendGameLogEntry(`${heroName} KO'd ${foeCard.name}.`, s);
+    }
     if (heroId != null) {
         if (!s.heroFoesKOd) s.heroFoesKOd = {};
         const heroSlot = s.heroData?.[heroId]?.cityIndex ?? null;

@@ -360,39 +360,34 @@ function applyCountdownLandingEffects(upperIdx, gameState) {
         if (!hState) return;
 
         if (hState.cityIndex === lowerIdx) {
-            // Deal 10 damage
-            if (typeof hState.hp === "number") {
-                hState.hp -= 10;
-                if (hState.hp < 0) hState.hp = 0;
-            }
+            const heroId = hid;
+            const heroObj = heroes.find(h => String(h.id) === String(heroId));
+            const heroName = heroObj?.name || `Hero ${heroId}`;
+            const dmg = 10;
+
+            const currentHP = (typeof hState.hp === "number") ? hState.hp : 0;
+            hState.hp = Math.max(0, currentHP - dmg);
 
             // Move hero back to HQ (cityIndex = null)
             hState.cityIndex = null;
             heroWasHit = true;
 
-            if (heroWasHit && hState) {
-                const heroObj = heroes.find(h => String(h.id) === String(heroId));
-                const dmg = 10;
+            appendGameLogEntry(`${heroName} took ${dmg} damage from Countdown.`, gameState);
 
-                hState.hp -= dmg;
-                if (hState.hp < 0) hState.hp = 0;
+            try { updateHeroHPDisplays(heroId); } catch (err) { console.warn("[COUNTDOWN] updateHeroHPDisplays failed", err); }
+            try { updateBoardHeroHP(heroId); } catch (err) { console.warn("[COUNTDOWN] updateBoardHeroHP failed", err); }
 
-                updateHeroHPDisplays(heroId);
-                updateBoardHeroHP(heroId);
+            console.log(
+                `[COUNTDOWN] ${heroName} takes ${dmg} damage `
+                + `from countdown in city ${lowerIdx}. New HP=${hState.hp}`
+            );
 
-                console.log(
-                    `[COUNTDOWN] ${heroObj?.name || 'Hero'} takes ${dmg} damage `
-                    + `from countdown in city ${heroIndexLower}. New HP=${hState.hp}`
-                );
-
-                if (heroWasHit && hState && hState.hp <= 0) {
-                    // Countdown killed the hero → full KO behavior (hand dump, overlay, etc.)
-                    handleHeroKnockout(heroId, hState, gameState, { source: "countdown" });
-                }
+            if (hState.hp <= 0) {
+                // Countdown killed the hero -- full KO behavior (hand dump, overlay, etc.)
+                handleHeroKnockout(heroId, hState, gameState, { source: "countdown", sourceName: "Countdown" });
             }
         }
     });
-
     // Clear hero DOM from lower city if someone was there
     if (heroWasHit && lowerSlot) {
         const area = lowerSlot.querySelector(".city-card-area");
@@ -1963,6 +1958,7 @@ export function endCurrentHeroTurn(gameState) {
 
                 // HERO DAMAGE THRESHOLD
                 const heroObj = heroes.find(h => String(h.id) === String(heroId));
+                const heroName = heroObj?.name || `Hero ${heroId}`;
                 const dt = Number(heroObj?.damageThreshold || 0);
 
                 // Only deal damage if foeDamage >= DT
@@ -1977,6 +1973,7 @@ export function endCurrentHeroTurn(gameState) {
 
                     heroState.hp -= foeDamage;
                     flashScreenRed();
+                    appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
 
                     if (heroState.hp <= 0) {
                         heroState.hp = 0;
@@ -1988,7 +1985,7 @@ export function endCurrentHeroTurn(gameState) {
                             + ` (DT=${dt}) → KO!`
                         );
 
-                        handleHeroKnockout(heroId, heroState, gameState, { source: "endTurnDamage" });
+                        handleHeroKnockout(heroId, heroState, gameState, { source: "endTurnDamage", sourceName: foe.name });
                     } else {
                         updateHeroHPDisplays(heroId);
                         updateBoardHeroHP(heroId);
@@ -3082,6 +3079,7 @@ function retreatHeroToHQ(gameState, heroId) {
                     if (foeDamage >= dt) {
                         heroState.hp -= foeDamage;
                         flashScreenRed();
+                        appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
 
                         if (heroState.hp <= 0) {
                             heroState.hp = 0;
@@ -3094,7 +3092,7 @@ function retreatHeroToHQ(gameState, heroId) {
                                 + `(DT=${dt}, new HP=${heroState.hp}) → KO!`
                             );
 
-                            handleHeroKnockout(heroId, heroState, gameState, { source: "retreatFail" });
+                            handleHeroKnockout(heroId, heroState, gameState, { source: "retreatFail", sourceName: foe.name });
                         } else {
                             updateHeroHPDisplays(heroId);
                             updateBoardHeroHP(heroId);
@@ -3856,22 +3854,24 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
       : null;
 
     if (foe && heroObj) {
+      const heroName = heroObj?.name || `Hero ${activeHeroId}`;
       const foeDamage = Number(foe.damage || 0);
       const dt = Number(heroObj.damageThreshold || 0);
 
       if (foeDamage >= dt && foeDamage > 0) {
         activeState.hp = Number(activeState.hp || 0) - foeDamage;
         console.log(
-          `[SHOVE-ENTRY] ${heroObj.name} took ${foeDamage} damage for forcing a hero from the fight.`
+          `[SHOVE-ENTRY] ${heroName} took ${foeDamage} damage for forcing a hero from the fight.`
         );
         flashScreenRed();
+        appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, state);
 
         updateHeroHPDisplays(activeHeroId);
         updateBoardHeroHP(activeHeroId);
 
         if (activeState.hp <= 0) {
           activeState.hp = 0;
-          handleHeroKnockout(activeHeroId, activeState, state, { source: "shoveEntry" });
+          handleHeroKnockout(activeHeroId, activeState, state, { source: "shoveEntry", sourceName: foe.name });
         }
       }
     }
@@ -4174,6 +4174,15 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
         console.warn("[handleHeroKnockout] KO markers failed", err);
     }
 
+    try {
+        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+        const heroName = heroObj?.name || `Hero ${heroId}`;
+        const sourceName = options?.sourceName || "damage";
+        appendGameLogEntry(`${heroName} was KO'd by ${sourceName}.`, state);
+    } catch (err) {
+        console.warn("[handleHeroKnockout] Failed to append KO log.", err);
+    }
+
     const effectiveState = state || gameState;
     saveGameState(effectiveState);
 
@@ -4256,6 +4265,7 @@ function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabe
         if (foeDamage >= dt) {
             heroState.hp -= foeDamage;
             flashScreenRed();
+            appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
 
             if (heroState.hp <= 0) {
                 heroState.hp = 0;
@@ -4267,7 +4277,7 @@ function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabe
                     + `(DT=${dt}, new HP=${heroState.hp}) → KO!`
                 );
 
-                handleHeroKnockout(heroId, heroState, gameState, { source: "exitRetreatFail" });
+                handleHeroKnockout(heroId, heroState, gameState, { source: "exitRetreatFail", sourceName: foe.name });
                 return false; // abort whatever action was trying to leave the city
             }
 
