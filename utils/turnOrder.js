@@ -3483,6 +3483,14 @@ export function showHeroTopPreview(heroId, state, count = 3) {
                     );
                     console.log("Hero hand:", heroData.hand);
                     renderHeroHandBar(gameState);
+
+                    try {
+                        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+                        const heroName = heroObj?.name || `Hero ${heroId}`;
+                        appendGameLogEntry(`${heroName} drew a card.`, state);
+                    } catch (e) {
+                        console.warn("[HERO DRAW] Failed to append draw log:", e);
+                    }
                 } catch (err) {
                     console.warn("[HERO DRAW] Failed to resolve hero draw/choice:", err);
                 }

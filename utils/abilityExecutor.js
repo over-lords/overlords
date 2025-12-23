@@ -410,31 +410,38 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     const heroId = selectedData?.currentHeroId ?? null;
     const rawCount = resolveNumericValue(args?.[0] ?? 1, heroId, gameState);
     const count = Math.max(0, Number(rawCount) || 0);
-    const flag = (args?.[1] ?? "").toString().toLowerCase();
+    const flag = (args?.[1] ?? '').toString().toLowerCase();
+
+    const logDraw = (hid, drew) => {
+        if (!hid || drew <= 0) return;
+        const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
+        const noun = drew === 1 ? 'a card' : `${drew} cards`;
+        appendGameLogEntry(`${heroName} drew ${noun}.`, gameState);
+    };
 
     if (!heroId) {
-        console.warn("[draw] No currentHeroId available.");
+        console.warn('[draw] No currentHeroId available.');
         return;
     }
 
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) {
-        console.warn("[draw] No heroState for heroId:", heroId);
+        console.warn('[draw] No heroState for heroId:', heroId);
         return;
     }
 
     if (count <= 0) {
-        console.log("[draw] Count resolved to 0; no cards drawn.");
+        console.log('[draw] Count resolved to 0; no cards drawn.');
         return;
     }
 
     // Special flag: all -> every active hero (including current) draws `count`
-    if (flag === "all") {
+    if (flag === 'all') {
         const heroIds = gameState.heroes || [];
         heroIds.forEach(hid => {
             const hState = gameState.heroData?.[hid];
             if (!hState) return;
-            const hp = typeof hState.hp === "number" ? hState.hp : 1;
+            const hp = typeof hState.hp === 'number' ? hState.hp : 1;
             if (hp <= 0) return; // only active (non-KO) heroes
 
             if (!Array.isArray(hState.deck)) hState.deck = [];
@@ -442,16 +449,19 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
 
             console.log(`[draw] ${count} card(s) for hero ${hid} (all flag).`);
 
+            let drew = 0;
             for (let i = 0; i < count; i++) {
                 if (hState.deck.length === 0) {
-                    console.log("[draw] Deck empty — cannot draw further.", { heroId: hid });
+                    console.log('[draw] Deck empty - cannot draw further.', { heroId: hid });
                     break;
                 }
 
                 const cardId = hState.deck.shift();
                 hState.hand.push(cardId);
-                console.log(`[draw] → Drawn card ID ${cardId} for hero ${hid}`);
+                console.log(`[draw] Drawn card ID ${cardId} for hero ${hid}`);
+                drew++;
             }
+            logDraw(hid, drew);
         });
 
         saveGameState(gameState);
@@ -459,15 +469,15 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
         return;
     }
 
-    // Special flag: allOtherHeroes → every other active hero draws `count`
-    if (flag === "allotherheroes") {
+    // Special flag: allOtherHeroes -> every other active hero draws `count`
+    if (flag === 'allotherheroes') {
         const heroIds = gameState.heroes || [];
         heroIds.forEach(hid => {
             if (String(hid) === String(heroId)) return;
 
             const hState = gameState.heroData?.[hid];
             if (!hState) return;
-            const hp = typeof hState.hp === "number" ? hState.hp : 1;
+            const hp = typeof hState.hp === 'number' ? hState.hp : 1;
             if (hp <= 0) return; // only active (non-KO) heroes
 
             if (!Array.isArray(hState.deck)) hState.deck = [];
@@ -475,16 +485,19 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
 
             console.log(`[draw] ${count} card(s) for hero ${hid} (allOtherHeroes flag).`);
 
+            let drew = 0;
             for (let i = 0; i < count; i++) {
                 if (hState.deck.length === 0) {
-                    console.log("[draw] Deck empty — cannot draw further.", { heroId: hid });
+                    console.log('[draw] Deck empty - cannot draw further.', { heroId: hid });
                     break;
                 }
 
                 const cardId = hState.deck.shift();
                 hState.hand.push(cardId);
-                console.log(`[draw] → Drawn card ID ${cardId} for hero ${hid}`);
+                console.log(`[draw] Drawn card ID ${cardId} for hero ${hid}`);
+                drew++;
             }
+            logDraw(hid, drew);
         });
 
         saveGameState(gameState);
@@ -495,19 +508,20 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     if (!Array.isArray(heroState.deck))   heroState.deck = [];
     if (!Array.isArray(heroState.hand))   heroState.hand = [];
     if (!Array.isArray(heroState.discard)) heroState.discard = [];
-    if (typeof heroState.drawnThisTurn !== "number") heroState.drawnThisTurn = 0;
+    if (typeof heroState.drawnThisTurn !== 'number') heroState.drawnThisTurn = 0;
 
     console.log(`[draw] ${count} card(s) for hero ${heroId}.`);
 
+    let drew = 0;
     for (let i = 0; i < count; i++) {
         if (heroState.deck.length === 0) {
             if (heroState.drawnThisTurn >= 5) {
-                console.log("[draw] Deck empty and 5+ cards already drawn this turn; no reshuffle.");
+                console.log('[draw] Deck empty and 5+ cards already drawn this turn; no reshuffle.');
                 break;
             }
 
             if (heroState.discard.length > 0) {
-                console.log("[draw] Deck empty, shuffling discard under deck.");
+                console.log('[draw] Deck empty, shuffling discard under deck.');
                 const shuffled = [...heroState.discard];
                 for (let j = shuffled.length - 1; j > 0; j--) {
                     const k = Math.floor(Math.random() * (j + 1));
@@ -516,7 +530,7 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
                 heroState.deck.push(...shuffled);
                 heroState.discard = [];
             } else {
-                console.log("[draw] Deck empty — cannot draw further (no discard).");
+                console.log('[draw] Deck empty - cannot draw further (no discard).');
                 break;
             }
         }
@@ -524,9 +538,11 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
         const cardId = heroState.deck.shift();
         heroState.hand.push(cardId);
         heroState.drawnThisTurn = (heroState.drawnThisTurn || 0) + 1;
-        console.log(`[draw] → Drawn card ID ${cardId}`);
+        console.log(`[draw] Drawn card ID ${cardId}`);
+        drew++;
     }
 
+    logDraw(heroId, drew);
     saveGameState(gameState);
     renderHeroHandBar(gameState);
 };
@@ -5045,3 +5061,4 @@ function maybeSendHeroHomeAfterLaneClears(heroId, defeatedSlotIndex, state = gam
     sendHeroHomeFromBoard(heroId, state);
   }
 }
+
