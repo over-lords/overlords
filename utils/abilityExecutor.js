@@ -4662,6 +4662,11 @@ export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
                 effects: (cardData.abilitiesEffects || []).map(e => e.effect)
             }
         );
+        try {
+            appendGameLogEntry(`Enemies and Allies Draw: ${cardData.name}.`, state);
+        } catch (err) {
+            console.warn("[enemyDraw] Failed to append game log entry for draw", err);
+        }
 
         // -------------------------------------------------
         // VISUAL RENDER
