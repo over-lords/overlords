@@ -792,8 +792,10 @@ EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
         return;
     }
 
+    const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
     console.log(`[rescueBystander] Rescuing ${count} bystander(s) for hero ${heroId}.`);
 
+    const rescuedNames = [];
     for (let i = 0; i < count; i++) {
         const picked = bystanders[Math.floor(Math.random() * bystanders.length)];
 
@@ -803,10 +805,19 @@ EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
         }
 
         heroState.hand.push(String(picked.id));
+        rescuedNames.push(picked.name ?? picked.id);
 
         console.log(
             `[rescueBystander] → Rescued bystander '${picked.name ?? picked.id}'.`
         );
+    }
+
+    if (rescuedNames.length) {
+        const nameList = rescuedNames.join(", ");
+        const msg = rescuedNames.length === 1
+            ? `${nameList} was rescued by ${heroName}.`
+            : `Bystanders: ${nameList} were rescued by ${heroName}.`;
+        appendGameLogEntry(msg, gameState);
     }
 
     saveGameState(gameState);
@@ -840,6 +851,7 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
     }
 
     let rescuedCount = 0;
+    const rescuedNames = [];
 
     s.cities.forEach((entry, idx) => {
         if (!entry) return;
@@ -852,6 +864,7 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
                 if (idStr) {
                     heroState.hand.push(idStr);
                     rescuedCount += 1;
+                    if (b?.name) rescuedNames.push(String(b.name));
                 }
             });
             entry.capturedBystanders = [];
@@ -863,7 +876,13 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
     });
 
     if (rescuedCount > 0) {
+        const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
         console.log(`[rescueCapturedBystander] Hero ${hid} rescued ${rescuedCount} captured bystander(s).`);
+        const nameList = rescuedNames.length ? rescuedNames.join(", ") : `${rescuedCount} bystander(s)`;
+        const msg = rescuedNames.length === 1
+            ? `${nameList} was rescued by ${heroName}.`
+            : `Bystanders: ${nameList} were rescued by ${heroName}.`;
+        appendGameLogEntry(msg, s);
         saveGameState(s);
         renderHeroHandBar(s);
     } else {
@@ -1935,6 +1954,14 @@ export async function handleVillainEscape(entry, state) {
     if (!foeCard) {
         console.warn("[handleVillainEscape] No foe card found for id:", foeId);
         return;
+    }
+    if (captured.length > 0) {
+        const foeName = foeCard?.name || "Enemy";
+        const names = captured.map(b => b?.name || "Bystander").join(", ");
+        const msg = captured.length === 1
+            ? `${names} was KO'd by ${foeName}.`
+            : `Bystanders: ${names} were KO'd by ${foeName}.`;
+        appendGameLogEntry(msg, state);
     }
 
     // Pull per-instance HP first; fall back to tracked villainHP or base card HP
@@ -3920,6 +3947,12 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             captured.forEach(b => heroState.hand.push(String(b.id)));
 
             console.log(`[damageFoe] Hero ${heroId} rescues bystanders:`, captured.map(b => b.name));
+            const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+            const names = captured.map(b => b?.name || "Bystander").join(", ");
+            const msg = captured.length === 1
+                ? `${names} was rescued by ${heroName}.`
+                : `Bystanders: ${names} were rescued by ${heroName}.`;
+            appendGameLogEntry(msg, s);
         } else {
             if (!Array.isArray(s.koCards)) s.koCards = [];
 
@@ -3935,6 +3968,12 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
                 window.renderKOBar(s);
             }
+            const foeName = foeCard?.name || "Enemy";
+            const names = captured.map(b => b?.name || "Bystander").join(", ");
+            const msg = captured.length === 1
+                ? `${names} was KO'd by ${foeName}.`
+                : `Bystanders: ${names} were KO'd by ${foeName}.`;
+            appendGameLogEntry(msg, s);
         }
 
         entry.capturedBystanders = [];

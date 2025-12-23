@@ -1317,6 +1317,20 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
     console.log(
         `[BYSTANDER] ${byName} KO'd by Overlord. Total KO'd bystanders: ${totalKOd}.`
     );
+
+    try {
+        const ovId = state.currentOverlordId ?? state.overlordId ?? null;
+        const ovName = state.currentOverlordCard?.name
+            || overlords.find(o => String(o.id) === String(ovId))?.name
+            || "Overlord";
+        const nameList = newlyKOd.map(c => c?.name || "Bystander").join(", ");
+        const logMsg = newlyKOd.length === 1
+            ? `${nameList} was KO'd by ${ovName}.`
+            : `Bystanders: ${nameList} were KO'd by ${ovName}.`;
+        appendGameLogEntry(logMsg, state);
+    } catch (err) {
+        console.warn("[BYSTANDER] Failed to append KO log", err);
+    }
 }
 
 export async function startHeroTurn(state, opts = {}) {
@@ -4131,6 +4145,11 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
     }
 
     const alreadyKO = !!heroState.isKO;
+    // If already marked KO (e.g., skipping KO heroes at turn start), avoid re-logging/spamming.
+    if (alreadyKO && options?.fromTurnStart) {
+        return;
+    }
+
     heroState.isKO = true;
 
     // 1) Move entire hand into discard
@@ -4174,13 +4193,15 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
         console.warn("[handleHeroKnockout] KO markers failed", err);
     }
 
-    try {
-        const heroObj = heroes.find(h => String(h.id) === String(heroId));
-        const heroName = heroObj?.name || `Hero ${heroId}`;
-        const sourceName = options?.sourceName || "damage";
-        appendGameLogEntry(`${heroName} was KO'd by ${sourceName}.`, state);
-    } catch (err) {
-        console.warn("[handleHeroKnockout] Failed to append KO log.", err);
+    if (!alreadyKO) {
+        try {
+            const heroObj = heroes.find(h => String(h.id) === String(heroId));
+            const heroName = heroObj?.name || `Hero ${heroId}`;
+            const sourceName = options?.sourceName || "damage";
+            appendGameLogEntry(`${heroName} was KO'd by ${sourceName}.`, state);
+        } catch (err) {
+            console.warn("[handleHeroKnockout] Failed to append KO log.", err);
+        }
     }
 
     const effectiveState = state || gameState;
