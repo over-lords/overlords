@@ -49,9 +49,19 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
-function createLogRow(text) {
+function normalizeLogEntry(entry) {
+    if (entry == null) return { text: "" };
+    if (typeof entry === "string") return { text: entry };
+    if (typeof entry === "object") return { id: entry.id, text: entry.text ?? "" };
+    return { text: String(entry) };
+}
+
+function createLogRow(entry) {
+    const { text, id } = normalizeLogEntry(entry);
+
     const row = document.createElement("div");
     row.className = "game-log-entry";
+    if (id) row.dataset.logId = id;
 
     if (typeof text !== "string") {
         row.textContent = "";
@@ -158,15 +168,20 @@ export function renderGameLogFromState(state = gameState) {
     return true;
 }
 
-export function appendGameLogEntry(text, state = gameState) {
-    if (!text) return;
+export function appendGameLogEntry(text, state = gameState, opts = {}) {
+    if (!text) return null;
     const log = ensureGameLogContainer();
-    if (!log) return;
+    if (!log) return null;
 
     if (!Array.isArray(state.gameLog)) state.gameLog = [];
-    state.gameLog.push(text);
+    state.logEntrySeq = (state.logEntrySeq || 0) + 1;
 
-    const row = createLogRow(text);
+    const id = opts.id || `log-${state.logEntrySeq}`;
+    const entry = { id, text };
+
+    state.gameLog.push(entry);
+
+    const row = createLogRow(entry);
     log.appendChild(row);
 
     if (logAutoScrollEnabled) {
@@ -174,6 +189,25 @@ export function appendGameLogEntry(text, state = gameState) {
     }
 
     saveGameState(state);
+    return id;
+}
+
+export function removeGameLogEntryById(id, state = gameState) {
+    if (!id) return;
+    const log = document.getElementById(LOG_CONTAINER_ID);
+
+    if (Array.isArray(state.gameLog)) {
+        const idx = state.gameLog.findIndex(e => normalizeLogEntry(e).id === id);
+        if (idx !== -1) {
+            state.gameLog.splice(idx, 1);
+            saveGameState(state);
+        }
+    }
+
+    if (log) {
+        const node = log.querySelector(`[data-log-id="${id}"]`);
+        if (node) node.remove();
+    }
 }
 
 const HERO_BORDER_URLS = {

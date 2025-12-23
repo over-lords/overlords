@@ -18,7 +18,7 @@ import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 import { bystanders } from "../data/bystanders.js";
 
-import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel } from "./pageSetup.js";
+import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
          enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities } from "./turnOrder.js";
@@ -61,6 +61,15 @@ const GLIDE_ORDER = [
 ];
 
 const EFFECT_HANDLERS = {};
+
+const CITY_NAME_BY_LOWER_INDEX = {
+    [CITY_EXIT_UPPER + 1]: "Star",
+    [CITY_5_UPPER + 1]: "Coast",
+    [CITY_4_UPPER + 1]: "Keystone",
+    [CITY_3_UPPER + 1]: "Central",
+    [CITY_2_UPPER + 1]: "Metropolis",
+    [CITY_ENTRY_UPPER + 1]: "Gotham"
+};
 
 // Helpers to highlight and clear special target outlines (used by damageFoe selection UIs)
 function clearDamageFoeTargetHighlights() {
@@ -4012,6 +4021,15 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
         console.warn("[travelTo] Missing hero state or card for", resolvedHeroId);
         return;
     }
+    const heroName = heroCard.name || `Hero ${resolvedHeroId}`;
+
+    const clearPendingTravelLog = () => {
+        const pending = s.pendingTravelLog;
+        if (pending && String(pending.heroId) === String(resolvedHeroId)) {
+            removeGameLogEntryById(pending.id, s);
+            s.pendingTravelLog = null;
+        }
+    };
 
     const destStr = String(destRaw).toLowerCase();
     const toOverlord = destStr === "overlord";
@@ -4026,16 +4044,19 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
                     destIndex = lowerIdx;
                 } else {
                     console.warn("[travelTo] lastShovedVillainDestination did not map to a valid lower city:", upper);
+                    clearPendingTravelLog();
                     return;
                 }
             } else {
                 console.warn("[travelTo] No lastShovedVillainDestination recorded.");
+                clearPendingTravelLog();
                 return;
             }
         } else {
             const num = Number(destRaw);
             if (!Number.isInteger(num) || num < 1 || num > 11 || num % 2 === 0) {
                 console.warn("[travelTo] Invalid city index:", destRaw);
+                clearPendingTravelLog();
                 return;
             }
             destIndex = num;
@@ -4049,12 +4070,14 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
     // Avoid no-op travel requests that would leave the hero in place.
     if (!toOverlord && typeof prevIdx === "number" && prevIdx === destIndex) {
         console.log("[travelTo] Hero already at destination; skipping travel.");
+        clearPendingTravelLog();
         return;
     }
 
     // If already facing the Overlord, skip redundant travel.
     if (toOverlord && heroState.isFacingOverlord) {
         console.log("[travelTo] Hero already facing Overlord; skipping travel.");
+        clearPendingTravelLog();
         return;
     }
 
@@ -4067,6 +4090,8 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
     if (toOverlord) {
         heroState.cityIndex = null;
         heroState.isFacingOverlord = true;
+        clearPendingTravelLog();
+        appendGameLogEntry(`${heroName} traveled to face the Overlord.`, s);
         showRetreatButtonForCurrentHero(s);
         try {
             const btn = document.getElementById("face-overlord-button");
@@ -4082,6 +4107,9 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
 
     heroState.cityIndex = destIndex;
     heroState.isFacingOverlord = false;
+    clearPendingTravelLog();
+    const cityName = CITY_NAME_BY_LOWER_INDEX[destIndex] || `City ${destIndex}`;
+    appendGameLogEntry(`${heroName} traveled to ${cityName}.`, s);
 
     const slot = citySlots[destIndex];
     const area = slot?.querySelector(".city-card-area");

@@ -171,7 +171,7 @@ import { renderCard, findCardInAllSources } from './cardRenderer.js';
 import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHeroPanel, 
          buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
          renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow,
-         appendGameLogEntry } from './pageSetup.js';
+         appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, refreshFrozenOverlays } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -2242,6 +2242,12 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
+    // Clear only this hero's pending travel decision log if present
+    if (gameState.pendingTravelLog && String(gameState.pendingTravelLog.heroId) === String(heroId)) {
+        removeGameLogEntryById(gameState.pendingTravelLog.id, gameState);
+        gameState.pendingTravelLog = null;
+    }
+
     if (heroState.currentTravel <= 0) {
         console.log(`[TRAVEL] ${heroName} has no travel left. Travel blocked.`);
         hideTravelHighlights();
@@ -2377,6 +2383,9 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     );
 
     try { refreshFrozenOverlays(gameState); } catch (e) {}
+
+    const cityName = getCityNameFromIndex(cityIndex);
+    appendGameLogEntry(`${heroName} traveled to ${cityName}.`, gameState);
 
     saveGameState(gameState);
 }
@@ -2906,6 +2915,10 @@ export async function startTravelPrompt(gameState) {
             `[TRAVEL] ${heroName} already in city ${heroState.cityIndex}. `
             + `Skipping 'Where are you traveling?' banner.`
         );
+        // Clear any stale pending travel log for this hero.
+        if (gameState.pendingTravelLog && String(gameState.pendingTravelLog.heroId) === String(heroId)) {
+            gameState.pendingTravelLog = null;
+        }
         return;
     }
 
@@ -2926,6 +2939,13 @@ export async function startTravelPrompt(gameState) {
     setTimeout(() => {
         showMightBanner("Travel Where?");
     }, 700);
+
+    const pendingId = appendGameLogEntry(
+        `${heroName} is deciding where to travel.`,
+        gameState,
+        { id: `travel-${heroId}` }
+    );
+    gameState.pendingTravelLog = { id: pendingId, heroId };
 
     console.log(
         `[TRAVEL] Prompting ${heroName} to choose a travel destination. `
@@ -3181,6 +3201,11 @@ function performHeroTravelToOverlord(gameState, heroId) {
     const heroObj  = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
+    if (gameState.pendingTravelLog && String(gameState.pendingTravelLog.heroId) === String(heroId)) {
+        removeGameLogEntryById(gameState.pendingTravelLog.id, gameState);
+        gameState.pendingTravelLog = null;
+    }
+
     if (heroState.isFacingOverlord) {
         console.log(`[OVERLORD] ${heroName} is already facing the Overlord.`);
         return;
@@ -3271,6 +3296,8 @@ function performHeroTravelToOverlord(gameState, heroId) {
         "[performHeroTravelToOverlord] remaining destinations after move:",
         remainingDestinations
     );
+
+    appendGameLogEntry(`${heroName} traveled to face the Overlord.`, gameState);
 
     if (!heroState.hasDrawnThisTurn) {
         showHeroTopPreview(heroId, gameState);
@@ -3710,6 +3737,11 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
   const targetState = state.heroData?.[targetHeroId];
   if (!activeState || !targetState) return;
 
+  if (state.pendingTravelLog && String(state.pendingTravelLog.heroId) === String(activeHeroId)) {
+    removeGameLogEntryById(state.pendingTravelLog.id, state);
+    state.pendingTravelLog = null;
+  }
+
   const dest = Number(destinationLowerIndex);
   if (!Number.isFinite(dest)) return;
 
@@ -3850,6 +3882,12 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
   recomputeCurrentHeroTravelDestinations(state);
   refreshAllCityOutlines(state);
   try { refreshFrozenOverlays(state); } catch (e) {}
+
+  const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
+  const heroName = heroObj?.name || `Hero ${activeHeroId}`;
+  const cityName = getCityNameFromIndex(dest);
+  appendGameLogEntry(`${heroName} traveled to ${cityName}.`, state);
+
   saveGameState(state);
 }
 
