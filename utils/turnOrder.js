@@ -991,7 +991,7 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false }
                     console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
                 }
             }
-            return;
+            return { blocked: true, reason: "Teleporter cannot find an open city" };
         }
 
         const randomIndex = Math.floor(Math.random() * openSlots.length);
@@ -999,7 +999,7 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false }
 
         state.revealedTopVillain = false;
         placeCardInUpperCity(targetIdx, villainId, state, "villain");
-        return;
+        return { placed: true, blocked: false, teleportTargetIdx: targetIdx };
     }
 
     if (chargeDist > 0) {
@@ -1017,12 +1017,12 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false }
                 } catch (err) {
                     console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
                 }
-                return;
+                return { blocked: true, reason: "Frozen foe blocking entry" };
             }
         }
 
         await executeEffectSafely(`charge(${chargeDist})`, cardData, {});
-        return;
+        return { placed: true, blocked: false };
     }
 
     // NORMAL ENTRY: shove into city 1 using existing shoveUpper logic
@@ -1042,8 +1042,10 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false }
                 console.warn("[BANNER] Failed to show Top Card Revealed banner:", err);
             }
         }
-        return;
+        return { blocked: true, reason: "Frozen foe blocking entry" };
     }
+
+    return { placed: true, blocked: false };
 }
 
 /**
@@ -1074,6 +1076,9 @@ export async function villainDraw(count = 1) {
 
         const data = findCardInAllSources(villainId);
         const kind = classifyVillainCard(villainId, data);
+        const cardName = data?.name || `Card ${villainId}`;
+        let blockedReason = null;
+        let handlerResult = null;
 
         switch (kind) {
             case "countdown":
@@ -1094,11 +1099,39 @@ export async function villainDraw(count = 1) {
                 break;
             case "enemy":
                 console.log("[VILLAIN DRAW] Hench/Villain card:", villainId, data?.name);
-                await handleEnemyEntry(villainId, data, gameState, { fromDeck: true });
+                handlerResult = await handleEnemyEntry(villainId, data, gameState, { fromDeck: true });
+                if (handlerResult?.blocked) {
+                    blockedReason = handlerResult.reason || "Blocked";
+                }
                 break;
             default:
                 console.warn("[VILLAIN DRAW] Unknown villain deck card type:", villainId, data);
                 break;
+        }
+
+        if (blockedReason) {
+            try {
+                appendGameLogEntry(`Villain Deck Blocked: ${blockedReason}.`, gameState);
+            } catch (err) {
+                console.warn("[VILLAIN DRAW] Failed to append blocked log entry", err);
+            }
+            break; // stop drawing further cards when the current draw is blocked
+        }
+
+        try {
+            appendGameLogEntry(`Villain Deck Draw: ${cardName}.`, gameState);
+        } catch (err) {
+            console.warn("[VILLAIN DRAW] Failed to append game log entry", err);
+        }
+
+        // Post-draw logs for specific behaviors
+        if (kind === "enemy" && handlerResult?.teleportTargetIdx != null) {
+            try {
+                const cityName = getCityNameFromIndex(handlerResult.teleportTargetIdx + 1);
+                appendGameLogEntry(`${cardName} teleported to ${cityName}!`, gameState);
+            } catch (err) {
+                console.warn("[VILLAIN DRAW] Failed to append teleport log", err);
+            }
         }
     }
 
@@ -1363,11 +1396,6 @@ export async function startHeroTurn(state, opts = {}) {
     // Update coastal city tracking at the start of each hero turn
     checkCoastalCities(state);
 
-    // 1) VILLAIN DRAW for this "turn slot"
-    if (!skipVillainDraw) {
-        await villainDraw(1);
-    }
-
     // Ensure we have a valid index (store ONLY on state)
     const heroCount = heroIds.length;
 
@@ -1440,6 +1468,11 @@ export async function startHeroTurn(state, opts = {}) {
     }
 
     appendGameLogEntry(`${activeHeroName} started their turn.`, state);
+
+    // VILLAIN DRAW for this "turn slot" (after logging turn start for ordering)
+    if (!skipVillainDraw) {
+        await villainDraw(1);
+    }
 
     // 3) Normal hero turn setup for the chosen hero
     if (typeof state.turnCounter !== "number") state.turnCounter = 0;
@@ -2396,7 +2429,14 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
     try { refreshFrozenOverlays(gameState); } catch (e) {}
 
     const cityName = getCityNameFromIndex(cityIndex);
-    appendGameLogEntry(`${heroName} traveled to ${cityName}.`, gameState);
+    const foeSlotIdx = cityIndex - 1;
+    const foeEntry = Array.isArray(gameState.cities) ? gameState.cities[foeSlotIdx] : null;
+    const foeName = foeEntry
+        ? (henchmen.find(h => String(h.id) === String(foeEntry.id))?.name
+            || villains.find(v => String(v.id) === String(foeEntry.id))?.name
+            || `Enemy ${foeEntry.id}`)
+        : "no foe";
+    appendGameLogEntry(`${heroName} traveled to ${cityName} to engage ${foeName}.`, gameState);
 
     saveGameState(gameState);
 }
@@ -2527,7 +2567,7 @@ function showFaceOverlordPopup(gameState, heroId) {
     }
 }
 
-function getCityNameFromIndex(idx) {
+export function getCityNameFromIndex(idx) {
     switch (idx) {
         case 1: return "Star City";
         case 3: return "Coast City";
@@ -3309,7 +3349,15 @@ function performHeroTravelToOverlord(gameState, heroId) {
         remainingDestinations
     );
 
-    appendGameLogEntry(`${heroName} traveled to face the Overlord.`, gameState);
+    const ovInfo = getCurrentOverlordInfo(gameState);
+    const ovName =
+        ovInfo?.card?.name ||
+        ovInfo?.name ||
+        gameState.currentOverlord?.name ||
+        gameState.currentOverlordCard?.name ||
+        overlords.find(o => String(o.id) === String(gameState.overlordId))?.name ||
+        "the Overlord";
+    appendGameLogEntry(`${heroName} traveled to face the Overlord, ${ovName}.`, gameState);
 
     if (!heroState.hasDrawnThisTurn) {
         showHeroTopPreview(heroId, gameState);
@@ -3907,8 +3955,16 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
 
   const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
   const heroName = heroObj?.name || `Hero ${activeHeroId}`;
+  const shovedHeroObj = heroes.find(h => String(h.id) === String(targetHeroId));
+  const shovedHeroName = shovedHeroObj?.name || `Hero ${targetHeroId}`;
   const cityName = getCityNameFromIndex(dest);
-  appendGameLogEntry(`${heroName} traveled to ${cityName}.`, state);
+  const foeEntry = state.cities?.[dest - 1];
+  const foeName = foeEntry
+    ? (henchmen.find(h => String(h.id) === String(foeEntry.id))?.name
+        || villains.find(v => String(v.id) === String(foeEntry.id))?.name
+        || `Enemy ${foeEntry.id}`)
+    : "no foe";
+  appendGameLogEntry(`${heroName} traveled to ${cityName} to engage ${foeName}, shoving ${shovedHeroName} back to HQ.`, state);
 
   saveGameState(state);
 }

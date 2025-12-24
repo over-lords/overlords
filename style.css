@@ -757,7 +757,7 @@ html, body {
   bottom: 0px;
   left: 0px;
   display: flex;
-  z-index: 9000;
+  z-index: 900;
   transform: translate(-4px, 4px);
   align-items: flex-start;
 }
@@ -1672,7 +1672,7 @@ html, body {
 #ko-tab {
     position: fixed;
     top: 0;
-    left: 28%;
+    left: 17.9%;
     transform: translateX(-50%);
     background: rgba(0,0,0,0.85);
     width: 40px;

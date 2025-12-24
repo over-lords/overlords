@@ -56,6 +56,15 @@ function normalizeLogEntry(entry) {
     return { text: String(entry) };
 }
 
+function updateDropdownTabLogSnippet(state = gameState) {
+    const tab = document.getElementById("dropdown-tab");
+    if (!tab) return;
+    const textEl = document.getElementById("dropdown-tab-text") || tab;
+    const entries = Array.isArray(state?.gameLog) ? state.gameLog : [];
+    const latest = entries.length ? normalizeLogEntry(entries[entries.length - 1]).text : "Game Log Empty";
+    textEl.textContent = latest || "Game Log Empty";
+}
+
 function createLogRow(entry) {
     const { text, id } = normalizeLogEntry(entry);
 
@@ -149,6 +158,18 @@ function ensureGameLogContainer() {
     return log;
 }
 
+function addEmptyLogPlaceholder(logEl) {
+    if (!logEl) return;
+    if (logEl.querySelector(".game-log-empty")) return;
+
+    const placeholder = document.createElement("div");
+    placeholder.className = "game-log-empty";
+    placeholder.style.opacity = "0.6";
+    placeholder.style.fontStyle = "italic";
+    placeholder.textContent = "Game Log Empty";
+    logEl.appendChild(placeholder);
+}
+
 export function renderGameLogFromState(state = gameState) {
     const log = ensureGameLogContainer();
     if (!log) return false;
@@ -161,10 +182,15 @@ export function renderGameLogFromState(state = gameState) {
         log.appendChild(row);
     });
 
+    if (entries.length === 0) {
+        addEmptyLogPlaceholder(log);
+    }
+
     if (logAutoScrollEnabled) {
         log.scrollTop = log.scrollHeight;
     }
 
+    updateDropdownTabLogSnippet(state);
     return true;
 }
 
@@ -172,6 +198,9 @@ export function appendGameLogEntry(text, state = gameState, opts = {}) {
     if (!text) return null;
     const log = ensureGameLogContainer();
     if (!log) return null;
+
+    const placeholder = log.querySelector(".game-log-empty");
+    if (placeholder) placeholder.remove();
 
     if (!Array.isArray(state.gameLog)) state.gameLog = [];
     state.logEntrySeq = (state.logEntrySeq || 0) + 1;
@@ -188,6 +217,7 @@ export function appendGameLogEntry(text, state = gameState, opts = {}) {
         log.scrollTop = log.scrollHeight;
     }
 
+    updateDropdownTabLogSnippet(state);
     saveGameState(state);
     return id;
 }
@@ -207,7 +237,10 @@ export function removeGameLogEntryById(id, state = gameState) {
     if (log) {
         const node = log.querySelector(`[data-log-id="${id}"]`);
         if (node) node.remove();
+        const hasEntries = log.querySelector(".game-log-entry");
+        if (!hasEntries) addEmptyLogPlaceholder(log);
     }
+    updateDropdownTabLogSnippet(state);
 }
 
 const HERO_BORDER_URLS = {

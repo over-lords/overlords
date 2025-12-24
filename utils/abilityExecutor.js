@@ -21,7 +21,7 @@ import { bystanders } from "../data/bystanders.js";
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
-         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex } from "./turnOrder.js";
 
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
@@ -365,6 +365,22 @@ function applyFreezeToEntry(entry, slotIndex, state = gameState, opts = {}) {
         henchmen.find(h => String(h.id) === String(entry.id)) ||
         villains.find(v => String(v.id) === String(entry.id));
     if (foeCard) foeCard.isFrozen = true;
+
+    // Log the freeze event
+    try {
+        const heroName = heroId != null
+            ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
+            : "A hero";
+        const foeName = foeCard?.name || `Enemy ${entry.id ?? ""}`.trim();
+        const lowerIdx = Number.isInteger(slotIndex) ? slotIndex + 1 : null;
+        const cityName = getCityNameFromIndex(lowerIdx ?? slotIndex);
+        const durationText = (howLong === "next")
+            ? "until the end of their next turn"
+            : "permanently";
+        appendGameLogEntry(`${heroName} froze ${foeName} in ${cityName} ${durationText}.`, s);
+    } catch (err) {
+        console.warn("[applyFreezeToEntry] Failed to append freeze log", err);
+    }
 }
 
 function unfreezeByKey(key, state = gameState) {
@@ -372,17 +388,44 @@ function unfreezeByKey(key, state = gameState) {
     const s = state || gameState;
     if (!Array.isArray(s.cities)) return;
 
+    let logged = false;
+    let foeIdForBase = null;
+
     for (let i = 0; i < s.cities.length; i++) {
         const e = s.cities[i];
         if (!e) continue;
         const ek = getEntryKey(e);
         if (ek && ek === key) {
+            if (!logged) {
+                try {
+                    const foeName =
+                        henchmen.find(h => String(h.id) === String(e.id))?.name ||
+                        villains.find(v => String(v.id) === String(e.id))?.name ||
+                        `Enemy ${e.id ?? ""}`.trim();
+                    appendGameLogEntry(`${foeName} has been unfrozen.`, s);
+                } catch (err) {
+                    console.warn("[unfreezeByKey] Failed to append unfreeze log", err);
+                }
+                logged = true;
+                foeIdForBase = e.id ?? e.baseId ?? e.foeId ?? null;
+            }
             e.isFrozen = false;
+            if (typeof s.tempFrozen === "object") {
+                delete s.tempFrozen[ek];
+            }
             removeFrozenOverlay(i);
-            break;
         }
     }
     delete s.tempFrozen?.[key];
+
+    if (foeIdForBase != null) {
+        const baseCard =
+            henchmen.find(h => String(h.id) === String(foeIdForBase)) ||
+            villains.find(v => String(v.id) === String(foeIdForBase));
+        if (baseCard && baseCard.isFrozen) {
+            baseCard.isFrozen = false;
+        }
+    }
 }
 
 export function processTempFreezesForHero(heroId, state = gameState) {
@@ -1812,11 +1855,24 @@ async function runCharge(cardId, distance) {
         addChargeRushLines(entryIndex);
 
         let fromPos = UPPER_ORDER.indexOf(entryIndex);
+        let stepsMoved = 0;
 
         for (let step = 0; step < distance; step++) {
             const moved = await attemptSingleLeftShift(fromPos);
             if (!moved) break;
             fromPos -= 1;
+            stepsMoved += 1;
+        }
+
+        if (stepsMoved > 0) {
+            try {
+                const cardData = findCardInAllSources(cardId);
+                const foeName = cardData?.name || `Enemy ${cardId}`;
+                const label = stepsMoved === 1 ? "space" : "spaces";
+                appendGameLogEntry(`${foeName} charged ${stepsMoved} ${label}!`, gameState);
+            } catch (err) {
+                console.warn("[runCharge] Failed to append charge log", err);
+            }
         }
 
         saveGameState(gameState);
@@ -2485,6 +2541,13 @@ export async function rallyNextHenchVillains(count) {
 
     for (const id of collected) {
         await enterVillainFromEffect(id);
+        try {
+            const cardData = findCardInAllSources(id);
+            const cardName = cardData?.name || `Card ${id}`;
+            appendGameLogEntry(`Villain Deck Draw: ${cardName}`, gameState);
+        } catch (err) {
+            console.warn("[rallyNextHenchVillains] Failed to append game log entry", err);
+        }
     }
 
     saveGameState(gameState);
@@ -4164,7 +4227,15 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
         heroState.cityIndex = null;
         heroState.isFacingOverlord = true;
         clearPendingTravelLog();
-        appendGameLogEntry(`${heroName} traveled to face the Overlord.`, s);
+    const ovInfo = getCurrentOverlordInfo(s);
+    const ovName =
+        ovInfo?.card?.name ||
+        ovInfo?.name ||
+        s.currentOverlord?.name ||
+        s.currentOverlordCard?.name ||
+        overlords.find(o => String(o.id) === String(s.overlordId))?.name ||
+        "the Overlord";
+    appendGameLogEntry(`${heroName} traveled to face the Overlord, ${ovName}.`, s);
         showRetreatButtonForCurrentHero(s);
         try {
             const btn = document.getElementById("face-overlord-button");
@@ -4182,7 +4253,14 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
     heroState.isFacingOverlord = false;
     clearPendingTravelLog();
     const cityName = CITY_NAME_BY_LOWER_INDEX[destIndex] || `City ${destIndex}`;
-    appendGameLogEntry(`${heroName} traveled to ${cityName}.`, s);
+    const foeSlotIdx = destIndex - 1;
+    const foeEntry = Array.isArray(s.cities) ? s.cities[foeSlotIdx] : null;
+    const foeName = foeEntry
+        ? (henchmen.find(h => String(h.id) === String(foeEntry.id))?.name
+            || villains.find(v => String(v.id) === String(foeEntry.id))?.name
+            || `Enemy ${foeEntry.id}`)
+        : "no foe";
+    appendGameLogEntry(`${heroName} traveled to ${cityName} to engage ${foeName}.`, s);
 
     const slot = citySlots[destIndex];
     const area = slot?.querySelector(".city-card-area");
@@ -4663,7 +4741,7 @@ export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
             }
         );
         try {
-            appendGameLogEntry(`Enemies and Allies Draw: ${cardData.name}.`, state);
+            appendGameLogEntry(`Enemies and Allies Draw: ${cardData.name}`, state);
         } catch (err) {
             console.warn("[enemyDraw] Failed to append game log entry for draw", err);
         }
