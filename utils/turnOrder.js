@@ -1978,6 +1978,9 @@ export function endCurrentHeroTurn(gameState) {
     try { if (typeof window !== "undefined") window.__damageFoeSelectMode = null; } catch (e) {}
     // Clear any pending freezeVillain(any) selection at end of turn
     try { if (typeof window !== "undefined") window.__freezeSelectMode = null; } catch (e) {}
+    // Clear any pending knockback selection at end of turn
+    try { if (typeof window !== "undefined") window.__knockbackSelectMode = null; } catch (e) {}
+    gameState.pendingKnockback = null;
     // Clear any target highlights for damage selection
     try { if (typeof window !== "undefined" && typeof window.__clearDamageFoeHighlights === "function") window.__clearDamageFoeHighlights(); } catch (e) {}
 

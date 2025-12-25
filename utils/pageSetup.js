@@ -9,7 +9,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, refreshFrozenOverlays, runIfDiscardedEffects, renderScannedPreview } from './abilityExecutor.js';
+import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, knockbackFoe, refreshFrozenOverlays, runIfDiscardedEffects, renderScannedPreview } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
@@ -646,6 +646,21 @@ async function restoreUIFromState(state) {
                 h.owner = players[playerIndex] || "Player";
             });
         });
+    }
+
+    // Re-arm pending knockback selection after refresh (if any)
+    try {
+        if (state.pendingKnockback) {
+            window.__knockbackSelectMode = {
+                heroId: state.pendingKnockback.heroId ?? null,
+                flag: state.pendingKnockback.flag || "any",
+                state: gameState
+            };
+        } else {
+            window.__knockbackSelectMode = null;
+        }
+    } catch (e) {
+        console.warn("[RESTORE] Failed to restore pending knockback selection.", e);
     }
 
     console.log("UI restore complete.");
@@ -1782,6 +1797,85 @@ function showShoveSelectConfirm({ foeName }) {
     });
 }
 
+function showKnockbackSelectConfirm({ foeName }) {
+    return new Promise(resolve => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        `;
+
+        const box = document.createElement("div");
+        box.style.cssText = `
+            background: #fff;
+            color: #111;
+            border-radius: 14px;
+            border: 4px solid #000;
+            width: min(420px, 100%);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+            padding: 18px;
+            text-align: center;
+            font-family: 'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif;
+        `;
+
+        const title = document.createElement("div");
+        title.style.cssText = "font-size: 22px; font-weight: 800; margin-bottom: 10px;";
+        title.textContent = "Knockback";
+
+        const msg = document.createElement("div");
+        msg.style.cssText = "font-size: 18px; line-height: 1.35; margin-bottom: 16px;";
+        msg.textContent = `Return ${foeName} to the top of the villain deck?`;
+
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex; gap:10px; justify-content:center; flex-wrap:wrap;";
+
+        const makeBtn = (label, bg, fg) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.style.cssText = `
+                flex: 1 1 120px;
+                padding: 12px 14px;
+                font-size: 16px;
+                font-weight: 800;
+                border: 3px solid #000;
+                border-radius: 12px;
+                background: ${bg};
+                color: ${fg};
+                cursor: pointer;
+            `;
+            return b;
+        };
+
+        const yesBtn = makeBtn("Yes", "#ffd800", "#000");
+        const noBtn  = makeBtn("No", "#e3e3e3", "#000");
+
+        const cleanup = (result) => {
+            try { overlay.remove(); } catch (e) {}
+            resolve(result);
+        };
+
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick  = () => cleanup(false);
+
+        btnRow.appendChild(yesBtn);
+        btnRow.appendChild(noBtn);
+
+        box.appendChild(title);
+        box.appendChild(msg);
+        box.appendChild(btnRow);
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+}
+
 function findCityEntryForVillainCard(villainCard, state = gameState) {
     const cities = state?.cities;
     if (!Array.isArray(cities)) return { entry: null, slotIndex: null };
@@ -1860,6 +1954,30 @@ export function buildVillainPanel(villainCard) {
 
                 window.__freezeSelectMode = null;
                 try { if (typeof window !== "undefined" && typeof window.__clearDamageFoeHighlights === "function") window.__clearDamageFoeHighlights(); } catch (e) {}
+            });
+            return;
+        }
+    }
+
+    // If a knockback(any) is pending, hijack the click to a confirm modal instead of opening the panel UI.
+    const pendingKnockback = (typeof window !== "undefined") ? window.__knockbackSelectMode : null;
+    if (pendingKnockback) {
+        const stateForKnockback = pendingKnockback.state || gameState;
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForKnockback);
+        const type = (villainCard.type || "").toLowerCase();
+
+        if (!entry) {
+            console.warn("[buildVillainPanel] No matching city entry found for knockback target.");
+        } else if (type !== "henchman" && type !== "villain") {
+            console.log("[buildVillainPanel] Knockback requires a Henchman or Villain; ignoring selection.");
+        } else {
+            showKnockbackSelectConfirm({ foeName: villainCard.name }).then(allow => {
+                if (!allow) return;
+
+                knockbackFoe(entry, slotIndex, stateForKnockback, pendingKnockback.heroId ?? null);
+                stateForKnockback.pendingKnockback = null;
+                saveGameState(stateForKnockback);
+                try { if (typeof window !== "undefined") window.__knockbackSelectMode = null; } catch (e) {}
             });
             return;
         }

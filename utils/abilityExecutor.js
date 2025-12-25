@@ -1688,6 +1688,168 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
     }
 };
 
+function normalizeVillainDeckPointer(state) {
+    const ptr = typeof state.villainDeckPointer === "number" ? state.villainDeckPointer : 0;
+    return Math.max(0, ptr);
+}
+
+function pushCardToVillainDeckTop(cardId, state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(s.villainDeck)) {
+        s.villainDeck = [];
+    }
+    const ptr = normalizeVillainDeckPointer(s);
+    s.villainDeck.splice(ptr, 0, String(cardId));
+    s.villainDeckPointer = ptr;
+}
+
+function isHenchmanOrVillainId(id) {
+    const idStr = String(id);
+    return henchmen.some(h => String(h.id) === idStr) || villains.some(v => String(v.id) === idStr);
+}
+
+export function knockbackFoe(entry, slotIndex, state = gameState, heroId = null) {
+    const s = state || gameState;
+    if (!entry) return;
+
+    const upperIdx = (typeof slotIndex === "number") ? slotIndex : entry.slotIndex;
+    const cardId = entry.id ?? entry.baseId ?? entry.foeId;
+    const foeCard = cardId != null ? findCardInAllSources(cardId) : null;
+
+    if (typeof upperIdx !== "number" || cardId == null) {
+        console.warn("[knockbackFoe] Invalid target or slot index.", { entry, slotIndex });
+        return;
+    }
+
+    // Clear model entry
+    if (Array.isArray(s.cities)) {
+        const existing = s.cities[upperIdx];
+        const matchesKey = getEntryKey(existing) && getEntryKey(existing) === getEntryKey(entry);
+        const matchesId = existing && String(existing.id) === String(cardId);
+        if (matchesKey || matchesId) {
+            s.cities[upperIdx] = null;
+        }
+    }
+
+    // Clear per-instance HP and overlays
+    const entryKey = getEntryKey(entry);
+    if (entryKey && s.villainHP) delete s.villainHP[entryKey];
+    if (s.villainHP && s.villainHP[String(cardId)] != null) {
+        delete s.villainHP[String(cardId)];
+    }
+    if (entryKey && s.tempFrozen) {
+        delete s.tempFrozen[entryKey];
+    }
+    removeFrozenOverlay(upperIdx);
+
+    // Rescue captured bystanders for the acting hero
+    if (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) {
+        const captured = entry.capturedBystanders;
+        if (heroId != null && s.heroData && s.heroData[heroId]) {
+            const heroState = s.heroData[heroId];
+            if (!Array.isArray(heroState.hand)) heroState.hand = [];
+            captured.forEach(b => heroState.hand.push(String(b.id)));
+
+            const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+            const names = captured.map(b => b?.name || "Bystander").join(", ");
+            const msg = captured.length === 1
+                ? `${names} was rescued by ${heroName}.`
+                : `Bystanders: ${names} were rescued by ${heroName}.`;
+            appendGameLogEntry(msg, s);
+            try { renderHeroHandBar(s); } catch (err) { console.warn("[knockbackFoe] Failed to refresh hero hand UI.", err); }
+        }
+        entry.capturedBystanders = [];
+    }
+
+    // Send any engaged hero beneath this city back to HQ
+    const lowerIdx = upperIdx + 1;
+    (s.heroes || []).forEach(hid => {
+        const hState = s.heroData?.[hid];
+        if (hState && hState.cityIndex === lowerIdx) {
+            hState.cityIndex = null;
+            try {
+                const citySlots = document.querySelectorAll(".city-slot");
+                const slot = citySlots?.[lowerIdx];
+                const area = slot?.querySelector(".city-card-area");
+                if (area) area.innerHTML = "";
+            } catch (err) {
+                console.warn("[knockbackFoe] Failed to clear engaged hero UI.", err);
+            }
+        }
+    });
+
+    // Clear foe UI from the city
+    try {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const upperSlot = citySlots?.[upperIdx];
+        const area = upperSlot?.querySelector(".city-card-area");
+        if (area) area.innerHTML = "";
+    } catch (err) {
+        console.warn("[knockbackFoe] Failed to clear foe UI.", err);
+    }
+
+    // Reset card status and place on top of the villain deck
+    if (foeCard) {
+        foeCard.currentHP = Number(foeCard.hp) || Number(foeCard.hp?.valueOf?.()) || foeCard.hp;
+        if (foeCard.isFrozen) foeCard.isFrozen = false;
+    }
+    pushCardToVillainDeckTop(cardId, s);
+    s.revealedTopVillain = true;
+    try {
+        const btn = document.getElementById("top-villain-button");
+        if (btn) btn.style.display = "flex";
+    } catch (err) {
+        console.warn("[knockbackFoe] Failed to refresh top-villain button.", err);
+    }
+
+    const heroName = heroId != null
+        ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
+        : "A hero";
+    const foeName = foeCard?.name || `Enemy ${cardId}`;
+    appendGameLogEntry(`${heroName} knocked ${foeName} back to the top of the Villain Deck.`, s);
+
+    // Clear pending knockback trackers
+    s.pendingKnockback = null;
+    try { if (typeof window !== "undefined") window.__knockbackSelectMode = null; } catch (err) {}
+
+    saveGameState(s);
+}
+
+function queueKnockbackSelection(flag = "any", heroId = null, state = gameState) {
+    const s = state || gameState;
+    const normalized = String(flag || "any").toLowerCase();
+    if (normalized !== "any") {
+        console.warn("[knockback] Unsupported flag; only 'any' is implemented.", flag);
+        return;
+    }
+
+    const hasTargets = Array.isArray(s.cities) && s.cities.some(entry => entry && isHenchmanOrVillainId(entry.id));
+    if (!hasTargets) {
+        console.log("[knockback] No valid henchmen or villains to target.");
+        return;
+    }
+
+    if (typeof window !== "undefined") {
+        window.__knockbackSelectMode = { heroId, flag: "any", state: s };
+    }
+    s.pendingKnockback = { heroId, flag: "any" };
+    saveGameState(s);
+
+    try {
+        showMightBanner("Choose a foe to Knockback", 1800);
+    } catch (err) {
+        console.warn("[knockback] Could not show selection banner.", err);
+    }
+}
+
+EFFECT_HANDLERS.knockback = function(args = [], card, selectedData = {}) {
+    const flag = (args?.[0] ?? "any") || "any";
+    const heroId = selectedData?.currentHeroId ?? null;
+    const state = selectedData?.state || gameState;
+
+    queueKnockbackSelection(flag, heroId, state);
+};
+
 // END OF EFFECT HANDLERS
 
 export function executeEffectSafely(effectString, card, selectedData) {

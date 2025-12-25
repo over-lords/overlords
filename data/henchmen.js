@@ -184,7 +184,7 @@ export const henchmen = [
       {
         type: `optional`,
         condition: `uponDefeat`,
-        effect: `returnHenchOrVillain(1)`
+        effect: `knockback(any)`
       }
     ]
   },
