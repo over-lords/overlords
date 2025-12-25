@@ -923,6 +923,16 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
     // Use the shared resolver so Countdown (tactics) cards are found reliably
     const cardData = findCardInAllSources(newCardId);
 
+    const entryType = explicitType || (isCountdownId(newCardId) ? "countdown" : "villain");
+    const entryInst = `inst_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    state.cities[slotIndex] = {
+        slotIndex,
+        type: entryType,
+        id: String(newCardId),
+        instanceId: entryInst,
+        uniqueId: entryInst
+    };
+
     if (cardData) {
         wrapper.style.cursor = "pointer";
         wrapper.addEventListener("click", (e) => {
@@ -931,18 +941,11 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
                 newCardId,
                 cardName: cardData.name
             });
-            buildVillainPanel(cardData);
+            buildVillainPanel(cardData, { instanceId: entryInst, slotIndex });
         });
     } else {
         console.warn("No cardData found for newCardId (upper-city placement):", newCardId);
     }
-
-    const entryType = explicitType || (isCountdownId(newCardId) ? "countdown" : "villain");
-    state.cities[slotIndex] = {
-        slotIndex,
-        type: entryType,
-        id: String(newCardId)
-    };
 
     const baseHP = Number((cardData && cardData.hp) || 1);
 
@@ -1705,6 +1708,26 @@ export async function shoveUpper(newCardId) {
             gameState.cities[toIdx] = gameState.cities[fromIdx] || null;
             if (gameState.cities[toIdx]) {
                 gameState.cities[toIdx].slotIndex = toIdx;
+                if (!gameState.cities[toIdx].instanceId) {
+                    const genInst = `inst_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+                    gameState.cities[toIdx].instanceId = genInst;
+                    if (!gameState.cities[toIdx].uniqueId) {
+                        gameState.cities[toIdx].uniqueId = genInst;
+                    }
+                }
+                try {
+                    const cardId = gameState.cities[toIdx].baseId ?? gameState.cities[toIdx].id;
+                    const cardData = findCardInAllSources(cardId);
+                    cardNode.style.cursor = "pointer";
+                    cardNode.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        if (cardData) {
+                            buildVillainPanel(cardData, { instanceId: gameState.cities[toIdx].instanceId, slotIndex: toIdx });
+                        }
+                    });
+                } catch (err) {
+                    console.warn("[shoveUpper] Failed to rebind villain click after move.", err);
+                }
             }
             gameState.cities[fromIdx] = null;
 
@@ -1776,6 +1799,16 @@ export async function shoveUpper(newCardId) {
         entryAreaFinal.appendChild(wrapper);
     }
 
+    const entryType = isCountdownId(newCardId) ? "countdown" : "villain";
+    const entryInst = `inst_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    gameState.cities[ENTRY_IDX] = {
+        slotIndex: ENTRY_IDX,
+        type: entryType,
+        id: String(newCardId),
+        instanceId: entryInst,
+        uniqueId: entryInst
+    };
+
     const cardData =
         henchmen.find(h => h.id === newCardId) ||
         villains.find(v => v.id === newCardId);
@@ -1788,18 +1821,11 @@ export async function shoveUpper(newCardId) {
                 newCardId,
                 cardName: cardData.name
             });
-            buildVillainPanel(cardData);
+            buildVillainPanel(cardData, { instanceId: entryInst, slotIndex: ENTRY_IDX });
         });
     } else {
         console.warn("No cardData found for newCardId:", newCardId);
     }
-
-    const entryType = isCountdownId(newCardId) ? "countdown" : "villain";
-    gameState.cities[ENTRY_IDX] = {
-        slotIndex: ENTRY_IDX,
-        type: entryType,
-        id: String(newCardId)
-    };
 
     saveGameState(gameState);
 
