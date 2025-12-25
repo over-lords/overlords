@@ -228,7 +228,39 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
 
-    // atXorLessHP(n) / atXorGreaterHP(n) — apply to current hero
+    const getHeroTeams = (heroObj) => {
+        if (!heroObj) return [];
+        const base = [
+            heroObj.team,
+            heroObj.heroTeam,
+            heroObj.faction
+        ].filter(Boolean).map(v => String(v).toLowerCase());
+        const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
+        return Array.from(new Set([...base, ...list]));
+    };
+
+    const getActiveTeammates = (hid) => {
+        if (hid == null) return [];
+        const me = heroes.find(h => String(h.id) === String(hid));
+        if (!me) return [];
+        const myTeams = getHeroTeams(me);
+        if (!myTeams.length) return [];
+
+        return heroIds.reduce((acc, otherId) => {
+            if (String(otherId) === String(hid)) return acc;
+            const otherState = s.heroData?.[otherId];
+            const otherHp = typeof otherState?.hp === "number" ? otherState.hp : 1;
+            if (otherHp <= 0) return acc;
+            const otherCard = heroes.find(h => String(h.id) === String(otherId));
+            if (!otherCard) return acc;
+            const otherTeams = getHeroTeams(otherCard);
+            const sharesTeam = otherTeams.some(t => myTeams.includes(t));
+            if (sharesTeam) acc.push(otherCard.name || `Hero ${otherId}`);
+            return acc;
+        }, []);
+    };
+
+    // atXorLessHP(n) / atXorGreaterHP(n) - apply to current hero
     const hpMatch = condStr.match(/^atxor(less|greater)hp\((\d+)\)$/i);
     if (hpMatch) {
         const dir = hpMatch[1].toLowerCase();
@@ -268,6 +300,20 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     }
 
     const lowerCond = condStr.toLowerCase();
+
+    if (lowerCond === "confirmactiveteammates") {
+        const teammates = getActiveTeammates(heroId);
+        const hasTeammates = teammates.length > 0;
+        console.log(`[confirmActiveTeammates] ${hasTeammates ? `true, heroes found: ${teammates.join(", ")}` : "false, no active teammates found."}`);
+        return hasTeammates;
+    }
+
+    if (lowerCond === "confirmnoactiveteammates") {
+        const teammates = getActiveTeammates(heroId);
+        const none = teammates.length === 0;
+        console.log(`[confirmNoActiveTeammates] ${none ? "true, no active teammates found." : `false, heroes found: ${teammates.join(", ")}`}`);
+        return none;
+    }
 
     if (lowerCond === "facingoverlord") {
         if (heroId == null) return false;
