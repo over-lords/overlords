@@ -3119,12 +3119,19 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
     const ovId      = info.id;
     const ovCard    = info.card;
     const currentHP = info.currentHP;
-    const actualDamage = Math.max(0, Math.min(amount, currentHP));
-    const newHP     = Math.max(0, currentHP - amount);
+    let actualDamage = Math.max(0, Math.min(amount, currentHP));
+    let newHP     = Math.max(0, currentHP - amount);
     const heroName  = heroId != null
         ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
         : "Hero";
     const overlordName = ovCard?.name || "Overlord";
+    const isFinalOverlord = info.kind !== "scenario" && Array.isArray(s.overlords) && s.overlords.length === 1;
+    const upperRowOccupied = isFinalOverlord && UPPER_ORDER.some(idx => isCityOccupied(s, idx));
+
+    if (isFinalOverlord && upperRowOccupied && newHP <= 0) {
+        newHP = 1;
+        actualDamage = Math.max(0, currentHP - newHP);
+    }
 
     if (heroId != null) {
         if (!s.heroDamageToOverlord) s.heroDamageToOverlord = {};
