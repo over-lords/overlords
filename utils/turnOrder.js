@@ -172,7 +172,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
          renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow,
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
-import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, refreshFrozenOverlays } from './abilityExecutor.js';
+import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -199,6 +199,17 @@ function isScenarioActive(state) {
     const stack = state.scenarioStack;
     if (!Array.isArray(stack)) return false;
     return stack.length > 0;
+}
+
+function getSlotFoeDamage(slotEntry, fallbackCard = null) {
+    if (slotEntry) {
+        return getEffectiveFoeDamage(slotEntry);
+    }
+    if (fallbackCard) {
+        const raw = fallbackCard.currentDamage ?? fallbackCard.damage ?? fallbackCard.dmg ?? 0;
+        return Number(raw) || 0;
+    }
+    return 0;
 }
 
 async function executeMightEffectSafe(effectString) {
@@ -1980,6 +1991,8 @@ export function endCurrentHeroTurn(gameState) {
     try { if (typeof window !== "undefined") window.__freezeSelectMode = null; } catch (e) {}
     // Clear any pending knockback selection at end of turn
     try { if (typeof window !== "undefined") window.__knockbackSelectMode = null; } catch (e) {}
+    // Clear any pending givePassive selection at end of turn
+    try { if (typeof window !== "undefined") window.__givePassiveSelectMode = null; } catch (e) {}
     gameState.pendingKnockback = null;
     // Clear any target highlights for damage selection
     try { if (typeof window !== "undefined" && typeof window.__clearDamageFoeHighlights === "function") window.__clearDamageFoeHighlights(); } catch (e) {}
@@ -2004,7 +2017,9 @@ export function endCurrentHeroTurn(gameState) {
                 villains.find(v => String(v.id) === foeId);
 
             if (foe) {
-                const foeDamage = Number(foe.damage || 0);
+                const foeDamage = getSlotFoeDamage(slotEntry, foe);
+                console.log("[RETREAT FAIL] Effective foe damage (after passives)", { foeDamage, foeId, entryKey: slotEntry?.instanceId ?? slotEntry?.uniqueId ?? null, damagePenalty: slotEntry?.damagePenalty, currentDamage: slotEntry?.currentDamage });
+                console.log("[END TURN DAMAGE] Effective foe damage (after passives)", { foeDamage, foeId, entryKey: slotEntry?.instanceId ?? slotEntry?.uniqueId ?? null, damagePenalty: slotEntry?.damagePenalty, currentDamage: slotEntry?.currentDamage });
 
                 // HERO DAMAGE THRESHOLD
                 const heroObj = heroes.find(h => String(h.id) === String(heroId));
@@ -2121,6 +2136,7 @@ export function endCurrentHeroTurn(gameState) {
 
     // Handle temporary freezes tied to this hero (remove after their next turn)
     processTempFreezesForHero(heroId, gameState);
+    processTempPassivesForHero(heroId, gameState);
 
     const nextIdx = (currentIdx + 1) % heroCount;
 
@@ -3120,7 +3136,7 @@ function retreatHeroToHQ(gameState, heroId) {
 
             if (foe) {
                 const retreatTarget = Number(heroObj?.retreat || 0);
-                const roll = Math.floor(Math.random() * 6) + 1; // 1–6
+                const roll = Math.floor(Math.random() * 6) + 1; // 1-6
 
                 console.log(
                     `[RETREAT] ${heroName} attempts to retreat from ${foe.name} `
@@ -3129,8 +3145,8 @@ function retreatHeroToHQ(gameState, heroId) {
 
                 // Only do anything special on a FAILED roll
                 if (roll < retreatTarget) {
-                    const foeDamage = Number(foe.damage || 0);
-                    const dt = Number(heroObj?.damageThreshold || 0);
+                const foeDamage = getSlotFoeDamage(slotEntry, foe);
+                const dt = Number(heroObj?.damageThreshold || 0);
 
                     // Match end-of-turn damage behavior: only if foeDamage >= DT
                     if (foeDamage >= dt) {
@@ -3920,7 +3936,8 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
 
     if (foe && heroObj) {
       const heroName = heroObj?.name || `Hero ${activeHeroId}`;
-      const foeDamage = Number(foe.damage || 0);
+      const foeDamage = getSlotFoeDamage(foeEntry, foe);
+      console.log("[SHOVE ENTRY] Effective foe damage (after passives)", { foeDamage, foeId, entryKey: foeEntry?.instanceId ?? foeEntry?.uniqueId ?? null, damagePenalty: foeEntry?.damagePenalty, currentDamage: foeEntry?.currentDamage });
       const dt = Number(heroObj.damageThreshold || 0);
 
       if (foeDamage >= dt && foeDamage > 0) {
@@ -4338,7 +4355,7 @@ function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabe
 
     // Only do anything special on a FAILED roll
     if (roll < retreatTarget) {
-        const foeDamage = Number(foe.damage || 0);
+        const foeDamage = getSlotFoeDamage(slotEntry, foe);
         const dt = Number(heroObj?.damageThreshold || 0);
 
         // Match end-of-turn damage behavior: only if foeDamage >= DT

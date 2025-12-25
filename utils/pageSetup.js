@@ -9,7 +9,7 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, knockbackFoe, refreshFrozenOverlays, runIfDiscardedEffects, renderScannedPreview } from './abilityExecutor.js';
+import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, renderScannedPreview } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
@@ -578,16 +578,33 @@ async function restoreUIFromState(state) {
 
             cardArea.innerHTML = "";
 
-            if (!entry.id) return;   // empty slot stays empty
+        if (!entry.id) return;   // empty slot stays empty
 
-            const wrapper = document.createElement("div");
-            wrapper.className = "card-wrapper";
+        const wrapper = document.createElement("div");
+        wrapper.className = "card-wrapper";
 
-            const rendered = renderCard(entry.id, wrapper);
-            wrapper.appendChild(rendered);
-            cardArea.appendChild(wrapper);
+        const cardId = entry.baseId ?? entry.id;
+        const renderCardData = findCardInAllSources(cardId);
+        const prevDamage = renderCardData?.damage;
+        const prevCurrent = renderCardData?.currentDamage;
+        const penalty = Number(entry.damagePenalty || 0);
+        if (renderCardData && penalty) {
+            const baseDamage = Number(renderCardData.damage ?? renderCardData.dmg ?? 0) || 0;
+            const eff = Math.max(0, baseDamage - penalty);
+            renderCardData.damage = eff;
+            renderCardData.currentDamage = eff;
+        }
 
-            // Restore clickability for villains & henchmen
+        const rendered = renderCard(cardId, wrapper);
+        wrapper.appendChild(rendered);
+
+        if (renderCardData) {
+            renderCardData.damage = prevDamage;
+            renderCardData.currentDamage = prevCurrent;
+        }
+        cardArea.appendChild(wrapper);
+
+        // Restore clickability for villains & henchmen
             const cardData =
                 henchmen.find(h => h.id === entry.id) ||
                 villains.find(v => v.id === entry.id);
@@ -615,7 +632,7 @@ async function restoreUIFromState(state) {
                 wrapper.style.cursor = "pointer";
                 wrapper.addEventListener("click", (e) => {
                     e.stopPropagation();
-                    buildVillainPanel(cardData);
+                    buildVillainPanel(cardData, { instanceId: getInstanceKey(entry), slotIndex: entry.slotIndex });
                 });
             }
         });
@@ -1876,12 +1893,100 @@ function showKnockbackSelectConfirm({ foeName }) {
     });
 }
 
-function findCityEntryForVillainCard(villainCard, state = gameState) {
+function showGivePassiveSelectConfirm({ foeName, label = "Apply Passive" }) {
+    return new Promise(resolve => {
+        const overlay = document.createElement("div");
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        `;
+
+        const box = document.createElement("div");
+        box.style.cssText = `
+            background: #fff;
+            color: #111;
+            border-radius: 14px;
+            border: 4px solid #000;
+            width: min(420px, 100%);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+            padding: 18px;
+            text-align: center;
+            font-family: 'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif;
+        `;
+
+        const title = document.createElement("div");
+        title.style.cssText = "font-size: 22px; font-weight: 800; margin-bottom: 10px;";
+        title.textContent = label;
+
+        const msg = document.createElement("div");
+        msg.style.cssText = "font-size: 18px; line-height: 1.35; margin-bottom: 16px;";
+        msg.textContent = `Apply to ${foeName}?`;
+
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex; gap:10px; justify-content:center; flex-wrap:wrap;";
+
+        const makeBtn = (label, bg, fg) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.style.cssText = `
+                flex: 1 1 120px;
+                padding: 12px 14px;
+                font-size: 16px;
+                font-weight: 800;
+                border: 3px solid #000;
+                border-radius: 12px;
+                background: ${bg};
+                color: ${fg};
+                cursor: pointer;
+            `;
+            return b;
+        };
+
+        const yesBtn = makeBtn("Yes", "#ffd800", "#000");
+        const noBtn  = makeBtn("No", "#e3e3e3", "#000");
+
+        const cleanup = (result) => {
+            try { overlay.remove(); } catch (e) {}
+            resolve(result);
+        };
+
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick  = () => cleanup(false);
+
+        btnRow.appendChild(yesBtn);
+        btnRow.appendChild(noBtn);
+
+        box.appendChild(title);
+        box.appendChild(msg);
+        box.appendChild(btnRow);
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+}
+
+function findCityEntryForVillainCard(villainCard, state = gameState, opts = {}) {
     const cities = state?.cities;
     if (!Array.isArray(cities)) return { entry: null, slotIndex: null };
 
     const idStr = String(villainCard.baseId ?? villainCard.id ?? "");
-    const key = getInstanceKey(villainCard);
+    const key = opts.instanceId ?? getInstanceKey(villainCard);
+    const preferredSlot = Number.isInteger(opts.slotIndex) ? opts.slotIndex : null;
+
+    // 0) Direct slot hint
+    if (preferredSlot != null && cities[preferredSlot]) {
+        const e = cities[preferredSlot];
+        if (String(e.id) === idStr || (key && getInstanceKey(e) === key)) {
+            return { entry: e, slotIndex: preferredSlot };
+        }
+    }
 
     // 1) Prefer a direct instanceId/uniqueId match
     if (key) {
@@ -1914,14 +2019,14 @@ function findCityEntryForVillainCard(villainCard, state = gameState) {
     return { entry: found, slotIndex: foundIndex };
 }
 
-export function buildVillainPanel(villainCard) {
+export function buildVillainPanel(villainCard, opts = {}) {
     if (!villainCard) return;
 
     // If a shoveVillain(any) is pending, hijack the click to a confirm modal instead of opening the panel UI.
     const pendingShove = (typeof window !== "undefined") ? window.__shoveVillainSelectMode : null;
     if (pendingShove && typeof window !== "undefined" && typeof window.__shoveVillainEffect === "function") {
         const stateForShove = pendingShove.state || gameState;
-        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForShove);
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForShove, opts);
 
         if (entry) {
             showShoveSelectConfirm({ foeName: villainCard.name }).then(allow => {
@@ -1937,7 +2042,7 @@ export function buildVillainPanel(villainCard) {
     const pendingFreeze = (typeof window !== "undefined") ? window.__freezeSelectMode : null;
     if (pendingFreeze) {
         const stateForFreeze = pendingFreeze.state || gameState;
-        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForFreeze);
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForFreeze, opts);
 
         if (!entry) {
             console.warn("[buildVillainPanel] No matching city entry found for freeze target.");
@@ -1963,7 +2068,7 @@ export function buildVillainPanel(villainCard) {
     const pendingKnockback = (typeof window !== "undefined") ? window.__knockbackSelectMode : null;
     if (pendingKnockback) {
         const stateForKnockback = pendingKnockback.state || gameState;
-        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForKnockback);
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForKnockback, opts);
         const type = (villainCard.type || "").toLowerCase();
 
         if (!entry) {
@@ -1978,6 +2083,28 @@ export function buildVillainPanel(villainCard) {
                 stateForKnockback.pendingKnockback = null;
                 saveGameState(stateForKnockback);
                 try { if (typeof window !== "undefined") window.__knockbackSelectMode = null; } catch (e) {}
+            });
+            return;
+        }
+    }
+
+    // If a giveVillainPassive(any) is pending, hijack the click to a confirm modal instead of opening the panel UI.
+    const pendingPassive = (typeof window !== "undefined") ? window.__givePassiveSelectMode : null;
+    if (pendingPassive) {
+        const stateForPassive = pendingPassive.state || gameState;
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForPassive, opts);
+        const type = (villainCard.type || "").toLowerCase();
+
+        if (!entry) {
+            console.warn("[buildVillainPanel] No matching city entry found for passive target.");
+        } else if (type !== "henchman" && type !== "villain") {
+            console.log("[buildVillainPanel] Passives require a Henchman or Villain; ignoring selection.");
+        } else {
+            showGivePassiveSelectConfirm({ foeName: villainCard.name, label: "Give Passive" }).then(allow => {
+                if (!allow) return;
+                givePassiveToEntry(entry, pendingPassive.passive, pendingPassive.howLong, stateForPassive, pendingPassive.heroId ?? null);
+                saveGameState(stateForPassive);
+                try { if (typeof window !== "undefined") window.__givePassiveSelectMode = null; } catch (e) {}
             });
             return;
         }
@@ -2066,13 +2193,28 @@ export function buildVillainPanel(villainCard) {
         ? `${maxHP}`
         : `${currentHP} / ${maxHP}`;
 
+    // Effective damage (respect per-instance damagePenalty/currentDamage)
+    const { entry: villainEntry } = findCityEntryForVillainCard(villainCard, gameState, opts);
+    let effectiveDamage = (typeof villainCard.currentDamage === "number")
+        ? villainCard.currentDamage
+        : Number(villainCard.damage ?? villainCard.dmg ?? 0) || 0;
+    if (villainEntry) {
+        if (typeof villainEntry.currentDamage === "number") {
+            effectiveDamage = villainEntry.currentDamage;
+        } else {
+            const base = Number(villainCard.damage ?? villainCard.dmg ?? 0) || 0;
+            const penalty = Number(villainEntry.damagePenalty || 0);
+            effectiveDamage = Math.max(0, base - penalty);
+        }
+    }
+
     panel.dataset.villainId = String(villainCard.id);
 
     rightCol.innerHTML = `
         <h2>${villainCard.name}</h2>
         <div><strong>${villainCard.type}</strong></div>
         <div><strong>HP:</strong> <span id="villain-panel-hp">${hpDisplay}</span></div>
-        <div><strong>Damage:</strong> ${villainCard.damage}</div>
+        <div><strong>Damage:</strong> ${effectiveDamage}</div>
         <h3>Abilities</h3>
     `;
 

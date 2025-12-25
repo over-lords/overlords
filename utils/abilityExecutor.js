@@ -490,6 +490,121 @@ export function processTempFreezesForHero(heroId, state = gameState) {
     });
 }
 
+// =========================================================
+// PASSIVE HELPERS (e.g., Curse)
+// =========================================================
+function getFoeCardFromEntry(entry) {
+    const cardId = entry?.baseId ?? entry?.id ?? entry?.foeId;
+    if (cardId == null) return null;
+    const idStr = String(cardId);
+    return henchmen.find(h => String(h.id) === idStr) || villains.find(v => String(v.id) === idStr) || null;
+}
+
+function getBaseFoeDamage(entry) {
+    const card = getFoeCardFromEntry(entry);
+    return Number(card?.damage ?? card?.dmg ?? 0) || 0;
+}
+
+export function getEffectiveFoeDamage(entry) {
+    if (!entry) return 0;
+    const card = getFoeCardFromEntry(entry);
+    const base = getBaseFoeDamage(entry);
+    const penalty = Number(entry.damagePenalty || 0);
+    const current = Math.max(0, base - penalty);
+    entry.currentDamage = current;
+    if (card) card.currentDamage = current;
+    console.log("[getEffectiveFoeDamage]", { base, penalty, current, entryKey: getEntryKey(entry), slotIndex: entry.slotIndex });
+    return current;
+}
+
+function refreshFoeCardUI(slotIndex, entry) {
+    if (typeof document === "undefined") return;
+    try {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const slot = citySlots?.[slotIndex];
+        const area = slot?.querySelector(".city-card-area");
+        if (!area) return;
+        const wrapper = document.createElement("div");
+        wrapper.className = "card-wrapper";
+        const cardId = entry.baseId ?? entry.id;
+        const cardData = findCardInAllSources(cardId);
+        const prevDamage = cardData?.damage;
+        const prevCurrent = cardData?.currentDamage;
+        const effDmg = getEffectiveFoeDamage(entry);
+        if (cardData) {
+            cardData.damage = effDmg;
+            cardData.currentDamage = effDmg;
+        }
+        const rendered = renderCard(cardId, wrapper);
+        wrapper.appendChild(rendered);
+        if (cardData) {
+            cardData.damage = prevDamage;
+            cardData.currentDamage = prevCurrent;
+        }
+        wrapper.style.cursor = "pointer";
+        wrapper.setAttribute("data-card-id", String(cardId));
+        wrapper.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = findCardInAllSources(cardId);
+            if (card) buildVillainPanel(card, { instanceId: getEntryKey(entry), slotIndex: entry.slotIndex });
+        }, true);
+        area.innerHTML = "";
+        area.appendChild(wrapper);
+    } catch (err) {
+        console.warn("[refreshFoeCardUI] Failed to refresh foe card UI.", err);
+    }
+}
+
+function applyCurseToEntry(entry, amount, howLong, state = gameState, heroId = null) {
+    if (!entry) return;
+    const s = state || gameState;
+    console.log("[applyCurseToEntry] Applying Curse", { amount, howLong, entryKey: getEntryKey(entry), slotIndex: entry.slotIndex, id: entry.id });
+    entry.damagePenalty = (Number(entry.damagePenalty) || 0) + Math.max(0, Number(amount) || 0);
+    getEffectiveFoeDamage(entry);
+
+    const slotIdx = typeof entry.slotIndex === "number" ? entry.slotIndex : null;
+    if (slotIdx != null) refreshFoeCardUI(slotIdx, entry);
+
+    if (String(howLong || "forever").toLowerCase() === "next") {
+        if (!s.tempPassives) s.tempPassives = {};
+        const key = getEntryKey(entry) || String(entry.id || slotIdx);
+        s.tempPassives[key] = {
+            heroId,
+            kind: "curse",
+            amount: Number(amount) || 0,
+            armed: false
+        };
+        console.log("[applyCurseToEntry] Temp passive stored for next turn", { key, meta: s.tempPassives[key] });
+    }
+}
+
+export function processTempPassivesForHero(heroId, state = gameState) {
+    const s = state || gameState;
+    if (!s.tempPassives) return;
+
+    Object.entries({ ...s.tempPassives }).forEach(([key, meta]) => {
+        if (!meta || meta.heroId == null) return;
+        if (String(meta.heroId) !== String(heroId)) return;
+
+        if (meta.armed) {
+            if (Array.isArray(s.cities)) {
+                const entry = s.cities.find(e => e && (getEntryKey(e) === key || String(e.id) === key));
+                if (entry) {
+                    if (meta.kind === "curse") {
+                        entry.damagePenalty = Math.max(0, Number(entry.damagePenalty || 0) - Number(meta.amount || 0));
+                        getEffectiveFoeDamage(entry);
+                        if (typeof entry.slotIndex === "number") refreshFoeCardUI(entry.slotIndex, entry);
+                    }
+                }
+            }
+            delete s.tempPassives[key];
+        } else {
+            s.tempPassives[key] = { ...meta, armed: true };
+        }
+    });
+}
+
 EFFECT_HANDLERS.charge = function (args, card, selectedData) {
     const distance = Number(args[0]) || 1;
     runCharge(card.id, distance);
@@ -1686,6 +1801,99 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
             applyFreezeToEntry(entry, slotIndex, state, { howLong, heroId });
         }
     }
+};
+
+function parsePassiveSpec(specRaw) {
+    if (typeof specRaw !== "string") return null;
+    const m = specRaw.trim().match(/^([a-zA-Z]+)\((\d+)\)$/);
+    if (!m) return null;
+    return { kind: m[1].toLowerCase(), amount: Number(m[2]) || 0 };
+}
+
+function applyPassiveToEntry(entry, passive, howLong, state, heroId) {
+    if (!passive || !entry) return;
+    const s = state || gameState;
+    console.log("[applyPassiveToEntry] Applying passive", { passive, howLong, entryKey: getEntryKey(entry), slotIndex: entry.slotIndex, id: entry.id });
+    if (passive.kind === "curse") {
+        applyCurseToEntry(entry, passive.amount, howLong, s, heroId);
+    }
+
+    const foeCard = getFoeCardFromEntry(entry);
+    const foeName = foeCard?.name || `Enemy ${entry.id ?? ""}`.trim();
+    const heroName = heroId != null
+        ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
+        : "A hero";
+    const durationText = String(howLong || "forever").toLowerCase() === "next"
+        ? "until the end of their next turn"
+        : "permanently";
+    const passiveLabel = passive.amount != null
+        ? `${passive.kind.charAt(0).toUpperCase()}${passive.kind.slice(1)} ${passive.amount}`
+        : passive.kind;
+    try {
+        appendGameLogEntry(`${heroName} gave ${foeName} ${passiveLabel} ${durationText}.`, s);
+    } catch (err) {
+        console.warn("[giveVillainPassive] Failed to append log entry.", err);
+    }
+}
+
+export function givePassiveToEntry(entry, passive, howLong, state = gameState, heroId = null) {
+    applyPassiveToEntry(entry, passive, howLong, state, heroId);
+}
+
+function applyPassiveToTarget(targetMode, passive, howLong, state = gameState, heroId = null) {
+    const s = state || gameState;
+    const mode = String(targetMode || "any").toLowerCase();
+
+    if (mode === "lastdamagedfoe") {
+        const info = s.lastDamagedFoe;
+        console.log("[giveVillainPassive] lastDamagedFoe info", info);
+        if (!info || !Array.isArray(s.cities)) {
+            console.warn("[giveVillainPassive] No lastDamagedFoe available.");
+            return;
+        }
+        const entry = s.cities.find(e => e && (getEntryKey(e) === info.instanceId || String(e.id) === String(info.foeId)));
+        if (!entry) {
+            console.warn("[giveVillainPassive] Could not locate lastDamagedFoe entry.");
+            return;
+        }
+        console.log("[giveVillainPassive] Found entry for lastDamagedFoe", { entryKey: getEntryKey(entry), slotIndex: entry.slotIndex, id: entry.id });
+        applyPassiveToEntry(entry, passive, howLong, s, heroId);
+        saveGameState(s);
+        return;
+    }
+
+    if (mode === "any") {
+        if (typeof window === "undefined") {
+            console.warn("[giveVillainPassive] 'any' selection requires the browser UI.");
+            return;
+        }
+        window.__givePassiveSelectMode = { passive, howLong, heroId, state: s };
+        try {
+            showMightBanner("Choose a foe to give a passive", 1800);
+        } catch (err) {
+            console.warn("[giveVillainPassive] Could not show selection banner.", err);
+        }
+        return;
+    }
+
+    console.warn("[giveVillainPassive] Unknown target mode:", targetMode);
+}
+
+EFFECT_HANDLERS.giveVillainPassive = function(args = [], card, selectedData = {}) {
+    const passiveSpec = args?.[0] ?? "";
+    const who = args?.[1] ?? "any";
+    const howLong = args?.[2] ?? "forever";
+
+    const passive = parsePassiveSpec(String(passiveSpec));
+    if (!passive) {
+        console.warn("[giveVillainPassive] Invalid passive spec:", passiveSpec);
+        return;
+    }
+
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    applyPassiveToTarget(who, passive, howLong, state, heroId);
 };
 
 function normalizeVillainDeckPointer(state) {
