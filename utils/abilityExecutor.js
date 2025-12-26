@@ -346,6 +346,26 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return result;
     }
 
+    const targetCityMatch = condStr.match(/^checkDamageTargetCity\((\d+)\)$/i);
+    if (targetCityMatch) {
+        const targetIdx = Number(targetCityMatch[1]);
+        const pending = s._pendingDamageTarget;
+        let pass = false;
+        let details = "";
+
+        if (!pending || typeof pending.slotIndex !== "number") {
+            details = "no pending damage target";
+        } else if (pending.source !== "city-foe") {
+            details = `pending target type ${pending.source || "unknown"} not city foe`;
+        } else {
+            pass = (pending.slotIndex === targetIdx);
+            details = `pending slot=${pending.slotIndex}, targetIdx=${targetIdx}`;
+        }
+
+        console.log(`[checkDamageTargetCity(${targetIdx})] ${pass ? "true" : "false"} — ${details}`);
+        return pass;
+    }
+
     // Fallback: unknown condition -> false
     return false;
 }
@@ -3914,6 +3934,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     const s = state;
 
     const { flag = "single", fromAny = false, fromAll = false } = options;
+    let effectiveAmount = amount;
 
     // ============================================================
     // FLAG: "any" — enable UI target selection via villain panel
@@ -4385,6 +4406,17 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         if (entry) slotIndex = entry.slotIndex ?? slotIndex;
     }
 
+    // Track pending damage target for pre-damage conditions
+    if (slotIndex != null && slotIndex >= 0) {
+        s._pendingDamageTarget = {
+            slotIndex,
+            foeId: foeIdStr,
+            source: "city-foe"
+        };
+    } else {
+        s._pendingDamageTarget = null;
+    }
+
     if (!entry) {
         // Fallback: find by id (ambiguous if duplicates exist)
         let found = null;
@@ -4461,23 +4493,42 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         };
     }
 
-    const newHP = Math.max(0, currentHP - amount);
+    // Apply passive city-targeted double damage (e.g., Batman)
+    if (heroId != null) {
+        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+        const effs = Array.isArray(heroObj?.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+        effs.forEach(eff => {
+            if (!eff || (eff.type || "").toLowerCase() !== "passive") return;
+            const effStr = Array.isArray(eff.effect) ? eff.effect.join(",") : (eff.effect || "");
+            if (!/^doubleDamage/i.test(String(effStr || ""))) return;
+            const cond = eff.condition;
+            if (!cond) return;
+            const ok = evaluateCondition(String(cond), heroId, s);
+            console.log(`[damageFoe][doubleDamage check] hero=${heroObj?.name || heroId}, cond=${cond}, result=${ok}`);
+            if (ok) {
+                effectiveAmount *= 2;
+                console.log(`[damageFoe] Applying double damage: ${amount} -> ${effectiveAmount} (slot ${slotIndex})`);
+            }
+        });
+    }
+
+    const newHP = Math.max(0, currentHP - effectiveAmount);
     const heroName = heroId != null
         ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
         : "Hero";
-    const appliedDamage = Math.max(0, Math.min(amount, currentHP));
+    const appliedDamage = Math.max(0, Math.min(effectiveAmount, currentHP));
 
     // Sync per-instance representations (DO NOT mutate foeCard.currentHP)
     entry.maxHP = baseHP;
     entry.currentHP = newHP;
     s.villainHP[entryKey] = newHP;
 
-    console.log(`[damageFoe] ${foeCard.name} took ${amount} damage (${currentHP} -> ${newHP}).`);
+    console.log(`[damageFoe] ${foeCard.name} took ${effectiveAmount} damage (${currentHP} -> ${newHP}).`);
     appendGameLogEntry(`${heroName} dealt ${appliedDamage} damage to ${foeCard.name}.`, s);
 
     // Track last damage dealt by the acting hero (post-modifier amount)
     if (heroId && s.heroData?.[heroId]) {
-        s.heroData[heroId].lastDamageAmount = Number(amount) || 0;
+        s.heroData[heroId].lastDamageAmount = Number(effectiveAmount) || 0;
     }
 
     // Re-render the foe card in its city slot so board shows updated HP
@@ -4529,6 +4580,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     // If not KO'd, persist and exit
     if (newHP > 0) {
+        s._pendingDamageTarget = null;
         saveGameState(s);
         return;
     }
@@ -4537,6 +4589,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     // FOE KO'D
     // ===================================================================
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
+    s._pendingDamageTarget = null;
     if (heroId != null) {
         const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
         appendGameLogEntry(`${heroName} KO'd ${foeCard.name}.`, s);
