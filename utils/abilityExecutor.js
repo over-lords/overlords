@@ -1751,6 +1751,17 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
 
     // lastDamagedFoe
     if (String(who).toLowerCase() === "lastdamagedfoe") {
+        const ctx = state?._lastDamageContext;
+        if (ctx && (ctx.target === "overlord" || ctx.target === "none")) {
+            console.warn("[freezeVillain] Guard hit: lastDamagedFoe blocked because last damage target was not a city foe.", {
+                context: ctx,
+                heroId,
+                cardId: card?.id,
+                cardName: card?.name,
+                lastDamagedFoe: state?.lastDamagedFoe
+            });
+            return;
+        }
         const info = state.lastDamagedFoe;
         if (!info) {
             console.warn("[freezeVillain] No lastDamagedFoe recorded.");
@@ -1847,6 +1858,17 @@ function applyPassiveToTarget(targetMode, passive, howLong, state = gameState, h
     if (mode === "lastdamagedfoe") {
         const info = s.lastDamagedFoe;
         console.log("[giveVillainPassive] lastDamagedFoe info", info);
+        const ctx = s._lastDamageContext;
+        if (ctx && (ctx.target === "overlord" || ctx.target === "none")) {
+            console.warn("[giveVillainPassive] Guard hit: lastDamagedFoe blocked because last damage target was not a city foe.", {
+                context: ctx,
+                heroId,
+                passive,
+                howLong,
+                lastDamagedFoe: s?.lastDamagedFoe
+            });
+            return;
+        }
         if (!info || !Array.isArray(s.cities)) {
             console.warn("[giveVillainPassive] No lastDamagedFoe available.");
             return;
@@ -2975,6 +2997,8 @@ export async function onHeroCardActivated(cardId, meta = {}) {
         return;
     }
 
+    // Reset damage context for this activation (used by afterDamage effects)
+    gameState._lastDamageContext = null;
     // Reset pending damage accumulator for this activation
     gameState._pendingDamage = 0;
 
@@ -3416,6 +3440,16 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     gameState._pendingDamage = 0;
     gameState._pendingSetDamage = null;
 
+    // Default: assume nothing valid was damaged until we confirm otherwise
+    gameState._lastDamageContext = {
+        target: "none",
+        reason: (!foeSummary ? "no foeSummary" : "damageAmount<=0"),
+        heroId,
+        heroName,
+        cardId: idStr,
+        cardName
+    };
+
     if (foeSummary && damageAmount > 0) {
         console.log(
             `[AbilityExecutor] ${heroName} is dealing ${damageAmount} damage to ${foeSummary.foeName}.`
@@ -3423,8 +3457,27 @@ export async function onHeroCardActivated(cardId, meta = {}) {
 
         if (foeSummary.source === "overlord") {
             damageOverlord(damageAmount, gameState, heroId);
+            gameState._lastDamageContext = {
+                target: "overlord",
+                heroId,
+                heroName,
+                cardId: idStr,
+                cardName,
+                foeId: foeSummary.foeId,
+                foeName: foeSummary.foeName
+            };
         } else if (foeSummary.source === "city-upper") {
             damageFoe(damageAmount, foeSummary, heroId, gameState);
+            gameState._lastDamageContext = {
+                target: "city-foe",
+                heroId,
+                heroName,
+                cardId: idStr,
+                cardName,
+                foeId: foeSummary.foeId,
+                foeName: foeSummary.foeName,
+                slotIndex: foeSummary.slotIndex
+            };
         } else {
             console.log(
                 "[AbilityExecutor] Foe summary has unknown source; no damage applied.",
