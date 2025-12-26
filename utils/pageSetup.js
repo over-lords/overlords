@@ -738,6 +738,7 @@ async function restoreUIFromState(state) {
 
         initializeTurnUI(gameState);
         showRetreatButtonForCurrentHero(gameState);
+        initAndLogHeroIconAbilities(gameState);
         return;
     }
 
@@ -827,6 +828,8 @@ async function restoreUIFromState(state) {
 
             gameState.heroData[id].travel ??= (heroObj.travel || 0);
         });
+
+        initAndLogHeroIconAbilities(gameState);
 
         establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: true });
         saveGameState(gameState);
@@ -2344,6 +2347,74 @@ function lightenRGB(rgbString, factor = 0.65) {
     const nb = Math.round(b + (255 - b) * factor);
 
     return `rgb(${nr}, ${ng}, ${nb})`;
+}
+
+function initAndLogHeroIconAbilities(state = gameState) {
+    const s = state || gameState;
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    if (!heroIds.length) return;
+
+    if (!s.heroData) s.heroData = {};
+
+    console.log("=== HERO ICON ABILITIES ===");
+
+    heroIds.forEach(id => {
+        const heroObj = heroes.find(h => String(h.id) === String(id));
+        if (!heroObj) return;
+
+        const effects = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+        const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+
+        const hState = s.heroData[id] = s.heroData[id] || {};
+        hState.baseUses = hState.baseUses || {};
+        hState.currentUses = hState.currentUses || {};
+        const baseUsesRef = hState.baseUses;
+        const currentUsesRef = hState.currentUses;
+
+        // Sync uses into heroObj for UI panel consumption
+        heroObj.currentUses = heroObj.currentUses || {};
+        heroObj.baseUses = heroObj.baseUses || {};
+
+        if (!effects.length) {
+            console.log(`[ICON] ${heroObj.name}: (no icon abilities found)`);
+            return;
+        }
+
+        effects.forEach((eff, i) => {
+            const label = names[i]?.text || `Ability ${i + 1}`;
+            const maxUses = Number(eff?.uses ?? 0);
+
+            // Initialize base uses
+            if (baseUsesRef[i] == null) {
+                baseUsesRef[i] = maxUses;
+            }
+
+            // Initialize remaining uses if not set (skip passives, which are tracked as "-")
+            if (eff?.type !== "passive") {
+                if (currentUsesRef[i] == null) {
+                    currentUsesRef[i] = maxUses;
+                }
+            } else {
+                currentUsesRef[i] = null;
+            }
+
+            heroObj.currentUses[i] = currentUsesRef[i];
+            heroObj.baseUses[i] = baseUsesRef[i];
+
+            const effectText = Array.isArray(eff?.effect)
+                ? eff.effect.join(", ")
+                : (eff?.effect || "none");
+            const usesText = (eff?.type === "passive")
+                ? "passive"
+                : `${currentUsesRef[i] ?? maxUses} / ${baseUsesRef[i] ?? maxUses}`;
+            const condText = eff?.condition || "none";
+            const typeText = eff?.type || "unknown";
+
+            console.log(
+                `[ICON] ${heroObj.name}: ${label} — type:${typeText}, condition:${condText}, uses:${usesText}, effect:${effectText}`
+            );
+        });
+    });
 }
 
 export function buildHeroPanel(hero) {

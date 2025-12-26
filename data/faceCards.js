@@ -28,11 +28,10 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
+        type: `optional`,
         condition: `damageHero`,
         uses: `3`,
-        shared: `no`,
-        effect: `blockDamage`
+        effect: `blockDamage()`
       }
     ]
   },
@@ -1005,17 +1004,14 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `standard`,
-        condition: `none`,
         uses: `2`,
-        shared: `no`,
         effect: `freezeVillain(any)`
       },
       {
         type: `optional`,
         condition: `wouldUseDamageCard`,
         uses: `1`,
-        shared: `no`,
-        effect: `ignoreTextDoubleDamage`
+        effect: `doubleDamage(ignoreEffectText)`
       }
     ]
   },
@@ -1985,24 +1981,20 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `checkDamageTargetCity(Gotham)`,
+        condition: `checkDamageTargetCity(10)`,
         uses: `0`,
-        shared: `no`,
-        effect: `doubleDamage`
+        effect: `doubleDamage()`
       },
       {
-        type: `quick`,
+        type: `optional`,
         condition: `beforeDraw`,
         uses: `2`,
-        shared: `no`,
         effect: `extendDrawView(self,4)`
       },
       {
         type: `standard`,
-        condition: `none`,
         uses: `1`,
-        shared: `no`,
-        effect: `retreatHeroToHQ`
+        effect: `retreatHeroToHQ()`
       },
     ]
   },
