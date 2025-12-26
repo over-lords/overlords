@@ -346,6 +346,14 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return result;
     }
 
+    if (lowerCond === "beforedraw") {
+        const pendingHero = s._pendingBeforeDrawHero;
+        const matchesHero = heroId == null || (pendingHero != null && String(pendingHero) === String(heroId));
+        const result = pendingHero != null && matchesHero;
+        console.log(`[beforeDraw] ${result ? "true" : "false"} — pendingHero=${pendingHero ?? "none"}`);
+        return result;
+    }
+
     const targetCityMatch = condStr.match(/^checkDamageTargetCity\((\d+)\)$/i);
     if (targetCityMatch) {
         const targetIdx = Number(targetCityMatch[1]);
@@ -1234,6 +1242,39 @@ EFFECT_HANDLERS.doubleDamage = function(args = [], card, selectedData = {}) {
     console.log("[doubleDamage] Pending card damage multiplier now", gameState._pendingCardDamageMultiplier);
 };
 
+function extendDrawView(target = "self", count = 3, state = gameState, selectedData = {}) {
+    const s = state || gameState;
+    const currentHeroId = selectedData?.currentHeroId ?? null;
+    const heroIds = s.heroes || [];
+    let targetId = null;
+
+    if (String(target).toLowerCase() === "self") {
+        targetId = currentHeroId ?? heroIds[s.heroTurnIndex ?? 0] ?? null;
+    } else {
+        targetId = target;
+    }
+
+    if (targetId == null) {
+        console.warn("[extendDrawView] No target hero resolved.");
+        return;
+    }
+
+    if (!s.heroData) s.heroData = {};
+    if (!s.heroData[targetId]) s.heroData[targetId] = {};
+
+    const amt = Number(count) || 0;
+    s.heroData[targetId].pendingDrawPreviewCount = amt;
+
+    const heroName = heroes.find(h => String(h.id) === String(targetId))?.name || `Hero ${targetId}`;
+    console.log(`[extendDrawView] Set draw preview size to ${amt} for ${heroName}.`);
+}
+
+EFFECT_HANDLERS.extendDrawView = function(args = [], card, selectedData = {}) {
+    const target = args?.[0] ?? "self";
+    const count = args?.[1] ?? 3;
+    extendDrawView(target, count, gameState, selectedData);
+};
+
 function restoreExtraTurnModalFromState(state = gameState) {
     const modalData = state?.pendingExtraTurnModal;
     if (!modalData || !Array.isArray(modalData.options) || !modalData.options.length) return;
@@ -1242,6 +1283,58 @@ function restoreExtraTurnModalFromState(state = gameState) {
 
 if (typeof window !== "undefined") {
     window.restoreExtraTurnModalFromState = restoreExtraTurnModalFromState;
+}
+
+export async function maybeRunHeroIconBeforeDrawOptionals(heroId) {
+    if (heroId == null) return;
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) return;
+
+    const effs = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+    const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+    const hState = gameState.heroData?.[heroId] || {};
+
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (!eff || (eff.type || "").toLowerCase() !== "optional") continue;
+        const cond = eff.condition;
+        if (!cond || String(cond).toLowerCase() !== "beforedraw") continue;
+
+        const usesMax = Number(eff.uses || 0);
+        const currentUses = hState.currentUses?.[i];
+        const remaining = currentUses == null ? usesMax : currentUses;
+        if (remaining <= 0) {
+            console.log(`[maybeRunHeroIconBeforeDrawOptionals] No uses left for icon optional idx ${i} on hero ${heroObj.name}.`);
+            continue;
+        }
+
+        const condOk = evaluateCondition(String(cond), heroId, gameState);
+        if (!condOk) continue;
+
+        const promptText =
+            names[i]?.text
+                ? `${names[i].text}?`
+                : "Use optional ability?";
+
+        let allow = true;
+        if (typeof window !== "undefined" && typeof window.showOptionalAbilityPrompt === "function") {
+            allow = await window.showOptionalAbilityPrompt(promptText);
+        }
+
+        if (!allow) {
+            console.log(`[maybeRunHeroIconBeforeDrawOptionals] Optional icon ability declined for ${heroObj.name}.`);
+            continue;
+        }
+
+        if (!hState.currentUses) hState.currentUses = {};
+        const nextUses = remaining - 1;
+        hState.currentUses[i] = Math.max(0, nextUses);
+        if (!heroObj.currentUses) heroObj.currentUses = {};
+        heroObj.currentUses[i] = hState.currentUses[i];
+
+        executeEffectSafely(eff.effect, heroObj, { currentHeroId: heroId, state: gameState });
+        console.log(`[maybeRunHeroIconBeforeDrawOptionals] Applied icon optional for ${heroObj.name}. Uses left: ${hState.currentUses[i]} / ${usesMax}`);
+    }
 }
 
 async function maybeRunHeroIconDamageOptionals(heroId) {

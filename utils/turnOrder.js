@@ -172,7 +172,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
          renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow,
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
-import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays } from './abilityExecutor.js';
+import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, maybeRunHeroIconBeforeDrawOptionals } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -1623,8 +1623,10 @@ export async function startHeroTurn(state, opts = {}) {
 
     if (activeHeroState && typeof activeHeroState.cityIndex === "number") {
         if (!activeHeroState.hasDrawnThisTurn) {
-            showHeroTopPreview(activeHeroId, state);
+            const previewCount = Number(activeHeroState.pendingDrawPreviewCount ?? 3) || 3;
+            await maybeShowHeroTopPreviewWithBeforeDraw(state, activeHeroId, previewCount);
             activeHeroState.hasDrawnThisTurn = true;
+            activeHeroState.pendingDrawPreviewCount = null;
             saveGameState(state);
         }
     }
@@ -2637,8 +2639,10 @@ async function performHeroStartingTravel(gameState, heroId, cityIndex) {
     showRetreatButtonForCurrentHero(gameState);
 
     if (!heroState.hasDrawnThisTurn) {
-        showHeroTopPreview(heroId, gameState);
+        const previewCount = Number(heroState.pendingDrawPreviewCount ?? 3) || 3;
+        await maybeShowHeroTopPreviewWithBeforeDraw(gameState, heroId, previewCount);
         heroState.hasDrawnThisTurn = true;
+        heroState.pendingDrawPreviewCount = null;
     }
 
     renderHeroHandBar(gameState);
@@ -3592,8 +3596,10 @@ async function performHeroTravelToOverlord(gameState, heroId) {
     appendGameLogEntry(`${heroName} traveled to face the Overlord, ${ovName}.`, gameState);
 
     if (!heroState.hasDrawnThisTurn) {
-        showHeroTopPreview(heroId, gameState);
+        const previewCount = Number(heroState.pendingDrawPreviewCount ?? 3) || 3;
+        await maybeShowHeroTopPreviewWithBeforeDraw(gameState, heroId, previewCount);
         heroState.hasDrawnThisTurn = true;
+        heroState.pendingDrawPreviewCount = null;
     }
 
     renderHeroHandBar(gameState);
@@ -4177,8 +4183,10 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
   showRetreatButtonForCurrentHero(state);
 
   if (!activeState.hasDrawnThisTurn) {
-    showHeroTopPreview(activeHeroId, state);
+    const previewCount = Number(activeState.pendingDrawPreviewCount ?? 3) || 3;
+    await maybeShowHeroTopPreviewWithBeforeDraw(state, activeHeroId, previewCount);
     activeState.hasDrawnThisTurn = true;
+    activeState.pendingDrawPreviewCount = null;
   }
 
   renderHeroHandBar(state);
@@ -4418,6 +4426,24 @@ function maybePromptHeroShove(targetHeroData, targetHeroId, targetCityIndex) {
     });
 
     return true;
+}
+
+async function maybeShowHeroTopPreviewWithBeforeDraw(state, heroId, previewCount = 3) {
+    if (!state || heroId == null) return;
+    state._pendingBeforeDrawHero = heroId;
+    console.log("[beforeDraw] checking icon optionals for hero", heroId);
+    try {
+        if (typeof maybeRunHeroIconBeforeDrawOptionals === "function") {
+            await maybeRunHeroIconBeforeDrawOptionals(heroId);
+        } else {
+            console.log("[beforeDraw] handler not available; skipping optional checks.");
+        }
+    } catch (e) {
+        console.warn("[beforeDraw] icon optionals failed", e);
+    }
+    const desiredPreview = Number(state.heroData?.[heroId]?.pendingDrawPreviewCount ?? previewCount ?? 3) || 3;
+    showHeroTopPreview(heroId, state, desiredPreview);
+    state._pendingBeforeDrawHero = null;
 }
 
 window.maybePromptHeroShove = maybePromptHeroShove;
