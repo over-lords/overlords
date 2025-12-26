@@ -366,6 +366,13 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return pass;
     }
 
+    if (lowerCond === "wouldusedamagecard") {
+        const base = Number(s._pendingCardBaseDamage || 0);
+        const result = base >= 1;
+        console.log(`[wouldUseDamageCard] ${result ? "true" : "false"} — baseDamage=${base}`);
+        return result;
+    }
+
     // Fallback: unknown condition -> false
     return false;
 }
@@ -1215,6 +1222,18 @@ EFFECT_HANDLERS.blockDamage = function(args = [], card, selectedData = {}) {
     return blockDamage(gameState);
 };
 
+EFFECT_HANDLERS.doubleDamage = function(args = [], card, selectedData = {}) {
+    const flagsRaw = args?.[0] || "";
+    const flags = String(flagsRaw || "").toLowerCase();
+    const ignoreText = flags.includes("ignoreeffecttext");
+    gameState._pendingCardDamageMultiplier = (gameState._pendingCardDamageMultiplier || 1) * 2;
+    if (ignoreText) {
+        gameState._pendingIgnoreEffectText = true;
+        console.log("[doubleDamage] Applied ignoreEffectText; remaining card effects will be skipped.");
+    }
+    console.log("[doubleDamage] Pending card damage multiplier now", gameState._pendingCardDamageMultiplier);
+};
+
 function restoreExtraTurnModalFromState(state = gameState) {
     const modalData = state?.pendingExtraTurnModal;
     if (!modalData || !Array.isArray(modalData.options) || !modalData.options.length) return;
@@ -1223,6 +1242,61 @@ function restoreExtraTurnModalFromState(state = gameState) {
 
 if (typeof window !== "undefined") {
     window.restoreExtraTurnModalFromState = restoreExtraTurnModalFromState;
+}
+
+async function maybeRunHeroIconDamageOptionals(heroId) {
+    if (heroId == null) return;
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) return;
+
+    const effs = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+    const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+    const hState = gameState.heroData?.[heroId] || {};
+    const base = Number(gameState._pendingCardBaseDamage || 0);
+
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (!eff || (eff.type || "").toLowerCase() !== "optional") continue;
+        const cond = eff.condition;
+        if (!cond || String(cond).toLowerCase() !== "wouldusedamagecard") continue;
+
+        const usesMax = Number(eff.uses || 0);
+        const currentUses = hState.currentUses?.[i];
+        const remaining = currentUses == null ? usesMax : currentUses;
+        if (remaining <= 0) {
+            console.log(`[maybeRunHeroIconDamageOptionals] No uses left for icon optional idx ${i} on hero ${heroObj.name}.`);
+            continue;
+        }
+
+        const condOk = evaluateCondition(String(cond), heroId, gameState);
+        if (!condOk) continue;
+
+        const promptText =
+            names[i]?.text
+                ? `${names[i].text}?`
+                : "Use optional ability?";
+
+        let allow = true;
+        if (typeof window !== "undefined" && typeof window.showOptionalAbilityPrompt === "function") {
+            allow = await window.showOptionalAbilityPrompt(promptText);
+        }
+
+        if (!allow) {
+            console.log(`[maybeRunHeroIconDamageOptionals] Optional icon ability declined for ${heroObj.name}.`);
+            continue;
+        }
+
+        // Consume use
+        if (!hState.currentUses) hState.currentUses = {};
+        const nextUses = remaining - 1;
+        hState.currentUses[i] = Math.max(0, nextUses);
+        if (!heroObj.currentUses) heroObj.currentUses = {};
+        heroObj.currentUses[i] = hState.currentUses[i];
+
+        // Apply the effect
+        executeEffectSafely(eff.effect, heroObj, { currentHeroId: heroId, state: gameState });
+        console.log(`[maybeRunHeroIconDamageOptionals] Applied icon optional for ${heroObj.name}. Uses left: ${hState.currentUses[i]} / ${usesMax}`);
+    }
 }
 
 function scanDeck(whichRaw, howMany = 1, selectedData = {}) {
@@ -3126,6 +3200,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     gameState._lastDamageContext = null;
     // Reset pending damage accumulator for this activation
     gameState._pendingDamage = 0;
+    gameState._pendingCardDamageMultiplier = 1;
 
     const idStr    = String(cardId);
     const action   = meta.action || "activated";
@@ -3246,6 +3321,11 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     const rawDamage =
         (cardData && (cardData.damage ?? cardData.dmg ?? cardData.attack)) ?? 0;
     const baseDamageAmount = Number(rawDamage) || 0;
+    gameState._pendingCardBaseDamage = baseDamageAmount;
+    gameState._pendingCardDamageMultiplier = 1;
+    gameState._pendingIgnoreEffectText = false;
+
+    await maybeRunHeroIconDamageOptionals(heroId);
 
     if (Array.isArray(cardData?.abilitiesEffects) && cardData.abilitiesEffects.length > 0) {
         console.log(`[AbilityExecutor] Abilities Effects for ${cardName}:`);
@@ -3547,6 +3627,11 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 continue;
             }
 
+            if (gameState._pendingIgnoreEffectText && !(eff.effect && String(eff.effect).toLowerCase().startsWith("doubledamage"))) {
+                console.log("[AbilityExecutor] Ignoring remaining effects due to ignoreEffectText flag.");
+                break;
+            }
+
             const res = await executeEffectBlock(eff, i, { skipCondition: true });
             if (res && res.skipTo != null) {
                 i = res.skipTo;
@@ -3558,12 +3643,17 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     // APPLY BASE DAMAGE AFTER EFFECTS
     // ------------------------------------------------------
     const bonusDamage = Number(gameState._pendingDamage || 0);
-    let damageAmount = baseDamageAmount + bonusDamage;
+    const multiplier = Number(gameState._pendingCardDamageMultiplier || 1) || 1;
+    let damageAmount = (baseDamageAmount * multiplier) + bonusDamage;
     if (gameState._pendingSetDamage != null) {
         damageAmount = Number(gameState._pendingSetDamage) || 0;
     }
     gameState._pendingDamage = 0;
     gameState._pendingSetDamage = null;
+    gameState._pendingCardDamageMultiplier = 1;
+    gameState._pendingIgnoreEffectText = false;
+    gameState._pendingCardDamageMultiplier = 1;
+    gameState._pendingIgnoreEffectText = false;
 
     // Default: assume nothing valid was damaged until we confirm otherwise
     gameState._lastDamageContext = {
