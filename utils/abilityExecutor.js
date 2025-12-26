@@ -111,6 +111,45 @@ if (typeof window !== "undefined") {
     window.__clearDamageFoeHighlights = clearDamageFoeTargetHighlights;
 }
 
+function getHeroTeamsForCard(heroObj) {
+    if (!heroObj) return [];
+    const base = [
+        heroObj.team,
+        heroObj.heroTeam,
+        heroObj.faction
+    ].filter(Boolean).map(v => String(v).toLowerCase());
+    const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
+    return Array.from(new Set([...base, ...list]));
+}
+
+function getActiveTeammates(heroId, state = gameState, opts = {}) {
+    const { includeId = false } = opts;
+    const s = state || gameState;
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    if (heroId == null || !heroIds.length) return [];
+
+    const me = heroes.find(h => String(h.id) === String(heroId));
+    if (!me) return [];
+    const myTeams = getHeroTeamsForCard(me);
+    if (!myTeams.length) return [];
+
+    return heroIds.reduce((acc, otherId) => {
+        if (String(otherId) === String(heroId)) return acc;
+        const otherState = s.heroData?.[otherId];
+        const otherHp = typeof otherState?.hp === "number" ? otherState.hp : 1;
+        if (otherHp <= 0) return acc;
+        const otherCard = heroes.find(h => String(h.id) === String(otherId));
+        if (!otherCard) return acc;
+        const otherTeams = getHeroTeamsForCard(otherCard);
+        const sharesTeam = otherTeams.some(t => myTeams.includes(t));
+        if (sharesTeam) {
+            const otherName = otherCard.name || `Hero ${otherId}`;
+            acc.push(includeId ? { id: otherId, name: otherName } : otherName);
+        }
+        return acc;
+    }, []);
+}
+
 function findKOdHeroes(state = gameState) {
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
@@ -227,38 +266,7 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     if (!condStr || condStr.toLowerCase() === "none") return true;
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
-
-    const getHeroTeams = (heroObj) => {
-        if (!heroObj) return [];
-        const base = [
-            heroObj.team,
-            heroObj.heroTeam,
-            heroObj.faction
-        ].filter(Boolean).map(v => String(v).toLowerCase());
-        const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
-        return Array.from(new Set([...base, ...list]));
-    };
-
-    const getActiveTeammates = (hid) => {
-        if (hid == null) return [];
-        const me = heroes.find(h => String(h.id) === String(hid));
-        if (!me) return [];
-        const myTeams = getHeroTeams(me);
-        if (!myTeams.length) return [];
-
-        return heroIds.reduce((acc, otherId) => {
-            if (String(otherId) === String(hid)) return acc;
-            const otherState = s.heroData?.[otherId];
-            const otherHp = typeof otherState?.hp === "number" ? otherState.hp : 1;
-            if (otherHp <= 0) return acc;
-            const otherCard = heroes.find(h => String(h.id) === String(otherId));
-            if (!otherCard) return acc;
-            const otherTeams = getHeroTeams(otherCard);
-            const sharesTeam = otherTeams.some(t => myTeams.includes(t));
-            if (sharesTeam) acc.push(otherCard.name || `Hero ${otherId}`);
-            return acc;
-        }, []);
-    };
+    const getActiveTeammatesForCond = (hid) => getActiveTeammates(hid, s);
 
     // atXorLessHP(n) / atXorGreaterHP(n) - apply to current hero
     const hpMatch = condStr.match(/^atxor(less|greater)hp\((\d+)\)$/i);
@@ -302,14 +310,14 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     const lowerCond = condStr.toLowerCase();
 
     if (lowerCond === "confirmactiveteammates") {
-        const teammates = getActiveTeammates(heroId);
+        const teammates = getActiveTeammatesForCond(heroId);
         const hasTeammates = teammates.length > 0;
         console.log(`[confirmActiveTeammates] ${hasTeammates ? `true, heroes found: ${teammates.join(", ")}` : "false, no active teammates found."}`);
         return hasTeammates;
     }
 
     if (lowerCond === "confirmnoactiveteammates") {
-        const teammates = getActiveTeammates(heroId);
+        const teammates = getActiveTeammatesForCond(heroId);
         const none = teammates.length === 0;
         console.log(`[confirmNoActiveTeammates] ${none ? "true, no active teammates found." : `false, heroes found: ${teammates.join(", ")}`}`);
         return none;
@@ -1099,6 +1107,78 @@ EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData
     const heroId = selectedData?.currentHeroId ?? null;
     rescueCapturedBystander(flag, heroId, gameState);
 };
+
+function giveTeammateExtraTurn(heroId = null, state = gameState) {
+    const s = state || gameState;
+    const hid = heroId ?? s.heroes?.[s.heroTurnIndex ?? 0];
+    if (!hid) {
+        console.warn("[giveTeammateExtraTurn] No heroId available.");
+        return [];
+    }
+
+    const teammates = getActiveTeammates(hid, s, { includeId: true });
+    console.log(`[giveTeammateExtraTurn] Active teammates for hero ${hid}: ${teammates.length ? teammates.map(t => t.name).join(", ") : "none"}.`);
+
+    if (!teammates.length) return [];
+
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    const sourceIdx = heroIds.findIndex(id => String(id) === String(hid));
+    const fallbackIdx = Number.isInteger(s.heroTurnIndex) ? s.heroTurnIndex : 0;
+    const resumeIndex = heroIds.length
+        ? ((sourceIdx >= 0 ? sourceIdx : fallbackIdx) + 1) % heroIds.length
+        : 0;
+
+    const modalData = {
+        header: "Choose a teammate to take an extra turn after yours.",
+        options: teammates,
+        selectedId: teammates[0]?.id ?? null,
+        sourceHeroId: hid,
+        resumeIndex
+    };
+
+    try {
+        s.pendingExtraTurnModal = { ...modalData };
+        saveGameState(s);
+    } catch (err) {
+        console.warn("[giveTeammateExtraTurn] Failed to persist modal state before showing.", err);
+    }
+
+    showTeammateExtraTurnModal(modalData).then(chosen => {
+        if (!chosen) return;
+
+        s.pendingExtraTurn = {
+            sourceHeroId: hid,
+            targetHeroId: chosen.id,
+            resumeIndex,
+            consumed: false
+        };
+
+        try { saveGameState(s); } catch (err) {
+            console.warn("[giveTeammateExtraTurn] Failed to save state after queueing extra turn.", err);
+        }
+
+        console.log(`[giveTeammateExtraTurn] Pending extra turn queued for ${chosen.name || chosen.id}.`);
+    }).catch(err => {
+        console.warn("[giveTeammateExtraTurn] Failed to show teammate modal.", err);
+    });
+
+    return teammates.map(t => t.name || t.id);
+}
+
+EFFECT_HANDLERS.giveTeammateExtraTurn = function(args = [], card, selectedData = {}) {
+    const heroId = selectedData?.currentHeroId ?? null;
+    return giveTeammateExtraTurn(heroId, gameState);
+};
+
+function restoreExtraTurnModalFromState(state = gameState) {
+    const modalData = state?.pendingExtraTurnModal;
+    if (!modalData || !Array.isArray(modalData.options) || !modalData.options.length) return;
+    showTeammateExtraTurnModal(modalData);
+}
+
+if (typeof window !== "undefined") {
+    window.restoreExtraTurnModalFromState = restoreExtraTurnModalFromState;
+}
 
 function scanDeck(whichRaw, howMany = 1, selectedData = {}) {
     const which = String(whichRaw || "").toLowerCase();
@@ -5489,6 +5569,185 @@ window.showChooseAbilityPrompt = function ({ header, options }) {
         };
     });
 };
+
+let extraTurnModalRefs = null;
+
+function ensureExtraTurnModal() {
+    if (extraTurnModalRefs) return extraTurnModalRefs;
+    if (typeof document === "undefined") return null;
+
+    const overlay = document.createElement("div");
+    overlay.id = "extra-turn-overlay";
+    overlay.style.cssText = `
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100vw; height:100vh;
+        background:rgba(0,0,0,0.6);
+        z-index:999999;
+        justify-content:center;
+        align-items:center;
+        padding:16px;
+        box-sizing:border-box;
+    `;
+
+    const box = document.createElement("div");
+    box.id = "extra-turn-box";
+    box.style.cssText = `
+        width:100%;
+        max-width:380px;
+        background:white;
+        border-radius:12px;
+        padding:20px;
+        font-family:'Racing Sans One', sans-serif;
+        text-align:center;
+        box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        display:flex;
+        flex-direction:column;
+        gap:16px;
+    `;
+
+    const headerEl = document.createElement("div");
+    headerEl.id = "extra-turn-header";
+    headerEl.style.cssText = `
+        font-size:26px;
+        line-height:1.2;
+    `;
+    headerEl.textContent = "Choose a teammate to take an extra turn after yours.";
+
+    const list = document.createElement("div");
+    list.id = "extra-turn-list";
+    list.style.cssText = `
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        width:100%;
+        max-height:60vh;
+        overflow-y:auto;
+    `;
+
+    const confirmRow = document.createElement("div");
+    confirmRow.style.cssText = `
+        display:flex;
+        margin-top:8px;
+    `;
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.id = "extra-turn-confirm";
+    confirmBtn.textContent = "Confirm";
+    confirmBtn.style.cssText = `
+        flex:1;
+        padding:14px 18px;
+        font-size:20px;
+        font-weight:bold;
+        border:none;
+        border-radius:10px;
+        background:#26a626;
+        border:4px solid black;
+        color:black;
+        cursor:pointer;
+    `;
+
+    confirmRow.appendChild(confirmBtn);
+    box.appendChild(headerEl);
+    box.appendChild(list);
+    box.appendChild(confirmRow);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    extraTurnModalRefs = { overlay, headerEl, list, confirmBtn };
+    return extraTurnModalRefs;
+}
+
+function showTeammateExtraTurnModal({ header, options, selectedId: selectedIdInit = null, sourceHeroId = null, resumeIndex = null }) {
+    return new Promise(resolve => {
+        const refs = ensureExtraTurnModal();
+        if (!refs) {
+            console.warn("[ExtraTurnModal] Unable to render modal.");
+            resolve(null);
+            return;
+        }
+
+        const { overlay, headerEl, list, confirmBtn } = refs;
+        let selectedId = selectedIdInit ?? (options?.[0]?.id ?? null);
+
+        headerEl.textContent = header || "Choose a teammate to take an extra turn after yours.";
+        list.innerHTML = "";
+
+        options.forEach((opt, idx) => {
+            const isSelected = selectedId != null
+                ? String(opt.id) === String(selectedId)
+                : idx === 0;
+            const btn = document.createElement("button");
+            btn.textContent = opt.name || opt.label || `Option ${idx + 1}`;
+            btn.style.cssText = `
+                width:100%;
+                padding:12px 14px;
+                font-size:20px;
+                font-weight:bold;
+                border:none;
+                border-radius:10px;
+                border:4px solid black;
+                background:${isSelected ? "#ffd800" : "#ddd"};
+                color:black;
+                cursor:pointer;
+                text-align:center;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+            `;
+
+            btn.onclick = () => {
+                selectedId = opt.id;
+                [...list.children].forEach(child => child.style.background = "#ddd");
+                btn.style.background = "#ffd800";
+
+                try {
+                    if (gameState && gameState.pendingExtraTurnModal) {
+                        gameState.pendingExtraTurnModal.selectedId = selectedId;
+                        saveGameState(gameState);
+                    }
+                } catch (err) {
+                    console.warn("[ExtraTurnModal] Failed to persist selection.", err);
+                }
+            };
+
+            list.appendChild(btn);
+        });
+
+        overlay.style.display = "flex";
+
+        confirmBtn.onclick = () => {
+            overlay.style.display = "none";
+            confirmBtn.onclick = null;
+            try {
+                if (gameState) {
+                    const chosen = options.find(o => String(o.id) === String(selectedId)) || null;
+                    // If we have source/resume info, set pendingExtraTurn here as well (helps on refresh restore)
+                    if (chosen && sourceHeroId != null) {
+                        gameState.pendingExtraTurn = {
+                            sourceHeroId,
+                            targetHeroId: chosen.id,
+                            resumeIndex: Number.isInteger(resumeIndex) ? resumeIndex : null,
+                            consumed: false
+                        };
+                    }
+                    gameState.pendingExtraTurnModal = null;
+                    saveGameState(gameState);
+                }
+            } catch (err) {
+                console.warn("[ExtraTurnModal] Failed to clear modal state on confirm.", err);
+            }
+            const chosen = options.find(o => String(o.id) === String(selectedId)) || null;
+            if (chosen) {
+                console.log(`[ExtraTurnModal] Selected teammate: ${chosen.name || chosen.id}`);
+            } else {
+                console.log("[ExtraTurnModal] No teammate selected.");
+            }
+            resolve(chosen);
+        };
+    });
+}
 
 function collectUponDefeatEffects(cardData) {
   const out = [];

@@ -1404,7 +1404,7 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
 }
 
 export async function startHeroTurn(state, opts = {}) {
-    const { skipVillainDraw = false } = opts;
+    const { skipVillainDraw = false, suppressRoundAdvance = false } = opts;
 
     if (state.gameOver) {
         console.log("[startHeroTurn] Game is already over; no new hero turn will start.");
@@ -1499,7 +1499,7 @@ export async function startHeroTurn(state, opts = {}) {
     const activeHeroName = heroes.find(h => String(h.id) === String(activeHeroId))?.name || `Hero ${activeHeroId}`;
 
     if (typeof state.roundNumber !== "number") state.roundNumber = 1;
-    if (startedAtIndexZero) {
+    if (startedAtIndexZero && !suppressRoundAdvance) {
         appendGameLogEntry(`Start of Round ${state.roundNumber}`, state);
         state.roundNumber += 1;
     }
@@ -2186,6 +2186,58 @@ export function endCurrentHeroTurn(gameState) {
     // Handle temporary freezes tied to this hero (remove after their next turn)
     processTempFreezesForHero(heroId, gameState);
     processTempPassivesForHero(heroId, gameState);
+
+    const pendingExtra = gameState.pendingExtraTurn;
+    const targetIdx = pendingExtra
+        ? heroIds.findIndex(id => String(id) === String(pendingExtra.targetHeroId))
+        : -1;
+
+    // If the triggering hero just ended their turn, insert the pending extra turn next.
+    if (pendingExtra && !pendingExtra.consumed && String(pendingExtra.sourceHeroId) === String(heroId)) {
+        if (targetIdx === -1) {
+            console.warn("[endCurrentHeroTurn] Pending extra turn target not found; clearing.");
+            gameState.pendingExtraTurn = null;
+        } else {
+            const resumeIndex = Number.isInteger(pendingExtra.resumeIndex)
+                ? pendingExtra.resumeIndex
+                : ((currentIdx + 1) % heroCount);
+            gameState.pendingExtraTurn = {
+                ...pendingExtra,
+                consumed: true,
+                resumeIndex
+            };
+            gameState.heroTurnIndex = targetIdx;
+            saveGameState(gameState);
+            startHeroTurn(gameState, { skipVillainDraw: true, suppressRoundAdvance: true });
+            initializeTurnUI(gameState);
+            return;
+        }
+    }
+
+    // If the extra turn hero just ended their bonus turn, resume normal order.
+    if (pendingExtra && pendingExtra.consumed && String(pendingExtra.targetHeroId) === String(heroId)) {
+        const resumeIndex = Number.isInteger(pendingExtra.resumeIndex)
+            ? pendingExtra.resumeIndex
+            : ((currentIdx + 1) % heroCount);
+        gameState.pendingExtraTurn = null;
+        gameState.heroTurnIndex = resumeIndex;
+        saveGameState(gameState);
+        startHeroTurn(gameState);
+        initializeTurnUI(gameState);
+        return;
+    }
+    // If pending extra turn exists but was never consumed (e.g., restored mid-flow) and we're at the target hero,
+    // honor it now but still skip villain draw.
+    if (pendingExtra && !pendingExtra.consumed && String(pendingExtra.targetHeroId) === String(heroId)) {
+        const resumeIndex = Number.isInteger(pendingExtra.resumeIndex)
+            ? pendingExtra.resumeIndex
+            : ((currentIdx + 1) % heroCount);
+        gameState.pendingExtraTurn = { ...pendingExtra, consumed: true, resumeIndex };
+        saveGameState(gameState);
+        startHeroTurn(gameState, { skipVillainDraw: true, suppressRoundAdvance: true });
+        initializeTurnUI(gameState);
+        return;
+    }
 
     const nextIdx = (currentIdx + 1) % heroCount;
 

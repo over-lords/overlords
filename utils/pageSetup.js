@@ -682,6 +682,14 @@ async function restoreUIFromState(state) {
 
     console.log("UI restore complete.");
     try { refreshFrozenOverlays(state); } catch (e) {}
+
+    try {
+        if (typeof window !== "undefined" && typeof window.restoreExtraTurnModalFromState === "function") {
+            window.restoreExtraTurnModalFromState(state);
+        }
+    } catch (e) {
+        console.warn("[RESTORE] Failed to restore extra turn modal.", e);
+    }
 }
 
 (async () => {
