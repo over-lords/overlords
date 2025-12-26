@@ -2745,9 +2745,9 @@ window.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
         //console.log("End turn clicked.");
-        endCurrentHeroTurn(gameState);
+        await endCurrentHeroTurn(gameState);
     });
 });
 

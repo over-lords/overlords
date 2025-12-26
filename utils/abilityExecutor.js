@@ -338,6 +338,14 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return !!state?.lastShovedVillainDestination;
     }
 
+    if (lowerCond === "damagehero") {
+        const pending = s.pendingDamageHero;
+        const matchesHero = heroId == null || (pending && String(pending.heroId) === String(heroId));
+        const result = !!pending && matchesHero;
+        console.log(`[damageHero condition] ${result ? "true" : "false"}${pending ? ` (hero=${pending.heroId}, amount=${pending.amount}, source=${pending.sourceName || "unknown"})` : ""}`);
+        return result;
+    }
+
     // Fallback: unknown condition -> false
     return false;
 }
@@ -1168,6 +1176,23 @@ function giveTeammateExtraTurn(heroId = null, state = gameState) {
 EFFECT_HANDLERS.giveTeammateExtraTurn = function(args = [], card, selectedData = {}) {
     const heroId = selectedData?.currentHeroId ?? null;
     return giveTeammateExtraTurn(heroId, gameState);
+};
+
+function blockDamage(state = gameState) {
+    const s = state || gameState;
+    if (!s.pendingDamageHero) {
+        console.log("[blockDamage] No pending damage to block.");
+        return false;
+    }
+    const targetId = s.pendingDamageHero.heroId;
+    const heroName = heroes.find(h => String(h.id) === String(targetId))?.name || `Hero ${targetId}`;
+    console.log(`[blockDamage] Blocking all pending damage to ${heroName}.`, s.pendingDamageHero);
+    s.pendingDamageHero = null;
+    return true;
+}
+
+EFFECT_HANDLERS.blockDamage = function(args = [], card, selectedData = {}) {
+    return blockDamage(gameState);
 };
 
 function restoreExtraTurnModalFromState(state = gameState) {
@@ -4465,7 +4490,21 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
                 area.innerHTML = "";
                 const wrapper = document.createElement("div");
                 wrapper.className = "card-wrapper";
-                wrapper.appendChild(renderCard(foeIdStr, wrapper));
+                // Preserve per-entry runtime damage (e.g., curses)
+                const baseDmg = Number(foeCard.damage ?? foeCard.dmg ?? foeCard.currentDamage ?? 0) || 0;
+                const effectiveDamage =
+                    (typeof entry.currentDamage === "number")
+                        ? entry.currentDamage
+                        : (typeof entry.damagePenalty === "number"
+                            ? Math.max(0, baseDmg - Number(entry.damagePenalty || 0))
+                            : baseDmg);
+                const effectiveCard = {
+                    ...foeCard,
+                    damage: effectiveDamage,
+                    currentDamage: effectiveDamage
+                };
+
+                wrapper.appendChild(renderCard(foeIdStr, wrapper, { cardDataOverride: effectiveCard }));
                 area.appendChild(wrapper);
 
                 wrapper.style.cursor = "pointer";

@@ -34,14 +34,22 @@ export function findCardInAllSources(id) {
   return null;
 }
 
-export function renderCard(cardId, container) {
-  const cardData = findCardInAllSources(cardId);
-  if (!cardData) {
+export function renderCard(cardId, container, opts = {}) {
+  const sourceCard = opts.cardDataOverride || findCardInAllSources(cardId);
+  if (!sourceCard) {
     const missing = document.createElement('div');
     missing.textContent = `Card not found: ${cardId}`;
     missing.style.color = 'red';
     missing.style.fontWeight = 'bold';
     return missing;
+  }
+
+  // Work on a shallow copy so we don't mutate shared data
+  const cardData = { ...sourceCard };
+
+  // If a runtime currentDamage is present, use it for display
+  if (cardData.currentDamage != null && (cardData.damage == null || cardData.damage === "")) {
+    cardData.damage = cardData.currentDamage;
   }
 
   if(cardData.type === "Main") {

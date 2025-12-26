@@ -30,6 +30,7 @@ export const heroes = [
       {
         type: `optional`,
         condition: `damageHero`,
+        howOften: `OPT`,
         uses: `3`,
         effect: `blockDamage()`
       }
@@ -1005,6 +1006,7 @@ export const heroes = [
       {
         type: `standard`,
         uses: `2`,
+        howOften: `OPT`,
         effect: `freezeVillain(any)`
       },
       {
@@ -1989,6 +1991,7 @@ export const heroes = [
         type: `optional`,
         condition: `beforeDraw`,
         uses: `2`,
+        howOften: `OPT`,
         effect: `extendDrawView(self,4)`
       },
       {

@@ -592,6 +592,90 @@ export function gameStart(selectedData) {
     };
 }
 
+function flagPendingHeroDamage(heroId, amount, sourceName = "unknown", state = gameState) {
+    const s = state || gameState;
+    s.pendingDamageHero = {
+        heroId,
+        amount,
+        sourceName
+    };
+    const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+    console.log(`[damageHero] Pending damage to ${heroName}: ${amount} from ${sourceName}.`);
+}
+
+async function tryBlockPendingHeroDamage(state = gameState) {
+    const s = state || gameState;
+    const pending = s.pendingDamageHero;
+    if (!pending) return false;
+
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    for (const hid of heroIds) {
+        const heroObj = heroes.find(h => String(h.id) === String(hid));
+        if (!heroObj) continue;
+
+        const effects = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+        const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+        const hState = s.heroData?.[hid] || {};
+
+        const turnUsed = hState.damageHeroBlockTurnUsed;
+        if (typeof s.turnCounter === "number" && turnUsed === s.turnCounter) {
+            continue; // already used this turn
+        }
+
+        for (let i = 0; i < effects.length; i++) {
+            const eff = effects[i];
+            if (!eff) continue;
+            const type = (eff.type || "").toLowerCase();
+            const cond = (eff.condition || "").toLowerCase();
+            const effectStr = Array.isArray(eff.effect) ? eff.effect.join(",") : (eff.effect || "");
+            const usesMax = Number(eff.uses || 0);
+
+            const usesLeft = hState.currentUses?.[i];
+
+            const matches =
+                type === "optional" &&
+                cond === "damagehero" &&
+                effectStr.toLowerCase().includes("blockdamage") &&
+                (eff.howOften || "").toLowerCase() === "opt" &&
+                (usesLeft == null ? usesMax : usesLeft) > 0;
+
+            if (!matches) continue;
+
+            const targetName = heroes.find(h => String(h.id) === String(pending.heroId))?.name || `Hero ${pending.heroId}`;
+            const promptText = `${heroObj.name}: Block incoming Damage to ${targetName}?`;
+            let allow = true;
+
+            if (typeof window !== "undefined") {
+                if (typeof window.showOptionalAbilityPrompt === "function") {
+                    allow = await window.showOptionalAbilityPrompt(promptText);
+                } else if (typeof window.confirm === "function") {
+                    allow = window.confirm(promptText);
+                }
+            }
+
+            if (!allow) {
+                continue;
+            }
+
+            // Consume use
+            if (!hState.currentUses) hState.currentUses = {};
+            const current = hState.currentUses[i];
+            const max = usesMax;
+            const nextUses = (current == null ? max : current) - 1;
+            hState.currentUses[i] = Math.max(0, nextUses);
+            if (!heroObj.currentUses) heroObj.currentUses = {};
+            heroObj.currentUses[i] = hState.currentUses[i];
+
+            hState.damageHeroBlockTurnUsed = s.turnCounter;
+            s.pendingDamageHero = null;
+            console.log(`[damageHero] ${heroObj.name} blocked all incoming damage to ${targetName}. Uses left: ${hState.currentUses[i]} / ${max}`);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 const UPPER_ORDER = [
     CITY_EXIT_UPPER,   // leftmost Star
     CITY_5_UPPER,
@@ -1515,6 +1599,14 @@ export async function startHeroTurn(state, opts = {}) {
     if (typeof state.turnCounter !== "number") state.turnCounter = 0;
     state.turnCounter++;
 
+    // Reset once-per-turn damage blocks
+    if (state.heroData) {
+        Object.keys(state.heroData).forEach(hid => {
+            if (!state.heroData[hid]) return;
+            state.heroData[hid].damageHeroBlockTurnUsed = null;
+        });
+    }
+
     currentTurn(heroTurnIndex, heroIds);
 
     resetHeroCurrentTravelAtTurnStart(state);
@@ -1994,7 +2086,7 @@ export function buildHeroDeck(heroName) {
     return deck;
 }
 
-export function endCurrentHeroTurn(gameState) {
+export async function endCurrentHeroTurn(gameState) {
     if (gameState.gameOver) {
         console.log("[endCurrentHeroTurn] Game is already over; ignoring end-turn.");
         return;
@@ -2085,9 +2177,18 @@ export function endCurrentHeroTurn(gameState) {
                     };
                     console.log("[END TURN DAMAGE] Recorded lastDamageCauser", gameState.lastDamageCauser);
 
-                    heroState.hp -= foeDamage;
-                    flashScreenRed();
-                    appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
+                    flagPendingHeroDamage(heroId, foeDamage, foe.name, gameState);
+                    const blocked = await tryBlockPendingHeroDamage(gameState);
+                    const pending = gameState.pendingDamageHero;
+
+                    if (!blocked && pending) {
+                        heroState.hp -= foeDamage;
+                        flashScreenRed();
+                        appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
+                    } else {
+                        // Cleared by block
+                        gameState.pendingDamageHero = null;
+                    }
 
                     if (heroState.hp <= 0) {
                         heroState.hp = 0;
@@ -2135,6 +2236,8 @@ export function endCurrentHeroTurn(gameState) {
                             }
                         });
                     }
+
+                    gameState.pendingDamageHero = null;
                 } else {
                     console.log(
                         `[END TURN] ${heroObj?.name} ignores ${foe.name}'s damage `
@@ -2399,7 +2502,7 @@ function hideTravelHighlights() {
     slots.forEach(s => s.classList.remove("travel-highlight"));
 }
 
-function performHeroStartingTravel(gameState, heroId, cityIndex) {
+async function performHeroStartingTravel(gameState, heroId, cityIndex) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
@@ -2452,7 +2555,7 @@ function performHeroStartingTravel(gameState, heroId, cityIndex) {
             `[EXIT-RETREAT] ${heroName} is leaving city ${previousIndex} to travel to city ${cityIndex}.`
         );
 
-        const okToLeave = attemptLeaveCityAsRetreat(
+        const okToLeave = await attemptLeaveCityAsRetreat(
             gameState,
             heroId,
             previousIndex,
@@ -2600,9 +2703,9 @@ function formatTimer(sec) {
     return `${m}:${s}`;
 }
 
-function autoEndTurnDueToTimeout() {
+async function autoEndTurnDueToTimeout() {
     const gs = window.gameState;
-    endCurrentHeroTurn(gs);
+    await endCurrentHeroTurn(gs);
 }
 
 function showTravelPopup(gameState, heroId, cityIndex) {
@@ -3206,7 +3309,7 @@ export function showRetreatButtonForCurrentHero(gameState) {
     console.log(`[RETREAT] ${heroName} is in city ${heroState.cityIndex}. Retreat option shown.`);
 }
 
-function retreatHeroToHQ(gameState, heroId) {
+async function retreatHeroToHQ(gameState, heroId) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
@@ -3247,13 +3350,21 @@ function retreatHeroToHQ(gameState, heroId) {
                 // Only do anything special on a FAILED roll
                 if (roll < retreatTarget) {
                 const foeDamage = getSlotFoeDamage(slotEntry, foe);
-                const dt = Number(heroObj?.damageThreshold || 0);
+                    const dt = Number(heroObj?.damageThreshold || 0);
 
                     // Match end-of-turn damage behavior: only if foeDamage >= DT
                     if (foeDamage >= dt) {
-                        heroState.hp -= foeDamage;
-                        flashScreenRed();
-                        appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
+                        flagPendingHeroDamage(heroId, foeDamage, foe.name, gameState);
+                        const blocked = await tryBlockPendingHeroDamage(gameState);
+                        const pending = gameState.pendingDamageHero;
+
+                        if (!blocked && pending) {
+                            heroState.hp -= foeDamage;
+                            flashScreenRed();
+                            appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
+                        } else {
+                            gameState.pendingDamageHero = null;
+                        }
 
                         if (heroState.hp <= 0) {
                             heroState.hp = 0;
@@ -3277,6 +3388,7 @@ function retreatHeroToHQ(gameState, heroId) {
                                 + `(DT=${dt}, new HP=${heroState.hp})`
                             );
                         }
+                        gameState.pendingDamageHero = null;
                     } else {
                         console.log(
                             `[RETREAT] ${heroName} FAILS retreat roll but ignores `
@@ -3351,8 +3463,8 @@ function openRetreatConfirm(gameState, heroId) {
     yesBtn.onclick = null;
     noBtn.onclick  = null;
 
-    yesBtn.onclick = () => {
-        retreatHeroToHQ(gameState, heroId);
+    yesBtn.onclick = async () => {
+        await retreatHeroToHQ(gameState, heroId);
 
         // hide retreat button as the hero has left the city
         const retreatBtn = document.getElementById("retreat-button");
@@ -3366,7 +3478,7 @@ function openRetreatConfirm(gameState, heroId) {
     };
 }
 
-function performHeroTravelToOverlord(gameState, heroId) {
+async function performHeroTravelToOverlord(gameState, heroId) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
@@ -3404,7 +3516,7 @@ function performHeroTravelToOverlord(gameState, heroId) {
             `[EXIT-RETREAT] ${heroName} is leaving city ${prevCityIndex} to face the Overlord.`
         );
 
-        const okToLeave = attemptLeaveCityAsRetreat(
+        const okToLeave = await attemptLeaveCityAsRetreat(
             gameState,
             heroId,
             prevCityIndex,
@@ -3920,7 +4032,7 @@ function hideFaceOverlordButton() {
 // ================================================================
 // SHOVE TRAVEL
 // ================================================================
-function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLowerIndex) {
+async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLowerIndex) {
   const activeState = state.heroData?.[activeHeroId];
   const targetState = state.heroData?.[targetHeroId];
   if (!activeState || !targetState) return;
@@ -3970,7 +4082,7 @@ function performHeroShoveTravel(state, activeHeroId, targetHeroId, destinationLo
       `[EXIT-RETREAT] ${heroName} is leaving city ${previousIndex} to shove another hero.`
     );
 
-    const okToLeave = attemptLeaveCityAsRetreat(
+    const okToLeave = await attemptLeaveCityAsRetreat(
       state,
       activeHeroId,
       previousIndex,
@@ -4391,7 +4503,7 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
 // ================================================================
 // CITY EXIT "RETREAT" CHECK (used when leaving a city via travel)
 // ================================================================
-function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabel = "") {
+async function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabel = "") {
     const heroState = gameState?.heroData?.[heroId];
     if (!heroState) return true;
 
@@ -4457,13 +4569,21 @@ function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabe
     // Only do anything special on a FAILED roll
     if (roll < retreatTarget) {
         const foeDamage = getSlotFoeDamage(slotEntry, foe);
-        const dt = Number(heroObj?.damageThreshold || 0);
+                    const dt = Number(heroObj?.damageThreshold || 0);
 
-        // Match end-of-turn damage behavior: only if foeDamage >= DT
-        if (foeDamage >= dt) {
-            heroState.hp -= foeDamage;
-            flashScreenRed();
-            appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
+                    // Match end-of-turn damage behavior: only if foeDamage >= DT
+                    if (foeDamage >= dt) {
+                        flagPendingHeroDamage(heroId, foeDamage, foe.name, gameState);
+                        const blocked = await tryBlockPendingHeroDamage(gameState);
+            const pending = gameState.pendingDamageHero;
+
+            if (!blocked && pending) {
+                heroState.hp -= foeDamage;
+                flashScreenRed();
+                appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
+            } else {
+                gameState.pendingDamageHero = null;
+            }
 
             if (heroState.hp <= 0) {
                 heroState.hp = 0;
@@ -4486,6 +4606,7 @@ function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, contextLabe
                 `[EXIT-RETREAT] ${heroName} FAILS exit roll and takes ${foeDamage} damage from ${foe.name}. `
                 + `(DT=${dt}, new HP=${heroState.hp}).`
             );
+            gameState.pendingDamageHero = null;
         } else {
             console.log(
                 `[EXIT-RETREAT] ${heroName} FAILS exit roll but ignores `
