@@ -1109,7 +1109,7 @@ export async function villainDraw(count = 1) {
                 break;
             case "bystander":
                 console.log("[VILLAIN DRAW] Bystander card:", villainId);
-                await handleBystanderDraw(villainId, data, gameState);
+                handlerResult = await handleBystanderDraw(villainId, data, gameState);
                 break;
             case "enemy":
                 console.log("[VILLAIN DRAW] Hench/Villain card:", villainId, data?.name);
@@ -1139,6 +1139,14 @@ export async function villainDraw(count = 1) {
         }
 
         // Post-draw logs for specific behaviors
+        if (kind === "bystander" && handlerResult?.captureLog) {
+            try {
+                appendGameLogEntry(handlerResult.captureLog, gameState);
+            } catch (err) {
+                console.warn("[BYSTANDER] Failed to append capture log", err);
+            }
+        }
+
         if (kind === "enemy" && handlerResult?.teleportTargetIdx != null) {
             try {
                 const cityName = getCityNameFromIndex(handlerResult.teleportTargetIdx + 1);
@@ -1248,6 +1256,12 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
     }
 
     const byName = cardData?.name || "Bystander";
+    const getOverlordName = () => {
+        const ovId = state.currentOverlordId ?? state.overlordId ?? null;
+        return state.currentOverlordCard?.name
+            || overlords.find(o => String(o.id) === String(ovId))?.name
+            || "Overlord";
+    };
 
     // 1) If any hench/villain is on the map, the rightmost captures
     const enemyIdx = getRightmostCapturingEnemyIndex(state);
@@ -1258,6 +1272,7 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
         }
 
         const entry = state.cities[enemyIdx];
+        let foeCard = null;
         if (!entry) {
             console.warn("[BYSTANDER] Expected foe at", enemyIdx, "but none found.");
         } else {
@@ -1272,7 +1287,7 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
 
             // Also attach to the static card data for villain-panel display
             const foeId = String(entry.id);
-            const foeCard =
+            foeCard =
                 henchmen.find(h => String(h.id) === foeId) ||
                 villains.find(v => String(v.id) === foeId);
 
@@ -1298,8 +1313,14 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
             );
         }
 
+        if (entry || foeCard) {
+            const foeName = foeCard?.name || entry?.name || "Foe";
+            const cityName = getCityNameFromIndex(enemyIdx + 1);
+            return { captureLog: `${byName} captured by ${foeName} in ${cityName}.` };
+        }
+
         // Draw is consumed, nothing goes to the board, no shove.
-        return;
+        return { captureLog: null };
     }
 
     // 2) No hench/villain but a Scenario is active → Scenario captures
@@ -1326,7 +1347,7 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
             state.scenarioCapturedBystanders[scenarioId]
         );
 
-        return;
+        return { captureLog: `${byName} captured by ${getOverlordName()}.` };
     }
 
     // 3) No foes and no Scenario → Overlord immediately KOs the bystander
@@ -1378,6 +1399,8 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
     } catch (err) {
         console.warn("[BYSTANDER] Failed to append KO log", err);
     }
+
+    return { captureLog: null };
 }
 
 export async function startHeroTurn(state, opts = {}) {
