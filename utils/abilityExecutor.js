@@ -21,7 +21,7 @@ import { bystanders } from "../data/bystanders.js";
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
-         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout } from "./turnOrder.js";
 
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
@@ -59,6 +59,14 @@ const GLIDE_ORDER = [
   CITY_2_GLIDE,
   CITY_ENTRY_GLIDE
 ];
+
+const HERO_TEAM_SET = (() => {
+    const set = new Set();
+    heroes.forEach(h => {
+        getHeroTeamsForCard(h).forEach(t => set.add(t));
+    });
+    return set;
+})();
 
 const EFFECT_HANDLERS = {};
 
@@ -216,6 +224,27 @@ function getKOdTeamCount(teamName, heroId = null, state = gameState) {
     return count;
 }
 
+function getTotalRescuedBystanders(state = gameState) {
+    const rescues = state?.heroBystandersRescued;
+    if (!rescues || typeof rescues !== "object") return 0;
+    return Object.values(rescues).reduce((acc, entry) => {
+        const n = typeof entry?.count === "number" ? entry.count : 0;
+        return acc + n;
+    }, 0);
+}
+
+function incrementRescuedBystanders(heroId, count, state = gameState) {
+    if (!heroId || !Number.isFinite(count) || count <= 0) return;
+    const s = state || gameState;
+    if (!s.heroBystandersRescued) s.heroBystandersRescued = {};
+    const key = String(heroId);
+    const current = s.heroBystandersRescued[key] || { count: 0, slotIndex: null };
+    s.heroBystandersRescued[key] = {
+        count: (current.count || 0) + count,
+        slotIndex: current.slotIndex
+    };
+}
+
 function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (typeof raw === "number") return raw;
     if (typeof raw !== "string") return 0;
@@ -243,6 +272,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     }
     if (lower === "getherodamage") {
         return getHeroDamage(heroId, state);
+    }
+    if (lower === "rescuedbystanderscount") {
+        return getTotalRescuedBystanders(state);
     }
     if (lower === "findkodheroes") {
         return findKOdHeroes(state);
@@ -1138,6 +1170,7 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
             ? `${nameList} was rescued by ${heroName}.`
             : `Bystanders: ${nameList} were rescued by ${heroName}.`;
         appendGameLogEntry(msg, s);
+        incrementRescuedBystanders(hid, rescuedCount, s);
         saveGameState(s);
         renderHeroHandBar(s);
     } else {
@@ -1228,6 +1261,314 @@ function blockDamage(state = gameState) {
 
 EFFECT_HANDLERS.blockDamage = function(args = [], card, selectedData = {}) {
     return blockDamage(gameState);
+};
+
+function isHeroSelectorValue(val) {
+    if (val == null) return false;
+    if (typeof val === "number" || /^\d+$/.test(String(val))) {
+        return heroes.some(h => String(h.id) === String(val));
+    }
+    const lower = String(val).toLowerCase();
+    if (["random", "all", "current", "coastal"].includes(lower)) return true;
+    return HERO_TEAM_SET.has(lower);
+}
+
+function resolveHeroTargets(selectorRaw, state = gameState, defaultHeroId = null) {
+    const s = state || gameState;
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    const activeHeroes = heroIds.filter(hid => {
+        const hp = s.heroData?.[hid]?.hp;
+        return hp == null ? true : hp > 0;
+    });
+
+    const selector = selectorRaw == null ? "current" : selectorRaw;
+    const lower = String(selector).toLowerCase();
+
+    if (lower === "all") {
+        return activeHeroes;
+    }
+
+    if (lower === "random") {
+        if (!activeHeroes.length) return [];
+        const picked = activeHeroes[Math.floor(Math.random() * activeHeroes.length)];
+        return [picked];
+    }
+
+    if (lower === "current") {
+        const idx = Number.isInteger(s.heroTurnIndex) ? s.heroTurnIndex : 0;
+        const hid = heroIds[idx];
+        if (hid == null) return [];
+        const hp = s.heroData?.[hid]?.hp;
+        return hp == null || hp > 0 ? [hid] : [];
+    }
+
+    if (lower === "coastal") {
+        const { left, right } = checkCoastalCities(s);
+        if (left == null && right == null) return [];
+        return activeHeroes.filter(hid => {
+            const hState = s.heroData?.[hid];
+            if (!hState) return false;
+            const cityIdx = hState.cityIndex;
+            if (!Number.isInteger(cityIdx)) return false;
+            return (left != null && cityIdx === left + 1) || (right != null && cityIdx === right + 1);
+        });
+    }
+
+    if (lower === "leftmostengaged") {
+        let bestId = null;
+        let bestCity = null;
+
+        activeHeroes.forEach(hid => {
+            const hState = s.heroData?.[hid];
+            if (!hState) return;
+            if (hState.isFacingOverlord) return;
+            if (!Number.isInteger(hState.cityIndex)) return;
+            const cityIdx = Number(hState.cityIndex);
+            if (bestCity == null || cityIdx < bestCity) {
+                bestCity = cityIdx;
+                bestId = hid;
+            }
+        });
+
+        return bestId != null ? [bestId] : [];
+    }
+
+    // Target a specific hero id
+    const matchId = heroIds.find(hid => String(hid) === String(selector));
+    if (matchId != null) {
+        const hp = s.heroData?.[matchId]?.hp;
+        return hp == null || hp > 0 ? [matchId] : [];
+    }
+
+    // Team target
+    const teamTargets = activeHeroes.filter(hid => {
+        const heroObj = heroes.find(h => String(h.id) === String(hid));
+        return heroMatchesTeam(heroObj, selector);
+    });
+    if (teamTargets.length) return teamTargets;
+
+    // Fallback to default/current hero
+    if (defaultHeroId != null) {
+        const hp = s.heroData?.[defaultHeroId]?.hp;
+        return hp == null || hp > 0 ? [defaultHeroId] : [];
+    }
+
+    return [];
+}
+
+function resolveDamageFromLastDamagedFoe(heroId, state = gameState) {
+    const s = state || gameState;
+
+    const ctx = s._lastDamageContext;
+    if (ctx && (ctx.target === "overlord" || ctx.target === "none")) {
+        return 0;
+    }
+
+    const info =
+        s.heroData?.[heroId]?.lastDamagedFoe ||
+        ((s.lastDamagedFoe && (s.lastDamagedFoe.heroId == null || String(s.lastDamagedFoe.heroId) === String(heroId)))
+            ? s.lastDamagedFoe
+            : null);
+
+    if (!info) {
+        const snap = s._lastHeroDamageSnapshot;
+        if (snap && (snap.heroId == null || String(snap.heroId) === String(heroId))) {
+            return Math.max(0, Number(snap.amount) || 0);
+        }
+        return 0;
+    }
+
+    if (typeof info.foeDamageSnapshot === "number") {
+        return Math.max(0, Number(info.foeDamageSnapshot) || 0);
+    }
+
+    const fromInstance = Array.isArray(s.cities)
+        ? s.cities.find(e => e && getEntryKey(e) === info.instanceId)
+        : null;
+
+    const entry =
+        fromInstance ||
+        (Number.isInteger(info.slotIndex) && Array.isArray(s.cities) ? s.cities[info.slotIndex] : null) ||
+        (Array.isArray(s.cities) ? s.cities.find(e => e && String(e.id) === String(info.foeId)) : null);
+
+    if (!entry) return 0;
+
+    return getEffectiveFoeDamage(entry);
+}
+
+function resolveDamageHeroAmount(rawAmount, heroId, state = gameState) {
+    if (typeof rawAmount === "string" && rawAmount.toLowerCase() === "lastdamagedfoe") {
+        return resolveDamageFromLastDamagedFoe(heroId, state);
+    }
+    return resolveNumericValue(rawAmount ?? 0, heroId, state);
+}
+
+function normalizeDamageHeroOptions(rawOptions, card = null, selectedData = {}) {
+    const opt = {};
+
+    if (rawOptions && typeof rawOptions === "object" && !Array.isArray(rawOptions)) {
+        Object.assign(opt, rawOptions);
+    }
+
+    const text = typeof rawOptions === "string" ? rawOptions.toLowerCase() : "";
+    opt.ignoreDT = opt.ignoreDT || text.includes("ignoredt");
+    opt.state = opt.state || selectedData.state || gameState;
+    opt.currentHeroId = opt.currentHeroId ?? selectedData.currentHeroId ?? null;
+    opt.sourceName = opt.sourceName || card?.name || "effect";
+    opt.cardId = opt.cardId || card?.id || null;
+
+    return opt;
+}
+
+function enqueueHeroDamage(targets, amountArg, opts = {}, state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(targets) || !targets.length) return;
+
+    // Strip circular references before queuing
+    const cleanOpts = { ...opts };
+    delete cleanOpts.state;
+    delete cleanOpts.selectedData;
+
+    if (!s._pendingHeroDamageQueue) s._pendingHeroDamageQueue = [];
+    s._pendingHeroDamageQueue.push({
+        targets: [...targets],
+        amountArg,
+        opts: cleanOpts
+    });
+    console.log("[damageHero] Queued hero damage until foe selection resolves.", { count: targets.length });
+}
+
+export async function processQueuedHeroDamage(state = gameState) {
+    const s = state || gameState;
+    const queue = Array.isArray(s._pendingHeroDamageQueue) ? s._pendingHeroDamageQueue.slice() : [];
+    s._pendingHeroDamageQueue = [];
+    for (const entry of queue) {
+        const { targets, amountArg, opts } = entry || {};
+        if (!Array.isArray(targets)) continue;
+        for (const hid of targets) {
+            let dmg;
+            if (typeof amountArg === "string" && amountArg.toLowerCase() === "lastdamagedfoe") {
+                const snap = s._lastHeroDamageSnapshot;
+                const allowSnap = snap && (snap.heroId == null || String(snap.heroId) === String(hid));
+                dmg = allowSnap ? Math.max(0, Number(snap.amount) || 0) : resolveDamageHeroAmount(amountArg, hid, s);
+            } else {
+                dmg = resolveDamageHeroAmount(amountArg, hid, s);
+            }
+            await applyDamageToHero(hid, dmg, opts);
+        }
+    }
+}
+
+async function applyDamageToHero(heroId, amount, options = {}) {
+    const s = options.state || gameState;
+    if (!s || heroId == null) return;
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) {
+        console.warn("[damageHero] Unknown hero id:", heroId);
+        return;
+    }
+
+    if (!s.heroData) s.heroData = {};
+    const heroState = s.heroData[heroId] || (s.heroData[heroId] = {});
+
+    const baseHP = Number(heroObj.hp || heroObj.baseHP || 0);
+    if (typeof heroState.hp !== "number") heroState.hp = baseHP;
+
+    if (heroState.hp <= 0) {
+        console.log(`[damageHero] ${heroObj.name} is already KO'd; skipping damage.`);
+        return;
+    }
+
+    const amt = Math.max(0, Number(amount) || 0);
+    const dt = Number(heroObj.damageThreshold || 0);
+
+    if (!options.ignoreDT && amt < dt) {
+        console.log(`[damageHero] ${heroObj.name} ignores ${amt} damage (DT=${dt}).`);
+        return;
+    }
+
+    // Clear any stale causer metadata so KO effects don't attribute to the wrong foe
+    s.lastDamageCauser = null;
+
+    flagPendingHeroDamage(heroId, amt, options.sourceName || "effect", s);
+    const blocked = await tryBlockPendingHeroDamage(s);
+    const pending = s.pendingDamageHero;
+
+    if (blocked || !pending) {
+        s.pendingDamageHero = null;
+        return;
+    }
+
+    const before = heroState.hp;
+    heroState.hp = Math.max(0, before - amt);
+    heroObj.currentHP = heroState.hp;
+    heroState.lastDamageAmount = amt;
+
+    if (typeof flashScreenRed === "function") {
+        try { flashScreenRed(); } catch (e) { console.warn("[damageHero] flashScreenRed failed", e); }
+    }
+
+    appendGameLogEntry(`${heroObj.name} took ${amt} damage from ${options.sourceName || "effect"}.`, s);
+
+    try { updateHeroHPDisplays(heroId); } catch (e) { console.warn("[damageHero] updateHeroHPDisplays failed", e); }
+    try { updateBoardHeroHP(heroId); } catch (e) { console.warn("[damageHero] updateBoardHeroHP failed", e); }
+
+    if (heroState.hp <= 0) {
+        handleHeroKnockout(heroId, heroState, s, { source: "damageHero", sourceName: options.sourceName || "effect" });
+    }
+
+    s.pendingDamageHero = null;
+    saveGameState(s);
+}
+
+export async function damageHero(count, whichHero = "current", options = {}) {
+    const opts = normalizeDamageHeroOptions(options, options.card || null, options.selectedData || {});
+    const state = opts.state || gameState;
+
+    let amountArg = count;
+    let targetArg = whichHero;
+
+    // Support legacy ordering: damageHero(target, amount) only when the first arg is a non-numeric selector.
+    if (typeof count === "string" && !/^\d+$/.test(count) && isHeroSelectorValue(count) && whichHero !== undefined) {
+        targetArg = count;
+        amountArg = whichHero;
+    }
+
+    const defaultHeroId = opts.currentHeroId ?? (Array.isArray(state.heroes) ? state.heroes[state.heroTurnIndex ?? 0] : null);
+    const targets = resolveHeroTargets(targetArg, state, defaultHeroId);
+
+    const selectionPending =
+        (typeof window !== "undefined") &&
+        window.__damageFoeSelectMode &&
+        typeof window.__damageFoeSelectMode.amount === "number";
+
+    if (
+        selectionPending &&
+        typeof amountArg === "string" &&
+        amountArg.toLowerCase() === "lastdamagedfoe"
+    ) {
+        enqueueHeroDamage(targets, amountArg, opts, state);
+        return;
+    }
+
+    if (!targets.length) {
+        console.log("[damageHero] No valid hero targets found for selector:", targetArg);
+        return;
+    }
+
+    for (const hid of targets) {
+        const dmg = resolveDamageHeroAmount(amountArg, hid, state);
+        await applyDamageToHero(hid, dmg, opts);
+    }
+}
+
+EFFECT_HANDLERS.damageHero = function(args = [], card, selectedData = {}) {
+    const [rawCount, rawTarget, rawOptions] = Array.isArray(args) ? args : [];
+    const opts = normalizeDamageHeroOptions(rawOptions, card, selectedData);
+    opts.selectedData = selectedData;
+    opts.card = card;
+    damageHero(rawCount, rawTarget, opts);
 };
 
 EFFECT_HANDLERS.doubleDamage = function(args = [], card, selectedData = {}) {
@@ -4725,10 +5066,22 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     // Track last damaged foe for follow-up effects (only if we have a stable instance key)
     if (entryKey) {
-        s.lastDamagedFoe = {
+        const info = {
             foeId: foeIdStr,
             instanceId: entryKey,
-            slotIndex
+            slotIndex,
+            heroId: heroId ?? null,
+            foeDamageSnapshot: getEffectiveFoeDamage(entry)
+        };
+        s.lastDamagedFoe = info;
+        if (heroId != null) {
+            if (!s.heroData) s.heroData = {};
+            if (!s.heroData[heroId]) s.heroData[heroId] = {};
+            s.heroData[heroId].lastDamagedFoe = info;
+        }
+        s._lastHeroDamageSnapshot = {
+            heroId: heroId ?? null,
+            amount: info.foeDamageSnapshot ?? 0
         };
     }
 

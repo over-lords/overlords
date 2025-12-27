@@ -77,7 +77,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `All Hero's Maximum HP is reduced by 1.`
+                text: `Every Hero's Maximum HP is reduced by 1.`
             }
         ],
         abilitiesNamePrint: [

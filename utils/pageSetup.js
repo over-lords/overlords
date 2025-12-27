@@ -9,8 +9,11 @@ import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { renderCard, renderAbilityText, findCardInAllSources } from './cardRenderer.js';
 import { keywords } from '../data/keywords.js';
-import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, renderScannedPreview } from './abilityExecutor.js';
-import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, showRetreatButtonForCurrentHero } from "./turnOrder.js";
+import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, 
+         freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, 
+         renderScannedPreview, processQueuedHeroDamage } from './abilityExecutor.js';
+import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, 
+         showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { gameState } from "../data/gameState.js";
@@ -2097,23 +2100,30 @@ export function buildVillainPanel(villainCard, opts = {}) {
     const pendingKnockback = (typeof window !== "undefined") ? window.__knockbackSelectMode : null;
     if (pendingKnockback) {
         const stateForKnockback = pendingKnockback.state || gameState;
-        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForKnockback, opts);
-        const type = (villainCard.type || "").toLowerCase();
 
-        if (!entry) {
-            console.warn("[buildVillainPanel] No matching city entry found for knockback target.");
-        } else if (type !== "henchman" && type !== "villain") {
-            console.log("[buildVillainPanel] Knockback requires a Henchman or Villain; ignoring selection.");
+        // Guard against multiple open popups: clear prior pending selection if another is active
+        if (pendingKnockback.active) {
+            try { window.__knockbackSelectMode = null; } catch (e) {}
         } else {
-            showKnockbackSelectConfirm({ foeName: villainCard.name }).then(allow => {
-                if (!allow) return;
+            const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForKnockback, opts);
+            const type = (villainCard.type || "").toLowerCase();
 
-                knockbackFoe(entry, slotIndex, stateForKnockback, pendingKnockback.heroId ?? null);
-                stateForKnockback.pendingKnockback = null;
-                saveGameState(stateForKnockback);
-                try { if (typeof window !== "undefined") window.__knockbackSelectMode = null; } catch (e) {}
-            });
-            return;
+            if (!entry) {
+                console.warn("[buildVillainPanel] No matching city entry found for knockback target.");
+            } else if (type !== "henchman" && type !== "villain") {
+                console.log("[buildVillainPanel] Knockback requires a Henchman or Villain; ignoring selection.");
+            } else {
+                window.__knockbackSelectMode.active = true;
+                showKnockbackSelectConfirm({ foeName: villainCard.name }).then(allow => {
+                    try { window.__knockbackSelectMode = null; } catch (e) {}
+                    if (!allow) return;
+
+                    knockbackFoe(entry, slotIndex, stateForKnockback, pendingKnockback.heroId ?? null);
+                    stateForKnockback.pendingKnockback = null;
+                    saveGameState(stateForKnockback);
+                });
+                return;
+            }
         }
     }
 
@@ -2199,6 +2209,7 @@ export function buildVillainPanel(villainCard, opts = {}) {
                 { flag: "single", fromAny: true }
             );
 
+            processQueuedHeroDamage(stateForDamage);
             window.__damageFoeSelectMode = null;
         });
 

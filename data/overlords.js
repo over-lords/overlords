@@ -374,7 +374,7 @@ export const overlords = [
         condition: `gameStart`,
         uses: `1`,
         shared: `no`,
-        effect: `damageHero(aqua,1)`
+        effect: `damageHero(1,Aqua)`
       }
     ],
     mightNamePrint: [
@@ -391,7 +391,7 @@ export const overlords = [
         condition: `cityOccupied(coastal)`,
         uses: `999`,
         shared: `no`,
-        effect: `damageHero(coastal,3)`
+        effect: `damageHero(3,coastal)`
       },
       {
         type: `might`,
@@ -992,7 +992,7 @@ export const overlords = [
         condition: `wouldBeKod`,
         uses: `1`,
         shared: `no`,
-        effect: [`surviveAt(1)`,`endHeroTurn`,`damageHero(all,5)`]
+        effect: [`surviveAt(1)`,`endHeroTurn`,`damageHero(5,all)`]
       }
     ]
   },
@@ -1094,7 +1094,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`powerVillain(all,1)`,`damageHero(all,1)`]
+        effect: [`powerVillain(all,1)`,`damageHero(1,all)`]
       }
     ],
     bonusNamePrint: [

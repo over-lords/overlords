@@ -594,7 +594,7 @@ export function gameStart(selectedData) {
     };
 }
 
-function flagPendingHeroDamage(heroId, amount, sourceName = "unknown", state = gameState) {
+export function flagPendingHeroDamage(heroId, amount, sourceName = "unknown", state = gameState) {
     const s = state || gameState;
     s.pendingDamageHero = {
         heroId,
@@ -605,7 +605,7 @@ function flagPendingHeroDamage(heroId, amount, sourceName = "unknown", state = g
     console.log(`[damageHero] Pending damage to ${heroName}: ${amount} from ${sourceName}.`);
 }
 
-async function tryBlockPendingHeroDamage(state = gameState) {
+export async function tryBlockPendingHeroDamage(state = gameState) {
     const s = state || gameState;
     const pending = s.pendingDamageHero;
     if (!pending) return false;
@@ -1180,6 +1180,12 @@ export async function villainDraw(count = 1) {
         let blockedReason = null;
         let handlerResult = null;
 
+        try {
+            appendGameLogEntry(`Villain Deck Draw: ${cardName}.`, gameState);
+        } catch (err) {
+            console.warn("[VILLAIN DRAW] Failed to append game log entry", err);
+        }
+
         switch (kind) {
             case "countdown":
                 console.log("[VILLAIN DRAW] Countdown card:", villainId);
@@ -1216,12 +1222,6 @@ export async function villainDraw(count = 1) {
                 console.warn("[VILLAIN DRAW] Failed to append blocked log entry", err);
             }
             break; // stop drawing further cards when the current draw is blocked
-        }
-
-        try {
-            appendGameLogEntry(`Villain Deck Draw: ${cardName}.`, gameState);
-        } catch (err) {
-            console.warn("[VILLAIN DRAW] Failed to append game log entry", err);
         }
 
         // Post-draw logs for specific behaviors
@@ -4162,19 +4162,27 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
       const dt = Number(heroObj.damageThreshold || 0);
 
       if (foeDamage >= dt && foeDamage > 0) {
-        activeState.hp = Number(activeState.hp || 0) - foeDamage;
-        console.log(
-          `[SHOVE-ENTRY] ${heroName} took ${foeDamage} damage for forcing a hero from the fight.`
-        );
-        flashScreenRed();
-        appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, state);
+        flagPendingHeroDamage(activeHeroId, foeDamage, foe.name, state);
+        const blocked = await tryBlockPendingHeroDamage(state);
+        const pending = state.pendingDamageHero;
 
-        updateHeroHPDisplays(activeHeroId);
-        updateBoardHeroHP(activeHeroId);
+        if (!blocked && pending) {
+          activeState.hp = Number(activeState.hp || 0) - foeDamage;
+          console.log(
+            `[SHOVE-ENTRY] ${heroName} took ${foeDamage} damage for forcing a hero from the fight.`
+          );
+          flashScreenRed();
+          appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, state);
 
-        if (activeState.hp <= 0) {
-          activeState.hp = 0;
-          handleHeroKnockout(activeHeroId, activeState, state, { source: "shoveEntry", sourceName: foe.name });
+          updateHeroHPDisplays(activeHeroId);
+          updateBoardHeroHP(activeHeroId);
+
+          if (activeState.hp <= 0) {
+            activeState.hp = 0;
+            handleHeroKnockout(activeHeroId, activeState, state, { source: "shoveEntry", sourceName: foe.name });
+          }
+        } else {
+          state.pendingDamageHero = null;
         }
       }
     }
@@ -4453,7 +4461,7 @@ window.maybePromptHeroShove = maybePromptHeroShove;
 // ================================================================
 // HERO KO HANDLER
 // ================================================================
-function handleHeroKnockout(heroId, heroState, state, options = {}) {
+export function handleHeroKnockout(heroId, heroState, state, options = {}) {
     if (!heroState || !state) return;
 
     // Normalize HP

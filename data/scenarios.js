@@ -80,7 +80,7 @@ export const scenarios = [
                 condition: `teamHeroEndTurn(Bat)`,
                 uses: `0`,
                 shared: `no`,
-                effect: `damageHero(current,1)`
+                effect: `damageHero(1,current)`
             }
         ]
     },

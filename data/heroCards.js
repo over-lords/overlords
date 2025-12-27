@@ -61,7 +61,7 @@ export const heroCards = [
     damage: "4",
     abilitiesText: [
       {
-        text: `CHOOSE: This card deals 8 Damage and Superman cannot deal Damage on his next turn. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 1.`
+        text: `CHOOSE: This card deals 8 Damage. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 1.`
       }
     ],
     abilitiesNamePrint: [
@@ -82,7 +82,7 @@ export const heroCards = [
       },
       {
         type: `chooseOption(1)`,
-        effect: [`setCardDamageTo(8)`,`disableHeroDamage(next)`]
+        effect: `setCardDamageTo(8)`
       },
       {
         type: `chooseOption(2)`,
@@ -121,7 +121,7 @@ export const heroCards = [
       },
       {
         type: `chooseOption(1)`,
-        effect: [`setCardDamageTo(0)`,`damageFoe(999,any)`,`damageHero(lastDamagedFoe)`]
+        effect: [`setCardDamageTo(0)`,`damageFoe(999,any)`,`damageHero(lastDamagedFoe,current,ignoreDT)`]
       },
       {
         type: `chooseOption(2)`,

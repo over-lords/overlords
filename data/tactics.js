@@ -724,7 +724,7 @@ export const tactics = [
         condition: `kodHenchman()`,
         uses: `999`,
         shared: `no`,
-        effect: `ignoreRewardDamageOverlord(henchmanDamage())`
+        effect: `ignoreRewardDamageOverlord(henchmanDamage)`
       }
     ],
     mightNamePrint: [
@@ -738,7 +738,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`damageHero(all,rescuedBystandersCount())`]
+        effect: [`damageHero(rescuedBystandersCount,all)`]
       }
     ],
     evilWinsNamePrint: [
@@ -850,7 +850,7 @@ export const tactics = [
         condition: `bystanderKod()`,
         uses: `999`,
         shared: `no`,
-        effect: `damageHero(all,2)`
+        effect: `damageHero(2,all)`
       },
     ],
     mightNamePrint: [
