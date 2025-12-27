@@ -5323,16 +5323,18 @@ function adjustHeroTravelDelta(delta, opts = {}, heroId = null, state = gameStat
 
     const permanent = String(opts.flag || "").toLowerCase() === "permanent";
 
-    const printedBase = (typeof heroCard.travel === "number") ? heroCard.travel : 0;
+    const printedBase = Number(heroCard.travel ?? 0) || 0;
+    const storedBase = Number(heroState.travel);
 
     // Base travel (max) comes from heroState.travel if set; otherwise heroCard.travel
-    const base = typeof heroState.travel === "number"
-        ? heroState.travel
+    const base = Number.isFinite(storedBase)
+        ? storedBase
         : printedBase;
 
     // Current travel is the mutable per-turn budget
-    const current = typeof heroState.currentTravel === "number"
-        ? heroState.currentTravel
+    const storedCurrent = Number(heroState.currentTravel);
+    const current = Number.isFinite(storedCurrent)
+        ? storedCurrent
         : base;
 
     let newCurrent = current + delta;
@@ -5342,8 +5344,8 @@ function adjustHeroTravelDelta(delta, opts = {}, heroId = null, state = gameStat
 
     if (permanent) {
         // When permanently bumping, use at least the printed base as the starting point
-        const baseline = (typeof heroState.travel === "number" && heroState.travel >= printedBase)
-            ? heroState.travel
+        const baseline = (Number.isFinite(storedBase) && storedBase >= printedBase)
+            ? storedBase
             : printedBase;
 
         let newBase = baseline + delta;
