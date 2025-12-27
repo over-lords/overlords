@@ -1184,6 +1184,46 @@ EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData
     rescueCapturedBystander(flag, heroId, gameState);
 };
 
+EFFECT_HANDLERS.disableExtraTravel = function(args = [], card, selectedData = {}) {
+    // Signature: disableExtraTravel(all,next)
+    const target = args?.[0] ?? "all";
+    const duration = String(args?.[1] ?? "next").toLowerCase();
+    const state = selectedData?.state || gameState;
+    if (!state) return;
+
+    const turns = duration === "next" ? 1 : 0;
+    if (typeof state.turnCounter !== "number") state.turnCounter = 0;
+
+    state.extraTravelDampener = {
+        target: String(target || "all").toLowerCase(),
+        expiresAtTurnCounter: state.turnCounter + turns,
+        active: true
+    };
+
+    appendGameLogEntry(`Travel Dampened: All Heroes are limited to 1 Travel until after this Hero's next turn.`, state);
+    saveGameState(state);
+};
+
+EFFECT_HANDLERS.disableExtraDraw = function(args = [], card, selectedData = {}) {
+    // Signature: disableExtraDraw(all,next)
+    const target = args?.[0] ?? "all";
+    const duration = String(args?.[1] ?? "next").toLowerCase();
+    const state = selectedData?.state || gameState;
+    if (!state) return;
+
+    const turns = duration === "next" ? 1 : 0;
+    if (typeof state.turnCounter !== "number") state.turnCounter = 0;
+
+    state.extraDrawDampener = {
+        target: String(target || "all").toLowerCase(),
+        expiresAtTurnCounter: state.turnCounter + turns,
+        active: true
+    };
+
+    appendGameLogEntry(`Draws dampened: all heroes will only draw 1 card on their next turns.`, state);
+    saveGameState(state);
+};
+
 function giveTeammateExtraTurn(heroId = null, state = gameState) {
     const s = state || gameState;
     const hid = heroId ?? s.heroes?.[s.heroTurnIndex ?? 0];

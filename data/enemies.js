@@ -297,7 +297,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Your Hero can only draw 1 card on their next turn.`
+                text: `All Heroes can only draw 1 card on their next turns.`
             }
         ],
         abilitiesNamePrint: [
@@ -373,7 +373,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `disableExtraTraval(all,next)`
+                effect: `disableExtraTravel(all,next)`
             }
         ]
     },

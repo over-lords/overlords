@@ -2123,6 +2123,15 @@ export async function endCurrentHeroTurn(gameState) {
         return;
     }
 
+    // Clear travel dampener if it was set to expire after this turn
+    if (gameState.extraTravelDampener?.active) {
+        const expiresAt = gameState.extraTravelDampener.expiresAtTurnCounter;
+        if (typeof gameState.turnCounter === "number" && typeof expiresAt === "number" && gameState.turnCounter >= expiresAt) {
+            gameState.extraTravelDampener = null;
+            appendGameLogEntry(`Travel dampener ended.`, gameState);
+        }
+    }
+
     if (!heroState.deck || heroState.deck.length === 0) {
         if (heroState.discard && heroState.discard.length > 0) {
             heroState.deck = shuffle([...heroState.discard]);
@@ -2144,6 +2153,23 @@ export async function endCurrentHeroTurn(gameState) {
 
     // Reset last damage causer at start of end-turn damage check
     gameState.lastDamageCauser = null;
+
+    // Clear travel/draw dampeners if expiring after this turn
+    const turnCount = typeof gameState.turnCounter === "number" ? gameState.turnCounter : 0;
+    if (gameState.extraTravelDampener?.active) {
+        const expiresAt = gameState.extraTravelDampener.expiresAtTurnCounter;
+        if (typeof expiresAt === "number" && turnCount >= expiresAt) {
+            gameState.extraTravelDampener = null;
+            appendGameLogEntry(`Travel dampener ended.`, gameState);
+        }
+    }
+    if (gameState.extraDrawDampener?.active) {
+        const expiresAt = gameState.extraDrawDampener.expiresAtTurnCounter;
+        if (typeof expiresAt === "number" && turnCount >= expiresAt) {
+            gameState.extraDrawDampener = null;
+            appendGameLogEntry(`Draw dampener ended.`, gameState);
+        }
+    }
 
     if (typeof heroState.cityIndex === "number") {
 
@@ -3254,6 +3280,20 @@ function resetHeroCurrentTravelAtTurnStart(gameState) {
     heroState.travelUsedThisTurn = 0;
     heroState.isFacingOverlord = false;
     refreshOverlordFacingGlow(gameState);
+
+    if (gameState.extraTravelDampener?.active) {
+        const flag = String(gameState.extraTravelDampener.target || "").toLowerCase();
+        if (flag === "all") {
+            heroState.currentTravel = Math.min(heroState.currentTravel, 1);
+        }
+    }
+
+    if (gameState.extraDrawDampener?.active) {
+        const flag = String(gameState.extraDrawDampener.target || "").toLowerCase();
+        if (flag === "all") {
+            heroState.pendingDrawPreviewCount = 1;
+        }
+    }
 
     heroState.hasDrawnThisTurn = false;
     const heroName = heroObj?.name || `Hero ${activeHeroId}`;
