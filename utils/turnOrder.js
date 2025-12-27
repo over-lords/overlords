@@ -197,6 +197,12 @@ function isCountdownId(id) {
     return COUNTDOWN_IDS.has(String(id));
 }
 
+function getActiveUpperOrder(state = gameState) {
+    const s = state || gameState;
+    const destroyed = s?.destroyedCities || {};
+    return UPPER_ORDER.filter(idx => !destroyed[idx]);
+}
+
 function isScenarioActive(state) {
     const stack = state.scenarioStack;
     if (!Array.isArray(stack)) return false;
@@ -230,7 +236,7 @@ async function executeMightEffectSafe(effectString) {
     }
 }
 
-function markCityDestroyed(upperIdx, gameState) {
+function markCityDestroyed(upperIdx, gameState, opts = {}) {
     if (!gameState.destroyedCities) {
         gameState.destroyedCities = {};
     }
@@ -239,6 +245,10 @@ function markCityDestroyed(upperIdx, gameState) {
         return;
     }
     gameState.destroyedCities[upperIdx] = true;
+    if (opts.by === "countdown") {
+        if (!gameState.destroyedByCountdown) gameState.destroyedByCountdown = {};
+        gameState.destroyedByCountdown[upperIdx] = true;
+    }
 
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
@@ -289,6 +299,24 @@ function markCityDestroyed(upperIdx, gameState) {
 
     // Check for "all 6 cities destroyed" loss condition
     checkGameEndConditions(gameState);
+}
+
+function unmarkCityDestroyed(upperIdx, gameState) {
+    if (!gameState?.destroyedCities) return;
+    delete gameState.destroyedCities[upperIdx];
+
+    const citySlots = document.querySelectorAll(".city-slot");
+    const upperSlot = citySlots[upperIdx];
+    const lowerSlot = citySlots[upperIdx + 1];
+
+    [upperSlot, lowerSlot].forEach(slot => {
+        if (!slot) return;
+        slot.style.backgroundColor = "";
+        const overlay = slot.querySelector(".destroyed-city-overlay");
+        if (overlay) overlay.remove();
+        const area = slot.querySelector(".city-card-area");
+        if (area) area.style.zIndex = "";
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -410,7 +438,58 @@ function applyCountdownLandingEffects(upperIdx, gameState) {
     }
 
     // 3) Mark the city as destroyed (upper + lower)
-    markCityDestroyed(upperIdx, gameState);
+    markCityDestroyed(upperIdx, gameState, { by: "countdown" });
+}
+
+function applyDestroyCity(upperIdx, state = gameState) {
+    if (upperIdx == null) return;
+    const s = state || gameState;
+    applyCountdownLandingEffects(upperIdx, s);
+    const cityName = getCityNameFromIndex(upperIdx + 1);
+    appendGameLogEntry(`${cityName} was destroyed.`, s);
+}
+
+function applyRestoreCity(upperIdx, state = gameState) {
+    if (upperIdx == null) return;
+    const s = state || gameState;
+    if (s.destroyedByCountdown?.[upperIdx]) {
+        console.log("[restoreCity] Cannot restore a city destroyed by a Countdown.");
+        return;
+    }
+    unmarkCityDestroyed(upperIdx, s);
+    const cityName = getCityNameFromIndex(upperIdx + 1);
+    appendGameLogEntry(`${cityName} was restored.`, s);
+    refreshFrozenOverlays(s);
+    refreshAllCityOutlines(s);
+}
+
+export function destroyCitiesByCount(count = 1, state = gameState) {
+    const s = state || gameState;
+    const num = Math.max(0, Number(count) || 0);
+    for (let i = 0; i < num; i++) {
+        const active = getActiveUpperOrder(s);
+        const target = active.length ? active[active.length - 1] : null;
+        if (target == null) break;
+        applyDestroyCity(target, s);
+    }
+    saveGameState(s);
+}
+
+export function restoreCitiesByCount(count = 1, state = gameState) {
+    const s = state || gameState;
+    const num = Math.max(0, Number(count) || 0);
+    for (let i = 0; i < num; i++) {
+        const destroyedMap = s.destroyedCities || {};
+        const destroyedList = Object.keys(destroyedMap)
+            .map(k => Number(k))
+            .filter(n => !Number.isNaN(n))
+            .filter(n => !(s.destroyedByCountdown?.[n]))
+            .sort((a, b) => a - b);
+        const target = destroyedList.length ? destroyedList[0] : null;
+        if (target == null) break;
+        applyRestoreCity(target, s);
+    }
+    saveGameState(s);
 }
 
 /**
@@ -982,6 +1061,14 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
         state.cities = new Array(12).fill(null);
     }
 
+    if (state.destroyedCities?.[slotIndex]) {
+        const isCountdown = explicitType === "countdown" || isCountdownId(newCardId);
+        if (!isCountdown) {
+            console.warn("[placeCardInUpperCity] Target city is destroyed; skipping placement.", slotIndex);
+            return;
+        }
+    }
+
     const slot = citySlots[slotIndex];
     if (!slot) {
         console.warn("[placeCardInUpperCity] No DOM slot at index", slotIndex);
@@ -1072,7 +1159,8 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false }
     const chargeDist = cardChargeDistance(cardData);
 
     if (hasTeleport) {
-        const openSlots = UPPER_ORDER.filter(idx => !state.cities?.[idx]);
+        const activeOrder = getActiveUpperOrder(state);
+        const openSlots = activeOrder.filter(idx => !state.cities?.[idx]);
 
         if (openSlots.length === 0) {
             console.warn(
@@ -1636,7 +1724,12 @@ export async function startHeroTurn(state, opts = {}) {
 
 export async function shoveUpper(newCardId) {
     const citySlots = document.querySelectorAll(".city-slot");
-    const EXIT_IDX = CITY_EXIT_UPPER;
+    const ACTIVE_UPPER = getActiveUpperOrder(gameState);
+    const EXIT_IDX = ACTIVE_UPPER.length ? ACTIVE_UPPER[0] : CITY_EXIT_UPPER;
+    if (ACTIVE_UPPER.length === 0) {
+        console.warn("[shoveUpper] No active cities available to place foe.");
+        return { placed: false, blockedFrozen: false };
+    }
 
     // Ensure cities array exists and has room
     if (!Array.isArray(gameState.cities)) {
@@ -1644,11 +1737,11 @@ export async function shoveUpper(newCardId) {
     }
 
     // UPPER_ORDER is [EXIT, 5, 4, 3, 2, ENTRY]
-    const ENTRY_IDX = CITY_ENTRY_UPPER;
+    const ENTRY_IDX = ACTIVE_UPPER.length ? ACTIVE_UPPER[ACTIVE_UPPER.length - 1] : CITY_ENTRY_UPPER;
 
     // Build a snapshot of current upper-row state (DOM + model)
     const snapshot = {};
-    UPPER_ORDER.forEach(idx => {
+    ACTIVE_UPPER.forEach(idx => {
         const slot = citySlots[idx];
         const area = slot ? slot.querySelector(".city-card-area") : null;
         const cardNode = area ? area.querySelector(".card-wrapper") : null;
@@ -1663,9 +1756,9 @@ export async function shoveUpper(newCardId) {
     // Helper: given an upper index, get the "next left" city (towards EXIT),
     // or null if we are already at EXIT.
     function getNextLeft(idx) {
-        const pos = UPPER_ORDER.indexOf(idx);
+        const pos = ACTIVE_UPPER.indexOf(idx);
         if (pos <= 0) return null; // EXIT has no left neighbor
-        return UPPER_ORDER[pos - 1];
+        return ACTIVE_UPPER[pos - 1];
     }
 
     // moveMap: fromUpperIdx -> destUpperIdx (or null for off-board)
@@ -1765,7 +1858,7 @@ export async function shoveUpper(newCardId) {
         2: 0
     };
 
-    for (const fromIdx of UPPER_ORDER) {
+    for (const fromIdx of ACTIVE_UPPER) {
         if (!Object.prototype.hasOwnProperty.call(moveMap, fromIdx)) continue;
 
         const toIdx = moveMap[fromIdx]; // may be null (off-board)
@@ -2123,14 +2216,23 @@ export async function endCurrentHeroTurn(gameState) {
         return;
     }
 
-    // Clear travel dampener if it was set to expire after this turn
-    if (gameState.extraTravelDampener?.active) {
-        const expiresAt = gameState.extraTravelDampener.expiresAtTurnCounter;
-        if (typeof gameState.turnCounter === "number" && typeof expiresAt === "number" && gameState.turnCounter >= expiresAt) {
-            gameState.extraTravelDampener = null;
-            appendGameLogEntry(`Travel dampener ended.`, gameState);
+    const clearDampenersIfExpired = () => {
+        const turnCount = typeof gameState.turnCounter === "number" ? gameState.turnCounter : 0;
+        if (gameState.extraTravelDampener?.active) {
+            const expiresAt = gameState.extraTravelDampener.expiresAtTurnCounter;
+            if (typeof expiresAt === "number" && turnCount >= expiresAt) {
+                gameState.extraTravelDampener = null;
+                appendGameLogEntry(`Travel dampener ended.`, gameState);
+            }
         }
-    }
+        if (gameState.extraDrawDampener?.active) {
+            const expiresAt = gameState.extraDrawDampener.expiresAtTurnCounter;
+            if (typeof expiresAt === "number" && turnCount >= expiresAt) {
+                gameState.extraDrawDampener = null;
+                appendGameLogEntry(`Draw dampener ended.`, gameState);
+            }
+        }
+    };
 
     if (!heroState.deck || heroState.deck.length === 0) {
         if (heroState.discard && heroState.discard.length > 0) {
@@ -2155,21 +2257,7 @@ export async function endCurrentHeroTurn(gameState) {
     gameState.lastDamageCauser = null;
 
     // Clear travel/draw dampeners if expiring after this turn
-    const turnCount = typeof gameState.turnCounter === "number" ? gameState.turnCounter : 0;
-    if (gameState.extraTravelDampener?.active) {
-        const expiresAt = gameState.extraTravelDampener.expiresAtTurnCounter;
-        if (typeof expiresAt === "number" && turnCount >= expiresAt) {
-            gameState.extraTravelDampener = null;
-            appendGameLogEntry(`Travel dampener ended.`, gameState);
-        }
-    }
-    if (gameState.extraDrawDampener?.active) {
-        const expiresAt = gameState.extraDrawDampener.expiresAtTurnCounter;
-        if (typeof expiresAt === "number" && turnCount >= expiresAt) {
-            gameState.extraDrawDampener = null;
-            appendGameLogEntry(`Draw dampener ended.`, gameState);
-        }
-    }
+    clearDampenersIfExpired();
 
     if (typeof heroState.cityIndex === "number") {
 

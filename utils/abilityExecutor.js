@@ -21,7 +21,7 @@ import { bystanders } from "../data/bystanders.js";
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
-         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout, destroyCitiesByCount, restoreCitiesByCount } from "./turnOrder.js";
 
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { gameState } from "../data/gameState.js";
@@ -1222,6 +1222,20 @@ EFFECT_HANDLERS.disableExtraDraw = function(args = [], card, selectedData = {}) 
 
     appendGameLogEntry(`Draws Dampened: All Heroes will only be able to draw 1 card until after this Hero's next turn.`, state);
     saveGameState(state);
+};
+
+EFFECT_HANDLERS.destroyCity = function(args = [], card, selectedData = {}) {
+    const heroId = selectedData?.currentHeroId ?? null;
+    const state = selectedData?.state || gameState;
+    const count = Math.max(1, resolveNumericValue(args?.[0] ?? 1, heroId, state));
+    destroyCitiesByCount(count, state);
+};
+
+EFFECT_HANDLERS.restoreCity = function(args = [], card, selectedData = {}) {
+    const heroId = selectedData?.currentHeroId ?? null;
+    const state = selectedData?.state || gameState;
+    const count = Math.max(1, resolveNumericValue(args?.[0] ?? 1, heroId, state));
+    restoreCitiesByCount(count, state);
 };
 
 function giveTeammateExtraTurn(heroId = null, state = gameState) {
