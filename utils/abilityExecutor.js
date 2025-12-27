@@ -1220,7 +1220,7 @@ EFFECT_HANDLERS.disableExtraDraw = function(args = [], card, selectedData = {}) 
         active: true
     };
 
-    appendGameLogEntry(`Draws dampened: all heroes will only draw 1 card on their next turns.`, state);
+    appendGameLogEntry(`Draws Dampened: All Heroes will only be able to draw 1 card until after this Hero's next turn.`, state);
     saveGameState(state);
 };
 
