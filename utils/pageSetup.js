@@ -1587,7 +1587,16 @@ const getInstanceKey = (obj) => {
 
 function showDamageSelectConfirm({ amount, foeName }) {
     return new Promise(resolve => {
+        // If a damage confirm overlay is already open, remove it before creating a new one
+        try {
+            const existing = document.querySelectorAll('[data-damage-confirm-overlay="1"]');
+            existing.forEach(el => { try { el.remove(); } catch (e) {} });
+        } catch (e) {
+            console.warn("[damageConfirm] Failed to clear existing overlays", e);
+        }
+
         const overlay = document.createElement("div");
+        overlay.dataset.damageConfirmOverlay = "1";
         overlay.style.cssText = `
             position: fixed;
             inset: 0;
@@ -1669,7 +1678,16 @@ function showDamageSelectConfirm({ amount, foeName }) {
 
 function showFreezeSelectConfirm({ foeName }) {
     return new Promise(resolve => {
+        // If a freeze confirm overlay is already open, remove it before creating a new one
+        try {
+            const existing = document.querySelectorAll('[data-freeze-confirm-overlay="1"]');
+            existing.forEach(el => { try { el.remove(); } catch (e) {} });
+        } catch (e) {
+            console.warn("[freezeConfirm] Failed to clear existing overlays", e);
+        }
+
         const overlay = document.createElement("div");
+        overlay.dataset.freezeConfirmOverlay = "1";
         overlay.style.cssText = `
             position: fixed;
             inset: 0;
