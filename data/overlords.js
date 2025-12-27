@@ -146,7 +146,7 @@ export const overlords = [
         condition: `heroKOd`,
         uses: `999`,
         shared: `no`,
-        effect: `returnHeroAsVillain`
+        effect: `returnHeroAsVillain()`
       }
     ],
     mightNamePrint: [

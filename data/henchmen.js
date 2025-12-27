@@ -119,7 +119,7 @@ export const henchmen = [
       },
       {
         condition: `KOHero`,
-        effect: `returnHeroAsVillain`
+        effect: `returnHeroAsVillain()`
       },
       {
         type: `optional`,
@@ -214,7 +214,7 @@ export const henchmen = [
       {
         type: `passive`,
         condition: `isEngaged`,
-        effect: `disableRetreat`
+        effect: `disableRetreat()`
       },
       {
         condition: `uponDefeat`,
@@ -407,7 +407,7 @@ export const henchmen = [
     abilitiesEffects: [
       {
         condition: `KOHero`,
-        effect: `returnHeroAsVillain`
+        effect: `returnHeroAsVillain()`
       },
       {
         condition: `uponDefeat`,

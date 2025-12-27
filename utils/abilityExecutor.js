@@ -2372,7 +2372,63 @@ EFFECT_HANDLERS.knockback = function(args = [], card, selectedData = {}) {
     queueKnockbackSelection(flag, heroId, state);
 };
 
+EFFECT_HANDLERS.returnHeroAsVillain = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.targetHeroId ?? selectedData?.currentHeroId ?? null;
+    const foeName = card?.name || "Unknown foe";
+
+    if (!heroId) {
+        console.warn("[returnHeroAsVillain] No heroId provided; skipping.");
+        return;
+    }
+
+    const heroCard = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroCard?.name || `Hero ${heroId}`;
+
+    console.log(`[returnHeroAsVillain] KOHero triggered by ${foeName} on ${heroName} (${heroId}).`);
+
+    const match = villains.find(v => String(v.name).toLowerCase() === String(heroName).toLowerCase());
+    if (!match) {
+        console.log(`[returnHeroAsVillain] No villain with matching name for ${heroName}; skipping deck insert.`);
+        return;
+    }
+
+    console.log(`[returnHeroAsVillain] Found villain match ${match.name} (${match.id}); placing on top of villain deck.`);
+    pushCardToVillainDeckTop(match.id, state);
+
+    const logMsg = `${foeName} KO'd ${heroName} and they've been turned!`;
+    appendGameLogEntry(logMsg, state);
+    console.log(`[returnHeroAsVillain] ${logMsg}`);
+
+    try { saveGameState(state); } catch (err) {
+        console.warn("[returnHeroAsVillain] Failed to save game state after inserting villain.", err);
+    }
+};
+
 // END OF EFFECT HANDLERS
+
+export function triggerKOHeroEffects(foeCard, state = gameState, heroId = null, context = {}) {
+    if (!foeCard) return;
+    const effects = Array.isArray(foeCard.abilitiesEffects) ? foeCard.abilitiesEffects : [];
+    if (!effects.length) return;
+
+    effects.forEach((eff, idx) => {
+        if (!eff) return;
+        const cond = String(eff.condition || "").toLowerCase();
+        if (cond !== "kohero") return;
+        try {
+            executeEffectSafely(eff.effect, foeCard, {
+                ...context,
+                currentHeroId: heroId,
+                targetHeroId: heroId,
+                state
+            });
+            console.log(`[triggerKOHeroEffects] Ran KOHero effect #${idx + 1} for ${foeCard.name || foeCard.id}.`);
+        } catch (err) {
+            console.warn("[triggerKOHeroEffects] Failed to run KOHero effect", err);
+        }
+    });
+}
 
 export function executeEffectSafely(effectString, card, selectedData) {
     if (Array.isArray(effectString)) {

@@ -304,7 +304,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -402,7 +402,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `optional`,
@@ -507,7 +507,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -593,7 +593,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `uponDefeat`,
@@ -736,7 +736,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -1198,7 +1198,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -1233,7 +1233,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -1320,7 +1320,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `passive`,
@@ -1500,7 +1500,7 @@ export const villains = [
       {
         type: `passive`,
         condition: `none`,
-        effect: `hasGlide`
+        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -1512,6 +1512,160 @@ export const villains = [
         condition: `onEscape`,
         uses: `999`,
         effect: `damageHero(3,all)`
+      }
+    ]
+  },
+  {
+    id: "5639",
+    name: "Batman",
+    image: `${cardArtFolder}/batman.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: All Heroes lose a random Icon Ability use. If a Hero has none to lose, they take 3 Damage. <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging Batman. <span class="line-gap"></span> 
+               Reward: CHOOSE: KO a Henchman or Villain in Gotham OR Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Must I Do Everything Myself?`
+      },
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+          text: `Choose Reward!`
+      },
+      {
+          text: `KO a Foe in Gotham`
+      },
+      {
+          text: `Freeze any Foe`
+      },
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `passive`,
+        condition: `isEngaged`,
+        effect: `disableRetreat()`
+      },
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`damageFoe(999,10)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`freezeVillain(any)`]
+      },
+    ],
+    mightNamePrint: [
+      {
+          text: `Gotham is Mine!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`loseIconUse(1,random,all)`]
+      }
+    ],
+  },
+  {
+    id: "5640",
+    name: "Superman",
+    image: `${cardArtFolder}/superman.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "25",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 2, Glide <span class="line-gap"></span> 
+               Reward: Deal 5 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Up, Up, and Away!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasGlide()`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(5)`
+      }
+    ]
+  },
+  {
+    id: "5641",
+    name: "Wonder Woman",
+    image: `${cardArtFolder}/wonderWoman.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "22",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
       }
     ]
   },

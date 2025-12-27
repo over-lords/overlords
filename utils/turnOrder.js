@@ -172,7 +172,9 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          buildMainCardPanel, playMightSwipeAnimation, showMightBanner, setCurrentOverlord, 
          renderHeroHandBar, applyHeroKOMarkers, clearHeroKOMarkers, refreshOverlordFacingGlow,
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
-import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, maybeRunHeroIconBeforeDrawOptionals } from './abilityExecutor.js';
+import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
+         processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -4520,6 +4522,27 @@ function handleHeroKnockout(heroId, heroState, state, options = {}) {
     }
 
     const effectiveState = state || gameState;
+
+    // Trigger KOHero effects for the foe that caused this KO (if known)
+    try {
+        const lastCauser = effectiveState.lastDamageCauser;
+        const foeId = lastCauser?.foeId;
+        if (foeId) {
+            const foeCard =
+                henchmen.find(h => String(h.id) === String(foeId)) ||
+                villains.find(v => String(v.id) === String(foeId));
+            if (foeCard) {
+                triggerKOHeroEffects(foeCard, effectiveState, heroId, {
+                    foeInstanceId: lastCauser.instanceId ?? null,
+                    slotIndex: lastCauser.slotIndex ?? null,
+                    source: options?.source || null
+                });
+            }
+        }
+    } catch (err) {
+        console.warn("[handleHeroKnockout] Failed to trigger KOHero effects.", err);
+    }
+
     saveGameState(effectiveState);
 
     // Check "all heroes KO'd" loss condition (and any others)
