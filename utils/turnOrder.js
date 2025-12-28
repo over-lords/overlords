@@ -174,7 +174,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
-         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects } from './abilityExecutor.js';
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -1288,16 +1288,6 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
 
     area.innerHTML = "";
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "card-wrapper city-card-enter";
-    wrapper.style.position = "relative";
-    wrapper.style.zIndex = "2"; // ensure card sits above destroyed-city overlay
-
-    const rendered = renderCard(newCardId, wrapper);
-    wrapper.appendChild(rendered);
-
-    area.appendChild(wrapper);
-
     // Use the shared resolver so Countdown (tactics) cards are found reliably
     const cardData = findCardInAllSources(newCardId);
 
@@ -1311,6 +1301,47 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
         uniqueId: entryInst
     };
 
+    const entry = state.cities[slotIndex];
+    const baseHP = Number((cardData && cardData.hp) || 1);
+
+    if (!state.villainHP) state.villainHP = {};
+    const savedHP = state.villainHP[entryInst];
+    const currentHP = (typeof savedHP === "number") ? savedHP : baseHP;
+
+    entry.maxHP = baseHP;
+    entry.currentHP = currentHP;
+
+    state.villainHP[entryInst] = currentHP;
+
+    // Keep the master card object in sync for panels / re-renders
+    if (cardData) {
+        cardData.currentHP = currentHP;
+    }
+
+    try {
+        triggerRuleEffects("henchmanEntered", { entryIndex: slotIndex, entry, cardData, state });
+        const syncedHP = entry.currentHP ?? currentHP;
+        state.villainHP[entryInst] = syncedHP;
+        if (cardData) {
+            cardData.currentHP = syncedHP;
+        }
+    } catch (err) {
+        console.warn("[placeCardInUpperCity] Failed to trigger rule effects:", err);
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper city-card-enter";
+    wrapper.style.position = "relative";
+    wrapper.style.zIndex = "2"; // ensure card sits above destroyed-city overlay
+
+    const renderOverride = cardData
+        ? { cardDataOverride: { ...cardData, hp: entry.maxHP, currentHP: entry.currentHP } }
+        : undefined;
+    const rendered = renderCard(newCardId, wrapper, renderOverride);
+    wrapper.appendChild(rendered);
+
+    area.appendChild(wrapper);
+
     if (cardData) {
         wrapper.style.cursor = "pointer";
         wrapper.addEventListener("click", (e) => {
@@ -1323,28 +1354,6 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
         });
     } else {
         console.warn("No cardData found for newCardId (upper-city placement):", newCardId);
-    }
-
-    const baseHP = Number((cardData && cardData.hp) || 1);
-
-    if (!state.villainHP) state.villainHP = {};
-    const savedHP = state.villainHP[String(newCardId)];
-
-    let currentHP;
-    if (typeof savedHP === "number") {
-        currentHP = savedHP;
-    } else {
-        currentHP = baseHP;
-    }
-
-    state.cities[slotIndex].maxHP = baseHP;
-    state.cities[slotIndex].currentHP = currentHP;
-
-    state.villainHP[String(newCardId)] = currentHP;
-
-    // Keep the master card object in sync for panels / re-renders
-    if (cardData) {
-        cardData.currentHP = currentHP;
     }
 
     saveGameState(state);
@@ -2213,16 +2222,6 @@ export async function shoveUpper(newCardId) {
         entryAreaFinal.innerHTML = "";
     }
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "card-wrapper city-card-enter";
-
-    const rendered = renderCard(newCardId, wrapper);
-    wrapper.appendChild(rendered);
-
-    if (entryAreaFinal) {
-        entryAreaFinal.appendChild(wrapper);
-    }
-
     const entryType = isCountdownId(newCardId) ? "countdown" : "villain";
     const entryInst = `inst_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     gameState.cities[ENTRY_IDX] = {
@@ -2233,9 +2232,46 @@ export async function shoveUpper(newCardId) {
         uniqueId: entryInst
     };
 
+    const entry = gameState.cities[ENTRY_IDX];
+
     const cardData =
         henchmen.find(h => h.id === newCardId) ||
         villains.find(v => v.id === newCardId);
+
+    const baseHP = Number((cardData && cardData.hp) || 1);
+    if (!gameState.villainHP) gameState.villainHP = {};
+    const savedHP = gameState.villainHP[entryInst];
+    let currentHP = typeof savedHP === "number" ? savedHP : baseHP;
+
+    entry.maxHP = baseHP;
+    entry.currentHP = currentHP;
+
+    gameState.villainHP[entryInst] = currentHP;
+    if (cardData) cardData.currentHP = currentHP;
+
+    try {
+        triggerRuleEffects("henchmanEntered", { entryIndex: ENTRY_IDX, entry, cardData, state: gameState });
+        const syncedHP = entry.currentHP ?? currentHP;
+        gameState.villainHP[entryInst] = syncedHP;
+        if (cardData) {
+            cardData.currentHP = syncedHP;
+        }
+    } catch (err) {
+        console.warn("[shoveUpper] Failed to trigger rule effects:", err);
+    }
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "card-wrapper city-card-enter";
+
+    const renderOverride = cardData
+        ? { cardDataOverride: { ...cardData, hp: entry.maxHP, currentHP: entry.currentHP } }
+        : undefined;
+    const rendered = renderCard(newCardId, wrapper, renderOverride);
+    wrapper.appendChild(rendered);
+
+    if (entryAreaFinal) {
+        entryAreaFinal.appendChild(wrapper);
+    }
 
     if (cardData) {
         wrapper.style.cursor = "pointer";

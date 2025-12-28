@@ -417,6 +417,15 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     return false;
 }
 
+function normalizeConditionString(cond) {
+    if (!cond) return "";
+    let s = String(cond).trim().toLowerCase();
+    if (s.endsWith("()")) {
+        s = s.slice(0, -2).trim();
+    }
+    return s;
+}
+
 // Shared helper to get per-instance key
 function getEntryKey(obj) {
     const k = obj?.instanceId ?? obj?.uniqueId ?? null;
@@ -2397,6 +2406,47 @@ EFFECT_HANDLERS.rallyNextHenchVillains = function(args) {
     rallyNextHenchVillains(count);
 };
 
+EFFECT_HANDLERS.henchEntryBonusHp = function(args = [], card, selectedData = {}) {
+    const amount = Number(args[0]) || 0;
+    if (!amount) return;
+
+    const state = selectedData.state || gameState;
+    const entry =
+        selectedData.entry ||
+        (typeof selectedData.entryIndex === "number" && state?.cities?.[selectedData.entryIndex])
+            || null;
+
+    if (!entry) {
+        console.warn("[henchEntryBonusHp] No entry provided for henchman HP bonus.");
+        return;
+    }
+
+    const foeId = entry.id ?? null;
+    const cardData =
+        selectedData.cardData ||
+        (foeId != null ? findCardInAllSources(foeId) : null);
+    const isHench =
+        (cardData?.type || "").toLowerCase() === "henchman" ||
+        (foeId != null && henchmen.some(h => String(h.id) === String(foeId)));
+
+    if (!isHench) return;
+
+    if (!state.villainHP) state.villainHP = {};
+
+    const entryKey = entry.instanceId ?? entry.uniqueId ?? (foeId != null ? String(foeId) : null);
+    const baseHP = Number(entry.maxHP ?? cardData?.hp ?? 0) || 0;
+    const currentHP = Number(entry.currentHP ?? (entryKey ? state.villainHP[entryKey] : null) ?? baseHP) || 0;
+
+    const nextMax = baseHP + amount;
+    const nextCurrent = currentHP + amount;
+
+    entry.maxHP = nextMax;
+    entry.currentHP = nextCurrent;
+
+    if (entryKey) state.villainHP[entryKey] = nextCurrent;
+    if (cardData) cardData.currentHP = nextCurrent;
+};
+
 EFFECT_HANDLERS.villainDraw = function(args) {
     const count = Number(args[0]) || 1;
     villainDraw(count);
@@ -2921,6 +2971,33 @@ export function executeEffectSafely(effectString, card, selectedData) {
             console.warn(`[executeEffectSafely] Handler '${fnName}' failed: ${err.message}`);
         }
     }
+}
+
+export function triggerRuleEffects(condition, payload = {}, state = gameState) {
+    const s = state || gameState;
+    const condNorm = normalizeConditionString(condition);
+    if (!condNorm) return;
+
+    const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+    const activeTactics = (s.tactics || [])
+        .map(id => tacticMap.get(String(id)))
+        .filter(Boolean);
+
+    activeTactics.forEach(tacticCard => {
+        const effects = Array.isArray(tacticCard.abilitiesEffects) ? tacticCard.abilitiesEffects : [];
+
+        effects.forEach((eff, idx) => {
+            const effCond = normalizeConditionString(eff?.condition);
+            if (!effCond || effCond !== condNorm) return;
+            if (!eff?.effect) return;
+
+            try {
+                executeEffectSafely(eff.effect, tacticCard, { ...payload, state: s, tacticId: tacticCard.id });
+            } catch (err) {
+                console.warn(`[triggerRuleEffects] Failed to run effect ${idx} on ${tacticCard.name}:`, err);
+            }
+        });
+    });
 }
 
 export function runGameStartAbilities(selectedData) {
@@ -3656,6 +3733,7 @@ export function resolveExitForVillain(entry) {
         console.warn("[resolveExitForVillain] Invalid slotIndex on entry:", entry);
         return;
     }
+    const exitKey = getEntryKey(entry);
 
     const lowerIdx = upperIdx + 1;
     console.warn("[resolveExitForVillain] Villain exited:", entry);
@@ -3671,7 +3749,10 @@ export function resolveExitForVillain(entry) {
         const current = gameState.cities[upperIdx];
 
         // Only clear if the exiting villain is still there in the model
-        if (current && String(current.id) === String(entry.id)) {
+        const currentKey = getEntryKey(current);
+        const matchByKey = exitKey && currentKey && currentKey === exitKey;
+        const matchById = current && String(current.id) === String(entry.id);
+        if (current && (matchByKey || matchById)) {
             gameState.cities[upperIdx] = null;
         }
     }
@@ -3712,13 +3793,16 @@ export function resolveExitForVillain(entry) {
         const current = Array.isArray(gameState.cities)
             ? gameState.cities[upperIdx]
             : null;
+        const currentKey = getEntryKey(current);
+        const matchByKey = exitKey && currentKey && currentKey === exitKey;
+        const matchById = current && String(current.id) === String(entry.id);
 
         // Only clear the upper slot if:
         //  - it's still empty in the model (stale DOM),
         //  - OR it still belongs to the same exiting villain id.
         // If a new villain (e.g., from city 2) has been moved into 0,
         // current.id !== entry.id and we skip clearing DOM.
-        if (!current || String(current.id) === String(entry.id)) {
+        if (!current || matchByKey || matchById) {
             if (freshUpperSlot) {
                 const upperArea = freshUpperSlot.querySelector(".city-card-area");
                 if (upperArea) upperArea.innerHTML = "";

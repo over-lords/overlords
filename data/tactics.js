@@ -248,11 +248,11 @@ export const tactics = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: `henchmanRallied`,
-        uses: `999`,
+        type: `passive`,
+        condition: `henchmanEntered()`,
+        uses: `0`,
         shared: `no`,
-        effect: `henchGainLife(1,lastRallied)`
+        effect: `henchEntryBonusHp(1)`
       }
     ],
     mightNamePrint: [
