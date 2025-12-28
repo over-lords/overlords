@@ -197,6 +197,211 @@ function isCountdownId(id) {
     return COUNTDOWN_IDS.has(String(id));
 }
 
+function hasUpperRowFoe(state = gameState) {
+    const s = state || gameState;
+    const cities = Array.isArray(s.cities) ? s.cities : [];
+    const upperSlots = [CITY_EXIT_UPPER, CITY_5_UPPER, CITY_4_UPPER, CITY_3_UPPER, CITY_2_UPPER, CITY_ENTRY_UPPER];
+    return upperSlots.some(idx => {
+        const entry = cities[idx];
+        return entry && entry.id != null;
+    });
+}
+
+function isHeroEngagedWithFoe(heroId, state = gameState) {
+    const s = state || gameState;
+    const heroState = s.heroData?.[heroId];
+    if (!heroState) return false;
+    if (heroState.isFacingOverlord) return false;
+    if (typeof heroState.cityIndex !== "number") return false;
+    const upperIdx = heroState.cityIndex - 1;
+    if (upperIdx < 0) return false;
+    const cities = Array.isArray(s.cities) ? s.cities : [];
+    const entry = cities[upperIdx];
+    return !!(entry && entry.id != null);
+}
+
+function isStandardEffectLive(effectVal, heroId, state = gameState) {
+    const list = Array.isArray(effectVal) ? effectVal : [effectVal];
+    const strings = list.filter(e => typeof e === "string");
+    const hasFreezeAny = strings.some(e => /freezeVillain\s*\(any\)/i.test(String(e)));
+    if (hasFreezeAny) {
+        return hasUpperRowFoe(state);
+    }
+
+    const hasRetreatHQ = strings.some(e => /retreatHeroToHQ\s*\(\s*\)/i.test(String(e)));
+    if (hasRetreatHQ) {
+        return isHeroEngagedWithFoe(heroId, state);
+    }
+
+    return true;
+}
+
+function getHeroStandardEffects(heroId, state = gameState) {
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) return [];
+
+    const effects = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+    const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+    const hState = state.heroData?.[heroId] || {};
+
+    const results = [];
+
+    effects.forEach((eff, i) => {
+        if (!eff || (eff.type || "").toLowerCase() !== "standard") return;
+        const maxUses = Number(eff.uses || 0);
+        const remaining = hState.currentUses?.[i] == null ? maxUses : hState.currentUses[i];
+        if (remaining <= 0) return;
+
+        const live = isStandardEffectLive(eff.effect, heroId, state);
+        if (!live) return;
+
+        const label = names[i]?.text || `Ability ${i + 1}`;
+        results.push({
+            index: i,
+            label,
+            usesLeft: remaining,
+            usesMax: maxUses,
+            effect: eff.effect
+        });
+    });
+
+    return results;
+}
+
+let currentStandardOptions = [];
+let currentStandardHeroId = null;
+let selectedStandardOption = null;
+
+function closeStandardAbilityOverlay() {
+    const overlay = document.getElementById("standard-ability-overlay");
+    const optionsBox = document.getElementById("standard-ability-options");
+    const msg = document.getElementById("standard-ability-message");
+    const activateBtn = document.getElementById("standard-ability-activate");
+
+    if (optionsBox) optionsBox.innerHTML = "";
+    if (msg) msg.textContent = "";
+    if (activateBtn) activateBtn.disabled = true;
+    selectedStandardOption = null;
+    currentStandardOptions = [];
+    currentStandardHeroId = null;
+    if (overlay) overlay.style.display = "none";
+}
+
+async function runStandardAbility(option, heroId, state = gameState) {
+    if (!option || heroId == null) return;
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const hState = state.heroData?.[heroId];
+    if (!heroObj || !hState) return;
+
+    const effectsArray = Array.isArray(option.effect) ? option.effect : [option.effect];
+    for (const eff of effectsArray) {
+        if (typeof eff !== "string") continue;
+        try {
+            await executeEffectSafely(eff, heroObj, { currentHeroId: heroId, state });
+        } catch (err) {
+            console.warn("[StandardAbility] Failed to execute effect", eff, err);
+        }
+    }
+
+    const max = Number(option.usesMax || option.usesLeft || 0);
+    if (!hState.currentUses) hState.currentUses = {};
+    const before = hState.currentUses[option.index];
+    const remaining = before == null ? max : before;
+    hState.currentUses[option.index] = Math.max(0, remaining - 1);
+    heroObj.currentUses = heroObj.currentUses || {};
+    heroObj.currentUses[option.index] = hState.currentUses[option.index];
+
+    const heroName = heroObj.name || `Hero ${heroId}`;
+    appendGameLogEntry(`${heroName} used ${option.label}.`, state);
+    saveGameState(state);
+}
+
+function openStandardAbilityMenu(heroId, state = gameState) {
+    const overlay = document.getElementById("standard-ability-overlay");
+    const optionsBox = document.getElementById("standard-ability-options");
+    const msg = document.getElementById("standard-ability-message");
+    const activateBtn = document.getElementById("standard-ability-activate");
+    if (!overlay || !optionsBox || !msg || !activateBtn) return;
+
+    const options = getHeroStandardEffects(heroId, state);
+    currentStandardOptions = options;
+    currentStandardHeroId = heroId;
+    selectedStandardOption = null;
+
+    optionsBox.innerHTML = "";
+    activateBtn.disabled = true;
+
+    if (!options.length) {
+        msg.textContent = "No live standard-speed effects available.";
+        overlay.style.display = "flex";
+        return;
+    }
+
+    msg.textContent = "";
+
+    options.forEach((opt, idx) => {
+        const row = document.createElement("div");
+        row.className = "standard-ability-option";
+        row.innerHTML = `
+            <div style="flex:1 1 auto;">${opt.label}</div>
+            <div style="font-weight:bold;">${opt.usesLeft}x</div>
+        `;
+        row.addEventListener("click", () => {
+            selectedStandardOption = idx;
+            optionsBox.querySelectorAll(".standard-ability-option").forEach(el => el.classList.remove("selected"));
+            row.classList.add("selected");
+            activateBtn.disabled = false;
+        });
+        optionsBox.appendChild(row);
+    });
+
+    overlay.style.display = "flex";
+}
+
+function updateStandardSpeedUI(state = gameState, heroId = null) {
+    const btn = document.getElementById("standard-activate-btn");
+    if (!btn) return;
+
+    const heroIds = state.heroes || [];
+    const activeHeroId = heroId ?? heroIds[state.heroTurnIndex ?? 0];
+
+    if (!activeHeroId || !state.heroData?.[activeHeroId]) {
+        btn.style.display = "none";
+        closeStandardAbilityOverlay();
+        return;
+    }
+
+    const options = getHeroStandardEffects(activeHeroId, state);
+    if (!options.length) {
+        btn.style.display = "none";
+        closeStandardAbilityOverlay();
+        return;
+    }
+
+    btn.style.display = "block";
+    btn.onclick = () => openStandardAbilityMenu(activeHeroId, state);
+}
+
+const standardAbilityClose = document.getElementById("standard-ability-close");
+if (standardAbilityClose) {
+    standardAbilityClose.addEventListener("click", () => closeStandardAbilityOverlay());
+}
+
+const standardAbilityActivateBtn = document.getElementById("standard-ability-activate");
+if (standardAbilityActivateBtn) {
+    standardAbilityActivateBtn.addEventListener("click", async () => {
+        if (selectedStandardOption == null) return;
+        const option = currentStandardOptions[selectedStandardOption];
+        if (!option || currentStandardHeroId == null) {
+            closeStandardAbilityOverlay();
+            return;
+        }
+        await runStandardAbility(option, currentStandardHeroId, gameState);
+        closeStandardAbilityOverlay();
+        updateStandardSpeedUI(gameState, currentStandardHeroId);
+    });
+}
+
 function getActiveUpperOrder(state = gameState) {
     const s = state || gameState;
     const destroyed = s?.destroyedCities || {};
@@ -1680,6 +1885,13 @@ export async function startHeroTurn(state, opts = {}) {
 
     appendGameLogEntry(`${activeHeroName} started their turn.`, state);
 
+    // Refresh standard-speed UI immediately when turn starts
+    try {
+        updateStandardSpeedUI(state, activeHeroId);
+    } catch (err) {
+        console.warn("[startHeroTurn] updateStandardSpeedUI failed", err);
+    }
+
     // VILLAIN DRAW for this "turn slot" (after logging turn start for ordering)
     if (!skipVillainDraw) {
         await villainDraw(1);
@@ -2117,6 +2329,8 @@ export function initializeTurnUI(gameState) {
         endTurnBtn.style.display = "none";
         return;
     }
+
+    updateStandardSpeedUI(gameState, activeHeroId);
 
     // -----------------------------
     // Restore / recompute Engage Overlord UI
@@ -2770,6 +2984,7 @@ async function performHeroStartingTravel(gameState, heroId, cityIndex) {
     );
 
     try { refreshFrozenOverlays(gameState); } catch (e) {}
+    try { updateStandardSpeedUI(gameState, heroId); } catch (e) { console.warn("[TRAVEL] updateStandardSpeedUI failed", e); }
 
     const cityName = getCityNameFromIndex(cityIndex);
     const foeSlotIdx = cityIndex - 1;
@@ -3726,6 +3941,7 @@ async function performHeroTravelToOverlord(gameState, heroId) {
     }
 
     renderHeroHandBar(gameState);
+    try { updateStandardSpeedUI(gameState, heroId); } catch (e) { console.warn("[OVERLORD] updateStandardSpeedUI failed", e); }
     saveGameState(gameState);
 }
 
@@ -4324,6 +4540,7 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
   recomputeCurrentHeroTravelDestinations(state);
   refreshAllCityOutlines(state);
   try { refreshFrozenOverlays(state); } catch (e) {}
+  try { updateStandardSpeedUI(state, activeHeroId); } catch (e) { console.warn("[SHOVE] updateStandardSpeedUI failed", e); }
 
   const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
   const heroName = heroObj?.name || `Hero ${activeHeroId}`;
