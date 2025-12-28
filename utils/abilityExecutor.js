@@ -699,6 +699,20 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     const count = Math.max(0, Number(rawCount) || 0);
     const flag = (args?.[1] ?? '').toString().toLowerCase();
 
+    const clampDrawForHero = (hid, desired) => {
+        const damp = gameState.extraDrawDampener;
+        if (damp?.active) {
+            const target = String(damp.target || "").toLowerCase();
+            const hState = gameState.heroData?.[hid];
+            const already = typeof hState?.drawnThisTurn === "number" ? hState.drawnThisTurn : 0;
+            if (target === "all") {
+                const remaining = Math.max(0, 1 - already);
+                return Math.min(desired, remaining);
+            }
+        }
+        return desired;
+    };
+
     const logDraw = (hid, drew) => {
         if (!hid || drew <= 0) return;
         const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
@@ -734,10 +748,13 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
             if (!Array.isArray(hState.deck)) hState.deck = [];
             if (!Array.isArray(hState.hand)) hState.hand = [];
 
-            console.log(`[draw] ${count} card(s) for hero ${hid} (all flag).`);
+            const allowed = clampDrawForHero(hid, count);
+            if (allowed <= 0) return;
+
+            console.log(`[draw] ${allowed} card(s) for hero ${hid} (all flag).`);
 
             let drew = 0;
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < allowed; i++) {
                 if (hState.deck.length === 0) {
                     console.log('[draw] Deck empty - cannot draw further.', { heroId: hid });
                     break;
@@ -770,10 +787,13 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
             if (!Array.isArray(hState.deck)) hState.deck = [];
             if (!Array.isArray(hState.hand)) hState.hand = [];
 
-            console.log(`[draw] ${count} card(s) for hero ${hid} (allOtherHeroes flag).`);
+            const allowed = clampDrawForHero(hid, count);
+            if (allowed <= 0) return;
+
+            console.log(`[draw] ${allowed} card(s) for hero ${hid} (allOtherHeroes flag).`);
 
             let drew = 0;
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < allowed; i++) {
                 if (hState.deck.length === 0) {
                     console.log('[draw] Deck empty - cannot draw further.', { heroId: hid });
                     break;
@@ -797,10 +817,16 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     if (!Array.isArray(heroState.discard)) heroState.discard = [];
     if (typeof heroState.drawnThisTurn !== 'number') heroState.drawnThisTurn = 0;
 
-    console.log(`[draw] ${count} card(s) for hero ${heroId}.`);
+    const allowedCount = clampDrawForHero(heroId, count);
+    if (allowedCount <= 0) {
+        console.log('[draw] Draw dampener: no draws allowed for this hero right now.');
+        return;
+    }
+
+    console.log(`[draw] ${allowedCount} card(s) for hero ${heroId}.`);
 
     let drew = 0;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < allowedCount; i++) {
         if (heroState.deck.length === 0) {
             if (heroState.drawnThisTurn >= 5) {
                 console.log('[draw] Deck empty and 5+ cards already drawn this turn; no reshuffle.');

@@ -3376,13 +3376,6 @@ function resetHeroCurrentTravelAtTurnStart(gameState) {
         }
     }
 
-    if (gameState.extraDrawDampener?.active) {
-        const flag = String(gameState.extraDrawDampener.target || "").toLowerCase();
-        if (flag === "all") {
-            heroState.pendingDrawPreviewCount = 1;
-        }
-    }
-
     heroState.hasDrawnThisTurn = false;
     const heroName = heroObj?.name || `Hero ${activeHeroId}`;
 
