@@ -2172,9 +2172,6 @@ async function applyDamageToHero(heroId, amount, options = {}) {
         return;
     }
 
-    // Clear any stale causer metadata so KO effects don't attribute to the wrong foe
-    s.lastDamageCauser = null;
-
     flagPendingHeroDamage(heroId, amt, options.sourceName || "effect", s);
     const blocked = await tryBlockPendingHeroDamage(s);
     const pending = s.pendingDamageHero;
@@ -2200,6 +2197,9 @@ async function applyDamageToHero(heroId, amount, options = {}) {
 
     if (heroState.hp <= 0) {
         handleHeroKnockout(heroId, heroState, s, { source: "damageHero", sourceName: options.sourceName || "effect" });
+    } else {
+        // Handle Eject passive on damaging foe (send hero back to HQ)
+        try { ejectHeroIfCauserHasEject(heroId, s); } catch (err) { console.warn("[damageHero] Eject handling failed", err); }
     }
 
     s.pendingDamageHero = null;
@@ -4632,6 +4632,55 @@ function cardHasClash(cardId) {
         }
     }
     return false;
+}
+
+function foeHasEject(entry) {
+    if (!entry) return false;
+    const card =
+        henchmen.find(h => String(h.id) === String(entry.id)) ||
+        villains.find(v => String(v.id) === String(entry.id));
+    if (!card) return false;
+
+    if (card.hasEject === true) return true;
+
+    const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
+    for (const eff of effects) {
+        if (!eff || (eff.type || "").toLowerCase() !== "passive") continue;
+        const raw = eff.effect;
+        const list = Array.isArray(raw) ? raw : [raw];
+        for (const e of list) {
+            if (typeof e !== "string") continue;
+            if (e.trim().toLowerCase() === "haseject") return true;
+        }
+    }
+    return false;
+}
+
+export function ejectHeroIfCauserHasEject(heroId, state = gameState) {
+    const s = state || gameState;
+    if (heroId == null) return false;
+
+    const causer = s.lastDamageCauser;
+    const slotIdx = causer?.slotIndex;
+    let foeEntry = null;
+    if (typeof slotIdx === "number" && Array.isArray(s.cities)) {
+        foeEntry = s.cities[slotIdx];
+    }
+    if (!foeEntry && causer?.instanceId && Array.isArray(s.cities)) {
+        foeEntry = s.cities.find(e => e && getEntryKey(e) === causer.instanceId) || null;
+    }
+    if (!foeEntry || !foeHasEject(foeEntry)) return false;
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const foeCard = findCardInAllSources(foeEntry.id);
+    const foeName = foeCard?.name || `Enemy ${foeEntry.id ?? ""}`.trim();
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    console.log(`[Eject] ${foeName} ejected ${heroName} back to HQ.`);
+    appendGameLogEntry(`${heroName} was ejected to HQ by ${foeName}.`, s);
+    sendHeroHomeFromBoard(heroId, s);
+    saveGameState(s);
+    return true;
 }
 
 export function resolveExitForVillain(entry) {

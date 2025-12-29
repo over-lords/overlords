@@ -175,7 +175,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers,
-         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives } from './abilityExecutor.js';
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -2595,6 +2595,7 @@ export async function endCurrentHeroTurn(gameState) {
 
                         handleHeroKnockout(heroId, heroState, gameState, { source: "endTurnDamage", sourceName: foe.name });
                     } else {
+                        try { ejectHeroIfCauserHasEject(heroId, gameState); } catch (err) { console.warn("[endCurrentHeroTurn] Eject handling failed", err); }
                         updateHeroHPDisplays(heroId);
                         updateBoardHeroHP(heroId);
 
