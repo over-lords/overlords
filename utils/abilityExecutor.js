@@ -1175,6 +1175,51 @@ EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
     renderHeroHandBar(gameState);
 };
 
+EFFECT_HANDLERS.koBystander = function(args = [], cardData, selectedData = {}) {
+    const count = Math.max(1, Number(args?.[0]) || 1);
+    const state = selectedData?.state || gameState;
+
+    if (!Array.isArray(bystanders) || bystanders.length === 0) {
+        console.warn("[koBystander] No bystanders available to KO.");
+        return;
+    }
+
+    if (!Array.isArray(state.koCards)) state.koCards = [];
+
+    const names = [];
+    for (let i = 0; i < count; i++) {
+        const picked = bystanders[Math.floor(Math.random() * bystanders.length)];
+        if (!picked?.id) {
+            console.warn("[koBystander] Picked invalid bystander:", picked);
+            continue;
+        }
+        state.koCards.push({
+            id: picked.id,
+            name: picked.name,
+            type: "Bystander",
+            source: "koBystander"
+        });
+        names.push(picked.name || `Bystander ${picked.id}`);
+    }
+
+    if (names.length) {
+        const msg = names.length === 1
+            ? `${names[0]} was KO'd.`
+            : `Bystanders KO'd: ${names.join(", ")}`;
+        appendGameLogEntry(msg, state);
+    }
+
+    try {
+        if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
+            window.renderKOBar(state);
+        }
+    } catch (e) {
+        console.warn("[koBystander] Failed to render KO bar", e);
+    }
+
+    saveGameState(state);
+};
+
 function rescueCapturedBystander(flag = "all", heroId = null, state = gameState) {
     const s = state || gameState;
     const hid = heroId ?? s.heroes?.[s.heroTurnIndex ?? 0];
