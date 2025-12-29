@@ -285,7 +285,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `halveDamage(current,next)`
+                effect: `halfDamage(current,next)`
             }
         ]
     },

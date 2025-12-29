@@ -200,7 +200,12 @@ function applyHalfDamageModifier(amount, heroId, state = gameState) {
     mods.forEach(mod => {
         if (!mod) return;
         if (typeof mod.expiresAtTurnCounter === "number" && turn >= mod.expiresAtTurnCounter) return;
-        if (!heroMatchesTeam(heroObj, mod.team)) return;
+        const teamKey = String(mod.team || "").toLowerCase().trim();
+        const applies =
+            teamKey === "current"
+                ? heroId != null
+                : heroMatchesTeam(heroObj, teamKey);
+        if (!applies) return;
         // Round up to keep at least half, minimum 1
         dmg = Math.max(1, Math.ceil(dmg / 2));
     });
