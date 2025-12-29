@@ -1308,7 +1308,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: `giveHeroPassive(discardCardsAtWill)`
+        effect: `giveHeroPassive(discardCardsAtWill())`
       },
     ]
   },
@@ -1539,7 +1539,7 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: `giveHeroPassive(discardCardsAtWill)`
+        effect: `giveHeroPassive(discardCardsAtWill())`
       },
       {
         type: `quick`,

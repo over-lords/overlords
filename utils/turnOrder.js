@@ -174,7 +174,8 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
-         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers } from './abilityExecutor.js';
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers,
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -240,8 +241,7 @@ function getHeroStandardEffects(heroId, state = gameState) {
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     if (!heroObj) return [];
 
-    const effects = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
-    const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+    const { effects, names } = getHeroAbilitiesWithTemp(heroId, state);
     const hState = state.heroData?.[heroId] || {};
 
     const results = [];
@@ -294,6 +294,8 @@ async function runStandardAbility(option, heroId, state = gameState) {
     if (!heroObj || !hState) return;
 
     const effectsArray = Array.isArray(option.effect) ? option.effect : [option.effect];
+    const skipUseDecrement = effectsArray.some(eff => typeof eff === "string" && /^discardCardsAtWill/i.test(eff));
+
     for (const eff of effectsArray) {
         if (typeof eff !== "string") continue;
         try {
@@ -307,7 +309,9 @@ async function runStandardAbility(option, heroId, state = gameState) {
     if (!hState.currentUses) hState.currentUses = {};
     const before = hState.currentUses[option.index];
     const remaining = before == null ? max : before;
-    hState.currentUses[option.index] = Math.max(0, remaining - 1);
+    hState.currentUses[option.index] = skipUseDecrement
+        ? remaining
+        : Math.max(0, remaining - 1);
     heroObj.currentUses = heroObj.currentUses || {};
     heroObj.currentUses[option.index] = hState.currentUses[option.index];
 
@@ -2677,6 +2681,7 @@ export async function endCurrentHeroTurn(gameState) {
     // Handle temporary freezes tied to this hero (remove after their next turn)
     processTempFreezesForHero(heroId, gameState);
     processTempPassivesForHero(heroId, gameState);
+    cleanupExpiredHeroPassives(heroId, gameState);
 
     const pendingExtra = gameState.pendingExtraTurn;
     const targetIdx = pendingExtra

@@ -782,6 +782,199 @@ export function processTempPassivesForHero(heroId, state = gameState) {
     });
 }
 
+// ---------------------------------------------------------
+// HERO TEMP PASSIVES / ABILITIES
+// ---------------------------------------------------------
+function normalizeHeroPassiveDuration(raw) {
+    const val = String(raw ?? "").toLowerCase();
+    if (!val || ["current", "turn", "currentturn", "thisturn"].includes(val)) return "current";
+    if (["next", "nextturn"].includes(val)) return "next";
+    if (["forever", "permanent", "always", "perma"].includes(val)) return "forever";
+    return "current";
+}
+
+function buildHeroPassiveAbility(effectSpec, opts = {}) {
+    if (effectSpec == null) return null;
+    const raw = String(effectSpec).trim();
+    if (!raw) return null;
+
+    const fnMatch = raw.match(/^([A-Za-z0-9_]+)\s*(\((.*)\))?/);
+    const fnName = fnMatch ? fnMatch[1].toLowerCase() : "";
+    const argSection = fnMatch && fnMatch[3] != null ? fnMatch[3] : "";
+
+    let effectText = raw;
+    let type = opts.typeHint || null;
+    let uses = opts.usesOverride;
+    let label = opts.label || raw;
+
+    const cityLabel = () => {
+        const idx = Number(argSection);
+        const name = Number.isFinite(idx) ? getCityNameFromIndex(idx) : null;
+        return name ? `Travel to ${name}` : "Travel";
+    };
+
+    if (fnName === "atwilltravelto") {
+        effectText = `travelTo(${argSection})`;
+        type = type || "standard";
+        uses = uses ?? 1;
+        if (!opts.label) label = cityLabel();
+    } else if (fnName === "retreatherotohq") {
+        type = type || "standard";
+        uses = uses ?? 1;
+        if (!opts.label) label = "Withdraw";
+    } else if (fnName === "travelto") {
+        type = type || "standard";
+        uses = uses ?? 1;
+        if (!opts.label) label = cityLabel();
+    } else if (fnName === "discardcardsatwill") {
+        type = type || "standard";
+        uses = uses ?? 999;
+        effectText = "discardCardsAtWill()";
+        if (!opts.label) label = "Discard cards at will";
+    }
+
+    if (!type) type = "passive";
+    if (uses == null) {
+        uses = (type === "standard" || type === "optional") ? 1 : 0;
+    }
+
+    const abilityEntry = {
+        type,
+        condition: "none",
+        uses,
+        effect: effectText
+    };
+
+    if (type === "optional" && !abilityEntry.howOften) {
+        abilityEntry.howOften = "OPT";
+    }
+
+    return { abilityEntry, label };
+}
+
+function getAbilityKey(ability) {
+    if (!ability) return null;
+    const type = String(ability.type || "").toLowerCase();
+    const eff = Array.isArray(ability.effect) ? ability.effect.join("|") : String(ability.effect || "");
+    return `${type}::${eff}`;
+}
+
+function addTempHeroAbility(heroId, abilityEntry, meta = {}, state = gameState) {
+    const s = state || gameState;
+    if (!heroId || !abilityEntry) return null;
+    if (!s.heroData) s.heroData = {};
+    const heroState = s.heroData[heroId] || (s.heroData[heroId] = {});
+    if (!Array.isArray(heroState.tempAbilities)) heroState.tempAbilities = [];
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const baseLen = Array.isArray(heroObj?.abilitiesEffects) ? heroObj.abilitiesEffects.length : 0;
+    const incomingKey = getAbilityKey(abilityEntry);
+    const existingIndex = heroState.tempAbilities.findIndex(entry => entry && getAbilityKey(entry.ability) === incomingKey);
+
+    if (existingIndex !== -1) {
+        const existing = heroState.tempAbilities[existingIndex];
+        const incomingUses = Math.max(0, Number(abilityEntry.uses || 0));
+        const oldMax = Math.max(0, Number(existing.ability?.uses || 0));
+        const newMax = Math.min(999, oldMax + incomingUses);
+        existing.ability.uses = newMax;
+
+        const idx = baseLen + existingIndex;
+        if (!heroState.currentUses) heroState.currentUses = {};
+        const oldRemaining = heroState.currentUses[idx];
+        const newRemaining = oldRemaining == null
+            ? newMax
+            : Math.min(999, Math.max(0, oldRemaining) + incomingUses);
+        heroState.currentUses[idx] = newRemaining;
+        if (heroObj) {
+            heroObj.currentUses = heroObj.currentUses || {};
+            heroObj.currentUses[idx] = heroState.currentUses[idx];
+        }
+        return existingIndex;
+    }
+
+    let slot = heroState.tempAbilities.findIndex(entry => !entry);
+    if (slot === -1) {
+        heroState.tempAbilities.push(null);
+        slot = heroState.tempAbilities.length - 1;
+    }
+
+    heroState.tempAbilities[slot] = {
+        ability: abilityEntry,
+        label: meta.label || null,
+        expiresAtTurnCounter: meta.expiresAtTurnCounter ?? null,
+        source: meta.source || null,
+        createdTurnCounter: meta.createdTurnCounter ?? null
+    };
+
+    // Initialize uses for new temp ability
+    if (abilityEntry.type && abilityEntry.type.toLowerCase() !== "passive") {
+        const idx = baseLen + slot;
+        if (!heroState.currentUses) heroState.currentUses = {};
+        heroState.currentUses[idx] = Math.max(0, Number(abilityEntry.uses || 0));
+        if (heroObj) {
+            heroObj.currentUses = heroObj.currentUses || {};
+            heroObj.currentUses[idx] = heroState.currentUses[idx];
+        }
+    }
+
+    return slot;
+}
+
+export function cleanupExpiredHeroPassives(heroId, state = gameState, opts = {}) {
+    const s = state || gameState;
+    if (!heroId || !s.heroData?.[heroId]) return;
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const baseLen = Array.isArray(heroObj?.abilitiesEffects) ? heroObj.abilitiesEffects.length : 0;
+    const heroState = s.heroData[heroId];
+    if (!Array.isArray(heroState.tempAbilities)) return;
+
+    const turnCount = typeof s.turnCounter === "number" ? s.turnCounter : 0;
+    let changed = false;
+
+    heroState.tempAbilities = heroState.tempAbilities.map((entry, idx) => {
+        if (!entry) return null;
+        const expiresAt = entry.expiresAtTurnCounter;
+        const shouldExpire = typeof expiresAt === "number" ? (turnCount >= expiresAt) : false;
+        if (shouldExpire) {
+            if (heroState.currentUses && (baseLen + idx) in heroState.currentUses) {
+                delete heroState.currentUses[baseLen + idx];
+            }
+            if (heroObj?.currentUses && (baseLen + idx) in heroObj.currentUses) {
+                delete heroObj.currentUses[baseLen + idx];
+            }
+            changed = true;
+            return null;
+        }
+        return entry;
+    });
+
+    if (changed && opts.save !== false) {
+        saveGameState(s);
+    }
+}
+
+export function getHeroAbilitiesWithTemp(heroId, state = gameState) {
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const baseEffects = Array.isArray(heroObj?.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+    const baseNames = Array.isArray(heroObj?.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+    const heroState = state?.heroData?.[heroId] || {};
+    const tempList = Array.isArray(heroState.tempAbilities) ? heroState.tempAbilities : [];
+
+    const tempEffects = tempList.map(entry => entry?.ability || null);
+    const tempNames = tempList.map(entry => entry
+        ? { text: entry.label || (entry.ability?.effect ? String(entry.ability.effect) : "Temporary Ability") }
+        : null
+    );
+
+    return {
+        effects: baseEffects.concat(tempEffects),
+        names: baseNames.concat(tempNames),
+        baseLength: baseEffects.length,
+        tempAbilities: tempList
+    };
+}
+
 EFFECT_HANDLERS.charge = function (args, card, selectedData) {
     const distance = Number(args[0]) || 1;
     runCharge(card.id, distance);
@@ -1884,8 +2077,7 @@ export async function maybeRunHeroIconBeforeDrawOptionals(heroId) {
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     if (!heroObj) return;
 
-    const effs = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
-    const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+    const { effects: effs, names } = getHeroAbilitiesWithTemp(heroId, gameState);
     const hState = gameState.heroData?.[heroId] || {};
 
     for (let i = 0; i < effs.length; i++) {
@@ -1936,8 +2128,7 @@ async function maybeRunHeroIconDamageOptionals(heroId) {
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     if (!heroObj) return;
 
-    const effs = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
-    const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
+    const { effects: effs, names } = getHeroAbilitiesWithTemp(heroId, gameState);
     const hState = gameState.heroData?.[heroId] || {};
     const base = Number(gameState._pendingCardBaseDamage || 0);
 
@@ -2724,6 +2915,66 @@ EFFECT_HANDLERS.discard = function(args = [], card, selectedData = {}) {
     saveGameState(state);
 };
 
+function toggleDiscardAtWill(heroId, state = gameState) {
+    if (!heroId || !state) return;
+    const s = state || gameState;
+    const current = s.discardMode;
+    const isActive =
+        current &&
+        String(current.heroId) === String(heroId) &&
+        current.mode === "atWill" &&
+        (current.remaining == null || current.remaining > 0);
+
+    if (isActive) {
+        s.discardMode = null;
+        return false;
+    }
+
+    s.discardMode = {
+        heroId,
+        remaining: Number.MAX_SAFE_INTEGER,
+        mode: "atWill"
+    };
+    return true;
+}
+
+EFFECT_HANDLERS.discardCardsAtWill = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const heroId =
+        selectedData?.currentHeroId ??
+        (Array.isArray(state.heroes) ? state.heroes[state.heroTurnIndex ?? 0] : null);
+
+    if (heroId == null) {
+        console.warn("[discardCardsAtWill] No heroId resolved.");
+        return;
+    }
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+
+    const enabled = toggleDiscardAtWill(heroId, state);
+    try {
+        appendGameLogEntry(
+            enabled
+                ? `${heroName} can now discard cards at will.`
+                : `${heroName} disabled discard at will.`,
+            state
+        );
+    } catch (err) {
+        console.warn("[discardCardsAtWill] Failed to append log entry.", err);
+    }
+
+    try { renderHeroHandBar(state); } catch (err) { console.warn("[discardCardsAtWill] Failed to refresh hand bar.", err); }
+    try {
+        if (typeof window !== "undefined" && typeof window.updateStandardSpeedUI === "function") {
+            window.updateStandardSpeedUI(state, heroId);
+        }
+    } catch (err) {
+        console.warn("[discardCardsAtWill] Failed to refresh standard ability UI.", err);
+    }
+    try { saveGameState(state); } catch (err) { console.warn("[discardCardsAtWill] Failed to save state after toggle.", err); }
+};
+
 EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
     const who = (args?.[0] ?? "any") || "any";
     const howLong = (args?.[1] ?? "forever") || "forever";
@@ -2898,6 +3149,102 @@ EFFECT_HANDLERS.giveVillainPassive = function(args = [], card, selectedData = {}
     const heroId = selectedData?.currentHeroId ?? null;
 
     applyPassiveToTarget(who, passive, howLong, state, heroId);
+};
+
+EFFECT_HANDLERS.giveHeroPassive = function(args = [], card, selectedData = {}) {
+    const effectSpec = args?.[0];
+    if (effectSpec == null) {
+        console.warn("[giveHeroPassive] No effect specified.");
+        return;
+    }
+
+    const heroId =
+        selectedData?.currentHeroId ??
+        (Array.isArray(gameState.heroes) ? gameState.heroes[gameState.heroTurnIndex ?? 0] : null);
+
+    if (heroId == null) {
+        console.warn("[giveHeroPassive] No heroId resolved.");
+        return;
+    }
+
+    const state = selectedData?.state || gameState;
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) {
+        console.warn("[giveHeroPassive] Hero not found for id:", heroId);
+        return;
+    }
+
+    let duration = "current";
+    let typeHint = null;
+    let usesOverride = null;
+    let labelHint = null;
+
+    (args.slice(1) || []).forEach(arg => {
+        if (typeof arg === "number" && !Number.isNaN(arg)) {
+            usesOverride = Number(arg);
+            return;
+        }
+        const val = String(arg ?? "").toLowerCase();
+        if (["current", "turn", "currentturn", "thisturn"].includes(val)) {
+            duration = "current";
+            return;
+        }
+        if (["next", "nextturn"].includes(val)) {
+            duration = "next";
+            return;
+        }
+        if (["forever", "permanent", "always", "perma"].includes(val)) {
+            duration = "forever";
+            return;
+        }
+        if (["standard", "optional", "passive", "quick"].includes(val)) {
+            typeHint = val;
+            return;
+        }
+        if (!labelHint) {
+            labelHint = String(arg);
+        }
+    });
+
+    const built = buildHeroPassiveAbility(effectSpec, { typeHint, usesOverride, label: labelHint });
+    if (!built || !built.abilityEntry) {
+        console.warn("[giveHeroPassive] Could not build temp ability from spec:", effectSpec);
+        return;
+    }
+
+    const durationNorm = normalizeHeroPassiveDuration(duration);
+    const turnCount = typeof state.turnCounter === "number" ? state.turnCounter : 0;
+    let expiresAtTurnCounter = null;
+    if (durationNorm === "current") expiresAtTurnCounter = turnCount;
+    else if (durationNorm === "next") expiresAtTurnCounter = turnCount + 1;
+
+    const slot = addTempHeroAbility(heroId, built.abilityEntry, {
+        label: built.label,
+        expiresAtTurnCounter,
+        source: card?.name || card?.id || null,
+        createdTurnCounter: turnCount
+    }, state);
+
+    const heroName = heroObj?.name || `Hero ${heroId}`;
+    const durationText =
+        durationNorm === "forever"
+            ? "for the rest of the game"
+            : (durationNorm === "next" ? "through next turn" : "for this turn");
+    if (slot != null) {
+        try {
+            appendGameLogEntry(`${heroName} gained ${built.label} ${durationText}.`, state);
+        } catch (err) {
+            console.warn("[giveHeroPassive] Failed to log passive gain.", err);
+        }
+        try {
+            if (typeof window !== "undefined" && typeof window.updateStandardSpeedUI === "function") {
+                window.updateStandardSpeedUI(state, heroId);
+            }
+        } catch (err) {
+            console.warn("[giveHeroPassive] Failed to refresh standard ability UI.", err);
+        }
+        try { saveGameState(state); } catch (err) { console.warn("[giveHeroPassive] Failed to save state after granting passive.", err); }
+    }
 };
 
 function normalizeVillainDeckPointer(state) {
@@ -3158,7 +3505,16 @@ export function executeEffectSafely(effectString, card, selectedData) {
         const match = call.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
 
         if (!match) {
-            console.warn(`[executeEffectSafely] Could not parse effect '${call}' on ${card?.name}.`);
+            const bareHandler = EFFECT_HANDLERS[call];
+            if (bareHandler) {
+                try {
+                    bareHandler([], card, { ...selectedData });
+                } catch (err) {
+                    console.warn(`[executeEffectSafely] Handler '${call}' failed: ${err.message}`);
+                }
+            } else {
+                console.warn(`[executeEffectSafely] Could not parse effect '${call}' on ${card?.name}.`);
+            }
             continue;
         }
 
@@ -5484,7 +5840,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     // Apply passive city-targeted double damage (e.g., Batman)
     if (heroId != null) {
         const heroObj = heroes.find(h => String(h.id) === String(heroId));
-        const effs = Array.isArray(heroObj?.abilitiesEffects) ? heroObj.abilitiesEffects : [];
+        const { effects: effs } = getHeroAbilitiesWithTemp(heroId, s);
         effs.forEach(eff => {
             if (!eff || (eff.type || "").toLowerCase() !== "passive") return;
             const effStr = Array.isArray(eff.effect) ? eff.effect.join(",") : (eff.effect || "");
@@ -5885,6 +6241,17 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
         return;
     }
 
+    // If another hero is already in the destination city, send them back to HQ (no damage).
+    if (Array.isArray(heroIds)) {
+        heroIds.forEach(hid => {
+            if (String(hid) === String(resolvedHeroId)) return;
+            const otherState = s.heroData?.[hid];
+            if (otherState && otherState.cityIndex === destIndex) {
+                sendHeroHomeFromBoard(hid, s);
+            }
+        });
+    }
+
     heroState.cityIndex = destIndex;
     heroState.isFacingOverlord = false;
     clearPendingTravelLog();
@@ -5911,6 +6278,13 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
 
     showRetreatButtonForCurrentHero(s);
     renderHeroHandBar(s);
+    try {
+        if (typeof window !== "undefined" && typeof window.recomputeCurrentHeroTravelDestinations === "function") {
+            window.recomputeCurrentHeroTravelDestinations(s);
+        }
+    } catch (err) {
+        console.warn("[travelTo] Failed to recompute travel destinations.", err);
+    }
     saveGameState(s);
 }
 
@@ -5940,6 +6314,13 @@ function retreatHeroToHQSafe(heroId = null, state = gameState) {
 
     showRetreatButtonForCurrentHero(s);
     renderHeroHandBar(s);
+    try {
+        if (typeof window !== "undefined" && typeof window.recomputeCurrentHeroTravelDestinations === "function") {
+            window.recomputeCurrentHeroTravelDestinations(s);
+        }
+    } catch (err) {
+        console.warn("[retreatHeroToHQ] Failed to recompute travel destinations.", err);
+    }
     saveGameState(s);
 }
 
