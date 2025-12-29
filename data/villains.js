@@ -1510,7 +1510,6 @@ export const villains = [
       {
         type: `quick`,
         condition: `onEscape`,
-        uses: `999`,
         effect: `damageHero(3,all)`
       }
     ]

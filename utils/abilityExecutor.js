@@ -3993,6 +3993,24 @@ export async function handleVillainEscape(entry, state) {
         appendGameLogEntry(msg, state);
     }
 
+    // Run onEscape effects (non-takeover) safely before HP/overlord resolution
+    try {
+        const effects = Array.isArray(foeCard.abilitiesEffects) ? foeCard.abilitiesEffects : [];
+        for (let i = 0; i < effects.length; i++) {
+            const eff = effects[i];
+            if (!eff || !eff.effect) continue;
+            const cond = String(eff.condition || "").trim().toLowerCase();
+            if (cond !== "onescape") continue;
+            try {
+                executeEffectSafely(eff.effect, foeCard, { state, slotIndex: entry.slotIndex, foeEntry: entry });
+            } catch (err) {
+                console.warn("[handleVillainEscape] onEscape effect failed", err);
+            }
+        }
+    } catch (err) {
+        console.warn("[handleVillainEscape] Failed to process onEscape effects.", err);
+    }
+
     // Pull per-instance HP first; fall back to tracked villainHP or base card HP
     const getInstanceKey = (obj) => {
         const k = obj?.instanceId ?? obj?.uniqueId ?? null;
