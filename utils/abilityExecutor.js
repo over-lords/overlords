@@ -501,6 +501,39 @@ function getEntryKey(obj) {
     return (k == null) ? null : String(k);
 }
 
+function triggerTravelsTo(entry, slotIndex, state = gameState) {
+    if (!entry || typeof slotIndex !== "number") return;
+    const s = state || gameState;
+    const cardData = findCardInAllSources(entry.id);
+    if (!cardData || !Array.isArray(cardData.abilitiesEffects)) return;
+
+    const effects = cardData.abilitiesEffects;
+    effects.forEach((eff, idx) => {
+        if (!eff || !eff.condition) return;
+        const cond = String(eff.condition).trim().toLowerCase();
+        const match = cond.match(/^travelsto\((\d+)\)$/);
+        if (!match) return;
+
+        const targetIdx = Number(match[1]);
+        if (targetIdx !== slotIndex) return;
+
+        const usesMax = Number(eff.uses || 1);
+        if (!entry.abilityUses) entry.abilityUses = {};
+        const remaining = entry.abilityUses[idx] == null ? usesMax : entry.abilityUses[idx];
+        if (remaining <= 0) return;
+
+        entry.abilityUses[idx] = Math.max(0, remaining - 1);
+
+        try {
+            executeEffectSafely(eff.effect, cardData, { state: s, slotIndex, foeEntry: entry });
+        } catch (err) {
+            console.warn("[triggerTravelsTo] Failed to execute effect", eff.effect, err);
+        }
+    });
+
+    saveGameState(s);
+}
+
 function ensureFrozenOverlay(slotIndex) {
     const citySlots = document.querySelectorAll(".city-slot");
     const slot = citySlots?.[slotIndex];
@@ -2060,6 +2093,56 @@ EFFECT_HANDLERS.extendDrawView = function(args = [], card, selectedData = {}) {
     const target = args?.[0] ?? "self";
     const count = args?.[1] ?? 3;
     extendDrawView(target, count, gameState, selectedData);
+};
+
+EFFECT_HANDLERS.doubleVillainLife = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    let slotIndex = selectedData?.slotIndex;
+    let entry = selectedData?.foeEntry || null;
+
+    if (!entry && typeof slotIndex === "number" && Array.isArray(state?.cities)) {
+        entry = state.cities[slotIndex];
+    }
+
+    if (!entry && Array.isArray(state?.cities)) {
+        entry = state.cities.find(e => e && String(e.id) === String(card?.id));
+        slotIndex = entry ? entry.slotIndex : slotIndex;
+    }
+
+    if (!entry) {
+        console.warn("[doubleVillainLife] No foe entry available.");
+        return;
+    }
+
+    const key = getEntryKey(entry) || String(entry.id || "");
+    const foeCard = findCardInAllSources(entry.id);
+    const baseHP = Number(entry.maxHP ?? foeCard?.hp ?? foeCard?.baseHP ?? 0);
+
+    if (!state.villainHP) state.villainHP = {};
+    let current = typeof entry.currentHP === "number"
+        ? entry.currentHP
+        : (key && typeof state.villainHP[key] === "number" ? state.villainHP[key] : baseHP);
+
+    if (!Number.isFinite(current)) current = baseHP;
+
+    const newHP = current * 2;
+    entry.currentHP = newHP;
+    entry.maxHP = Math.max(entry.maxHP || baseHP, newHP);
+    if (key) state.villainHP[key] = newHP;
+    if (foeCard) foeCard.currentHP = newHP;
+
+    if (typeof slotIndex === "number") {
+        try { refreshFoeCardUI(slotIndex, entry); } catch (err) { console.warn("[doubleVillainLife] Failed to refresh UI.", err); }
+    }
+
+    try {
+        const name = foeCard?.name || `Enemy ${entry.id ?? ""}`.trim();
+        appendGameLogEntry(`${name} doubled its HP to ${newHP}.`, state);
+    } catch (err) {
+        console.warn("[doubleVillainLife] Failed to log HP change.", err);
+    }
+
+    saveGameState(state);
 };
 
 function restoreExtraTurnModalFromState(state = gameState) {
@@ -4160,6 +4243,7 @@ function moveCardModelAndDOM(fromIndex, toIndex) {
         if (gameState.cities[toIndex].isFrozen) {
             ensureFrozenOverlay(toIndex);
         }
+        triggerTravelsTo(gameState.cities[toIndex], toIndex, gameState);
     }
     gameState.cities[fromIndex] = null;
 

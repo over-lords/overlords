@@ -939,7 +939,7 @@ export const villains = [
         type: `quick`,
         condition: `travelsTo(4)`,
         uses: `1`,
-        effect: `doubleVillainLife`
+        effect: `doubleVillainLife()`
       },
       {
         type: `optional`,
