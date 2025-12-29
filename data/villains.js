@@ -365,8 +365,7 @@ export const villains = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `none`,
-        effect: `disableIconAbilitiesAgainst`
+        effect: `disableIconAbilitiesAgainst()`
       },
       {
         type: `optional`,

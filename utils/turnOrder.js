@@ -174,8 +174,8 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
-         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers,
-         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject } from './abilityExecutor.js';
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers, 
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -238,6 +238,8 @@ function isStandardEffectLive(effectVal, heroId, state = gameState) {
 }
 
 function getHeroStandardEffects(heroId, state = gameState) {
+    if (iconAbilitiesDisabledForHero(heroId, state)) return [];
+
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     if (!heroObj) return [];
 

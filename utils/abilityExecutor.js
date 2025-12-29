@@ -2436,6 +2436,9 @@ EFFECT_HANDLERS.doubleVillainLife = function(args = [], card, selectedData = {})
     saveGameState(state);
 };
 
+// No-op handler for passive marker; logic handled via foeDisablesIconAbilities
+EFFECT_HANDLERS.disableIconAbilitiesAgainst = function() {};
+
 EFFECT_HANDLERS.logDamageCheckDamage = function(args = [], card, selectedData = {}) {
     const state = selectedData?.state || gameState;
     let entry = selectedData?.foeEntry || null;
@@ -2477,6 +2480,11 @@ export async function maybeRunHeroIconBeforeDrawOptionals(heroId) {
     if (heroId == null) return;
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     if (!heroObj) return;
+
+    if (iconAbilitiesDisabledForHero(heroId, gameState)) {
+        console.log(`[beforeDraw] Icon abilities disabled for ${heroObj.name} (engaged with foe).`);
+        return;
+    }
 
     const { effects: effs, names } = getHeroAbilitiesWithTemp(heroId, gameState);
     const hState = gameState.heroData?.[heroId] || {};
@@ -2528,6 +2536,11 @@ async function maybeRunHeroIconDamageOptionals(heroId) {
     if (heroId == null) return;
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     if (!heroObj) return;
+
+    if (iconAbilitiesDisabledForHero(heroId, gameState)) {
+        console.log(`[wouldUseDamageCard] Icon abilities disabled for ${heroObj.name} (engaged with foe).`);
+        return;
+    }
 
     const { effects: effs, names } = getHeroAbilitiesWithTemp(heroId, gameState);
     const hState = gameState.heroData?.[heroId] || {};
@@ -4740,6 +4753,42 @@ function foeHasEject(entry) {
         }
     }
     return false;
+}
+
+function foeDisablesIconAbilities(entry) {
+    if (!entry) return false;
+    const card =
+        henchmen.find(h => String(h.id) === String(entry.id)) ||
+        villains.find(v => String(v.id) === String(entry.id));
+    if (!card) return false;
+
+    if (card.disableIconAbilitiesAgainst === true) return true;
+
+    const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
+    for (const eff of effects) {
+        if (!eff || (eff.type || "").toLowerCase() !== "passive") continue;
+        const raw = eff.effect;
+        const list = Array.isArray(raw) ? raw : [raw];
+        for (const e of list) {
+            if (typeof e !== "string") continue;
+            const val = e.trim().toLowerCase();
+            if (val.startsWith("disableiconabilitiesagainst")) return true;
+        }
+    }
+    return false;
+}
+
+export function iconAbilitiesDisabledForHero(heroId, state = gameState) {
+    const s = state || gameState;
+    const heroState = s.heroData?.[heroId];
+    if (!heroState) return false;
+    const lowerIdx = heroState.cityIndex;
+    if (!Number.isInteger(lowerIdx)) return false;
+    const upperIdx = lowerIdx - 1;
+    if (upperIdx < 0) return false;
+    const entry = Array.isArray(s.cities) ? s.cities[upperIdx] : null;
+    if (!entry) return false;
+    return foeDisablesIconAbilities(entry);
 }
 
 export function ejectHeroIfCauserHasEject(heroId, state = gameState) {
