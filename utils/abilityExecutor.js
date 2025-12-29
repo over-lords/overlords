@@ -1780,6 +1780,92 @@ EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData
     rescueCapturedBystander(flag, heroId, gameState);
 };
 
+function koCapturedBystander(flag = "all", state = gameState) {
+    const s = state || gameState;
+    const norm = String(flag || "all").toLowerCase();
+    const koList = [];
+
+    const addKo = (b, source) => {
+        koList.push({
+            id: b?.id,
+            name: b?.name || "Bystander",
+            type: b?.type || "Bystander",
+            source
+        });
+    };
+
+    const entries = Array.isArray(s.cities) ? s.cities : [];
+
+    if (norm === "all") {
+        entries.forEach((entry, idx) => {
+            if (!entry) return;
+            const captured = entry.capturedBystanders;
+            if (Array.isArray(captured) && captured.length > 0) {
+                captured.forEach(b => addKo(b, `city-${idx}`));
+                entry.capturedBystanders = [];
+            } else if (Number(captured) > 0) {
+                for (let i = 0; i < Number(captured); i++) addKo({ name: "Bystander" }, `city-${idx}`);
+                entry.capturedBystanders = [];
+            }
+        });
+    } else if (norm === "random") {
+        const pool = [];
+        entries.forEach((entry, idx) => {
+            if (!entry) return;
+            const captured = entry.capturedBystanders;
+            if (Array.isArray(captured)) {
+                captured.forEach((b, i) => pool.push({ entry, idx, bIndex: i, b }));
+            } else if (Number(captured) > 0) {
+                pool.push({ entry, idx, bIndex: -1, b: { name: "Bystander" } });
+            }
+        });
+        if (pool.length) {
+            const pick = pool[Math.floor(Math.random() * pool.length)];
+            addKo(pick.b, `city-${pick.idx}`);
+            if (Array.isArray(pick.entry.capturedBystanders)) {
+                pick.entry.capturedBystanders.splice(pick.bIndex, 1);
+            } else {
+                pick.entry.capturedBystanders = Math.max(0, Number(pick.entry.capturedBystanders || 1) - 1);
+            }
+        }
+    } else {
+        console.warn("[koCapturedBystander] Unknown flag:", flag);
+        return;
+    }
+
+    if (!koList.length) {
+        console.log("[koCapturedBystander] No captured bystanders found.");
+        return;
+    }
+
+    if (!Array.isArray(s.koCards)) s.koCards = [];
+    s.koCards.push(...koList);
+
+    try {
+        if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
+            window.renderKOBar(s);
+        }
+    } catch (err) {
+        console.warn("[koCapturedBystander] Failed to render KO bar", err);
+    }
+
+    const total = koList.length;
+    const names = koList.map(k => k.name || "Bystander").join(", ");
+    appendGameLogEntry(
+        total === 1
+            ? `${names} was KO'd.`
+            : `Bystanders KO'd: ${names}.`,
+        s
+    );
+
+    saveGameState(s);
+}
+
+EFFECT_HANDLERS.koCapturedBystander = function(args = [], card, selectedData = {}) {
+    const flag = args?.[0] ?? "all";
+    koCapturedBystander(flag, selectedData?.state || gameState);
+};
+
 EFFECT_HANDLERS.disableExtraTravel = function(args = [], card, selectedData = {}) {
     // Signature: disableExtraTravel(all,next)
     const target = args?.[0] ?? "all";
