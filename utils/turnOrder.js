@@ -174,7 +174,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
-         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects } from './abilityExecutor.js';
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -1330,13 +1330,15 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
         console.warn("[placeCardInUpperCity] Failed to trigger rule effects:", err);
     }
 
+    const effDamage = getEffectiveFoeDamage(entry);
+
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper city-card-enter";
     wrapper.style.position = "relative";
     wrapper.style.zIndex = "2"; // ensure card sits above destroyed-city overlay
 
     const renderOverride = cardData
-        ? { cardDataOverride: { ...cardData, hp: entry.maxHP, currentHP: entry.currentHP } }
+        ? { cardDataOverride: { ...cardData, hp: entry.maxHP, currentHP: entry.currentHP, damage: effDamage, currentDamage: effDamage } }
         : undefined;
     const rendered = renderCard(newCardId, wrapper, renderOverride);
     wrapper.appendChild(rendered);
@@ -2261,11 +2263,13 @@ export async function shoveUpper(newCardId) {
         console.warn("[shoveUpper] Failed to trigger rule effects:", err);
     }
 
+    const effDamage = getEffectiveFoeDamage(entry);
+
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper city-card-enter";
 
     const renderOverride = cardData
-        ? { cardDataOverride: { ...cardData, hp: entry.maxHP, currentHP: entry.currentHP } }
+        ? { cardDataOverride: { ...cardData, hp: entry.maxHP, currentHP: entry.currentHP, damage: effDamage, currentDamage: effDamage } }
         : undefined;
     const rendered = renderCard(newCardId, wrapper, renderOverride);
     wrapper.appendChild(rendered);
@@ -2523,6 +2527,7 @@ export async function endCurrentHeroTurn(gameState) {
 
     // Clear travel/draw dampeners if expiring after this turn
     clearDampenersIfExpired();
+    try { await runTurnEndDamageTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndWasDamaged triggers failed", e); }
 
     if (typeof heroState.cityIndex === "number") {
 

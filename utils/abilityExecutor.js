@@ -213,6 +213,15 @@ function applyHalfDamageModifier(amount, heroId, state = gameState) {
     return dmg;
 }
 
+function markFoeDamagedThisTurn(entry, state = gameState) {
+    const s = state || gameState;
+    if (!entry) return;
+    const key = getEntryKey(entry);
+    if (!key) return;
+    if (!s.foeDamagedThisTurn) s.foeDamagedThisTurn = {};
+    s.foeDamagedThisTurn[key] = true;
+}
+
 function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     if (!teamName) return 0;
     const s = state || gameState;
@@ -455,6 +464,37 @@ function normalizeConditionString(cond) {
     return s;
 }
 
+export async function runTurnEndDamageTriggers(state = gameState) {
+    const s = state || gameState;
+    const map = s.foeDamagedThisTurn;
+    if (!map || typeof map !== "object") return;
+
+    const cities = Array.isArray(s.cities) ? s.cities : [];
+
+    for (let idx = 0; idx < cities.length; idx++) {
+        const entry = cities[idx];
+        if (!entry) continue;
+        const key = getEntryKey(entry);
+        if (!key || !map[key]) continue;
+
+        const cardData = findCardInAllSources(entry.id);
+        if (!cardData || !Array.isArray(cardData.abilitiesEffects)) continue;
+
+        for (const eff of cardData.abilitiesEffects) {
+            if (!eff || !eff.effect) continue;
+            const condNorm = normalizeConditionString(eff.condition || "none");
+            if (condNorm !== "turnendwasdamaged") continue;
+            try {
+                await executeEffectSafely(eff.effect, cardData, { state: s, slotIndex: idx, foeEntry: entry });
+            } catch (err) {
+                console.warn("[runTurnEndDamageTriggers] Failed to run effect for foe", entry.id, err);
+            }
+        }
+    }
+
+    s.foeDamagedThisTurn = {};
+}
+
 // Shared helper to get per-instance key
 function getEntryKey(obj) {
     const k = obj?.instanceId ?? obj?.uniqueId ?? null;
@@ -630,11 +670,27 @@ export function getEffectiveFoeDamage(entry) {
     if (!entry) return 0;
     const card = getFoeCardFromEntry(entry);
     const base = getBaseFoeDamage(entry);
+    const bonus = Number(entry.currentDamageBonus || 0);
+
+    // Back-compat: only use legacy overrides if no explicit bonus is tracked.
+    let legacyBonus = 0;
+    if (!entry.currentDamageBonus) {
+        const legacyDiffs = [];
+        if (typeof entry.currentDamage === "number") {
+            legacyDiffs.push(Number(entry.currentDamage) - base);
+        }
+        if (typeof entry.damage === "number") {
+            legacyDiffs.push(Number(entry.damage) - base);
+        }
+        legacyBonus = legacyDiffs.length
+            ? Math.max(0, ...legacyDiffs.filter(Number.isFinite))
+            : 0;
+    }
+
     const penalty = Number(entry.damagePenalty || 0);
-    const current = Math.max(0, base - penalty);
+    const current = Math.max(0, base + bonus + legacyBonus - penalty);
     entry.currentDamage = current;
-    if (card) card.currentDamage = current;
-    console.log("[getEffectiveFoeDamage]", { base, penalty, current, entryKey: getEntryKey(entry), slotIndex: entry.slotIndex });
+    console.log("[getEffectiveFoeDamage]", { base, bonus, penalty, current, entryKey: getEntryKey(entry), slotIndex: entry.slotIndex });
     return current;
 }
 
@@ -2580,6 +2636,61 @@ EFFECT_HANDLERS.increaseCardDamage = function(args = [], card, selectedData = {}
 
     if (!state._pendingDamage) state._pendingDamage = 0;
     state._pendingDamage += Number(delta) || 0;
+};
+
+EFFECT_HANDLERS.increaseVillainDamage = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const slotIndex = selectedData?.slotIndex;
+    const entry = selectedData?.foeEntry ?? (typeof slotIndex === "number" ? state?.cities?.[slotIndex] : null);
+    if (!entry) {
+        console.warn("[increaseVillainDamage] No foe entry provided.");
+        return;
+    }
+
+    const raw = args?.[0];
+    const delta = Number(raw) || 0;
+    if (!delta) return;
+
+    // Persist per-instance damage bonus
+    const currentBonus = Number(entry.currentDamageBonus || 0);
+    const nextBonus = currentBonus + delta;
+    entry.currentDamageBonus = nextBonus;
+
+    // Recompute effective damage and refresh UI
+    const effectiveDmg = getEffectiveFoeDamage(entry);
+    entry.currentDamage = effectiveDmg;
+
+    // Re-render the foe on board if possible
+    try {
+        const citySlots = document.querySelectorAll(".city-slot");
+        if (typeof slotIndex === "number" && citySlots[slotIndex]) {
+            const slot = citySlots[slotIndex];
+            const area = slot.querySelector(".city-card-area");
+            if (area) {
+                area.innerHTML = "";
+                const wrapper = document.createElement("div");
+                wrapper.className = "card-wrapper";
+                const cardData = findCardInAllSources(entry.id);
+                const override = cardData
+                    ? { ...cardData, damage: effectiveDmg, currentDamage: effectiveDmg }
+                    : { damage: effectiveDmg, currentDamage: effectiveDmg };
+                wrapper.appendChild(renderCard(entry.id, wrapper, { cardDataOverride: override }));
+                area.appendChild(wrapper);
+                wrapper.style.cursor = "pointer";
+                wrapper.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const panelCard = findCardInAllSources(entry.id);
+                    if (panelCard) {
+                        buildVillainPanel(panelCard, { instanceId: getEntryKey(entry), slotIndex });
+                    }
+                });
+            }
+        }
+    } catch (err) {
+        console.warn("[increaseVillainDamage] Failed to re-render foe card", err);
+    }
+
+    saveGameState(state);
 };
 
 EFFECT_HANDLERS.discard = function(args = [], card, selectedData = {}) {
@@ -5364,6 +5475,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
             heroId: heroId ?? null,
             amount: info.foeDamageSnapshot ?? 0
         };
+    }
+
+    if (effectiveAmount > 0) {
+        markFoeDamagedThisTurn(entry, s);
     }
 
     // Apply passive city-targeted double damage (e.g., Batman)
