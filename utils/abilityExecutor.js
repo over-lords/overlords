@@ -283,6 +283,30 @@ function incrementRescuedBystanders(heroId, count, state = gameState) {
     };
 }
 
+function getOverlordLevel(state = gameState) {
+    const s = state || gameState;
+    try {
+        const info = getCurrentOverlordInfo(s);
+        const lvl =
+            Number(info?.card?.level) ||
+            Number(info?.level) ||
+            Number(info?.overlord?.level) ||
+            null;
+        if (lvl != null && !Number.isNaN(lvl)) return lvl;
+    } catch (err) {
+        console.warn("[getOverlordLevel] getCurrentOverlordInfo failed", err);
+    }
+
+    const ovId = Array.isArray(s.overlords) ? s.overlords[0] : null;
+    if (ovId != null) {
+        const ovCard = overlords.find(o => String(o.id) === String(ovId));
+        const lvl = Number(ovCard?.level);
+        if (!Number.isNaN(lvl)) return lvl;
+    }
+
+    return 0;
+}
+
 function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (typeof raw === "number") return raw;
     if (typeof raw !== "string") return 0;
@@ -310,6 +334,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     }
     if (lower === "getherodamage") {
         return getHeroDamage(heroId, state);
+    }
+    if (lower === "getoverlordlevel") {
+        return getOverlordLevel(state);
     }
     if (lower === "rescuedbystanderscount") {
         return getTotalRescuedBystanders(state);
@@ -1364,7 +1391,11 @@ EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
 EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
     const state = selectedData?.state || gameState;
     const heroId = selectedData?.currentHeroId ?? null;
-    let amount = Number(args?.[0]) || 1;
+    const raw = args?.[0];
+    let amount = resolveNumericValue(raw, heroId, state);
+    if (!Number.isFinite(amount) || amount <= 0) {
+        amount = Number(raw) || 1;
+    }
     damageOverlord(amount, state, heroId);
 };
 
