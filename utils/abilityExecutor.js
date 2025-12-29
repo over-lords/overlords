@@ -33,13 +33,7 @@ import {
     CITY_4_UPPER,
     CITY_3_UPPER,
     CITY_2_UPPER,
-    CITY_ENTRY_UPPER,
-    CITY_EXIT_GLIDE,
-    CITY_5_GLIDE,
-    CITY_4_GLIDE,
-    CITY_3_GLIDE,
-    CITY_2_GLIDE,
-    CITY_ENTRY_GLIDE
+    CITY_ENTRY_UPPER
 } from '../data/gameState.js';
 
 const UPPER_ORDER = [
@@ -49,15 +43,6 @@ const UPPER_ORDER = [
     CITY_3_UPPER,
     CITY_2_UPPER,
     CITY_ENTRY_UPPER
-];
-
-const GLIDE_ORDER = [
-  CITY_EXIT_GLIDE,
-  CITY_5_GLIDE,
-  CITY_4_GLIDE,
-  CITY_3_GLIDE,
-  CITY_2_GLIDE,
-  CITY_ENTRY_GLIDE
 ];
 
 const HERO_TEAM_SET = (() => {
@@ -8002,31 +7987,22 @@ function maybeSendHeroHomeAfterLaneClears(heroId, defeatedSlotIndex, state = gam
   const heroState = state.heroData?.[heroId];
   if (!heroState) return;
 
-  // If facing the Overlord, do not apply “city lane clears → go home” logic
+  // If facing the Overlord, do not apply city lane clears -> go home logic
   if (heroState.isFacingOverlord) return;
 
   const heroLower = heroState.cityIndex;
   if (typeof heroLower !== "number") return;
 
-  // Heroes stand in LOWER slots; their lane’s UPPER slot is directly above
+  // Heroes stand in LOWER slots; their lane?s UPPER slot is directly above
   const heroUpper = heroLower - 1;
 
-  // Map that upper slot to the corresponding glide slot via your existing order arrays
-  const pos = UPPER_ORDER.indexOf(heroUpper);
-  const heroGlide = (pos >= 0) ? GLIDE_ORDER[pos] : null;
+  // Only send this hero home if the KO happened in THEIR lane (upper slot)
+  if (defeatedSlotIndex !== heroUpper) return;
 
-  // Only send this hero home if the KO happened in THEIR lane (upper or glide)
-  const koInMyLane =
-    defeatedSlotIndex === heroUpper ||
-    (heroGlide != null && defeatedSlotIndex === heroGlide);
-
-  if (!koInMyLane) return;
-
-  // Lane is “clear” only when BOTH upper and glide are empty
+  // Lane is clear when the upper slot above them is empty
   const upperEmpty = !isCityOccupied(state, heroUpper);
-  const glideEmpty = (heroGlide == null) ? true : !isCityOccupied(state, heroGlide);
 
-  if (upperEmpty && glideEmpty) {
+  if (upperEmpty) {
     sendHeroHomeFromBoard(heroId, state);
   }
 }

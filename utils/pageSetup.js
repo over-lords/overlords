@@ -31,13 +31,7 @@ import {    CITY_EXIT_UPPER,
             CITY_4_UPPER,
             CITY_3_UPPER,
             CITY_2_UPPER,
-            CITY_ENTRY_UPPER,
-            CITY_EXIT_GLIDE,
-            CITY_5_GLIDE,
-            CITY_4_GLIDE,
-            CITY_3_GLIDE,
-            CITY_2_GLIDE,
-            CITY_ENTRY_GLIDE } from '../data/gameState.js';
+            CITY_ENTRY_UPPER } from '../data/gameState.js';
 
 const LOG_CONTAINER_ID = "game-log";
 let logAutoScrollEnabled = true;

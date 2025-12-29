@@ -34,15 +34,6 @@ VILLAIN DRAW
                     will charge encounter a frozen foe
                         yes, charge max allowed
                         no? then charge to completion
-        else if draw has glide
-            does city 1 have a glider inside
-                yes
-                    is glider frozen?
-                        yes
-                            do not draw, just reveal top card
-                        no
-                            push glider to city 2 - new draw enters city 1
-                no, enter city 1
         else
             is city 1 occupied?
                 is city 1 frozen?
@@ -185,13 +176,7 @@ import {    CITY_EXIT_UPPER,
             CITY_4_UPPER,
             CITY_3_UPPER,
             CITY_2_UPPER,
-            CITY_ENTRY_UPPER,
-            CITY_EXIT_GLIDE,
-            CITY_5_GLIDE,
-            CITY_4_GLIDE,
-            CITY_3_GLIDE,
-            CITY_2_GLIDE,
-            CITY_ENTRY_GLIDE } from '../data/gameState.js';
+            CITY_ENTRY_UPPER } from '../data/gameState.js';
 
 const COUNTDOWN_IDS = new Set(["8001", "8002", "8003", "8004", "8005", "8006"]);
 
@@ -976,15 +961,6 @@ const UPPER_ORDER = [
     CITY_3_UPPER,
     CITY_2_UPPER,
     CITY_ENTRY_UPPER   // rightmost Gotham
-];
-
-const GLIDE_ORDER = [
-  CITY_EXIT_GLIDE,
-  CITY_5_GLIDE,
-  CITY_4_GLIDE,
-  CITY_3_GLIDE,
-  CITY_2_GLIDE,
-  CITY_ENTRY_GLIDE
 ];
 
 function entryIsFrozen(entry, upperIdx = null, state = gameState) {

@@ -536,7 +536,7 @@ export const tactics = [
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `All Villains gain Glide. <span class="line-gap"></span>
+        text: `All Villains gain Charge 1. <span class="line-gap"></span>
                 Might of the Overlord: Draw 3 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect).`
       }
     ],
@@ -551,7 +551,7 @@ export const tactics = [
         condition: `villainDrawn()`,
         uses: `0`,
         shared: `no`,
-        effect: `villainGainGlide()`
+        effect: `villainGainCharge(1)`
       }
     ],
     mightNamePrint: [

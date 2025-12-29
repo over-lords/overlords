@@ -288,23 +288,15 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+        text: `Reward: Deal 2 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
-      {
-        text: `Glide`
-      },
       {
         text: `Reward!`
       }
     ],
     abilitiesEffects: [
-      {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
-      },
       {
         type: `quick`,
         condition: `uponDefeat`,
@@ -385,12 +377,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
+        text: `Teleport <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Glide`
+        text: `Blam!`
       },
       {
         text: `Draw from the E&A`
@@ -398,9 +390,8 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
+        condition: `onEntry`,
+        effect: `teleport`
       },
       {
         type: `optional`,
@@ -482,15 +473,12 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Charge 1, Glide <span class="line-gap"></span> Reward: Your Hero's Travel Budget increases by 1.`
+        text: `Charge 1 <span class="line-gap"></span> Reward: Your Hero's Travel Budget increases by 1.`
       }
     ],
     abilitiesNamePrint: [
       {
         text: `Charge!`
-      },
-      {
-        text: `Glide`
       },
       {
         text: `Reward!`
@@ -501,11 +489,6 @@ export const villains = [
         type: `quick`,
         condition: `onEntry`,
         effect: `charge(1)`
-      },
-      {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -576,23 +559,15 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
-      {
-        text: `Glide`
-      },
       {
         text: `Reward!`
       }
     ],
     abilitiesEffects: [
-      {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
-      },
       {
         type: `uponDefeat`,
         condition: `uponDefeat`,
@@ -716,13 +691,10 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> If unengaged at the end of a Hero's turn, a random Hero will take 2 Damage. <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 2 Damage. <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
-      {
-        text: `Glide`
-      },
       {
         text: `Zap!`
       },
@@ -731,11 +703,6 @@ export const villains = [
       }
     ],
     abilitiesEffects: [
-      {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
-      },
       {
         type: `quick`,
         condition: `turnEndNotEngaged`,
@@ -1181,12 +1148,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Charge 1 <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Glide`
+        text: `Whoops!`
       },
       {
         text: `Reward!`
@@ -1194,9 +1161,9 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
         type: `quick`,
@@ -1216,12 +1183,12 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Teleport <span class="line-gap"></span> Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Glide`
+        text: `Spotted!`
       },
       {
         text: `Reward!`
@@ -1229,9 +1196,8 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
+        condition: `onEntry`,
+        effect: `teleport`
       },
       {
         type: `quick`,
@@ -1300,12 +1266,12 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Glide <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL : Draw 3, and Travel to engage the Overlord.`
+        text: `Teleport <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL : Draw 3, and Travel to engage the Overlord.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Glide`
+        text: `Making my Exit!`
       },
       {
         text: `Caught Off-Guard!`
@@ -1316,9 +1282,8 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
+        condition: `onEntry`,
+        effect: `teleport`
       },
       {
         type: `quick`,
@@ -1469,7 +1434,7 @@ export const villains = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Charge 1, Glide <span class="line-gap"></span> 
+        text: `Charge 1 <span class="line-gap"></span> 
                Reward: Deal 20 Damage to the Overlord. <span class="line-gap"></span> 
                If Ultraman Escapes: Deal 3 Damage to all Heroes.`
       }
@@ -1477,9 +1442,6 @@ export const villains = [
     abilitiesNamePrint: [
       {
         text: `Charge!`
-      },
-      {
-        text: `Glide`
       },
       {
         text: `Reward!`
@@ -1493,11 +1455,6 @@ export const villains = [
         type: `onEntry`,
         condition: `none`,
         effect: `charge(1)`
-      },
-      {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
       },
       {
         type: `quick`,
@@ -1596,7 +1553,7 @@ export const villains = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Charge 2, Glide <span class="line-gap"></span> 
+        text: `Charge 2 <span class="line-gap"></span> 
                Reward: Deal 5 Damage to the Overlord.`
       }
     ],
@@ -1616,11 +1573,6 @@ export const villains = [
         type: `quick`,
         condition: `onEntry`,
         effect: `charge(2)`
-      },
-      {
-        type: `passive`,
-        condition: `none`,
-        effect: `hasGlide()`
       },
       {
         type: `quick`,
