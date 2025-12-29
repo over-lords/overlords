@@ -174,7 +174,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
-         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers,
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers,
          getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -2532,6 +2532,7 @@ export async function endCurrentHeroTurn(gameState) {
     // Clear travel/draw dampeners if expiring after this turn
     clearDampenersIfExpired();
     try { await runTurnEndDamageTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndWasDamaged triggers failed", e); }
+    try { await runTurnEndNotEngagedTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndNotEngaged triggers failed", e); }
 
     if (typeof heroState.cityIndex === "number") {
 

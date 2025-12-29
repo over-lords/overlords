@@ -431,6 +431,11 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return true;
     }
 
+    if (lowerCond === "turnendnotengaged") {
+        // Always register; actual trigger handled at end of turn when foe not engaged
+        return true;
+    }
+
     if (lowerCond === "onlyonshove") {
         return !!state?.lastShovedVillainDestination;
     }
@@ -520,6 +525,34 @@ export async function runTurnEndDamageTriggers(state = gameState) {
     }
 
     s.foeDamagedThisTurn = {};
+}
+
+export async function runTurnEndNotEngagedTriggers(state = gameState) {
+    const s = state || gameState;
+    const cities = Array.isArray(s.cities) ? s.cities : [];
+    const heroIds = s.heroes || [];
+
+    for (let idx = 0; idx < cities.length; idx++) {
+        const entry = cities[idx];
+        if (!entry || entry.id == null) continue;
+        const lowerIdx = idx + 1;
+        const engaged = heroIds.some(hid => s.heroData?.[hid]?.cityIndex === lowerIdx);
+        if (engaged) continue;
+
+        const cardData = findCardInAllSources(entry.id);
+        if (!cardData || !Array.isArray(cardData.abilitiesEffects)) continue;
+
+        for (const eff of cardData.abilitiesEffects) {
+            if (!eff || !eff.effect) continue;
+            const condNorm = normalizeConditionString(eff.condition || "none");
+            if (condNorm !== "turnendnotengaged") continue;
+            try {
+                await executeEffectSafely(eff.effect, cardData, { state: s, slotIndex: idx, foeEntry: entry });
+            } catch (err) {
+                console.warn("[runTurnEndNotEngagedTriggers] Failed to run effect for foe", entry.id, err);
+            }
+        }
+    }
 }
 
 // Shared helper to get per-instance key
