@@ -1323,9 +1323,9 @@ export const villains = [
         effect: `hasGlide()`
       },
       {
-        type: `passive`,
+        type: `quick`,
         condition: `firstAttackPerTurn`,
-        effect: `damageAttacker(1)`
+        effect: `damageHero(1,current,ignoreDT)`
       },
       {
         type: `optional`,

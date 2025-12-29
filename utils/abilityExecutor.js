@@ -436,6 +436,11 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return true;
     }
 
+    if (lowerCond === "firstattackperturn") {
+        // For foe triggers, damage handler invokes directly; allow registration
+        return true;
+    }
+
     if (lowerCond === "turnendnotengaged") {
         // Always register; actual trigger handled at end of turn when foe not engaged
         return true;
@@ -821,6 +826,60 @@ function runFoeDamagedTriggers(entry, slotIndex, state = gameState) {
             console.warn("[runFoeDamagedTriggers] Failed to run damaged effect", err);
         }
     }
+    saveGameState(s);
+}
+
+function findHeroEngagedWithFoe(slotIndex, state = gameState) {
+    const s = state || gameState;
+    const lowerIdx = Number(slotIndex) + 1;
+    if (!Array.isArray(s.heroes) || !s.heroData) return null;
+    const heroId = s.heroes.find(hid => s.heroData?.[hid]?.cityIndex === lowerIdx) || null;
+    return heroId ?? null;
+}
+
+function runFoeFirstAttackPerTurnTriggers(entry, slotIndex, state = gameState) {
+    const s = state || gameState;
+    const cardData = findCardInAllSources(entry.id);
+    if (!cardData || !Array.isArray(cardData.abilitiesEffects)) return;
+
+    const turn = typeof s.turnCounter === "number" ? s.turnCounter : 0;
+    if (entry.lastDamagedTurnCounter === turn) return;
+
+    const engagedHeroId = findHeroEngagedWithFoe(slotIndex, s);
+
+    const effects = cardData.abilitiesEffects;
+    let fired = false;
+
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        if (!eff || !eff.effect) continue;
+        const condNorm = normalizeConditionString(eff.condition || "none");
+        if (condNorm !== "firstattackperturn") continue;
+
+        const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+        const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+        if (!entry.abilityUses) entry.abilityUses = {};
+        const remaining = entry.abilityUses[i] == null ? usesMax : entry.abilityUses[i];
+        if (remaining <= 0) continue;
+
+        if (hasFiniteUses) {
+            entry.abilityUses[i] = Math.max(0, remaining - 1);
+        } else {
+            entry.abilityUses[i] = usesMax;
+        }
+
+        try {
+            executeEffectSafely(eff.effect, cardData, { state: s, slotIndex, foeEntry: entry, currentHeroId: engagedHeroId });
+            fired = true;
+        } catch (err) {
+            console.warn("[runFoeFirstAttackPerTurnTriggers] Failed to run firstAttackPerTurn effect", err);
+        }
+    }
+
+    if (fired) {
+        entry.lastDamagedTurnCounter = turn;
+    }
+
     saveGameState(s);
 }
 
@@ -6090,6 +6149,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     if (effectiveAmount > 0) {
         markFoeDamagedThisTurn(entry, s);
+        runFoeFirstAttackPerTurnTriggers(entry, slotIndex, s);
     }
 
     // Apply passive city-targeted double damage (e.g., Batman)
