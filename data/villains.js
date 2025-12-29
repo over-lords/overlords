@@ -183,7 +183,6 @@ export const villains = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `none`,
         effect: `halveIncomingDamageFrom(Super)`
       },
       {
@@ -1359,7 +1358,6 @@ export const villains = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `none`,
         effect: [`halveIncomingDamageFrom(Bat)`,`halveIncomingDamageFrom(Arrow)`,`halveIncomingDamageFrom(Hawk)`]
       },
       {

@@ -213,6 +213,34 @@ function applyHalfDamageModifier(amount, heroId, state = gameState) {
     return dmg;
 }
 
+function foeHasHalfDamageModifierAgainstHero(entry, heroId, state = gameState) {
+    const s = state || gameState;
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) return false;
+    const heroTeams = getHeroTeamsForCard(heroObj);
+    if (!heroTeams.length) return false;
+
+    const foeCard = findCardInAllSources(entry.id);
+    const effects = Array.isArray(foeCard?.abilitiesEffects) ? foeCard.abilitiesEffects : [];
+
+    for (const eff of effects) {
+        if (!eff || (eff.type || "").toLowerCase() !== "passive") continue;
+        const raw = eff.effect;
+        const list = Array.isArray(raw) ? raw : [raw];
+        for (const e of list) {
+            if (typeof e !== "string") continue;
+            const m = e.trim().match(/^halveincomingdamagefrom\(([^)]+)\)$/i);
+            if (!m) continue;
+            const teamKey = m[1].trim().toLowerCase();
+            if (!teamKey) continue;
+            if (heroTeams.some(t => t === teamKey)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function markFoeDamagedThisTurn(entry, state = gameState) {
     const s = state || gameState;
     if (!entry) return;
@@ -6169,6 +6197,12 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
                 console.log(`[damageFoe] Applying double damage: ${amount} -> ${effectiveAmount} (slot ${slotIndex})`);
             }
         });
+    }
+
+    // Apply foe-side half-damage vs team (halveIncomingDamageFrom)
+    if (heroId != null && foeHasHalfDamageModifierAgainstHero(entry, heroId, s)) {
+        effectiveAmount = Math.max(1, Math.ceil(effectiveAmount / 2));
+        console.log(`[damageFoe] halveIncomingDamageFrom applied: hero ${heroId} damage halved to ${effectiveAmount}.`);
     }
 
     const newHP = Math.max(0, currentHP - effectiveAmount);
