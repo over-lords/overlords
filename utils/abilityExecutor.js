@@ -431,6 +431,11 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return true;
     }
 
+    if (lowerCond === "damaged") {
+        // For foe triggers, damage handler invokes directly; allow registration
+        return true;
+    }
+
     if (lowerCond === "turnendnotengaged") {
         // Always register; actual trigger handled at end of turn when foe not engaged
         return true;
@@ -785,6 +790,55 @@ export function getEffectiveFoeDamage(entry) {
     entry.currentDamage = current;
     console.log("[getEffectiveFoeDamage]", { base, bonus, penalty, current, entryKey: getEntryKey(entry), slotIndex: entry.slotIndex });
     return current;
+}
+
+function runFoeDamagedTriggers(entry, slotIndex, state = gameState) {
+    const s = state || gameState;
+    const cardData = findCardInAllSources(entry.id);
+    if (!cardData || !Array.isArray(cardData.abilitiesEffects)) return;
+
+    const effects = cardData.abilitiesEffects;
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        if (!eff || !eff.effect) continue;
+        const condNorm = normalizeConditionString(eff.condition || "none");
+        if (condNorm !== "damaged") continue;
+
+        const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+        const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+        if (!entry.abilityUses) entry.abilityUses = {};
+        const remaining = entry.abilityUses[i] == null ? usesMax : entry.abilityUses[i];
+        if (remaining <= 0) continue;
+        if (hasFiniteUses) {
+            entry.abilityUses[i] = Math.max(0, remaining - 1);
+        } else {
+            entry.abilityUses[i] = usesMax;
+        }
+
+        try {
+            executeEffectSafely(eff.effect, cardData, { state: s, slotIndex, foeEntry: entry });
+        } catch (err) {
+            console.warn("[runFoeDamagedTriggers] Failed to run damaged effect", err);
+        }
+    }
+    saveGameState(s);
+}
+
+function shouldIgnoreDamageFromCard(entry, cardId) {
+    if (!entry || !cardId) return false;
+    if (!Array.isArray(entry.damagedByCardIds)) {
+        entry.damagedByCardIds = [];
+    }
+    if (entry.damagedByCardIds.includes(cardId)) {
+        return true;
+    }
+    entry.damagedByCardIds.push(cardId);
+    return false;
+}
+
+function hasCardDamagedEntry(entry, cardId) {
+    if (!entry || !cardId) return false;
+    return Array.isArray(entry.damagedByCardIds) && entry.damagedByCardIds.includes(cardId);
 }
 
 function refreshFoeCardUI(slotIndex, entry) {
@@ -2206,6 +2260,33 @@ EFFECT_HANDLERS.doubleVillainLife = function(args = [], card, selectedData = {})
         console.warn("[doubleVillainLife] Failed to log HP change.", err);
     }
 
+    saveGameState(state);
+};
+
+EFFECT_HANDLERS.logDamageCheckDamage = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    let entry = selectedData?.foeEntry || null;
+    let slotIndex = selectedData?.slotIndex;
+
+    if (!entry && typeof slotIndex === "number" && Array.isArray(state?.cities)) {
+        entry = state.cities[slotIndex];
+    }
+
+    if (!entry) return;
+
+    const cardId = state?._lastDamageContext?.cardId || null;
+    if (!cardId) return;
+
+    const alreadyHad = hasCardDamagedEntry(entry, cardId);
+    if (!alreadyHad) {
+        if (!Array.isArray(entry.damagedByCardIds)) entry.damagedByCardIds = [];
+        entry.damagedByCardIds.push(cardId);
+        try {
+            console.log("[logDamageCheckDamage] Recorded new damaging card id", cardId, "Current list:", entry.damagedByCardIds);
+        } catch (err) {
+            // ignore logging failures
+        }
+    }
     saveGameState(state);
 };
 
@@ -5429,9 +5510,11 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     const { flag = "single", fromAny = false, fromAll = false } = options;
     let effectiveAmount = amount;
+    const lastCtx = s?._lastDamageContext;
+    const incomingCardId = lastCtx?.cardId || null;
 
     // ============================================================
-    // FLAG: "any" — enable UI target selection via villain panel
+    // FLAG: "any" – enable UI target selection via villain panel
     // ============================================================
     if (flag === "any") {
         if (typeof window === "undefined") {
@@ -5951,6 +6034,12 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         return;
     }
 
+    // Guard: ignore damage from the same hero card instance if already applied
+    if (incomingCardId && hasCardDamagedEntry(entry, incomingCardId)) {
+        console.log(`[damageFoe] Ignoring damage from card ${incomingCardId}; already damaged this foe instance.`);
+        return;
+    }
+
     const baseHP = Number(foeCard.hp || 0) || 0;
 
     if (!s.villainHP) s.villainHP = {};
@@ -6040,6 +6129,9 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     if (heroId && s.heroData?.[heroId]) {
         s.heroData[heroId].lastDamageAmount = Number(effectiveAmount) || 0;
     }
+
+    // Trigger damaged condition effects on this foe
+    try { runFoeDamagedTriggers(entry, slotIndex, s); } catch (err) { console.warn("[damageFoe] runFoeDamagedTriggers failed", err); }
 
     // Re-render the foe card in its city slot so board shows updated HP
     try {

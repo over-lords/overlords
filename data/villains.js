@@ -661,9 +661,9 @@ export const villains = [
     ],
     abilitiesEffects: [
       {
-        type: `passive`,
+        type: `quick`,
         condition: `damaged`,
-        effect: `logDamageCheckDamage`
+        effect: `logDamageCheckDamage()`
       },
       {
         type: `quick`,
