@@ -175,7 +175,8 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers, 
-         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero } from './abilityExecutor.js';
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero,
+         buildPermanentKOCountMap } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -2511,8 +2512,23 @@ export async function endCurrentHeroTurn(gameState) {
 
     if (!heroState.deck || heroState.deck.length === 0) {
         if (heroState.discard && heroState.discard.length > 0) {
-            heroState.deck = shuffle([...heroState.discard]);
-            heroState.discard = [];
+            const permaCountMap = buildPermanentKOCountMap(heroState);
+            const toDeck = [];
+            const remainDiscard = [];
+
+            heroState.discard.forEach(id => {
+                const key = String(id);
+                const remain = permaCountMap[key] || 0;
+                if (remain > 0) {
+                    permaCountMap[key] = remain - 1;
+                    remainDiscard.push(id);
+                } else {
+                    toDeck.push(id);
+                }
+            });
+
+            heroState.deck = shuffle(toDeck);
+            heroState.discard = remainDiscard;
         }
     }
 

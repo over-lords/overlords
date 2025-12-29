@@ -1866,6 +1866,101 @@ EFFECT_HANDLERS.koCapturedBystander = function(args = [], card, selectedData = {
     koCapturedBystander(flag, selectedData?.state || gameState);
 };
 
+function addPermanentKOTag(heroState, cardId) {
+    if (!heroState) return;
+    if (!Array.isArray(heroState.permanentKO)) heroState.permanentKO = [];
+    heroState.permanentKO.push(String(cardId));
+}
+
+export function buildPermanentKOCountMap(heroState) {
+    const map = {};
+    const list = Array.isArray(heroState?.permanentKO) ? heroState.permanentKO : [];
+    list.forEach(id => {
+        const key = String(id);
+        map[key] = (map[key] || 0) + 1;
+    });
+    return map;
+}
+
+function koTopHeroDiscard(flag = "all", state = gameState) {
+    const s = state || gameState;
+    const heroesArr = Array.isArray(s.heroes) ? s.heroes : [];
+    if (!heroesArr.length) return;
+
+    const pickHeroes = () => {
+        const withDiscard = heroesArr.filter(hid => (s.heroData?.[hid]?.discard || []).length > 0);
+        if (!withDiscard.length) return [];
+        const norm = String(flag || "all").toLowerCase();
+        if (norm === "random") {
+            const pick = withDiscard[Math.floor(Math.random() * withDiscard.length)];
+            return [pick];
+        }
+        return withDiscard;
+    };
+
+    const targets = pickHeroes();
+    if (!targets.length) {
+        console.log("[koTopHeroDiscard] No hero discard piles with cards.");
+        return;
+    }
+
+    const koList = [];
+
+    targets.forEach(hid => {
+        const hState = s.heroData?.[hid];
+        if (!hState || !Array.isArray(hState.discard) || !hState.discard.length) return;
+        const cardId = hState.discard.pop();
+        const cardData = findCardInAllSources(cardId);
+        const cardName = cardData?.name || `Card ${cardId}`;
+        const cardType = cardData?.type || "";
+
+        if (String(cardType).toLowerCase() === "main") {
+            // Permanently KO main cards stay in discard and are never drawn again.
+            addPermanentKOTag(hState, cardId);
+            hState.discard.push(cardId);
+            try {
+                appendGameLogEntry(`${cardName} is permanently KO'd for Hero ${hid}.`, s);
+            } catch (err) {
+                console.warn("[koTopHeroDiscard] Failed to log permanent KO.", err);
+            }
+        } else {
+            koList.push({
+                id: cardId,
+                name: cardName,
+                type: cardType || "Hero Card",
+                source: "koTopHeroDiscard",
+                heroId: hid
+            });
+        }
+    });
+
+    if (koList.length) {
+        if (!Array.isArray(s.koCards)) s.koCards = [];
+        s.koCards.push(...koList);
+        try {
+            if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
+                window.renderKOBar(s);
+            }
+        } catch (err) {
+            console.warn("[koTopHeroDiscard] Failed to render KO bar.", err);
+        }
+        const names = koList.map(k => k.name || "Card").join(", ");
+        appendGameLogEntry(
+            koList.length === 1
+                ? `${names} was KO'd from a discard pile.`
+                : `Cards KO'd from discard: ${names}.`,
+            s
+        );
+    }
+
+    saveGameState(s);
+}
+
+EFFECT_HANDLERS.koTopHeroDiscard = function(args = [], card, selectedData = {}) {
+    const flag = args?.[0] ?? "all";
+    koTopHeroDiscard(flag, selectedData?.state || gameState);
+};
+
 EFFECT_HANDLERS.disableExtraTravel = function(args = [], card, selectedData = {}) {
     // Signature: disableExtraTravel(all,next)
     const target = args?.[0] ?? "all";

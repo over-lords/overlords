@@ -3603,6 +3603,15 @@ function renderDiscardSlide(state = gameState) {
   bar.style.pointerEvents = "auto";
 
   const discardList = [...heroState.discard].reverse(); // left is latest
+  const permaMap = (() => {
+    const map = {};
+    const list = Array.isArray(heroState.permanentKO) ? heroState.permanentKO : [];
+    list.forEach(id => {
+      const key = String(id);
+      map[key] = (map[key] || 0) + 1;
+    });
+    return map;
+  })();
 
   // Empty placeholder (KO style)
   if (!discardList.length) {
@@ -3644,12 +3653,44 @@ function renderDiscardSlide(state = gameState) {
     scaleWrapper.style.transform = "scale(0.45)";
     scaleWrapper.style.transformOrigin = "top center";
     scaleWrapper.style.cursor = "pointer";
+    scaleWrapper.style.position = "relative";
 
     const idStr = String(id);
 
     // Render the card
     const cardEl = renderCard(idStr);
     scaleWrapper.appendChild(cardEl);
+
+    // Permanent KO overlay if applicable
+    if (permaMap[idStr] > 0) {
+      permaMap[idStr] = permaMap[idStr] - 1;
+      const tint = document.createElement("div");
+      tint.style.position = "absolute";
+      tint.style.top = "0";
+      tint.style.left = "0";
+      tint.style.right = "0";
+      tint.style.bottom = "0";
+      tint.style.background = "rgba(120, 0, 0, 0.45)";
+      tint.style.zIndex = "15";
+      tint.style.pointerEvents = "none";
+
+      const overlay = document.createElement("img");
+      overlay.src = HERO_KO_ICON_URL;
+      overlay.alt = "Permanently KO'd";
+      overlay.style.position = "absolute";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.right = "0";
+      overlay.style.bottom = "0";
+      overlay.style.margin = "auto";
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.objectFit = "contain";
+      overlay.style.pointerEvents = "none";
+      overlay.style.zIndex = "20";
+      scaleWrapper.appendChild(tint);
+      scaleWrapper.appendChild(overlay);
+    }
 
     // Resolve full card data once, then open correct panel on click (KO-bar style)
     const fullCardData =
