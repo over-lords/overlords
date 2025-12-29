@@ -23,10 +23,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
-                effect: `halfDamage(Justice,passive)`
+                effect: `halfDamage(Justice)`
             }
         ]
     },
@@ -50,9 +47,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: `disableScan()`
             }
         ]
@@ -78,8 +72,6 @@ export const scenarios = [
             {
                 type: `passive`,
                 condition: `teamHeroEndTurn(Bat)`,
-                uses: `0`,
-                shared: `no`,
                 effect: `damageHero(1,current)`
             }
         ]
@@ -104,9 +96,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: `reduceTeamDTtoX(flash,1)`
             }
         ]
@@ -132,8 +121,6 @@ export const scenarios = [
             {
                 type: `quick`,
                 condition: `turnStart()`,
-                uses: `999`,
-                shared: `no`,
                 effect: `drawEaA(1)`
             }
         ]
@@ -159,8 +146,6 @@ export const scenarios = [
             {
                 type: `quick`,
                 condition: `turnEnd()`,
-                uses: `999`,
-                shared: `no`,
                 effect: `koBystander(1)`
             }
         ]
@@ -185,9 +170,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: `halfDamage(Super)`
             }
         ]
@@ -212,9 +194,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: `disableCoastalBonus(Aqua)`
             }
         ]
@@ -239,9 +218,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: `disableProtectOn(Wonder)`
             }
         ]
@@ -266,9 +242,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: `disableTeamBonus(Titans)`
             }
         ]
@@ -293,9 +266,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: `doubleDamageAgainst(Lantern)`
             }
         ]
@@ -320,9 +290,6 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                condition: `none`,
-                uses: `0`,
-                shared: `no`,
                 effect: [`doubleDamageAgainst(Squad)`,`doubleDamageAgainst(Legion)`]
             }
         ]

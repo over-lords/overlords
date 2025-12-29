@@ -1244,9 +1244,10 @@ async function handleScenarioDraw(villainId, cardData, state) {
     if (Array.isArray(cardData.abilitiesEffects)) {
         for (const eff of cardData.abilitiesEffects) {
             if (!eff) continue;
-            if (eff.type === "passive" && eff.effect && eff.condition === "none") {
+            const cond = eff?.condition == null ? "none" : eff.condition;
+            if (eff.type === "passive" && eff.effect && cond === "none") {
                 try {
-                    await executeEffectSafely(eff.effect, cardData, { source: "scenario" });
+                    await executeEffectSafely(eff.effect, cardData, { source: "scenario", scenarioId, state });
                 } catch (err) {
                     console.warn("[SCENARIO] Passive effect failed:", err);
                 }
@@ -2480,6 +2481,20 @@ export async function endCurrentHeroTurn(gameState) {
             if (typeof expiresAt === "number" && turnCount >= expiresAt) {
                 gameState.extraDrawDampener = null;
                 appendGameLogEntry(`Draw dampener ended.`, gameState);
+            }
+        }
+        if (Array.isArray(gameState.halfDamageModifiers)) {
+            const before = gameState.halfDamageModifiers.length;
+            gameState.halfDamageModifiers = gameState.halfDamageModifiers.filter(mod => {
+                if (!mod) return false;
+                if (typeof mod.expiresAtTurnCounter === "number" && turnCount >= mod.expiresAtTurnCounter) {
+                    return false;
+                }
+                return true;
+            });
+            const removed = before - gameState.halfDamageModifiers.length;
+            if (removed > 0) {
+                appendGameLogEntry(`Half-damage effects expired.`, gameState);
             }
         }
     };

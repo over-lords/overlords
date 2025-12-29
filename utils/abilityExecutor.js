@@ -173,7 +173,7 @@ function findKOdHeroes(state = gameState) {
 
 function heroMatchesTeam(heroObj, teamNameRaw) {
     if (!heroObj || !teamNameRaw) return false;
-    const teamName = String(teamNameRaw).toLowerCase();
+    const teamName = String(teamNameRaw).toLowerCase().trim();
     const props = [
         heroObj.team,
         heroObj.heroTeam,
@@ -182,6 +182,30 @@ function heroMatchesTeam(heroObj, teamNameRaw) {
     const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
     const all = props.concat(list);
     return all.some(t => t === teamName);
+}
+
+function applyHalfDamageModifier(amount, heroId, state = gameState) {
+    if (!amount || amount <= 0) return amount;
+    if (!heroId) return amount;
+    const s = state || gameState;
+    const mods = Array.isArray(s.halfDamageModifiers) ? s.halfDamageModifiers : [];
+    if (!mods.length) return amount;
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) return amount;
+
+    const turn = typeof s.turnCounter === "number" ? s.turnCounter : 0;
+    let dmg = amount;
+
+    mods.forEach(mod => {
+        if (!mod) return;
+        if (typeof mod.expiresAtTurnCounter === "number" && turn >= mod.expiresAtTurnCounter) return;
+        if (!heroMatchesTeam(heroObj, mod.team)) return;
+        // Round up to keep at least half, minimum 1
+        dmg = Math.max(1, Math.ceil(dmg / 2));
+    });
+
+    return dmg;
 }
 
 function getActiveTeamCount(teamName, heroId = null, state = gameState) {
@@ -901,11 +925,16 @@ EFFECT_HANDLERS.retreatHeroToHQ = function(args = [], card, selectedData = {}) {
 };
 
 EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
-    const amount = Number(args?.[0]) || 0;
+    const heroId =
+        selectedData?.currentHeroId
+        ?? gameState.heroes?.[gameState.heroTurnIndex ?? 0]
+        ?? null;
+    let amount = Number(args?.[0]) || 0;
     if (amount <= 0) {
         console.warn("[damageFoe] Invalid damage amount:", args);
         return;
     }
+    amount = applyHalfDamageModifier(amount, heroId, gameState);
 
     // Optional second argument:
     //  - "all"
@@ -936,8 +965,6 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = Number(raw);
         }
     }
-
-    const heroId = selectedData?.currentHeroId ?? null;
 
     // Selected foe (only required for true single-target damage)
     let foeSummary = selectedData?.selectedFoeSummary ?? null;
@@ -1048,12 +1075,9 @@ EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
 };
 
 EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
-    const amount = Number(args?.[0]) || 1;
-
-    // Prefer the passed state (consistent with other handlers), fall back to global.
     const state = selectedData?.state || gameState;
     const heroId = selectedData?.currentHeroId ?? null;
-
+    let amount = Number(args?.[0]) || 1;
     damageOverlord(amount, state, heroId);
 };
 
@@ -1256,6 +1280,40 @@ EFFECT_HANDLERS.disableExtraDraw = function(args = [], card, selectedData = {}) 
     };
 
     appendGameLogEntry(`Draws Dampened: All Heroes will only be able to draw 1 card until after this Hero's next turn.`, state);
+    saveGameState(state);
+};
+
+EFFECT_HANDLERS.halfDamage = function(args = [], card, selectedData = {}) {
+    const team = args?.[0];
+    if (!team) return;
+
+    const durationRaw = String(args?.[1] ?? "").toLowerCase();
+    const state = selectedData?.state || gameState;
+    if (!state) return;
+
+    const turns = durationRaw === "next" ? 1 : 0;
+    if (typeof state.turnCounter !== "number") state.turnCounter = 0;
+
+    const sourceType = selectedData.source || (card?.type === "Scenario" ? "scenario" : "effect");
+    const sourceId = selectedData.scenarioId || card?.id || null;
+    const teamKey = String(team).toLowerCase().trim();
+
+    // Remove prior entries from same source/team to avoid duplicates
+    if (!Array.isArray(state.halfDamageModifiers)) state.halfDamageModifiers = [];
+    state.halfDamageModifiers = state.halfDamageModifiers.filter(mod => {
+        if (!mod) return false;
+        const sameSource = (sourceId != null && String(mod.sourceId) === String(sourceId)) && mod.sourceType === sourceType;
+        const sameTeam = String(mod.team || "").toLowerCase().trim() === teamKey;
+        return !(sameSource && sameTeam);
+    });
+
+    state.halfDamageModifiers.push({
+        team: teamKey,
+        expiresAtTurnCounter: turns > 0 ? state.turnCounter + turns : null,
+        sourceType,
+        sourceId
+    });
+
     saveGameState(state);
 };
 
@@ -3748,11 +3806,13 @@ export function resolveExitForVillain(entry) {
     if (Array.isArray(gameState.cities)) {
         const current = gameState.cities[upperIdx];
 
-        // Only clear if the exiting villain is still there in the model
         const currentKey = getEntryKey(current);
-        const matchByKey = exitKey && currentKey && currentKey === exitKey;
-        const matchById = current && String(current.id) === String(entry.id);
-        if (current && (matchByKey || matchById)) {
+        const sameInstance = exitKey && currentKey && currentKey === exitKey;
+        const sameIdNoKey =
+            !currentKey && !exitKey && current && String(current.id) === String(entry.id);
+
+        // Only clear if this exact instance (or keyless same-id) is still there
+        if (current && (sameInstance || sameIdNoKey)) {
             gameState.cities[upperIdx] = null;
         }
     }
@@ -3794,15 +3854,16 @@ export function resolveExitForVillain(entry) {
             ? gameState.cities[upperIdx]
             : null;
         const currentKey = getEntryKey(current);
-        const matchByKey = exitKey && currentKey && currentKey === exitKey;
-        const matchById = current && String(current.id) === String(entry.id);
+        const sameInstance = exitKey && currentKey && currentKey === exitKey;
+        const sameIdNoKey =
+            !currentKey && !exitKey && current && String(current.id) === String(entry.id);
 
         // Only clear the upper slot if:
         //  - it's still empty in the model (stale DOM),
         //  - OR it still belongs to the same exiting villain id.
         // If a new villain (e.g., from city 2) has been moved into 0,
         // current.id !== entry.id and we skip clearing DOM.
-        if (!current || matchByKey || matchById) {
+        if (!current || sameInstance || sameIdNoKey) {
             if (freshUpperSlot) {
                 const upperArea = freshUpperSlot.querySelector(".city-card-area");
                 if (upperArea) upperArea.innerHTML = "";
@@ -4336,6 +4397,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 foeName: foeSummary.foeName
             };
         } else if (foeSummary.source === "city-upper") {
+            damageAmount = applyHalfDamageModifier(damageAmount, heroId, gameState);
             damageFoe(damageAmount, foeSummary, heroId, gameState);
             gameState._lastDamageContext = {
                 target: "city-foe",
@@ -4448,6 +4510,8 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         return;
     }
 
+    amount = applyHalfDamageModifier(amount, heroId, s);
+
     const info = getCurrentOverlordInfo(s);
     if (!info) {
         console.warn("[damageOverlord] No current overlord found.");
@@ -4532,6 +4596,9 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         }
         if (s.scenarioHP) {
             delete s.scenarioHP[ovId];
+        }
+        if (Array.isArray(s.halfDamageModifiers)) {
+            s.halfDamageModifiers = s.halfDamageModifiers.filter(mod => !(mod && mod.sourceType === "scenario" && String(mod.sourceId) === String(ovId)));
         }
 
         // Determine what sits on top now: another Scenario or the real Overlord
