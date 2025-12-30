@@ -1,5 +1,9 @@
 const newsData = [
     {
+        date: "December 29th, 2025",
+        text: "The beginner game is finally done!"
+    },
+    {
         date: "December 24th, 2025",
         text: "Beginner game nearly ready."
     },
