@@ -322,7 +322,7 @@ export const overlords = [
     type: "Overlord",
     level: "1",
     hp: "25",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `1/Game: Resurrect Ra's Al Ghul to full HP after he is KO'd. <span class="line-gap"></span>
@@ -355,7 +355,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `healVillain(all,5)`
+        effect: `damageFoe(-5,all)`
       }
     ],
     bonusNamePrint: [
@@ -366,10 +366,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: [`used_abilitiesEffects(1)`,`foeEscapes`],
+        condition: [`used_abilitiesEffects(0)`,`foeEscapes`],
         uses: `999`,
         shared: `no`,
-        effect: `gainMaxHP`
+        effect: `gainMaxHPonFoeEscape()`
       }
     ]
   },

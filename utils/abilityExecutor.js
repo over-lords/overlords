@@ -726,6 +726,18 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return result;
     }
 
+    const usedAbilitiesMatch = lowerCond.match(/^used_abilitieseffects\(\s*(\d+)\s*\)$/i);
+    if (usedAbilitiesMatch) {
+        const idx = Math.max(0, Number(usedAbilitiesMatch[1]) - 1); // 1-based in data -> 0-based internally
+        const ovInfo = getCurrentOverlordInfo(s);
+        const ovId = ovInfo?.id ?? "overlord";
+        const key = `${ovId}::${idx}`;
+        const remaining = s.overlordAbilityUses?.[key];
+        const result = remaining === 0;
+        console.log(`[used_abilitiesEffects] key=${key} remaining=${remaining ?? "n/a"} -> ${result}`);
+        return result;
+    }
+
     const byKodMatch = condStr.match(/^bystanderskod\((\d+)\)$/i);
     if (byKodMatch) {
         const threshold = Number(byKodMatch[1]);
@@ -1234,6 +1246,55 @@ function runOverlordFirstAttackPerTurnTriggers(state = gameState, heroId = null)
     } catch (err) {
         console.warn("[runOverlordFirstAttackPerTurnTriggers] Failed to run tactic rule effects", err);
     }
+}
+
+function runOverlordReducedToHPTriggers(postDamageHP, state = gameState) {
+    const s = state || gameState;
+    const info = getCurrentOverlordInfo(s);
+    const cardData = info?.card;
+    const ovId = info?.id;
+    const hpVal = Number(postDamageHP);
+
+    if (!cardData || !Array.isArray(cardData.abilitiesEffects)) return false;
+    if (!Number.isFinite(hpVal)) return false;
+
+    let fired = false;
+    const effects = cardData.abilitiesEffects;
+
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        if (!eff || !eff.effect) continue;
+        const condStr = String(eff.condition || "");
+        const match = condStr.match(/^overlordreducedtohp\(\s*([+-]?\d+)\s*\)$/i);
+        if (!match) continue;
+        const threshold = Number(match[1]);
+        if (!Number.isFinite(threshold)) continue;
+        if (hpVal > threshold) continue;
+
+        const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+        const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+
+        if (!s.overlordAbilityUses) s.overlordAbilityUses = {};
+        const key = `${ovId ?? cardData.id ?? cardData.name ?? "Overlord"}::${i}`;
+        const remaining = s.overlordAbilityUses[key] == null ? usesMax : s.overlordAbilityUses[key];
+        if (remaining <= 0) continue;
+        s.overlordAbilityUses[key] = hasFiniteUses ? Math.max(0, remaining - 1) : usesMax;
+        console.log("[runOverlordReducedToHPTriggers] Triggered", {
+            key,
+            threshold,
+            postDamageHP: hpVal,
+            remaining: s.overlordAbilityUses[key]
+        });
+
+        try {
+            executeEffectSafely(eff.effect, cardData, { state: s });
+            fired = true;
+        } catch (err) {
+            console.warn("[runOverlordReducedToHPTriggers] Failed to run effect", err);
+        }
+    }
+
+    return fired;
 }
 
 function shouldIgnoreDamageFromCard(entry, cardId) {
@@ -1760,11 +1821,9 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
         ?? gameState.heroes?.[gameState.heroTurnIndex ?? 0]
         ?? null;
     let amount = Number(args?.[0]) || 0;
-    if (amount <= 0) {
-        console.warn("[damageFoe] Invalid damage amount:", args);
-        return;
+    if (amount > 0) {
+        amount = applyHalfDamageModifier(amount, heroId, gameState);
     }
-    amount = applyHalfDamageModifier(amount, heroId, gameState);
 
     // Optional second argument:
     //  - "all"
@@ -2281,6 +2340,12 @@ EFFECT_HANDLERS.disableScan = function(args = [], card, selectedData = {}) {
     appendGameLogEntry("Scanning is disabled.", s);
     console.log("[disableScan] Scanning disabled via effect.");
     saveGameState(s);
+};
+
+EFFECT_HANDLERS.gainMaxHPonFoeEscape = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    s._foeEscapeUseMaxHP = true;
+    console.log("[gainMaxHPonFoeEscape] Flag set for next escape HP gain (max instead of current).");
 };
 
 function koCapturedBystander(flag = "all", state = gameState) {
@@ -5983,12 +6048,38 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
     if (currentOv?.card) cardsToCheck.push(currentOv.card);
 
     cardsToCheck.forEach(card => {
-        const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
+        const effects = [
+            ...(Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : []),
+            ...(Array.isArray(card.mightEffects) ? card.mightEffects : []),
+            ...(Array.isArray(card.bonusEffects) ? card.bonusEffects : []),
+            ...(Array.isArray(card.evilWinsEffects) ? card.evilWinsEffects : [])
+        ];
 
         effects.forEach((eff, idx) => {
-            const effCond = normalizeConditionString(eff?.condition);
-            if (!effCond || effCond !== condNorm) return;
-            if (!eff?.effect) return;
+            if (!eff || !eff.effect) return;
+
+            const rawCond = eff.condition;
+            let matchesEvent = false;
+            let extraConds = [];
+
+            if (Array.isArray(rawCond)) {
+                const condList = rawCond.map(c => normalizeConditionString(c)).filter(Boolean);
+                matchesEvent = condList.includes(condNorm);
+                extraConds = condList.filter(c => c !== condNorm);
+            } else {
+                const effCond = normalizeConditionString(rawCond);
+                matchesEvent = !!effCond && effCond === condNorm;
+            }
+
+            if (!matchesEvent) return;
+
+            // All other conditions must pass
+            const heroIdForCond = payload?.currentHeroId ?? null;
+            for (const c of extraConds) {
+                if (!evaluateCondition(c, heroIdForCond, s)) {
+                    return;
+                }
+            }
 
             const typeNorm = String(eff.type || "").toLowerCase();
             console.log(`[triggerRuleEffects] Matched condition '${condNorm}' on ${card.name} (type=${typeNorm})`);
@@ -6381,6 +6472,19 @@ export async function handleVillainEscape(entry, state) {
     // Keep the card's currentHP in sync for any UI that still reads it
     foeCard.currentHP = vCur;
 
+    // Allow rules/overlord effects to react to an escape (e.g., switch to max HP gain)
+    try {
+        triggerRuleEffects("foeEscapes", {
+            state,
+            escapedEntry: entry,
+            escapedCard: foeCard,
+            hpCurrent: vCur,
+            hpMax: vMax
+        }, state);
+    } catch (err) {
+        console.warn("[handleVillainEscape] foeEscapes triggers failed", err);
+    }
+
     // ---------------------------------------------------------------------
     // 3. SCENARIO BRANCH:
     //    If a Scenario is on top, it gains HP with NO CAP and no takeover
@@ -6545,7 +6649,15 @@ export async function handleVillainEscape(entry, state) {
     // 7. FAILED TAKEOVER OR NO TAKEOVER → Overlord gains HP (capped)
     //    (original behavior)
     // ---------------------------------------------------------------------
-    const hpGain = vCur;
+    const useMaxHpGain = !!state._foeEscapeUseMaxHP;
+    state._foeEscapeUseMaxHP = false; // one-shot
+    const hpGain = useMaxHpGain ? vMax : vCur;
+    console.log("[handleVillainEscape] HP gain source", {
+        useMaxHpGain,
+        hpGain,
+        currentHP: vCur,
+        maxHP: vMax
+    });
     let updatedHP = ovCur + hpGain;
     const overCap = ovBaseHP * 2;
 
@@ -7811,8 +7923,9 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
     const currentHP = info.currentHP;
     let actualDamage = Math.max(0, Math.min(amount, currentHP));
     let newHP     = Math.max(0, currentHP - amount);
-    const healed = Math.max(0, newHP - currentHP);
-    const isHeal = amount < 0 && healed > 0;
+    let healed = Math.max(0, newHP - currentHP);
+    let isHeal = amount < 0 && healed > 0;
+    let suppressHealLog = false;
     const heroName  = heroId != null
         ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
         : "Hero";
@@ -7964,7 +8077,29 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         }
         s.overlordData.currentHP = newHP;
 
-        if (isHeal && healed > 0) {
+        // Check for "would be KO'd" triggers that can save the overlord
+        if (newHP <= 0) {
+            const triggered = runOverlordReducedToHPTriggers(newHP, s);
+            if (triggered) {
+                const latestHP = typeof s.overlordHP?.[ovId] === "number"
+                    ? s.overlordHP[ovId]
+                    : getCurrentOverlordInfo(s)?.currentHP;
+                if (typeof latestHP === "number") {
+                    newHP = latestHP;
+                    if (ovCard && typeof ovCard === "object") ovCard.currentHP = latestHP;
+                    s.overlordData.currentHP = latestHP;
+                    suppressHealLog = true;
+                }
+            }
+        }
+
+        // Recompute damage/heal deltas after any trigger-based changes
+        const netDelta = currentHP - newHP;
+        actualDamage = Math.max(0, netDelta);
+        healed = Math.max(0, -netDelta);
+        isHeal = healed > 0;
+
+        if (isHeal && healed > 0 && !suppressHealLog) {
             console.log(`Overlord ${ovId} gained ${healed} HP -> ${newHP} HP`);
             appendGameLogEntry(`${overlordName} gained ${healed} HP.`, s);
         } else {
@@ -8650,68 +8785,91 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         };
     }
 
-    if (effectiveAmount > 0) {
+    const isHeal = effectiveAmount < 0;
+
+    if (!isHeal) {
         markFoeDamagedThisTurn(entry, s);
         runFoeFirstAttackPerTurnTriggers(entry, slotIndex, s);
     }
 
-    // Apply protection check (immunity)
-    if (foeIsProtected(entry, slotIndex, s)) {
+    // Apply protection check (immunity) only for damage
+    if (!isHeal && foeIsProtected(entry, slotIndex, s)) {
         const cityName = getCityNameFromIndex(slotIndex + 1) || `City ${slotIndex}`;
         console.log(`[damageFoe] Damage prevented: protected foe in ${cityName}.`);
         appendGameLogEntry(`Damage prevented: protected foe in ${cityName}.`, s);
         return;
     }
 
-    // Apply passive city-targeted double damage (e.g., Batman)
-    if (heroId != null) {
-        const heroObj = heroes.find(h => String(h.id) === String(heroId));
-        const { effects: effs } = getHeroAbilitiesWithTemp(heroId, s);
-        effs.forEach(eff => {
-            if (!eff || (eff.type || "").toLowerCase() !== "passive") return;
-            const effStr = Array.isArray(eff.effect) ? eff.effect.join(",") : (eff.effect || "");
-            if (!/^doubleDamage/i.test(String(effStr || ""))) return;
-            const cond = eff.condition;
-            if (!cond) return;
-            const ok = evaluateCondition(String(cond), heroId, s);
-            console.log(`[damageFoe][doubleDamage check] hero=${heroObj?.name || heroId}, cond=${cond}, result=${ok}`);
-            if (ok) {
-                effectiveAmount *= 2;
-                console.log(`[damageFoe] Applying double damage: ${amount} -> ${effectiveAmount} (slot ${slotIndex})`);
-            }
-        });
+    if (!isHeal) {
+        // Apply passive city-targeted double damage (e.g., Batman)
+        if (heroId != null) {
+            const heroObj = heroes.find(h => String(h.id) === String(heroId));
+            const { effects: effs } = getHeroAbilitiesWithTemp(heroId, s);
+            effs.forEach(eff => {
+                if (!eff || (eff.type || "").toLowerCase() !== "passive") return;
+                const effStr = Array.isArray(eff.effect) ? eff.effect.join(",") : (eff.effect || "");
+                if (!/^doubleDamage/i.test(String(effStr || ""))) return;
+                const cond = eff.condition;
+                if (!cond) return;
+                const ok = evaluateCondition(String(cond), heroId, s);
+                console.log(`[damageFoe][doubleDamage check] hero=${heroObj?.name || heroId}, cond=${cond}, result=${ok}`);
+                if (ok) {
+                    effectiveAmount *= 2;
+                    console.log(`[damageFoe] Applying double damage: ${amount} -> ${effectiveAmount} (slot ${slotIndex})`);
+                }
+            });
+        }
+
+        // Apply foe-side half-damage vs team (halveIncomingDamageFrom)
+        if (heroId != null && foeHasHalfDamageModifierAgainstHero(entry, heroId, s)) {
+            effectiveAmount = Math.max(1, Math.ceil(effectiveAmount / 2));
+            console.log(`[damageFoe] halveIncomingDamageFrom applied: hero ${heroId} damage halved to ${effectiveAmount}.`);
+        }
+
+        effectiveAmount = applyHeroOutgoingDoubleDamage(effectiveAmount, heroId, s);
     }
 
-    // Apply foe-side half-damage vs team (halveIncomingDamageFrom)
-    if (heroId != null && foeHasHalfDamageModifierAgainstHero(entry, heroId, s)) {
-        effectiveAmount = Math.max(1, Math.ceil(effectiveAmount / 2));
-        console.log(`[damageFoe] halveIncomingDamageFrom applied: hero ${heroId} damage halved to ${effectiveAmount}.`);
-    }
+    const effWithFoeMods = isHeal
+        ? Math.abs(effectiveAmount)
+        : applyDoubleDamageAgainstFoe(effectiveAmount, { slotIndex }, s);
 
-    effectiveAmount = applyHeroOutgoingDoubleDamage(effectiveAmount, heroId, s);
-    const effWithFoeMods = applyDoubleDamageAgainstFoe(effectiveAmount, { slotIndex }, s);
-    const newHP = Math.max(0, currentHP - effWithFoeMods);
     const heroName = heroId != null
         ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
         : "Hero";
-    const appliedDamage = Math.max(0, Math.min(effWithFoeMods, currentHP));
-    playDamageSfx(appliedDamage);
+
+    let newHP;
+    let appliedDamage = 0;
+    let appliedHeal = 0;
+
+    if (isHeal) {
+        newHP = Math.min(baseHP, currentHP + effWithFoeMods);
+        appliedHeal = Math.max(0, newHP - currentHP);
+    } else {
+        newHP = Math.max(0, currentHP - effWithFoeMods);
+        appliedDamage = Math.max(0, Math.min(effWithFoeMods, currentHP));
+        playDamageSfx(appliedDamage);
+    }
 
     // Sync per-instance representations (DO NOT mutate foeCard.currentHP)
     entry.maxHP = baseHP;
     entry.currentHP = newHP;
     s.villainHP[entryKey] = newHP;
 
-    console.log(`[damageFoe] ${foeCard.name} took ${effWithFoeMods} damage (${currentHP} -> ${newHP}).`);
-    appendGameLogEntry(`${heroName} dealt ${appliedDamage} damage to ${foeCard.name}.`, s);
+    if (isHeal) {
+        console.log(`[damageFoe] ${foeCard.name} healed ${appliedHeal} (${currentHP} -> ${newHP}).`);
+        appendGameLogEntry(`${foeCard.name} gained ${appliedHeal} HP.`, s);
+    } else {
+        console.log(`[damageFoe] ${foeCard.name} took ${effWithFoeMods} damage (${currentHP} -> ${newHP}).`);
+        appendGameLogEntry(`${heroName} dealt ${appliedDamage} damage to ${foeCard.name}.`, s);
 
-    // Track last damage dealt by the acting hero (post-modifier amount)
-    if (heroId && s.heroData?.[heroId]) {
-        s.heroData[heroId].lastDamageAmount = Number(effectiveAmount) || 0;
+        // Track last damage dealt by the acting hero (post-modifier amount)
+        if (heroId && s.heroData?.[heroId]) {
+            s.heroData[heroId].lastDamageAmount = Number(effectiveAmount) || 0;
+        }
+
+        // Trigger damaged condition effects on this foe
+        try { runFoeDamagedTriggers(entry, slotIndex, s); } catch (err) { console.warn("[damageFoe] runFoeDamagedTriggers failed", err); }
     }
-
-    // Trigger damaged condition effects on this foe
-    try { runFoeDamagedTriggers(entry, slotIndex, s); } catch (err) { console.warn("[damageFoe] runFoeDamagedTriggers failed", err); }
 
     // Re-render the foe card in its city slot so board shows updated HP
     try {
