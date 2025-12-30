@@ -43,7 +43,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `protectHero(1,current)`
+                effect: `protectHero(nextAttack,current)`
             }
         ]
     },
@@ -65,7 +65,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `protectHero(1,current)`
+                effect: `protectHero(nextAttack,current)`
             }
         ]
     },
@@ -114,7 +114,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Double your Hero's Damage on their next turn.`
+                text: `Double your Hero's Damage until the end of their next turn.`
             }
         ],
         abilitiesNamePrint: [
@@ -202,7 +202,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Increase all active [ICON:Bat] Heroes' Damage Thresholds by 1 until the end of this Hero's next turn.`
+                text: `Increase all active [ICON:Bat] Heroes' Damage Thresholds to 3 until the start of this Hero's next turn.`
             }
         ],
         abilitiesNamePrint: [
@@ -212,7 +212,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `increaseHeroDT(bat,1,next)`
+                effect: `setHeroDTtoX(Bat,3,next)`
             }
         ]
     },
@@ -224,7 +224,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Every Hero can retrieve 1 card from their discard piles.`
+                text: `Every Hero retrieves 1 random card from their discard pile.`
             }
         ],
         abilitiesNamePrint: [
@@ -256,7 +256,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `doubleDamageAgainst(overlord,next)`
+                effect: `doubleDamageAgainstVillain(overlord,next)`
             }
         ]
     },
@@ -366,7 +366,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `add(1,any)`
+                effect: `add(1,current)`
             }
         ]
     },
@@ -657,7 +657,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `The next time you fail a Retreat Roll, you can choose to succeed instead.`
+                text: `The next time you would fail a Retreat Roll, you instead succeed.`
             }
         ],
         abilitiesNamePrint: [
@@ -667,7 +667,7 @@ export const allies = [
         ],
         abilitiesEffects: [
             {
-                effect: `succeedNextFailedRetreat`
+                effect: `succeedNextFailedRetreat()`
             }
         ]
     },

@@ -21,7 +21,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `setHeroDTtoXforX(current,1,1)`
+                effect: `setHeroDTtoX(current,1,next)`
             }
         ]
     },
@@ -43,7 +43,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `doubleDamageAgainst(wonder,next)`
+                effect: `doubleDamageAgainst(Wonder,next)`
             }
         ]
     },
@@ -65,7 +65,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `loseIconUse(1,random)`
+                effect: `loseIconUse(current,1,random)`
             }
         ]
     },
@@ -77,7 +77,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Every Hero's Maximum HP is reduced by 1.`
+                text: `All Heroes take 2 Damage.`
             }
         ],
         abilitiesNamePrint: [
@@ -87,7 +87,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `lowerMaxHP(1,all)`
+                effect: `damageHero(2,all,ignoreDT)`
             }
         ]
     },
@@ -99,7 +99,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `All Heroes take 2 Damage.`
+                text: `All Heroes take 1 Damage.`
             }
         ],
         abilitiesNamePrint: [
@@ -109,7 +109,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageHero(2,all)`
+                effect: `damageHero(1,all,ignoreDT)`
             }
         ]
     },
@@ -153,7 +153,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `protect(henchmen,["Star","Coast"])`
+                effect: `protectFoe(henchmen,[0,2],next)`
             }
         ]
     },
@@ -165,7 +165,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `KO one card from your Hero's hand or discard pile.`
+                text: `KO the top card of every Hero's discard pile.`
             }
         ],
         abilitiesNamePrint: [
@@ -175,7 +175,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `koCards(1,["hand","discard"])`
+                effect: `koTopHeroDiscard(all)`
             }
         ]
     },
@@ -197,7 +197,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `damageHero(1,leftmostEngaged)`
+                effect: `damageHero(1,leftmostEngaged,ignoreDT)`
             }
         ]
     },

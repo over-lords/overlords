@@ -11,7 +11,7 @@ import { renderCard, renderAbilityText, findCardInAllSources } from './cardRende
 import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, 
          freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, 
-         renderScannedPreview, processQueuedHeroDamage } from './abilityExecutor.js';
+         renderScannedPreview, processQueuedHeroDamage, getCurrentHeroDT } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, 
          showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
@@ -1084,6 +1084,17 @@ const pivotBtn   = document.getElementById("discard-pivot-button");
 const slidePanel = document.getElementById("discard-slide-panel");
 const closeBtn   = document.getElementById("discard-slide-close");
 const cardsRow   = document.getElementById("discard-slide-cards");
+const deckChooseBtn = document.createElement("button");
+deckChooseBtn.textContent = "Choose";
+deckChooseBtn.style.padding = "10px 16px";
+deckChooseBtn.style.fontSize = "16px";
+deckChooseBtn.style.display = "none";
+deckChooseBtn.id = "deck-choose-button";
+deckChooseBtn.style.alignSelf = "flex-end";
+deckChooseBtn.style.marginLeft = "auto";
+deckChooseBtn.style.marginRight = "100px";
+deckChooseBtn.style.marginBottom = "6px";
+if (cardsRow) cardsRow.appendChild(deckChooseBtn);
 
 pivotBtn.onclick = () => {
   slidePanel.classList.add("open");
@@ -1093,6 +1104,13 @@ pivotBtn.onclick = () => {
 closeBtn.onclick = () => {
   slidePanel.classList.remove("open");
 };
+
+// Restore deck-select mode after refresh if persisted
+if (gameState.deckSelectContext) {
+  window.__deckSelectContext = { ...gameState.deckSelectContext, state: gameState };
+  slidePanel.classList.add("open");
+  renderDiscardSlide(gameState);
+}
 
 const menuBtn = document.getElementById("gameMenu-box");
 const sideMenu = document.getElementById("sideMenu");
@@ -2145,7 +2163,7 @@ export function buildVillainPanel(villainCard, opts = {}) {
 
     // If a damageFoe(any/anyCoastal) is pending, hijack the click to a confirm modal instead of opening the panel UI.
     const pendingSelect = (typeof window !== "undefined") ? window.__damageFoeSelectMode : null;
-    if (pendingSelect && typeof pendingSelect.amount === "number") {
+    if (pendingSelect && (typeof pendingSelect.amount === "number" || typeof pendingSelect.customHandler === "function")) {
         const stateForDamage = pendingSelect.state || gameState;
         const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForDamage);
 
@@ -2179,12 +2197,7 @@ export function buildVillainPanel(villainCard, opts = {}) {
             }
         }
 
-        showDamageSelectConfirm({
-            amount: pendingSelect.amount,
-            foeName: villainCard.name
-        }).then(allow => {
-            if (!allow) return;
-
+        const proceed = () => {
             const summary = {
                 foeType: villainCard.type || "Enemy",
                 foeId: String(villainCard.baseId ?? villainCard.id ?? ""),
@@ -2195,17 +2208,44 @@ export function buildVillainPanel(villainCard, opts = {}) {
                 source: "city-upper"
             };
 
-            damageFoe(
-                pendingSelect.amount,
-                summary,
-                pendingSelect.heroId ?? null,
-                stateForDamage,
-                { flag: "single", fromAny: true }
-            );
+            if (typeof pendingSelect.customHandler === "function") {
+                if (pendingSelect.requireConfirm) {
+                    showDisableVillainConfirm({
+                        foeName: villainCard.name,
+                        message: pendingSelect.confirmMessage
+                    }).then(allow => {
+                        if (!allow) return;
+                        pendingSelect.customHandler({ entry, slotIndex, state: stateForDamage, summary });
+                        window.__damageFoeSelectMode = null;
+                    });
+                    return;
+                } else {
+                    pendingSelect.customHandler({ entry, slotIndex, state: stateForDamage, summary });
+                    window.__damageFoeSelectMode = null;
+                    return;
+                }
+            }
 
-            processQueuedHeroDamage(stateForDamage);
-            window.__damageFoeSelectMode = null;
-        });
+            showDamageSelectConfirm({
+                amount: pendingSelect.amount,
+                foeName: villainCard.name
+            }).then(allow => {
+                if (!allow) return;
+
+                damageFoe(
+                    pendingSelect.amount,
+                    summary,
+                    pendingSelect.heroId ?? null,
+                    stateForDamage,
+                    { flag: "single", fromAny: true }
+                );
+
+                processQueuedHeroDamage(stateForDamage);
+                window.__damageFoeSelectMode = null;
+            });
+        };
+
+        proceed();
 
         return;
     }
@@ -2475,7 +2515,7 @@ export function buildHeroPanel(hero) {
                 ? hero.hp                      // show only HP if full
                 : `${hero.currentHP} / ${hero.hp}`  // otherwise show current/max
         }</div>
-        <div><strong>Damage Threshold:</strong> ${hero.damageThreshold}</div>
+        <div><strong>Damage Threshold:</strong> ${getCurrentHeroDT(hero.id, gameState)}</div>
         <div><strong>Travel Budget:</strong> ${
             (() => {
                 const heroState = gameState.heroData?.[hero.id];
@@ -3576,6 +3616,23 @@ function renderDiscardSlide(state = gameState) {
 
   if (!cardsRow) return;
   cardsRow.innerHTML = "";
+  let deckSelectCtx = (typeof window !== "undefined") ? window.__deckSelectContext : null;
+  if (!deckSelectCtx && state.deckSelectContext) {
+    deckSelectCtx = { ...state.deckSelectContext, state };
+    if (typeof window !== "undefined") window.__deckSelectContext = deckSelectCtx;
+  }
+  const isDeckSelect = deckSelectCtx && String(deckSelectCtx.heroId) === String(heroId);
+  const setChooseState = (hasSelection) => {
+    deckChooseBtn.style.backgroundColor = hasSelection ? "gold" : "#444";
+    deckChooseBtn.style.color = hasSelection ? "#000" : "#ddd";
+    deckChooseBtn.style.cursor = hasSelection ? "pointer" : "not-allowed";
+    deckChooseBtn.disabled = !hasSelection;
+  };
+
+  const hasInitialSelection = isDeckSelect && deckSelectCtx?.selectedCardIds?.length > 0;
+  deckChooseBtn.style.display = isDeckSelect ? "inline-block" : "none";
+  setChooseState(hasInitialSelection);
+  closeBtn.style.display = isDeckSelect ? "none" : "block";
 
   // Layout container so we can put a label under the horizontal scroller
   cardsRow.style.display = "flex";
@@ -3596,7 +3653,10 @@ function renderDiscardSlide(state = gameState) {
   bar.style.alignItems = "center";
   bar.style.pointerEvents = "auto";
 
+  const deckList = Array.isArray(heroState.deck) ? heroState.deck.slice() : [];
   const discardList = [...heroState.discard].reverse(); // left is latest
+  const cardList = isDeckSelect ? deckList : discardList;
+  const selectedSet = new Set(isDeckSelect && deckSelectCtx?.selectedCardIds ? deckSelectCtx.selectedCardIds.map(String) : []);
   const permaMap = (() => {
     const map = {};
     const list = Array.isArray(heroState.permanentKO) ? heroState.permanentKO : [];
@@ -3608,9 +3668,9 @@ function renderDiscardSlide(state = gameState) {
   })();
 
   // Empty placeholder (KO style)
-  if (!discardList.length) {
+  if (!cardList.length) {
     const emptyMsg = document.createElement("div");
-    emptyMsg.textContent = `${heroName} has no discarded cards.`;
+    emptyMsg.textContent = isDeckSelect ? `${heroName} has no cards in deck.` : `${heroName} has no discarded cards.`;
     emptyMsg.style.marginTop = "80px";
     emptyMsg.style.padding = "16px";
     emptyMsg.style.fontSize = "24px";
@@ -3623,7 +3683,9 @@ function renderDiscardSlide(state = gameState) {
   }
 
   const sizeLabel = document.createElement("div");
-  sizeLabel.textContent = `${heroName}'s Discard Pile: ${heroState.discard.length} cards`;
+  sizeLabel.textContent = isDeckSelect
+    ? `${heroName}'s Deck: ${cardList.length} cards`
+    : `${heroName}'s Discard Pile: ${cardList.length} cards`;
   sizeLabel.style.marginTop = "14px";
   sizeLabel.style.marginRight = "10px";
   sizeLabel.style.marginBottom = "-4px";
@@ -3635,7 +3697,7 @@ function renderDiscardSlide(state = gameState) {
   cardsRow.appendChild(sizeLabel);
 
   // Render cards + click-to-open panel (inline, no wireCardToMainPanel)
-  for (const id of discardList) {
+  for (const id of cardList) {
     const cardDiv = document.createElement("div");
     cardDiv.className = "ko-card";
     cardDiv.style.height = "160px";
@@ -3644,8 +3706,14 @@ function renderDiscardSlide(state = gameState) {
     cardDiv.style.flex = "0 0 auto";
 
     const scaleWrapper = document.createElement("div");
-    scaleWrapper.style.transform = "scale(0.45)";
+    const scale = isDeckSelect ? 0.4 : 0.45;
+    scaleWrapper.style.transform = `scale(${scale})`;
     scaleWrapper.style.transformOrigin = "top center";
+    if (isDeckSelect) {
+      scaleWrapper.style.marginTop = "10px";
+      scaleWrapper.style.marginRight = "0px";
+      scaleWrapper.style.marginLeft = "-15px";
+    }
     scaleWrapper.style.cursor = "pointer";
     scaleWrapper.style.position = "relative";
 
@@ -3654,6 +3722,17 @@ function renderDiscardSlide(state = gameState) {
     // Render the card
     const cardEl = renderCard(idStr);
     scaleWrapper.appendChild(cardEl);
+
+    const applySelectionStyle = (isSelected) => {
+      if (isSelected) {
+        scaleWrapper.style.boxShadow = "0 0 16px 6px rgba(255, 215, 0, 0.8)";
+        scaleWrapper.style.border = "2px solid gold";
+      } else {
+        scaleWrapper.style.boxShadow = "";
+        scaleWrapper.style.border = "";
+      }
+    };
+    applySelectionStyle(selectedSet.has(idStr));
 
     // Permanent KO overlay if applicable
     if (permaMap[idStr] > 0) {
@@ -3686,6 +3765,45 @@ function renderDiscardSlide(state = gameState) {
       scaleWrapper.appendChild(overlay);
     }
 
+    if (isDeckSelect) {
+      deckChooseBtn.onclick = () => {
+        const ctx = window.__deckSelectContext;
+        if (!ctx || ctx.heroId == null) return;
+        const selectedIds = Array.isArray(ctx.selectedCardIds) ? ctx.selectedCardIds : [];
+        if (!selectedIds.length) return; // no-op unless something is selected
+        const maxSel = Math.max(1, Number(ctx.count) || 1);
+        const pickIds = selectedIds.slice(0, maxSel);
+        const hState = gameState.heroData?.[ctx.heroId];
+        if (!hState || !Array.isArray(hState.deck)) return;
+        if (!Array.isArray(hState.hand)) hState.hand = [];
+
+        pickIds.forEach(cardId => {
+          const pos = hState.deck.findIndex(id => String(id) === String(cardId));
+          if (pos >= 0) {
+            hState.deck.splice(pos, 1);
+          }
+          hState.hand.push(cardId);
+          const heroName = heroes.find(h => String(h.id) === String(ctx.heroId))?.name || `Hero ${ctx.heroId}`;
+          const cardName = findCardInAllSources(cardId)?.name || `Card ${cardId}`;
+          appendGameLogEntry(`${heroName} drew ${cardName} from their deck.`, gameState);
+        });
+        saveGameState(gameState);
+        window.__deckSelectContext = null;
+        gameState.deckSelectContext = null;
+        deckChooseBtn.style.display = "none";
+        try {
+          const closeBtnEl = document.getElementById("discard-slide-close");
+          if (closeBtnEl) closeBtnEl.click();
+          const panel = document.getElementById("discard-slide-panel");
+          if (panel) panel.style.display = "none";
+        } catch (e) {
+          // ignore
+        }
+        renderDiscardSlide(gameState);
+        renderHeroHandBar(gameState);
+      };
+    }
+
     // Resolve full card data once, then open correct panel on click (KO-bar style)
     const fullCardData =
       (typeof findCardInAllSources === "function") ? findCardInAllSources(idStr) : null;
@@ -3701,6 +3819,58 @@ function renderDiscardSlide(state = gameState) {
       );
 
       openPanelForCard(data);
+
+      if (isDeckSelect) {
+        if (!window.__deckSelectContext) window.__deckSelectContext = { selectedCardIds: [] };
+        const maxSel = Math.max(1, Number(deckSelectCtx.count) || 1);
+        // Single-select: clicking another card replaces the previous selection.
+        let currentSel = window.__deckSelectContext.selectedCardIds || [];
+        if (maxSel === 1) {
+          const isSelectedAlready = currentSel.length === 1 && String(currentSel[0]) === idStr;
+          if (isSelectedAlready) {
+            currentSel = [];
+            applySelectionStyle(false);
+            // Clear all highlights
+            if (bar) {
+              const wrappers = bar.querySelectorAll(".ko-card > div");
+              wrappers.forEach(w => {
+                w.style.boxShadow = "";
+                w.style.border = "";
+              });
+            }
+          } else {
+            currentSel = [idStr];
+            applySelectionStyle(true);
+            // Clear highlights from siblings
+            if (bar) {
+              const wrappers = bar.querySelectorAll(".ko-card > div");
+              wrappers.forEach(w => {
+                if (w !== scaleWrapper) {
+                  w.style.boxShadow = "";
+                  w.style.border = "";
+                }
+              });
+            }
+          }
+        } else {
+          const idxSel = currentSel.findIndex(cid => String(cid) === idStr);
+          if (idxSel >= 0) {
+            currentSel.splice(idxSel, 1);
+            applySelectionStyle(false);
+          } else if (currentSel.length < maxSel) {
+            currentSel.push(idStr);
+            applySelectionStyle(true);
+          }
+        }
+        window.__deckSelectContext.selectedCardIds = currentSel;
+        gameState.deckSelectContext = {
+          heroId: deckSelectCtx.heroId,
+          count: deckSelectCtx.count,
+          selectedCardIds: [...currentSel]
+        };
+        setChooseState(currentSel.length > 0);
+        saveGameState(gameState);
+      }
     }, true); // capture-phase to prevent inner handlers swallowing it
 
     cardDiv.appendChild(scaleWrapper);
@@ -3709,17 +3879,119 @@ function renderDiscardSlide(state = gameState) {
 
   cardsRow.appendChild(bar);
 
-  // Label under the row (KO style)
+  // Footer row: label + (optional) deck choose button
+  const footer = document.createElement("div");
+  footer.style.display = "flex";
+  footer.style.alignItems = "center";
+  footer.style.justifyContent = "space-between";
+  footer.style.marginTop = "12px";
+  footer.style.marginBottom = "10px";
+  footer.style.marginLeft = "30px";
+  footer.style.marginRight = "12px";
+
   const label = document.createElement("div");
   label.textContent = `Left is latest.`;
-  label.style.marginTop = "12px";
-  label.style.marginBottom = "10px";
-  label.style.marginLeft = "30px";
   label.style.fontSize = "20px";
   label.style.fontStyle = "italic";
   label.style.color = "#fff";
   label.style.textAlign = "left";
   label.style.pointerEvents = "none";
+  label.style.flex = "1";
 
-  cardsRow.appendChild(label);
+  footer.appendChild(label);
+  if (deckChooseBtn.parentElement !== footer) {
+    if (deckChooseBtn.parentElement) {
+      try { deckChooseBtn.parentElement.removeChild(deckChooseBtn); } catch (e) {}
+    }
+    footer.appendChild(deckChooseBtn);
+  }
+
+  cardsRow.appendChild(footer);
+}
+
+function showDisableVillainConfirm({ foeName, message }) {
+    return new Promise(resolve => {
+        try {
+            const existing = document.querySelectorAll('[data-disable-confirm-overlay="1"]');
+            existing.forEach(el => { try { el.remove(); } catch (e) {} });
+        } catch (e) {
+            console.warn("[disableConfirm] Failed to clear existing overlays", e);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.dataset.disableConfirmOverlay = "1";
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        `;
+
+        const box = document.createElement("div");
+        box.style.cssText = `
+            background: #fff;
+            color: #111;
+            border-radius: 14px;
+            border: 4px solid #000;
+            width: min(420px, 100%);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+            padding: 18px;
+            text-align: center;
+            font-family: 'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif;
+        `;
+
+        const title = document.createElement("div");
+        title.style.cssText = "font-size: 28px; font-weight: 800; margin-bottom: 10px;";
+        title.textContent = "Confirm Disable";
+
+        const msg = document.createElement("div");
+        msg.style.cssText = "font-size: 22px; line-height: 1.35; margin-bottom: 16px;";
+        msg.textContent = message || `Disable ${foeName}? (0 damage, abilities negated)`;
+
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex; gap:10px; justify-content:center; flex-wrap:wrap;";
+
+        const makeBtn = (label, bg, fg) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.style.cssText = `
+                flex: 1 1 120px;
+                padding: 12px 14px;
+                font-size: 16px;
+                font-weight: 800;
+                border: 3px solid #000;
+                border-radius: 12px;
+                background: ${bg};
+                color: ${fg};
+                cursor: pointer;
+            `;
+            return b;
+        };
+
+        const yesBtn = makeBtn("Yes", "#ffd800", "#000");
+        const noBtn  = makeBtn("No", "#e3e3e3", "#000");
+
+        const cleanup = (result) => {
+            try { overlay.remove(); } catch (e) {}
+            resolve(result);
+        };
+
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick  = () => cleanup(false);
+
+        btnRow.appendChild(yesBtn);
+        btnRow.appendChild(noBtn);
+
+        box.appendChild(title);
+        box.appendChild(msg);
+        box.appendChild(btnRow);
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
 }

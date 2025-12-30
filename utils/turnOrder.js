@@ -166,8 +166,8 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers, 
-         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero,
-         buildPermanentKOCountMap } from './abilityExecutor.js';
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny,
+         buildPermanentKOCountMap, pruneFoeDoubleDamage, pruneHeroProtections } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -1889,7 +1889,13 @@ export async function startHeroTurn(state, opts = {}) {
 
     // VILLAIN DRAW for this "turn slot" (after logging turn start for ordering)
     if (!skipVillainDraw) {
-        await villainDraw(1);
+        const skipCount = Number(state.villainDrawSkipCount) || 0;
+        if (skipCount > 0) {
+            state.villainDrawSkipCount = Math.max(0, skipCount - 1);
+            appendGameLogEntry(`Villain draw skipped. Remaining skips: ${state.villainDrawSkipCount}.`, state);
+        } else {
+            await villainDraw(1);
+        }
     }
 
     // 3) Normal hero turn setup for the chosen hero
@@ -2470,6 +2476,35 @@ export async function endCurrentHeroTurn(gameState) {
                 appendGameLogEntry(`Draw dampener ended.`, gameState);
             }
         }
+        if (gameState.iconAbilityDampener?.active) {
+            const expiresAt = gameState.iconAbilityDampener.expiresAtTurnCounter;
+            if (typeof expiresAt === "number" && turnCount >= expiresAt) {
+                gameState.iconAbilityDampener = null;
+                appendGameLogEntry(`Icon ability dampener ended.`, gameState);
+            }
+        }
+        if (gameState.retreatDampener?.active) {
+            const expiresAt = gameState.retreatDampener.expiresAtTurnCounter;
+            if (typeof expiresAt === "number" && turnCount >= expiresAt) {
+                gameState.retreatDampener = null;
+                appendGameLogEntry(`Retreat dampener ended.`, gameState);
+            }
+        }
+        pruneHeroProtections(gameState);
+        if (Array.isArray(gameState.doubleDamageHeroModifiers)) {
+            const before = gameState.doubleDamageHeroModifiers.length;
+            const filtered = gameState.doubleDamageHeroModifiers.filter(mod => {
+                if (!mod) return false;
+                if (typeof mod.expiresAtTurnCounter === "number" && turnCount >= mod.expiresAtTurnCounter) return false;
+                return true;
+            });
+            const removed = before - filtered.length;
+            gameState.doubleDamageHeroModifiers = filtered;
+            if (removed > 0) {
+                appendGameLogEntry(`Double-damage effects expired.`, gameState);
+            }
+        }
+        pruneFoeDoubleDamage(gameState);
         if (Array.isArray(gameState.halfDamageModifiers)) {
             const before = gameState.halfDamageModifiers.length;
             gameState.halfDamageModifiers = gameState.halfDamageModifiers.filter(mod => {
@@ -2552,10 +2587,18 @@ export async function endCurrentHeroTurn(gameState) {
                 // HERO DAMAGE THRESHOLD
                 const heroObj = heroes.find(h => String(h.id) === String(heroId));
                 const heroName = heroObj?.name || `Hero ${heroId}`;
-                const dt = Number(heroObj?.damageThreshold || 0);
+                const dt = getCurrentHeroDT(heroId, gameState);
 
                 // Only deal damage if foeDamage >= DT
                 if (foeDamage >= dt) {
+                    let blockedByProtection = false;
+                    if (consumeHeroProtectionIfAny(heroId, gameState)) {
+                        gameState.pendingDamageHero = null;
+                        blockedByProtection = true;
+                    }
+                    if (blockedByProtection) {
+                        // skip damage application
+                    } else {
                     const entryKey = slotEntry?.instanceId ?? slotEntry?.uniqueId ?? null;
                     gameState.lastDamageCauser = {
                         foeId,
@@ -2597,6 +2640,8 @@ export async function endCurrentHeroTurn(gameState) {
                             `[END TURN] ${heroObj?.name} takes ${foeDamage} damage from ${foe.name} in city ${heroState.cityIndex}.`
                             + ` (DT=${dt})`
                         );
+                    }
+
                     }
 
                     // Fire any pending end-of-turn damage triggers for this hero
@@ -3682,6 +3727,13 @@ export function showRetreatButtonForCurrentHero(gameState) {
     const heroObj = heroes.find(h => String(h.id) === String(activeHeroId));
     const heroName = heroObj?.name || `Hero ${activeHeroId}`;
 
+    // If retreat is disabled for this hero, hide the button
+    if (retreatDisabledForHero(activeHeroId, gameState)) {
+        btn.style.display = 'none';
+        console.log(`[RETREAT] ${heroName} cannot retreat (disabled). Button hidden.`);
+        return;
+    }
+
     // CASE 1: Facing Overlord → retreat is allowed
     if (heroState.isFacingOverlord) {
         btn.style.display = "block";
@@ -3746,13 +3798,24 @@ async function retreatHeroToHQ(gameState, heroId) {
                     + `in city ${heroIdx}. Roll=${roll}, needs >= ${retreatTarget}.`
                 );
 
+                let success = roll >= retreatTarget;
+                if (!success && heroState.succeedNextRetreat) {
+                    console.log(`[RETREAT] ${heroName} would fail retreat, but auto-succeeds due to protection.`);
+                    heroState.succeedNextRetreat = false;
+                    success = true;
+                }
+
                 // Only do anything special on a FAILED roll
-                if (roll < retreatTarget) {
+                if (!success) {
                 const foeDamage = getSlotFoeDamage(slotEntry, foe);
-                    const dt = Number(heroObj?.damageThreshold || 0);
+                    const dt = getCurrentHeroDT(heroId, gameState);
 
                     // Match end-of-turn damage behavior: only if foeDamage >= DT
                     if (foeDamage >= dt) {
+                        if (consumeHeroProtectionIfAny(heroId, gameState)) {
+                            gameState.pendingDamageHero = null;
+                            return;
+                        }
                         flagPendingHeroDamage(heroId, foeDamage, foe.name, gameState);
                         const blocked = await tryBlockPendingHeroDamage(gameState);
                         const pending = gameState.pendingDamageHero;
@@ -4553,9 +4616,13 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
       const heroName = heroObj?.name || `Hero ${activeHeroId}`;
       const foeDamage = getSlotFoeDamage(foeEntry, foe);
       console.log("[SHOVE ENTRY] Effective foe damage (after passives)", { foeDamage, foeId, entryKey: foeEntry?.instanceId ?? foeEntry?.uniqueId ?? null, damagePenalty: foeEntry?.damagePenalty, currentDamage: foeEntry?.currentDamage });
-      const dt = Number(heroObj.damageThreshold || 0);
+      const dt = getCurrentHeroDT(heroId, gameState);
 
       if (foeDamage >= dt && foeDamage > 0) {
+        if (consumeHeroProtectionIfAny(activeHeroId, state)) {
+          state.pendingDamageHero = null;
+          return;
+        }
         flagPendingHeroDamage(activeHeroId, foeDamage, foe.name, state);
         const blocked = await tryBlockPendingHeroDamage(state);
         const pending = state.pendingDamageHero;
@@ -5021,7 +5088,7 @@ async function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, conte
     // Only do anything special on a FAILED roll
     if (roll < retreatTarget) {
         const foeDamage = getSlotFoeDamage(slotEntry, foe);
-                    const dt = Number(heroObj?.damageThreshold || 0);
+                    const dt = getCurrentHeroDT(heroId, gameState);
 
                     // Match end-of-turn damage behavior: only if foeDamage >= DT
                     if (foeDamage >= dt) {
