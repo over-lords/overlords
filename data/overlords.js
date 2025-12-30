@@ -152,7 +152,7 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "55",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `If a Hero is KO'd: Next turn do not draw from the Villain Deck, that Hero enters as a Villain. <span class="line-gap"></span>
