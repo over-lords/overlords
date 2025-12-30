@@ -40,6 +40,45 @@
         </div>
     </div>
 
+    <script type="module">
+        import { supabase } from "./supabaseClient.js";
+
+        async function loadCampaignFlags() {
+            const uid = (typeof localStorage !== "undefined") ? localStorage.getItem("session_user_id") : null;
+            if (!uid) {
+                window.__campaignFlags = new Set();
+                return;
+            }
+            try {
+                const { data, error } = await supabase
+                    .from("users")
+                    .select("flags")
+                    .eq("id", uid)
+                    .single();
+                if (error) {
+                    console.warn("[Campaign] Failed to fetch user flags", error);
+                    window.__campaignFlags = new Set();
+                    return;
+                }
+                const flags = Array.isArray(data?.flags) ? data.flags.map(String) : [];
+                window.__campaignFlags = new Set(flags);
+            } catch (err) {
+                console.warn("[Campaign] Unexpected error fetching flags", err);
+                window.__campaignFlags = new Set();
+            }
+        }
+
+        // Ensure flags are loaded before rendering list
+        loadCampaignFlags().then(() => {
+            if (typeof window.__campaignFlags === "undefined") {
+                window.__campaignFlags = new Set();
+            }
+            if (typeof initializeCampaign === "function") {
+                initializeCampaign();
+            }
+        });
+    </script>
+
     <script>
         // Elements
         const listEl = document.getElementById("level-list");
@@ -127,8 +166,8 @@
 
             levels.forEach((name, idx) => {
                 const displayName = name.replace(/^(\d{2})-/, "");
+                const flagName = `world${currentWorld}game${idx + 1}`;
                 const row = document.createElement("div");
-                row.textContent = displayName;
                 row.style.cssText = `
                     padding: 12px 14px;
                     margin: 6px 0;
@@ -142,6 +181,15 @@
                     align-items: center;
                     box-shadow: ${name === selectedLevel ? "0 0 10px rgba(255,216,0,0.5)" : "none"};
                 `;
+                const titleSpan = document.createElement("span");
+                titleSpan.textContent = displayName;
+                const statusSpan = document.createElement("span");
+                statusSpan.textContent = (window.__campaignFlags && window.__campaignFlags.has(flagName)) ? "✔" : "";
+                statusSpan.style.color = "#7cf57c";
+                statusSpan.style.fontWeight = "bold";
+                statusSpan.style.marginLeft = "8px";
+                row.appendChild(titleSpan);
+                row.appendChild(statusSpan);
                 row.onclick = () => {
                     if (selectedLevel === name) {
                         selectedLevel = null;
@@ -288,8 +336,10 @@
             loadWorld(w);
         };
 
-        // Initial load
-        populateWorlds();
+        // Initial load (wait until flags are ready via initializeCampaign)
+        window.initializeCampaign = () => {
+            populateWorlds();
+        };
     </script>
 </body>
 </html>
