@@ -30,9 +30,9 @@
                 </select>
             </div>
 
-            <div style="display: flex; gap: 12px; flex-wrap: nowrap; width: 100%; padding-left: 10px; padding-right: 30px; overflow-x: auto;">
-                <div id="level-list" style="flex: 1 1 60%; min-width: 260px; max-height: 65vh; overflow-y: auto; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 10px;"></div>
-                <div style="flex: 1 1 30%; min-width: 220px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; justify-content: center; margin-right: 20px;">
+            <div style="display: flex; gap: 12px; flex-wrap: nowrap; width: 100%; padding-left: 10px; padding-right: 30px; overflow-x: hidden;">
+                <div id="level-list" style="flex: 1 1 60%; min-width: 0; max-height: 65vh; overflow-y: auto; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 10px;"></div>
+                <div style="flex: 1 1 30%; min-width: 0; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; justify-content: center; margin-right: 20px;">
                     <div id="selected-label" style="color:#fff; font-size:16px;">Select a level to play.</div>
                     <button id="play-btn" disabled style="padding: 12px 14px; font-size: 18px; font-weight: 800; border: 3px solid #000; border-radius: 12px; background: #444; color: #bbb; cursor: not-allowed;">Play</button>
                 </div>
@@ -122,8 +122,9 @@
             }
 
             levels.forEach(name => {
+                const displayName = name.replace(/^(\d{2})-/, "");
                 const row = document.createElement("div");
-                row.textContent = name;
+                row.textContent = displayName;
                 row.style.cssText = `
                     padding: 12px 14px;
                     margin: 6px 0;
