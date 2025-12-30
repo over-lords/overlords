@@ -130,7 +130,7 @@ export const scenarios = [
         name: "Brainiac Attacks",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "20",
         abilitiesText: [
             {

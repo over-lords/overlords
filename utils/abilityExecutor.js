@@ -45,6 +45,52 @@ const HERO_TEAM_SET = (() => {
     return set;
 })();
 
+function createDeferred() {
+    let resolveFn;
+    let rejectFn;
+    const p = new Promise((resolve, reject) => {
+        resolveFn = resolve;
+        rejectFn = reject;
+    });
+    return {
+        promise: p,
+        resolve: (v) => resolveFn && resolveFn(v),
+        reject: (e) => rejectFn && rejectFn(e),
+        used: false,
+        resolved: false
+    };
+}
+
+function getActiveTacticsFromState(state = gameState) {
+    const s = state || gameState;
+    const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+    const tacticIdSet = new Set();
+    const sources = [
+        s.tactics,
+        s.activeTactics,
+        s.tacticsInPlay,
+        s.selectedTactics,
+        s.tacticsInDeck,
+        s.tacticStack
+    ];
+    sources.forEach(list => {
+        if (!Array.isArray(list)) return;
+        list.forEach(entry => {
+            let id = entry;
+            if (entry && typeof entry === "object") {
+                if (entry.id != null) id = entry.id;
+                else if (entry.tacticId != null) id = entry.tacticId;
+                else if (entry.cardId != null) id = entry.cardId;
+            }
+            if (id == null) return;
+            tacticIdSet.add(String(id));
+        });
+    });
+    return Array.from(tacticIdSet)
+        .map(id => tacticMap.get(id))
+        .filter(Boolean);
+}
+
 export function playDamageSfx(amount) {
     const dmg = Math.max(0, Number(amount) || 0);
     if (dmg <= 0) return;
@@ -585,6 +631,14 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     if (lowerCond === "turnend") {
         // Registration allowed; actual firing handled in turn order
         return true;
+    }
+
+    if (lowerCond === "kodhenchman") {
+        const last = state?._lastKOdHenchman;
+        const matchesHero = heroId == null || (last && String(last.heroId) === String(heroId));
+        const result = !!last && matchesHero;
+        console.log(`[kodHenchman condition] ${result ? "true" : "false"}${last ? ` (hero=${last.heroId}, foe=${last.foeId}, inst=${last.instanceId})` : ""}`);
+        return result;
     }
 
     const teamEndMatch = condStr.match(/^teamheroendturn\(([^)]+)\)$/i);
@@ -2284,6 +2338,7 @@ function koTopHeroDiscard(countOrFlag = "all", who = "all", state = gameState) {
     targets.forEach(hid => {
         const hState = s.heroData?.[hid];
         if (!hState || !Array.isArray(hState.discard) || !hState.discard.length) return;
+        const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
         for (let i = 0; i < count; i++) {
             if (!hState.discard.length) break;
             const cardId = hState.discard.pop();
@@ -2296,7 +2351,7 @@ function koTopHeroDiscard(countOrFlag = "all", who = "all", state = gameState) {
                 addPermanentKOTag(hState, cardId);
                 hState.discard.push(cardId);
                 try {
-                    appendGameLogEntry(`${cardName} is permanently KO'd for Hero ${hid}.`, s);
+                    appendGameLogEntry(`${cardName} is permanently KO'd for ${heroName}.`, s);
                 } catch (err) {
                     console.warn("[koTopHeroDiscard] Failed to log permanent KO.", err);
                 }
@@ -2363,6 +2418,7 @@ function koTopHeroCard(count = 1, who = "current", state = gameState) {
         const hState = s.heroData?.[hid];
         if (!hState || !Array.isArray(hState.deck)) return;
         if (!Array.isArray(hState.discard)) hState.discard = [];
+        const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
 
         for (let i = 0; i < num; i++) {
             if (!hState.deck.length) break;
@@ -2377,7 +2433,7 @@ function koTopHeroCard(count = 1, who = "current", state = gameState) {
             if (String(cardType).toLowerCase() === "main") {
                 addPermanentKOTag(hState, cardId);
                 try {
-                    appendGameLogEntry(`${cardName} is permanently KO'd for Hero ${hid}.`, s);
+                    appendGameLogEntry(`${cardName} is permanently KO'd for ${heroName}.`, s);
                 } catch (err) {
                     console.warn("[koTopHeroCard] Failed to log permanent KO.", err);
                 }
@@ -3839,6 +3895,9 @@ function resolveDamageHeroAmount(rawAmount, heroId, state = gameState) {
         if (!entry) return 0;
         return getEffectiveFoeDamage(entry);
     }
+    if (typeof rawAmount === "string" && rawAmount.toLowerCase() === "rescuedbystanderscount") {
+        return getTotalRescuedBystanders(state);
+    }
     if (typeof rawAmount === "string" && rawAmount.toLowerCase() === "lastdamagedfoe") {
         return resolveDamageFromLastDamagedFoe(heroId, state);
     }
@@ -4070,6 +4129,55 @@ EFFECT_HANDLERS.doubleDamage = function(args = [], card, selectedData = {}) {
         console.log("[doubleDamage] Applied ignoreEffectText; remaining card effects will be skipped.");
     }
     console.log("[doubleDamage] Pending card damage multiplier now", s._pendingCardDamageMultiplier);
+};
+
+EFFECT_HANDLERS.ignoreRewardDamageOverlord = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    const rawArg = Array.isArray(args) ? args[0] : args;
+    const last = s?._lastKOdHenchman || {};
+
+    const foeId =
+        selectedData?.foeId ??
+        selectedData?.foeID ??
+        selectedData?.selectedFoeSummary?.foeId ??
+        selectedData?.selectedFoeSummary?.id ??
+        last.foeId ??
+        null;
+
+    const instanceId =
+        selectedData?.instanceId ??
+        selectedData?.foeInstanceId ??
+        selectedData?.selectedFoeSummary?.instanceId ??
+        last.instanceId ??
+        null;
+
+    // Mark reward suppression for the targeted foe instance
+    if (foeId != null) {
+        s._suppressRewardFor = { foeId: String(foeId), instanceId: instanceId ?? null };
+    }
+
+    const dmgFromArg = (rawArg != null && String(rawArg).toLowerCase() !== "henchmandamage")
+        ? Number(rawArg)
+        : NaN;
+    const resolvedDamage =
+        Number.isFinite(dmgFromArg)
+            ? Math.max(0, dmgFromArg)
+            : Math.max(0, Number(selectedData?.henchmanDamage ?? last.damage ?? 0) || 0);
+
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    if (resolvedDamage > 0) {
+        damageOverlord(resolvedDamage, s, heroId);
+    } else {
+        console.log("[ignoreRewardDamageOverlord] No damage resolved; reward still suppressed.", {
+            foeId,
+            instanceId,
+            rawArg,
+            last
+        });
+    }
+
+    saveGameState(s);
 };
 
 function extendDrawView(target = "self", count = 3, state = gameState, selectedData = {}) {
@@ -5706,10 +5814,32 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
 
     const cardsToCheck = [];
 
-    // Active tactics
+    // Active tactics (accept several state slots to be resilient)
     const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
-    const activeTactics = (s.tactics || [])
-        .map(id => tacticMap.get(String(id)))
+    const tacticIdSet = new Set();
+    const tacticSources = [
+        s.tactics,
+        s.activeTactics,
+        s.tacticsInPlay,
+        s.selectedTactics,
+        s.tacticsInDeck,
+        s.tacticStack
+    ];
+    tacticSources.forEach(list => {
+        if (!Array.isArray(list)) return;
+        list.forEach(entry => {
+            let id = entry;
+            if (entry && typeof entry === "object") {
+                if (entry.id != null) id = entry.id;
+                else if (entry.tacticId != null) id = entry.tacticId;
+                else if (entry.cardId != null) id = entry.cardId;
+            }
+            if (id == null) return;
+            tacticIdSet.add(String(id));
+        });
+    });
+    const activeTactics = Array.from(tacticIdSet)
+        .map(id => tacticMap.get(id))
         .filter(Boolean);
     cardsToCheck.push(...activeTactics);
 
@@ -5728,11 +5858,46 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
             if (!effCond || effCond !== condNorm) return;
             if (!eff?.effect) return;
 
-            try {
-                executeEffectSafely(eff.effect, card, { ...payload, state: s, tacticId: card.id });
-            } catch (err) {
-                console.warn(`[triggerRuleEffects] Failed to run effect ${idx} on ${card.name}:`, err);
+            const typeNorm = String(eff.type || "").toLowerCase();
+            console.log(`[triggerRuleEffects] Matched condition '${condNorm}' on ${card.name} (type=${typeNorm})`);
+            const runEffect = () => {
+                try {
+                    executeEffectSafely(eff.effect, card, { ...payload, state: s, tacticId: card.id });
+                } catch (err) {
+                    console.warn(`[triggerRuleEffects] Failed to run effect ${idx} on ${card.name}:`, err);
+                }
+            };
+
+            if (typeNorm === "optional") {
+                if (payload?.allowOptional === false) {
+                    console.log("[triggerRuleEffects] Skipping optional effect because allowOptional=false.");
+                    return;
+                }
+                const label = card.abilitiesNamePrint?.[idx]?.text || "Use optional ability?";
+                if (payload?.rewardDeferred) payload.rewardDeferred.used = true;
+                const promptPromise =
+                    (typeof window !== "undefined" && typeof window.showOptionalAbilityPrompt === "function")
+                        ? window.showOptionalAbilityPrompt(label)
+                        : (typeof window !== "undefined" && typeof window.confirm === "function")
+                            ? Promise.resolve(window.confirm(label))
+                        : Promise.resolve(false);
+                promptPromise
+                    .then(allow => {
+                        if (allow) runEffect();
+                        if (payload?.rewardDeferred && typeof payload.rewardDeferred.resolve === "function") {
+                            payload.rewardDeferred.resolve(allow);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn("[triggerRuleEffects] Optional prompt failed", err);
+                        if (payload?.rewardDeferred && typeof payload.rewardDeferred.resolve === "function") {
+                            payload.rewardDeferred.resolve(false);
+                        }
+                    });
+                return;
             }
+
+            runEffect();
         });
     });
 }
@@ -8475,6 +8640,19 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     // ===================================================================
     // FOE KO'D
     // ===================================================================
+    const effectiveHenchDamage = getEffectiveFoeDamage(entry);
+
+    // Track last KO'd henchman for downstream effects (e.g., ignore reward -> deal damage)
+    if (String(foeCard.type || "").toLowerCase() === "henchman") {
+        s._lastKOdHenchman = {
+            foeId: foeIdStr,
+            instanceId: entryKey,
+            heroId: heroId ?? null,
+            damage: effectiveHenchDamage
+        };
+
+    }
+
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
     s._pendingDamageTarget = null;
     if (heroId != null) {
@@ -8578,7 +8756,98 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     }
 
     // 3) RUN uponDefeat (after removal so other systems can't see the foe)
-    runUponDefeatEffects(foeCard, heroId, s, { selectedFoeSummary: foeSummary });
+    // Henchman-only deferral: villains should not be blocked or prompted.
+    const foeType = String(foeCard.type || "").toLowerCase();
+    if (foeType !== "henchman") {
+        runUponDefeatEffects(foeCard, heroId, s, {
+            selectedFoeSummary: { ...foeSummary, instanceId: entryKey },
+            foeInstanceId: entryKey
+        });
+    } else {
+        // If a kodHenchman optional might defer the reward decision, wait for it.
+        const rewardDeferred = createDeferred();
+
+        // First, check for optional kodHenchman effects on active tactics and run the prompt ourselves.
+        const activeTactics = getActiveTacticsFromState(s);
+        const matchingKodOptionals = activeTactics
+            .flatMap(card => {
+                const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
+                return effects.map((eff, idx) => ({ card, eff, idx }));
+            })
+            .filter(({ eff }) => normalizeConditionString(eff?.condition) === "kodhenchman" && String(eff?.type || "").toLowerCase() === "optional");
+
+        if (matchingKodOptionals.length > 0) {
+            const { card, eff, idx } = matchingKodOptionals[0]; // assume one relevant optional
+            const label = card.abilitiesNamePrint?.[idx]?.text || "Use optional ability?";
+            rewardDeferred.used = true;
+            const promptPromise =
+                (typeof window !== "undefined" && typeof window.showOptionalAbilityPrompt === "function")
+                    ? window.showOptionalAbilityPrompt(label)
+                    : (typeof window !== "undefined" && typeof window.confirm === "function")
+                        ? Promise.resolve(window.confirm(label))
+                        : Promise.resolve(false);
+
+            promptPromise.then(allow => {
+                if (allow) {
+                    try {
+                        executeEffectSafely(eff.effect, card, {
+                            currentHeroId: heroId ?? null,
+                            state: s,
+                            foeId: foeIdStr,
+                            instanceId: entryKey,
+                            henchmanDamage: effectiveHenchDamage
+                        });
+                    } catch (err) {
+                        console.warn("[damageFoe] Failed to run kodHenchman optional handler", err);
+                    }
+                }
+                if (typeof rewardDeferred.resolve === "function") rewardDeferred.resolve(allow);
+            }).catch(err => {
+                console.warn("[damageFoe] kodHenchman optional prompt failed", err);
+                if (typeof rewardDeferred.resolve === "function") rewardDeferred.resolve(false);
+            });
+        }
+
+        // Run non-optional kodHenchman effects (skip optionals we've already handled)
+        try {
+            triggerRuleEffects("kodHenchman", {
+                currentHeroId: heroId ?? null,
+                state: s,
+                foeId: foeIdStr,
+                instanceId: entryKey,
+                henchmanDamage: effectiveHenchDamage,
+                rewardDeferred,
+                allowOptional: false
+            });
+        } catch (err) {
+            console.warn("[damageFoe] Failed to trigger kodHenchman effects", err);
+        }
+
+        const runDefeat = () => {
+            runUponDefeatEffects(foeCard, heroId, s, {
+                selectedFoeSummary: { ...foeSummary, instanceId: entryKey },
+                foeInstanceId: entryKey
+            });
+        };
+
+        rewardDeferred.promise.then(() => {
+            runDefeat();
+        }).catch(() => {
+            runDefeat();
+        });
+
+        // If nothing consumed the deferred (no optional prompt and no effects), resolve immediately
+        setTimeout(() => {
+            if (!rewardDeferred.used && typeof rewardDeferred.resolve === "function") {
+                rewardDeferred.resolve();
+            }
+        }, 0);
+    }
+
+    // Clear the last KO tracking after defeat effects resolve to avoid stale triggers
+    if (s._lastKOdHenchman && s._lastKOdHenchman.instanceId === entryKey) {
+        s._lastKOdHenchman = null;
+    }
 
     // 4) APPEND FOE TO KO ARRAY
     if (!Array.isArray(s.koCards)) s.koCards = [];
@@ -9811,10 +10080,28 @@ function collectUponDefeatEffects(cardData) {
 
 function runUponDefeatEffects(cardData, heroId, state, extraSelectedData = {}) {
   if (!cardData) return;
-  if (heroId == null) return;
 
-  const heroState = state?.heroData?.[heroId];
-  if (!heroState) return;
+  const s = state || gameState;
+  const effectiveHeroId =
+    heroId ??
+    extraSelectedData?.currentHeroId ??
+    (Array.isArray(s?.heroes) ? s.heroes[s.heroTurnIndex ?? 0] : null);
+
+  // If reward is being intentionally bypassed (e.g., ignoreRewardDamageOverlord), skip the effects
+  const suppress = s?._suppressRewardFor;
+  const suppressMatch =
+      suppress &&
+      String(suppress.foeId ?? "") === String(cardData.id ?? "") &&
+      (
+          suppress.instanceId == null ||
+          suppress.instanceId === extraSelectedData.foeInstanceId ||
+          suppress.instanceId === extraSelectedData?.selectedFoeSummary?.instanceId
+      );
+  if (suppressMatch) {
+    console.log(`[uponDefeat] Reward suppressed for ${cardData.name} (instance ${extraSelectedData.foeInstanceId || "unknown"}).`);
+    s._suppressRewardFor = null;
+    return;
+  }
 
   const effects = collectUponDefeatEffects(cardData);
   if (!effects.length) return;
@@ -9835,15 +10122,22 @@ function runUponDefeatEffects(cardData, heroId, state, extraSelectedData = {}) {
                 ? `${cardData.abilitiesNamePrint[eff.abilityIndex].text}?`
                 : "Use optional ability?";
 
-            window.showOptionalAbilityPrompt(label).then(allow => {
+            const promptPromise =
+                (typeof window !== "undefined" && typeof window.showOptionalAbilityPrompt === "function")
+                    ? window.showOptionalAbilityPrompt(label)
+                    : (typeof window !== "undefined" && typeof window.confirm === "function")
+                        ? Promise.resolve(window.confirm(label))
+                        : Promise.resolve(false);
+
+            promptPromise.then(allow => {
                 if (!allow) return;
 
                 executeEffectSafely(eff.effect, cardData, {
                     ...extraSelectedData,
-                    currentHeroId: heroId,
-                    state
+                    currentHeroId: effectiveHeroId,
+                    state: s
                 });
-            });
+            }).catch(err => console.warn("[uponDefeat] Optional prompt failed", err));
 
             continue; // 🔴 REQUIRED
         }
@@ -9886,8 +10180,8 @@ function runUponDefeatEffects(cardData, heroId, state, extraSelectedData = {}) {
             for (const effectString of effectsArray) {
             executeEffectSafely(effectString, cardData, {
                 ...extraSelectedData,
-                currentHeroId: heroId,
-                state
+                currentHeroId: effectiveHeroId,
+                state: s
             });
             }
         });

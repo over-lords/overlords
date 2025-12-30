@@ -546,13 +546,13 @@ export const tactics = [
     name: "Systematic Destruction",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: ["no"],
     multiTacticReq: "no",
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `Might of the Overlord: All Heroes must KO a card from either their Hand or discard pile.`
+        text: `Might of the Overlord: The current Hero must CHOOSE : KO the top card of their deck. OR KO the top card of their discard pile.`
       }
     ],
     abilitiesNamePrint: [
@@ -571,42 +571,57 @@ export const tactics = [
     ],
     mightNamePrint: [
       {
-        text: `Zap!`
+        text: `Choose!`
+      },
+      {
+        text: `KO top of deck`
+      },
+      {
+        text: `KO top of discard`
       }
     ],
     mightEffects: [
       {
-        type: `might`,
+        type: `chooseOption`,
+        effect: `chooseYourEffect`,
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `koCardFromHandORDiscard(1)`
-      }
-    ]
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`koTopHeroCard(1,current)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`koTopHeroDiscard(1,current)`]
+      },
+    ],
   },
   {
     id: "5412",
     name: "Forever Evil",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: ["no"],
     multiTacticReq: "yes",
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `When you KO a Henchman: OPTIONAL: Ignore their Reward and deal their Damage to another Henchman, Villain, or the Overlord. <span class="line-gap"></span>
-              Might of the Overlord: All Heroes take Damage equal to the number of rescued Bystanders.`
+        text: `When you KO a Henchman: OPTIONAL : Ignore their Reward and deal their Damage to another Henchman, Villain, or the Overlord. <span class="line-gap"></span>
+              Might of the Overlord: All Heroes take Damage equal to the number of rescued Bystanders. <span class="line-gap"></span>
+              You must run a second Tactic alongside this one.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Throw the goons!`
+        text: `Ignore this Henchman's Reward to Damage the Overlord`
       }
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
+        type: `optional`,
         condition: `kodHenchman()`,
         uses: `999`,
         shared: `no`,
@@ -640,7 +655,8 @@ export const tactics = [
     abilitiesText: [
       {
         text: `OPTIONAL: When you rescue a Bystander, KO them (doing so means you do not gain their benefits). <span class="line-gap"></span>
-              Bonus Heroes Win Condition: You win when 10 Bystanders have been KO'd.`
+              Bonus Heroes Win Condition: You win when 10 Bystanders have been KO'd. <span class="line-gap"></span>
+              You must run a second Tactic alongside this one.`
       }
     ],
     abilitiesNamePrint: [
@@ -683,7 +699,7 @@ export const tactics = [
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `When you rescue a Bystander, deal 1 Damage to a Henchman, Villain, or the Overlord. When a Bystander is KO'd, all Heroes take 2 Damage. <span class="line-gap"></span>
+        text: `When you Rescue a Bystander, deal 1 Damage to a Henchman or Villain. When a Bystander is KO'd, all Heroes take 1 Damage. <span class="line-gap"></span>
               Might of the Overlord: Draw 3 from the E&A.`
       }
     ],
@@ -701,14 +717,14 @@ export const tactics = [
         condition: `bystanderRescued()`,
         uses: `999`,
         shared: `no`,
-        effect: `damageAnyBaddie(1)`
+        effect: `damageFoe(1,any)`
       },
       {
         type: `quick`,
         condition: `bystanderKod()`,
         uses: `999`,
         shared: `no`,
-        effect: `damageHero(2,all)`
+        effect: `damageHero(1,all,ignoreDT)`
       },
     ],
     mightNamePrint: [
@@ -738,7 +754,7 @@ export const tactics = [
     multiOverlordReq: "yes",
     abilitiesText: [
       {
-        text: `Required: A maximum of 10 Henchmen, 20 Villains, 5 Bystanders, 6 Mights of the Overlord, and 3 Scenarios. <span class="line-gap"></span>
+        text: `Required: A maximum of 10 Henchmen, 20 Villains, 5 Bystanders, 6 Mights of the Overlord, 3 Scenarios, and a minimum of 2 Tactics and 2 Overlords. <span class="line-gap"></span>
                 Double the Damage of all Villains. <span class="line-gap"></span>
                   All Heroes gain a 1/Game Icon Ability: On their turn, KO a Henchman or Villain. <span class="line-gap"></span>
                     Might of the Overlord: KO a Hero.`
@@ -779,7 +795,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`koHero(1)`]
+        effect: [`damageHero(999,random,ignoreDT)`]
       }
     ]
   },

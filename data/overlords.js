@@ -741,7 +741,7 @@ export const overlords = [
       {
         text: `Vandal Savage cannot be reduced to 0 HP before every Player has rescued at least 1 Bystander and KO'd at least 1 Henchman or Villain. <span class="line-gap"></span> 
                Might of the Overlord: Draw 2 cards from the Villain Deck and 1 from the E&A.<span class="line-gap"></span> 
-               Bonus Feature: After the first Hero is KO'd: If a Henchman or Villain is reduced to 1 HP and then left unengaged at the end of a Hero's turn, they regain 5 HP.`
+               Bonus Feature: After the first Hero is KO'd: If a Henchman or Villain is retreated from: They regain 5 HP.`
       }
     ],
     abilitiesNamePrint: [
@@ -752,10 +752,8 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `trackPlayersBystandersVillains`,
-        uses: `0`,
-        shared: `no`,
-        effect: `overlordCannotDie`
+        condition: `playerHasNotKodOrRescued`,
+        effect: `guardOverlord()`
       }
     ],
     mightNamePrint: [
@@ -769,7 +767,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`enemyDraw(1)`,`villainDraw(2)`]
+        effect: [`villainDraw(2)`,`enemyDraw(1)`]
       }
     ],
     bonusNamePrint: [
@@ -779,8 +777,8 @@ export const overlords = [
     ],
     bonusEffects: [
       {
-        type: `quick`,
-        condition: `heroRetreatsFromFoeWithXorLess(1)`,
+        type: `passive`,
+        condition: `heroKod()`,
         uses: `999`,
         shared: `no`,
         effect: `healAbandonedFoe(5)`
