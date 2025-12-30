@@ -108,21 +108,8 @@
                 }
             }
 
-            // Fallback: attempt directory scrape (works if server indexes dirs)
-            try {
-                const res = await fetch(`${base}/`);
-                if (!res.ok) throw new Error(`Failed to fetch levels: ${res.status}`);
-                const text = await res.text();
-                const matches = [...text.matchAll(/href=\"([^\"]+\.json)\"/gi)];
-                const names = matches
-                    .map(m => m[1])
-                    .filter(name => !name.startsWith("."))
-                    .map(name => name.replace(/\.json$/i, ""));
-                return Array.from(new Set(names));
-            } catch (err) {
-                console.warn("[Campaign] Could not load levels", err);
-                return [];
-            }
+            // If we get here, we failed
+            return [];
         }
 
         function renderLevels(levels) {
