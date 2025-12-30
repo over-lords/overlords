@@ -153,6 +153,7 @@ import { heroCards } from '../data/heroCards.js';
 
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
+import { recordCampaignWin } from './campaignProgress.js';
 import { overlords } from '../data/overlords.js';
 
 import { tactics } from '../data/tactics.js';
@@ -3591,6 +3592,19 @@ export function checkGameEndConditions(state) {
         showMightBanner(bannerText, 999999);
     } catch (err) {
         console.warn("[GameOver] Failed to show game-over banner", err);
+    }
+
+    // Campaign progression (only on win)
+    if (outcome === "win") {
+        try {
+            const flag = (typeof localStorage !== "undefined") ? localStorage.getItem("campaignCurrentFlag") : null;
+            if (flag) {
+                recordCampaignWin(flag);
+                try { localStorage.removeItem("campaignCurrentFlag"); } catch (_) {}
+            }
+        } catch (err) {
+            console.warn("[GameOver] Failed to record campaign progression", err);
+        }
     }
 
     freezeGameAndSetupQuitButton(s);

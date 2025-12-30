@@ -49,6 +49,8 @@
 
         let currentWorld = 1;
         let selectedLevel = null;
+        let selectedFlag = null;
+        let currentLevelList = [];
 
         async function fetchWorlds() {
             // Prefer GitHub directory listing
@@ -114,14 +116,16 @@
 
         function renderLevels(levels) {
             listEl.innerHTML = "";
+            currentLevelList = levels || [];
             if (!levels.length) {
                 listEl.innerHTML = `<div style="color:#fff; font-size:16px;">No levels found for world ${currentWorld}.</div>`;
                 selectedLevel = null;
+                selectedFlag = null;
                 updatePlay();
                 return;
             }
 
-            levels.forEach(name => {
+            levels.forEach((name, idx) => {
                 const displayName = name.replace(/^(\d{2})-/, "");
                 const row = document.createElement("div");
                 row.textContent = displayName;
@@ -139,7 +143,13 @@
                     box-shadow: ${name === selectedLevel ? "0 0 10px rgba(255,216,0,0.5)" : "none"};
                 `;
                 row.onclick = () => {
-                    selectedLevel = name === selectedLevel ? null : name;
+                    if (selectedLevel === name) {
+                        selectedLevel = null;
+                        selectedFlag = null;
+                    } else {
+                        selectedLevel = name;
+                        selectedFlag = `world${currentWorld}game${idx + 1}`;
+                    }
                     renderLevels(levels); // re-render to update selection highlight
                     updatePlay();
                 };
@@ -190,6 +200,8 @@
         async function loadWorld(world) {
             currentWorld = world;
             selectedLevel = null;
+            selectedFlag = null;
+            currentLevelList = [];
             updatePlay();
             const levels = await fetchLevels(world);
             renderLevels(levels);
@@ -197,6 +209,9 @@
 
         playBtn.onclick = async () => {
             if (!selectedLevel) return;
+            if (selectedFlag) {
+                try { localStorage.setItem("campaignCurrentFlag", selectedFlag); } catch (_) {}
+            }
             const relPath = `data/campaignLevels/world${currentWorld}/${selectedLevel}.json`;
             const rawUrl = `https://raw.githubusercontent.com/over-lords/overlords/main/${relPath}`;
             let json = null;
