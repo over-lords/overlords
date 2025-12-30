@@ -1590,7 +1590,8 @@ export async function villainDraw(count = 1) {
  * henchman/villain ids, advancing the pointer past everything scanned.
  * Used by rally effects.
  */
-export function takeNextHenchVillainsFromDeck(count) {
+export function takeNextHenchVillainsFromDeck(count, opts = {}) {
+    const { henchmenOnly = false } = opts;
     const deck = gameState.villainDeck;
     if (!Array.isArray(deck) || deck.length === 0) return [];
 
@@ -1611,7 +1612,7 @@ export function takeNextHenchVillainsFromDeck(count) {
         const isHench = henchmen.some(h => String(h.id) === idStr);
         const isVill  = villains.some(v => String(v.id) === idStr);
 
-        if (isHench || isVill) {
+        if (isHench || (!henchmenOnly && isVill)) {
             collected.push(id);
         }
 

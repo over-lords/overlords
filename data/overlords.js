@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Card%20Assets/Overlords";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/6ebc15357d16a80c9937473ba9dea35b69bacd4e/Public/Images/Card%20Assets/Overlords";
 
 // ids 5001-5200
 
@@ -910,11 +910,11 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "65",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `No Heroes can Scan. <span class="line-gap"></span>
-               Might of the Overlord: Of the next 5 cards in the Villain Deck, play all of the Henchmen. <span class="line-gap"></span>
+               Might of the Overlord: Draw 3 Henchmen from the Villain Deck. <span class="line-gap"></span>
                Bonus Evil Wins Condition: Evil Wins when 15 Bystanders have been KO'd.`
       }
     ],
@@ -926,10 +926,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `gameStart`,
-        uses: `0`,
-        shared: `no`,
-        effect: `disableScan`
+        effect: `disableScan()`
       }
     ],
     mightNamePrint: [
@@ -943,7 +940,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `playNextHenchmen(5)`
+        effect: `rallyNextHenchVillains(3,henchmenOnly)`
       }
     ],
     evilWinsNamePrint: [

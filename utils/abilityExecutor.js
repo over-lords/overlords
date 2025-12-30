@@ -4847,7 +4847,8 @@ EFFECT_HANDLERS.addNextOverlord = function (args, card, selectedData) {
 
 EFFECT_HANDLERS.rallyNextHenchVillains = function(args) {
     const count = Number(args[0]) || 1;
-    rallyNextHenchVillains(count);
+    const flag = args?.[1] || "";
+    rallyNextHenchVillains(count, { flag });
 };
 
 EFFECT_HANDLERS.henchEntryBonusHp = function(args = [], card, selectedData = {}) {
@@ -6741,10 +6742,12 @@ export function resolveExitForVillain(entry) {
 // //handleVillainEscape(entry, gameState);
 // Removed because this doubled the HP the overlord got when escaping
 
-export async function rallyNextHenchVillains(count) {
+export async function rallyNextHenchVillains(count, opts = {}) {
     if (!count || count <= 0) return;
 
-    const collected = takeNextHenchVillainsFromDeck(count);
+    const collected = takeNextHenchVillainsFromDeck(count, {
+        henchmenOnly: String(opts?.flag || "").toLowerCase() === "henchmenonly"
+    });
     if (!Array.isArray(collected) || collected.length === 0) return;
 
     for (const id of collected) {
