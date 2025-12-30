@@ -3448,6 +3448,16 @@ async function applyDamageToHero(heroId, amount, options = {}) {
     heroObj.currentHP = heroState.hp;
     heroState.lastDamageAmount = amt;
 
+    // Low HP music toggle if this is the active hero
+    try {
+        const activeHeroId = s.heroes?.[s.heroTurnIndex ?? 0];
+        if (typeof window !== "undefined" && typeof window.setLowHpMode === "function" && String(activeHeroId) === String(heroId)) {
+            window.setLowHpMode(heroState.hp > 0 && heroState.hp <= 3);
+        }
+    } catch (e) {
+        // ignore
+    }
+
     if (typeof flashScreenRed === "function") {
         try { flashScreenRed(); } catch (e) { console.warn("[damageHero] flashScreenRed failed", e); }
     }

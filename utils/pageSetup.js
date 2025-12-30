@@ -1240,8 +1240,27 @@ quitYes.addEventListener("click", () => {
     window.location.href = "index.html";
 });
 
+// Restore saved music volume to slider (0-1 stored)
+try {
+    const savedMusicVol = localStorage.getItem("gameMusicVolume");
+    if (savedMusicVol != null) {
+        const num = Math.max(0, Math.min(1, Number(savedMusicVol) || 0));
+        volMusic.value = Math.round(num * 100);
+    } else {
+        volMusic.value = 20; // default to 20%
+    }
+} catch (_) {
+    volMusic.value = 20;
+}
+
 volSFX.addEventListener("input", () => { }); // DUMMY FOR NOW
-volMusic.addEventListener("input", () => { });
+volMusic.addEventListener("input", () => {
+    const val = Math.max(0, Math.min(100, Number(volMusic.value) || 0));
+    if (typeof window.setMusicVolume === "function") {
+        window.setMusicVolume(val / 100);
+    }
+    try { localStorage.setItem("gameMusicVolume", String(val / 100)); } catch (_) {}
+});
 
 function applyOverlordFrame(overlord) {
     if (!overlord) return;

@@ -1925,6 +1925,14 @@ export async function startHeroTurn(state, opts = {}) {
 
     const activeHeroState = state.heroData?.[activeHeroId];
 
+    // Low HP music toggle for the active hero
+    if (activeHeroState) {
+        const hpNum = Number(activeHeroState.hp || 0);
+        if (typeof window !== "undefined" && typeof window.setLowHpMode === "function") {
+            window.setLowHpMode(hpNum > 0 && hpNum <= 3);
+        }
+    }
+
     if (activeHeroState && typeof activeHeroState.cityIndex === "number") {
         if (!activeHeroState.hasDrawnThisTurn) {
             const previewCount = Number(activeHeroState.pendingDrawPreviewCount ?? 3) || 3;
