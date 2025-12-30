@@ -662,6 +662,13 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return result;
     }
 
+    if (lowerCond === "overlordkosbystander") {
+        const flag = state?._overlordKOdBystander === true;
+        if (flag && state) state._overlordKOdBystander = false;
+        console.log(`[overlordKosBystander] ${flag ? "true" : "false"}`);
+        return flag;
+    }
+
     if (lowerCond === "kodhenchman") {
         const last = state?._lastKOdHenchman;
         const matchesHero = heroId == null || (last && String(last.heroId) === String(heroId));

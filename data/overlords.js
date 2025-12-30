@@ -326,7 +326,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `1/Game: Resurrect Ra's Al Ghul to full HP after he is KO'd. <span class="line-gap"></span>
-               Might of the Overlord: All Villains regain up to 5 HP. <span class="line-gap"></span>
+               Might of the Overlord: All Henchmen and Villains regain up to 5 HP. <span class="line-gap"></span>
                Bonus Feature: After being resurrected: Whenever a Henchman or Villain escapes, add their Maximum HP to Ra's when they escape.`
       }
     ],
@@ -579,10 +579,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `overlordKoBystander`,
+        condition: `overlordKosBystander`,
         uses: `999`,
         shared: `no`,
-        effect: `gainLife(5)`
+        effect: `damageOverlord(-5)`
       }
     ],
     mightNamePrint: [
@@ -796,7 +796,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `Decrease [ICON:Lantern] Heroes' Damage Thresholds by 1 (to a minimum of 1). <span class="line-gap"></span>
-               Might of the Overlord: All Villains gain 5 HP. <span class="line-gap"></span>
+               Might of the Overlord: All Henchmen and Villains regain up to 5 HP. <span class="line-gap"></span>
                Bonus Feature: If a [ICON:Lantern] Hero is KO'd, Sinestro regains 10 HP.`
       }
     ],
@@ -808,10 +808,9 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart`,
+        condition: `turnStart`,
         uses: `1`,
-        shared: `no`,
-        effect: `lowerDT(Lantern,1)`
+        effect: `decreaseHeroDT(Lantern,1)`
       }
     ],
     mightNamePrint: [
@@ -825,7 +824,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `villainGainLife(all,5)`
+        effect: `damageFoe(-5,all)`
       }
     ],
     bonusNamePrint: [
@@ -854,7 +853,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `Decrease [ICON:Flash] Heroes' Damage Thresholds by 1 (to a minimum of 1). <span class="line-gap"></span>
-               Might of the Overlord: All Henchmen and Villains Charge 2. <span class="line-gap"></span>
+               Might of the Overlord: All unengaged Henchmen and Villains Charge 2. <span class="line-gap"></span>
                Bonus Feature: If a [ICON:Flash] Hero is KO'd, the Hero with the most remaining HP takes 2 Damage.`
       }
     ],
@@ -866,10 +865,9 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart`,
+        condition: `turnStart`,
         uses: `1`,
-        shared: `no`,
-        effect: `lowerDT(Flash,1)`
+        effect: `decreaseHeroDT(Flash,1)`
       }
     ],
     mightNamePrint: [
@@ -883,7 +881,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `advanceFoe(all,2)`
+        effect: `shoveVillain(allUnengaged,-4)`
       }
     ],
     bonusNamePrint: [
@@ -897,7 +895,7 @@ export const overlords = [
         condition: `heroKod(Flash)`,
         uses: `999`,
         shared: `no`,
-        effect: `damageHealthiestHero(2)`
+        effect: `damageHero(2,highestHP)`
       }
     ]
   },
@@ -964,7 +962,7 @@ export const overlords = [
     doNotShow: "true",
     abilitiesText: [
       {
-        text: `All Villains with Charge advance an extra space when entering the board. <span class="line-gap"></span>
+        text: `All Villains gain Charge 1. <span class="line-gap"></span>
                Might of the Overlord: Reduce all Henchmen and Villains' HP by half and double their Damage. <span class="line-gap"></span>
                Bonus Feature: The first time Alexander Luthor would be reduced to 0 HP, he is instead reduced to only 1. Then, end the turn of the Hero who damaged him and deal 5 Damage to all Heroes.`
       }
@@ -976,11 +974,11 @@ export const overlords = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: `chargeVillainDrawn`,
-        uses: `999`,
+        type: `passive`,
+        condition: `villainDrawn()`,
+        uses: `0`,
         shared: `no`,
-        effect: `extraCharge(1)`
+        effect: `villainGainCharge(1)`
       }
     ],
     mightNamePrint: [
@@ -1036,9 +1034,7 @@ export const overlords = [
       {
         type: `passive`,
         condition: `gameStart`,
-        uses: `0`,
-        shared: `no`,
-        effect: `disableRetreat(all)`
+        effect: `disableRetreat()`
       }
     ],
     mightNamePrint: [
@@ -1052,7 +1048,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `reduceIconEffectUseBy(all,random,1)`
+        effect: `loseIconUse(all,1,random)`
       }
     ],
     bonusNamePrint: [
@@ -1093,10 +1089,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `firstTimePerTurnIsAttacked`,
+        condition: `firstAttackPerTurn`,
         uses: `999`,
         shared: `no`,
-        effect: `healOverlord(5)`
+        effect: `damageOverlord(-5)`
       }
     ],
     mightNamePrint: [
@@ -1110,7 +1106,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`powerVillain(all,1)`,`damageHero(1,all)`]
+        effect: [`powerVillain(1,all)`,`damageHero(1,all)`]
       }
     ],
     bonusNamePrint: [
@@ -1124,7 +1120,7 @@ export const overlords = [
         condition: `heroKod`,
         uses: `999`,
         shared: `no`,
-        effect: `healOverlord(20)`
+        effect: `damageOverlord(-20)`
       }
     ]
   },
@@ -1135,10 +1131,10 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "85",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
-        text: `Starro regains 5 HP for every Bystander he KO's. <span class="line-gap"></span>
+        text: `If Starro KO's a Bystander: They gain 5 HP. <span class="line-gap"></span>
                Might of the Overlord: KO all captured Bystanders. <span class="line-gap"></span>
                Bonus Evil Wins Condition: Evil Wins when 15 Bystanders have been KO'd.`
       }
@@ -1154,7 +1150,7 @@ export const overlords = [
         condition: `overlordKosBystander`,
         uses: `999`,
         shared: `no`,
-        effect: `healOverlord(5)`
+        effect: `damageOverlord(-5)`
       }
     ],
     mightNamePrint: [
@@ -1195,7 +1191,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `Ares starts the game with an extra 5 HP per Hero. <span class="line-gap"></span>
-               Might of the Overlord: Draw 5 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect). Double the HP of all Villains played by this effect. <span class="line-gap"></span>
+               Might of the Overlord: Draw 3 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect). Double the HP of all Villains played by this effect. <span class="line-gap"></span>
                Bonus Feature: After the first Hero is KO'd: Draw an extra card from the E&A whenever it is drawn from. `
       }
     ],
@@ -1207,10 +1203,9 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart`,
+        condition: `turnStart`,
         uses: `1`,
-        shared: `no`,
-        effect: `overlordGainLife(5*countActiveHeroes)`
+        effect: `damageOverlord(-5*getActiveTeamCount(all))`
       }
     ],
     mightNamePrint: [
@@ -1224,7 +1219,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`drawVillainIgnoreMights(5)`,`doubleDrawnVillainsHP`]
+        effect: [`rallyNextHenchVillains(3)`,`doubleDrawnVillainsHP()`]
       }
     ],
     bonusNamePrint: [
@@ -1282,7 +1277,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `reduceIconEffectUseBy(all,random,1)`
+        effect: `loseIconUse(all,1,random)`
       }
     ],
     bonusNamePrint: [
@@ -1323,10 +1318,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `heroKOd`,
+        condition: `heroKod()`,
         uses: `0`,
         shared: `no`,
-        effect: `returnHeroAsVillain`
+        effect: `returnHeroAsVillain()`
       }
     ],
     mightNamePrint: [
@@ -1371,7 +1366,7 @@ export const overlords = [
         text: `All Villains gain Teleport. <span class="line-gap"></span>
                When Brainiac is reduced to 60/40/20 HP: Restore a Destroyed City. <span class="line-gap"></span>
                Might of the Overlord: Destroy the Rightmost City. <span class="line-gap"></span>
-               Bonus Feature: When a City is Destroyed, Brainiac regains 10 HP.`
+               Bonus Feature: When a City is Destroyed, Brainiac gains 10 HP.`
       }
     ],
     abilitiesNamePrint: [
@@ -1390,7 +1385,7 @@ export const overlords = [
     ],
     mightNamePrint: [
       {
-          text: `Welcome to the Sinestro Corps!`
+          text: `Join My Collection!`
       }
     ],
     mightEffects: [
@@ -1423,7 +1418,7 @@ export const overlords = [
         condition: `cityDestroyed`,
         uses: `999`,
         shared: `no`,
-        effect: `healOverlord(10)`
+        effect: `damageOverlord(-10)`
       }
     ]
   },
@@ -1450,10 +1445,10 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `heroKOd`,
+        condition: `heroKod()`,
         uses: `0`,
         shared: `no`,
-        effect: `returnHeroAsVillain`
+        effect: `returnHeroAsVillain()`
       }
     ],
     mightNamePrint: [
@@ -1467,7 +1462,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `resurrectKOdHenchVillains(countActiveHeroes)`
+        effect: `reviveKodFoe(getActiveTeamCount(all))`
       }
     ],
     bonusNamePrint: [
@@ -1478,10 +1473,10 @@ export const overlords = [
     bonusEffects: [
       {
         type: `quick`,
-        condition: `bystanderKOd`,
+        condition: `bystanderKOd()`,
         uses: `999`,
         shared: `no`,
-        effect: `spawnBystanderZombie`
+        effect: `spawnBystanderZombie()`
       }
     ]
   },
@@ -1496,7 +1491,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `The game begins with Gotham already destroyed. <span class="line-gap"></span>
-               Might of the Overlord: Of the top 5 cards of the E&A, KO the Allies and play the Enemies. <span class="line-gap"></span>
+               Might of the Overlord: Play the next 3 Enemies from the E&A. <span class="line-gap"></span>
                Bonus Feature: Cities cannot be restored.`
       }
     ],
@@ -1508,10 +1503,9 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart`,
+        condition: `turnStart`,
         uses: `1`,
-        shared: `no`,
-        effect: `destroyCity`
+        effect: `destroyCity(1)`
       }
     ],
     mightNamePrint: [
@@ -1525,7 +1519,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `drawFromEnemyKoAllies(5)`
+        effect: `enemyDraw(3,nextEnemy)`
       }
     ],
     bonusNamePrint: [
@@ -1537,9 +1531,7 @@ export const overlords = [
       {
         type: `passive`,
         condition: `gameStart`,
-        uses: `0`,
-        shared: `no`,
-        effect: `disableRestoration`
+        effect: `disableCityRestoration()`
       }
     ]
   },

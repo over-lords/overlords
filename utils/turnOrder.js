@@ -1841,6 +1841,15 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
         console.warn("[BYSTANDER] Failed to append KO log", err);
     }
 
+    // Notify rule/overlord listeners that the Overlord directly KO'd a bystander
+    try {
+        triggerRuleEffects("overlordKosBystander", { state });
+    } catch (err) {
+        console.warn("[BYSTANDER] overlordKosBystander trigger failed", err);
+    }
+    // One-shot flag for condition checks
+    state._overlordKOdBystander = true;
+
     return { captureLog: null };
 }
 
