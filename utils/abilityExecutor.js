@@ -2695,6 +2695,15 @@ function heroRetrieveFromDiscard(count = 1, who = "current", state = gameState) 
         if (hid != null) takeFrom(hid);
     }
 
+    // Refresh hero hands so newly retrieved cards appear immediately
+    try {
+        if (typeof renderHeroHandBar === "function") {
+            s.heroes.forEach(hid => renderHeroHandBar(s, hid));
+        }
+    } catch (e) {
+        console.warn("[heroRetrieveFromDiscard] Failed to refresh hero hand bars", e);
+    }
+
     saveGameState(s);
 }
 
@@ -2733,6 +2742,12 @@ function openDeckSelectUI(heroId, count = 1, state = gameState) {
         if (typeof renderDiscardSlide === "function") renderDiscardSlide(s);
     } catch (e) {
         console.warn("[openDeckSelectUI] Failed to render deck select slide", e);
+    }
+    try {
+        const panel = document.getElementById("discard-slide-panel");
+        if (panel) panel.classList.add("open");
+    } catch (e) {
+        console.warn("[openDeckSelectUI] Failed to open discard panel for deck select", e);
     }
     try {
         const tab = document.getElementById("discard-tab-button");
@@ -3665,6 +3680,12 @@ EFFECT_HANDLERS.doubleVillainLife = function(args = [], card, selectedData = {})
 
 // No-op handler for passive marker; logic handled via foeDisablesIconAbilities
 EFFECT_HANDLERS.disableIconAbilitiesAgainst = function() {};
+// No-op handler for passive marker; logic handled via foeDisablesRetreat
+EFFECT_HANDLERS.disableRetreatAgainst = function() {};
+EFFECT_HANDLERS.koFromKO = function(args = [], card, selectedData = {}) {
+    const count = Number(args?.[0]) || 0;
+    koFromKO(count, selectedData?.state || gameState);
+};
 
 EFFECT_HANDLERS.logDamageCheckDamage = function(args = [], card, selectedData = {}) {
     const state = selectedData?.state || gameState;
@@ -6007,6 +6028,112 @@ function foeDisablesIconAbilities(entry) {
     return false;
 }
 
+function foeDisablesRetreat(entry) {
+    if (!entry) return false;
+    const card =
+        henchmen.find(h => String(h.id) === String(entry.id)) ||
+        villains.find(v => String(v.id) === String(entry.id));
+    if (!card) return false;
+
+    if (card.disableRetreatAgainst === true) return true;
+
+    const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
+    for (const eff of effects) {
+        if (!eff || (eff.type || "").toLowerCase() !== "passive") continue;
+        const raw = eff.effect;
+        const list = Array.isArray(raw) ? raw : [raw];
+        for (const e of list) {
+            if (typeof e !== "string") continue;
+            const val = e.trim().toLowerCase();
+            if (val.startsWith("disableretreatagainst")) return true;
+        }
+    }
+    return false;
+}
+
+function markFoePermanentKO(entry, cardData, state = gameState) {
+    if (!entry || !cardData) return;
+    if (!Array.isArray(state.permanentKOFoes)) state.permanentKOFoes = [];
+    const key = entry?.instanceId ?? entry?.uniqueId ?? (typeof entry?.id !== "undefined" ? String(entry.id) : null);
+    const record = {
+        id: entry.id,
+        instanceId: key,
+        name: cardData.name || `Foe ${entry.id}`,
+        type: cardData.type || "Enemy",
+        source: "perma-ko"
+    };
+    state.permanentKOFoes.push(record);
+}
+
+function isFoePermanentlyKO(entry, state = gameState) {
+    if (!entry) return false;
+    const key = entry?.instanceId ?? entry?.uniqueId ?? (typeof entry?.id !== "undefined" ? String(entry.id) : null);
+    const list = Array.isArray(state?.permanentKOFoes) ? state.permanentKOFoes : [];
+    return list.some(k => {
+        const recKey = k.instanceId || k.id;
+        return String(recKey) === String(key);
+    });
+}
+
+function koFromKO(count = 1, state = gameState) {
+    const s = state || gameState;
+    if (!s) return;
+    const pool = Array.isArray(s.koCards) ? s.koCards : [];
+    if (!pool.length) return;
+
+    const permaList = Array.isArray(s.permanentKOFoes) ? s.permanentKOFoes : [];
+    const eligible = pool
+        .map((card, idx) => ({ card, idx }))
+        .filter(({ card }) => {
+            if (!card) return false;
+            const type = String(card.type || "").toLowerCase();
+            if (type !== "henchman" && type !== "villain") return false;
+            // Skip if already permanently KO'd
+            if (card.permanentKO === true) return false;
+            const recKey = card.instanceId || card.uniqueId || card.id;
+            return !permaList.some(k => String(k.instanceId || k.id) === String(recKey));
+        });
+
+    const total = eligible.length;
+    if (!total) return;
+
+    const picks = Math.min(Math.max(0, Number(count) || 0), total);
+    const chosen = [];
+    const poolCopy = [...eligible];
+
+    for (let i = 0; i < picks; i++) {
+        const idx = Math.floor(Math.random() * poolCopy.length);
+        chosen.push(poolCopy.splice(idx, 1)[0]);
+    }
+
+    chosen.forEach(({ card }) => {
+        card.permanentKO = true;
+        const data =
+            villains.find(v => String(v.id) === String(card.id)) ||
+            henchmen.find(h => String(h.id) === String(card.id)) ||
+            {};
+        const entry = { id: card.id, instanceId: card.instanceId || card.uniqueId || card.id };
+        markFoePermanentKO(entry, data, s);
+        try {
+            if (typeof renderKOBar === "function") renderKOBar(s);
+        } catch (e) {
+            console.warn("[koFromKO] Failed to render KO bar for permanent KO foe", e);
+        }
+    });
+
+    if (chosen.length) {
+        const names = chosen.map(({ card }) => card.name || `Foe ${card.id}`).join(", ");
+        appendGameLogEntry(
+            chosen.length === 1
+                ? `${names} was permanently KO'd.`
+                : `Permanently KO'd: ${names}.`,
+            s
+        );
+    }
+
+    saveGameState(s);
+}
+
 export function iconAbilitiesDisabledForHero(heroId, state = gameState) {
     const s = state || gameState;
     const heroState = s.heroData?.[heroId];
@@ -6038,14 +6165,25 @@ export function iconAbilitiesDisabledForHero(heroId, state = gameState) {
 export function retreatDisabledForHero(heroId, state = gameState) {
     const s = state || gameState;
     const damp = s?.retreatDampener;
-    if (!damp || !damp.active) return false;
-    const turnCount = typeof s.turnCounter === "number" ? s.turnCounter : 0;
-    const expired = typeof damp.expiresAtTurnCounter === "number" && turnCount >= damp.expiresAtTurnCounter;
-    if (expired) return false;
-    const normTarget = String(damp.target || "").toLowerCase();
-    if (normTarget === "all") return true;
-    if (normTarget === "current" && damp.heroId != null && String(damp.heroId) === String(heroId)) return true;
-    return false;
+    if (damp && damp.active) {
+        const turnCount = typeof s.turnCounter === "number" ? s.turnCounter : 0;
+        const expired = typeof damp.expiresAtTurnCounter === "number" && turnCount >= damp.expiresAtTurnCounter;
+        if (!expired) {
+            const normTarget = String(damp.target || "").toLowerCase();
+            if (normTarget === "all") return true;
+            if (normTarget === "current" && damp.heroId != null && String(damp.heroId) === String(heroId)) return true;
+        }
+    }
+    // If in a city, check foe-specific retreat lock
+    const heroState = s.heroData?.[heroId];
+    if (!heroState) return false;
+    const lowerIdx = heroState.cityIndex;
+    if (!Number.isInteger(lowerIdx)) return false;
+    const upperIdx = lowerIdx - 1;
+    if (upperIdx < 0) return false;
+    const entry = Array.isArray(s.cities) ? s.cities[upperIdx] : null;
+    if (!entry) return false;
+    return foeDisablesRetreat(entry);
 }
 
 export function ejectHeroIfCauserHasEject(heroId, state = gameState) {

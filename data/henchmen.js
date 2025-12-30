@@ -193,7 +193,7 @@ export const henchmen = [
     name: "Manhunters",
     image: `${cardArtFolder}/Manhunters.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "3",
     damage: "3",
     abilitiesText: [
@@ -213,8 +213,7 @@ export const henchmen = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `isEngaged`,
-        effect: `disableRetreat()`
+        effect: `disableRetreatAgainst()`
       },
       {
         condition: `uponDefeat`,
@@ -227,7 +226,7 @@ export const henchmen = [
     name: "Gorilla Soldiers",
     image: `${cardArtFolder}/gorillaSoldiers.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
@@ -252,13 +251,13 @@ export const henchmen = [
     name: "Black Lanterns",
     image: `${cardArtFolder}/blackLanterns.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "3",
     damage: "3",
     abilitiesText: [
       {
         text: `Teleport <span class="line-gap"></span>
-               Reward: Permanently KO a Henchman or Villain in the KO Pile.`
+               Reward: OPTIONAL: Permanently KO a random Henchman or Villain in the KO Pile.`
       }
     ],
     abilitiesNamePrint: [
@@ -266,7 +265,7 @@ export const henchmen = [
         text: `Death From Above!`
       },
       {
-        text: `Permanently KO a KO'd Henchman or Villain`
+        text: `Reward! Permanently KO a KO'd Henchman or Villain`
       }
     ],
     abilitiesEffects: [
@@ -286,7 +285,7 @@ export const henchmen = [
     name: "League of Assassins Ninjas",
     image: `${cardArtFolder}/leagueOfAssassinsNinjas.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
@@ -311,7 +310,7 @@ export const henchmen = [
     name: "Creatures of Legend",
     image: `${cardArtFolder}/creaturesOfLegend3.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "2",
     damage: "2",
     abilitiesText: [
@@ -336,7 +335,7 @@ export const henchmen = [
     name: "Atlantean Deserters",
     image: `${cardArtFolder}/atlanteanDeserters.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
@@ -361,7 +360,7 @@ export const henchmen = [
     name: "Sinestro Corps",
     image: `${cardArtFolder}/sinestroCorps.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "2",
     damage: "2",
     abilitiesText: [
@@ -387,7 +386,7 @@ export const henchmen = [
     name: "Omac Drones",
     image: `${cardArtFolder}/omacDrones.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "3",
     damage: "3",
     abilitiesText: [
@@ -420,23 +419,24 @@ export const henchmen = [
     name: "Arkham Guards",
     image: `${cardArtFolder}/arkhamGuards.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: Draw 1, it is used against the Overlord.`
+        text: `Reward: OPTIONAL : Draw 1, and Travel to engage the Overlord.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Reward!`
+        text: `Reward! Draw 1 and Travel to the Overlord`
       }
     ],
     abilitiesEffects: [
       {
+        type: `optional`,
         condition: `uponDefeat`,
-        effect: `drawUseOverlord(1)`
+        effect: [`draw(1)`,`travelTo(Overlord)`]
       }
     ]
   },
@@ -445,7 +445,7 @@ export const henchmen = [
     name: "Argus Security",
     image: `${cardArtFolder}/argusSecurity.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "2",
     damage: "2",
     abilitiesText: [
@@ -461,7 +461,7 @@ export const henchmen = [
     abilitiesEffects: [
       {
         condition: `uponDefeat`,
-        effect: `revealAndStopVillainDraw(1)`
+        effect: [`scanDeck(villain,1)`,`disableVillainDraw(1)`]
       }
     ]
   },
@@ -470,12 +470,12 @@ export const henchmen = [
     name: "Enhanced Enforcer",
     image: `${cardArtFolder}/enhancedEnforcer.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "3",
     damage: "3",
     abilitiesText: [
       {
-        text: `Reward: Scan 3 from the Villain Deck, KO all revealed Might of the Overlords.`
+        text: `Reward: Scan 3 from the Villain Deck. KO your choice of the revealed cards.`
       }
     ],
     abilitiesNamePrint: [
@@ -486,7 +486,7 @@ export const henchmen = [
     abilitiesEffects: [
       {
         condition: `uponDefeat`,
-        effect: `scanKoMights(3)`
+        effect: [`scanDeck(villain,3)`,`applyScanEffects(ko)`]
       }
     ]
   },
@@ -495,7 +495,7 @@ export const henchmen = [
     name: "Police Officers",
     image: `${cardArtFolder}/policeOfficers.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "1",
     damage: "1",
     abilitiesText: [
@@ -520,7 +520,7 @@ export const henchmen = [
     name: "Watchtower Security",
     image: `${cardArtFolder}/watchtowerSecurity.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "2",
     damage: "2",
     abilitiesText: [
@@ -545,24 +545,24 @@ export const henchmen = [
     name: "Minor Hero",
     image: `${cardArtFolder}/minorHero.jpg`,
     type: "Henchman",
-    doNotShow: "true",
+    doNotShow: "false",
     hp: "3",
     damage: "3",
     abilitiesText: [
       {
-        text: `Reward: OPTIONAL : KO the top card of your Hero's deck and deal 5 Damage to the Overlord.`
+        text: `Reward: OPTIONAL : KO the top card of your Hero's discard pile and deal 5 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `KO the top card of your Deck to deal 5 Damage to the Overlord`
+        text: `KO the top card of your discard pile to deal 5 Damage to the Overlord`
       }
     ],
     abilitiesEffects: [
       {
         type: `optional`,
         condition: `uponDefeat`,
-        effect: `koTopHeroCardDamageOverlord(1,5)`
+        effect: [`koTopHeroDiscard(current)`,`damageOverlord(5)`]
       }
     ]
   },

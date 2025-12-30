@@ -3536,6 +3536,7 @@ export function renderKOBar(state = gameState) {
         //console.log("[renderKOBar] processing cardInfo:", cardInfo);
 
         const { id, name } = cardInfo;
+        const isPerma = cardInfo.permanentKO === true;
 
         const cardDiv = document.createElement("div");
         cardDiv.className = "ko-card";
@@ -3556,6 +3557,7 @@ export function renderKOBar(state = gameState) {
                 scaleWrapper.style.transform = "scale(0.48)";
                 scaleWrapper.style.transformOrigin = "center";
                 scaleWrapper.style.cursor = "pointer";
+                scaleWrapper.style.position = "relative";
 
                 const card = renderCard(String(id));
                 //console.log("[renderKOBar] renderCard returned:", card);
@@ -3563,6 +3565,31 @@ export function renderKOBar(state = gameState) {
                 const fullCardData = findCardInAllSources(String(id));
 
                 scaleWrapper.appendChild(card);
+
+                if (isPerma) {
+                    const tint = document.createElement("div");
+                    tint.style.position = "absolute";
+                    tint.style.top = "0";
+                    tint.style.left = "0";
+                    tint.style.right = "0";
+                    tint.style.bottom = "0";
+                    tint.style.background = "rgba(180,0,0,0.35)";
+                    tint.style.pointerEvents = "none";
+
+                    const koIcon = document.createElement("img");
+                    koIcon.src = HERO_KO_ICON_URL;
+                    koIcon.style.position = "absolute";
+                    koIcon.style.width = "100%";
+                    koIcon.style.height = "100%";
+                    koIcon.style.objectFit = "contain";
+                    koIcon.style.top = "50%";
+                    koIcon.style.left = "50%";
+                    koIcon.style.transform = "translate(-50%, -50%)";
+                    koIcon.style.pointerEvents = "none";
+
+                    scaleWrapper.appendChild(tint);
+                    scaleWrapper.appendChild(koIcon);
+                }
 
                 scaleWrapper.addEventListener("click", (e) => {
                     e.stopPropagation();

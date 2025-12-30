@@ -44,7 +44,7 @@ export const villains = [
     name: "Blight",
     image: `${cardArtFolder}/Blight.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Batman Beyond",
     hp: "15",
     damage: "2",
@@ -502,7 +502,7 @@ export const villains = [
     name: "Black Mask",
     image: `${cardArtFolder}/blackMask.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Batman",
     hp: "3",
     damage: "1",
@@ -1277,7 +1277,7 @@ export const villains = [
         text: `Caught Off-Guard!`
       },
       {
-        text: `Draw 3 and Travel to the Overlord`
+        text: `Reward! Draw 3 and Travel to the Overlord`
       }
     ],
     abilitiesEffects: [
@@ -1510,8 +1510,7 @@ export const villains = [
       },
       {
         type: `passive`,
-        condition: `isEngaged`,
-        effect: `disableRetreat()`
+        effect: `disableRetreatAgainst()`
       },
       {
           type: `chooseOption`,
