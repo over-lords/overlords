@@ -458,7 +458,7 @@ export const tactics = [
     name: "Thanagar Strikes",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: "no",
     multiTacticReq: "no",
     multiOverlordReq: "no",
@@ -645,55 +645,10 @@ export const tactics = [
   },
   {
     id: "5413",
-    name: "Year of the Villain",
-    image: `${cardArtFolder}/Tactic.jpg`,
-    type: "Tactic",
-    doNotShow: "true",
-    limitEaA: ["no"],
-    multiTacticReq: "yes",
-    multiOverlordReq: "no",
-    abilitiesText: [
-      {
-        text: `OPTIONAL: When you rescue a Bystander, KO them (doing so means you do not gain their benefits). <span class="line-gap"></span>
-              Bonus Heroes Win Condition: You win when 10 Bystanders have been KO'd. <span class="line-gap"></span>
-              You must run a second Tactic alongside this one.`
-      }
-    ],
-    abilitiesNamePrint: [
-      {
-        text: `I Don't Have Time for This!`
-      }
-    ],
-    abilitiesEffects: [
-      {
-        type: `quick`,
-        condition: `rescueBystander()`,
-        uses: `999`,
-        shared: `no`,
-        effect: `koRescuedBystander()`
-      }
-    ],
-    heroWinsNamePrint: [
-      {
-        text: `We Did It Gang!`
-      }
-    ],
-    heroWinsEffects: [
-      {
-        type: `heroWins`,
-        condition: `bystandersKOD(10)`,
-        uses: `1`,
-        shared: `no`,
-        effect: `heroWins`
-      }
-    ]
-  },
-  {
-    id: "5414",
     name: "A League of our Own",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: ["no"],
     multiTacticReq: "no",
     multiOverlordReq: "no",
@@ -714,7 +669,7 @@ export const tactics = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `bystanderRescued()`,
+        condition: `rescueBystander()`,
         uses: `999`,
         shared: `no`,
         effect: `damageFoe(1,any)`
@@ -743,7 +698,7 @@ export const tactics = [
     ]
   },
   {
-    id: "5415",
+    id: "5414",
     name: "Down Low, Too Slow",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",

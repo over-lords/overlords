@@ -1410,9 +1410,9 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
  * Handles Teleport, Charge, and normal shove.
  * `fromDeck: true` means it may revert the pointer & reveal top card for Teleport.
  */
-async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false } = {}) {
+async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false, bonusCharge = 0 } = {}) {
     const hasTeleport = cardHasTeleport(cardData);
-    const chargeDist = cardChargeDistance(cardData);
+    const chargeDist = cardChargeDistance(cardData) + (Number(bonusCharge) || 0);
 
     if (hasTeleport) {
         const activeOrder = getActiveUpperOrder(state);
@@ -1551,7 +1551,13 @@ export async function villainDraw(count = 1) {
                 break;
             case "enemy":
                 console.log("[VILLAIN DRAW] Hench/Villain card:", villainId, data?.name);
-                handlerResult = await handleEnemyEntry(villainId, data, gameState, { fromDeck: true });
+                const hasChargeTactic =
+                    Array.isArray(gameState.tactics) &&
+                    gameState.tactics.some(id => String(id) === "5409");
+                const isVillainCard = String(data?.type || "").toLowerCase() === "villain";
+                const baseCharge = cardChargeDistance(data);
+                const bonusCharge = (hasChargeTactic && isVillainCard && baseCharge === 0) ? 1 : 0;
+                handlerResult = await handleEnemyEntry(villainId, data, gameState, { fromDeck: true, bonusCharge });
                 if (handlerResult?.blocked) {
                     blockedReason = handlerResult.reason || "Blocked";
                 }

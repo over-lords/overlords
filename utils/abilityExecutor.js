@@ -633,6 +633,22 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return true;
     }
 
+    if (lowerCond === "rescuebystander") {
+        const pending = state?._pendingRescueBystanderHero;
+        const matchesHero = heroId == null || (pending != null && String(pending) === String(heroId));
+        const result = pending != null && matchesHero;
+        console.log(`[rescueBystander condition] ${result ? "true" : "false"}${pending != null ? ` (hero=${pending})` : ""}`);
+        return result;
+    }
+
+    if (lowerCond === "bystanderkod") {
+        const pending = state?._pendingBystanderKO;
+        const matchesHero = heroId == null || (pending != null && String(pending) === String(heroId));
+        const result = !!pending && matchesHero;
+        console.log(`[bystanderKod condition] ${result ? "true" : "false"}${pending ? ` (hero=${pending})` : ""}`);
+        return result;
+    }
+
     if (lowerCond === "kodhenchman") {
         const last = state?._lastKOdHenchman;
         const matchesHero = heroId == null || (last && String(last.heroId) === String(heroId));
@@ -1971,6 +1987,15 @@ EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
         appendGameLogEntry(msg, gameState);
     }
 
+    incrementRescuedBystanders(heroId, count, gameState);
+    gameState._pendingRescueBystanderHero = heroId;
+    try {
+        triggerRuleEffects("rescueBystander", { currentHeroId: heroId, state: gameState });
+    } catch (err) {
+        console.warn("[rescueBystander] Failed to trigger rescueBystander effects", err);
+    }
+    gameState._pendingRescueBystanderHero = null;
+
     saveGameState(gameState);
     renderHeroHandBar(gameState);
 };
@@ -1978,6 +2003,7 @@ EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
 EFFECT_HANDLERS.koBystander = function(args = [], cardData, selectedData = {}) {
     const count = Math.max(1, Number(args?.[0]) || 1);
     const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? (Array.isArray(state.heroes) ? state.heroes[state.heroTurnIndex ?? 0] : null);
 
     if (!Array.isArray(bystanders) || bystanders.length === 0) {
         console.warn("[koBystander] No bystanders available to KO.");
@@ -2009,6 +2035,14 @@ EFFECT_HANDLERS.koBystander = function(args = [], cardData, selectedData = {}) {
         appendGameLogEntry(msg, state);
     }
 
+    state._pendingBystanderKO = heroId ?? true;
+    try {
+        triggerRuleEffects("bystanderKod", { currentHeroId: heroId, state });
+    } catch (err) {
+        console.warn("[koBystander] Failed to trigger bystanderKod effects", err);
+    }
+    state._pendingBystanderKO = null;
+
     maybeTriggerEvilWinsConditions(state);
 
     try {
@@ -2019,6 +2053,66 @@ EFFECT_HANDLERS.koBystander = function(args = [], cardData, selectedData = {}) {
         console.warn("[koBystander] Failed to render KO bar", e);
     }
 
+    saveGameState(state);
+};
+
+EFFECT_HANDLERS.koRescuedBystander = function(args = [], cardData, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? (Array.isArray(state.heroes) ? state.heroes[state.heroTurnIndex ?? 0] : null);
+    if (!heroId) {
+        console.warn("[koRescuedBystander] No heroId available.");
+        return;
+    }
+
+    const heroState = state.heroData?.[heroId];
+    if (!heroState) {
+        console.warn("[koRescuedBystander] No heroState for heroId:", heroId);
+        return;
+    }
+
+    if (!Array.isArray(heroState.hand)) heroState.hand = [];
+    if (!Array.isArray(state.koCards)) state.koCards = [];
+
+    const remainingHand = [];
+    const koList = [];
+
+    heroState.hand.forEach(cardId => {
+        if (isBystanderId(cardId)) {
+            const cardData = bystanders.find(b => String(b.id) === String(cardId));
+            koList.push({
+                id: cardId,
+                name: cardData?.name || `Bystander ${cardId}`,
+                type: "Bystander",
+                source: "koRescuedBystander"
+            });
+        } else {
+            remainingHand.push(cardId);
+        }
+    });
+
+    heroState.hand = remainingHand;
+    if (koList.length) {
+        state.koCards.push(...koList);
+        const names = koList.map(k => k.name).join(", ");
+        appendGameLogEntry(
+            koList.length === 1
+                ? `${names} was KO'd from ${heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`}'s hand.`
+                : `Bystanders: ${names} were KO'd from ${heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`}'s hand.`,
+            state
+        );
+    }
+
+    state._pendingBystanderKO = heroId;
+    try {
+        triggerRuleEffects("bystanderKod", { currentHeroId: heroId, state });
+    } catch (err) {
+        console.warn("[koRescuedBystander] Failed to trigger bystanderKod effects", err);
+    }
+    state._pendingBystanderKO = null;
+
+    maybeTriggerEvilWinsConditions(state);
+    try { if (typeof window !== "undefined" && typeof window.renderHeroHandBar === "function") window.renderHeroHandBar(state); } catch (e) { /* ignore */ }
+    try { if (typeof window !== "undefined" && typeof window.renderKOBar === "function") window.renderKOBar(state); } catch (e) { /* ignore */ }
     saveGameState(state);
 };
 
@@ -2082,6 +2176,13 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
             : `Bystanders: ${nameList} were rescued by ${heroName}.`;
         appendGameLogEntry(msg, s);
         incrementRescuedBystanders(hid, rescuedCount, s);
+        s._pendingRescueBystanderHero = hid;
+        try {
+            triggerRuleEffects("rescueBystander", { currentHeroId: hid, state: s });
+        } catch (err) {
+            console.warn("[rescueCapturedBystander] Failed to trigger rescueBystander effects", err);
+        }
+        s._pendingRescueBystanderHero = null;
         saveGameState(s);
         renderHeroHandBar(s);
     } else {
@@ -5524,6 +5625,11 @@ function pushCardToVillainDeckTop(cardId, state = gameState) {
 function isHenchmanOrVillainId(id) {
     const idStr = String(id);
     return henchmen.some(h => String(h.id) === idStr) || villains.some(v => String(v.id) === idStr);
+}
+
+function isBystanderId(id) {
+    const idStr = String(id);
+    return bystanders.some(b => String(b.id) === idStr);
 }
 
 export function knockbackFoe(entry, slotIndex, state = gameState, heroId = null) {
