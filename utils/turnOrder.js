@@ -2534,6 +2534,7 @@ export async function endCurrentHeroTurn(gameState) {
         console.error("No heroState for heroId", heroId, gameState.heroData);
         return;
     }
+    const heroObj = heroes.find(h => String(h.id) === String(heroId)) || {};
 
     const clearDampenersIfExpired = () => {
         const turnCount = typeof gameState.turnCounter === "number" ? gameState.turnCounter : 0;
@@ -5131,6 +5132,12 @@ export function handleHeroKnockout(heroId, heroState, state, options = {}) {
     }
 
     const effectiveState = state || gameState;
+
+    try {
+        triggerRuleEffects("heroKod", { state: effectiveState, currentHeroId: heroId, targetHeroId: heroId });
+    } catch (err) {
+        console.warn("[handleHeroKnockout] heroKod triggers failed", err);
+    }
 
     // Trigger KOHero effects for the foe that caused this KO (if known)
     try {

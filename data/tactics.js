@@ -287,7 +287,7 @@ export const tactics = [
     name: "Coming of Apokalips",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: "no",
     multiTacticReq: "no",
     multiOverlordReq: "no",
@@ -414,7 +414,7 @@ export const tactics = [
     name: "Welcome to the Madhouse",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: "no",
     multiTacticReq: "no",
     multiOverlordReq: "no",
@@ -502,7 +502,7 @@ export const tactics = [
     name: "In Blackest Night",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: "no",
     multiTacticReq: "no",
     multiOverlordReq: "no",
@@ -537,7 +537,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `reviveKodFoe(first)`
+        effect: `reviveKodFoe(1)`
       }
     ]
   },

@@ -301,7 +301,7 @@ function getBystandersKOdCount(state = gameState) {
     return koList.filter(entry => entry && String(entry.type || "").toLowerCase() === "bystander").length;
 }
 
-function isProtectionDisabledForHero(heroId, state = gameState) {
+export function isProtectionDisabledForHero(heroId, state = gameState) {
     const s = state || gameState;
     const disableList = Array.isArray(s.disableProtectTeams) ? s.disableProtectTeams : [];
     if (!disableList.length || heroId == null) return false;
@@ -3691,6 +3691,11 @@ EFFECT_HANDLERS.disableProtectOn = function(args = [], card, selectedData = {}) 
     saveGameState(s);
 };
 
+EFFECT_HANDLERS.reviveKodFoe = function(args = [], card, selectedData = {}) {
+    const count = args?.[0] ?? 1;
+    reviveKodFoe(count, selectedData?.state || gameState);
+};
+
 function isHeroSelectorValue(val) {
     if (val == null) return false;
     if (typeof val === "number" || /^\d+$/.test(String(val))) {
@@ -3825,6 +3830,15 @@ function resolveDamageFromLastDamagedFoe(heroId, state = gameState) {
 }
 
 function resolveDamageHeroAmount(rawAmount, heroId, state = gameState) {
+    if (typeof rawAmount === "string" && rawAmount.toLowerCase() === "engagedfoedamage") {
+        const s = state || gameState;
+        const heroState = s.heroData?.[heroId];
+        if (!heroState) return 0;
+        const upperIdx = typeof heroState.cityIndex === "number" ? heroState.cityIndex - 1 : null;
+        const entry = Number.isInteger(upperIdx) && Array.isArray(s.cities) ? s.cities[upperIdx] : null;
+        if (!entry) return 0;
+        return getEffectiveFoeDamage(entry);
+    }
     if (typeof rawAmount === "string" && rawAmount.toLowerCase() === "lastdamagedfoe") {
         return resolveDamageFromLastDamagedFoe(heroId, state);
     }
@@ -6561,6 +6575,52 @@ function isFoePermanentlyKO(entry, state = gameState) {
         const recKey = k.instanceId || k.id;
         return String(recKey) === String(key);
     });
+}
+
+async function reviveKodFoe(count = 1, state = gameState) {
+    const s = state || gameState;
+    if (!s) return;
+    const pool = Array.isArray(s.koCards) ? s.koCards : [];
+    if (!pool.length) return;
+
+    const permaList = Array.isArray(s.permanentKOFoes) ? s.permanentKOFoes : [];
+    const eligible = pool
+        .map((card, idx) => ({ card, idx }))
+        .filter(({ card }) => {
+            if (!card) return false;
+            const type = String(card.type || "").toLowerCase();
+            if (type !== "henchman" && type !== "villain") return false;
+            if (card.permanentKO === true) return false;
+            const recKey = card.instanceId || card.uniqueId || card.id;
+            return !permaList.some(k => String(k.instanceId || k.id) === String(recKey));
+        });
+
+    if (!eligible.length) return;
+
+    const toRevive = Math.min(Math.max(0, Number(count) || 0), eligible.length);
+    let revived = 0;
+
+    for (const { card, idx } of eligible) {
+        if (revived >= toRevive) break;
+        // Remove from KO pile
+        pool.splice(idx - revived, 1); // adjust for prior splices
+        revived += 1;
+
+        const cardData =
+            villains.find(v => String(v.id) === String(card.id)) ||
+            henchmen.find(h => String(h.id) === String(card.id)) ||
+            null;
+
+        try {
+            await enterVillainFromEffect(card.id);
+            const name = cardData?.name || card.name || `Foe ${card.id}`;
+            appendGameLogEntry(`${name} was revived from the KO pile.`, s);
+        } catch (err) {
+            console.warn("[reviveKodFoe] Failed to enter foe from KO pile", err);
+        }
+    }
+
+    saveGameState(s);
 }
 
 function koFromKO(count = 1, state = gameState) {
