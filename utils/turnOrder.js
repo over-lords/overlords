@@ -167,9 +167,11 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
-         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
-         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny,
-         buildPermanentKOCountMap, pruneFoeDoubleDamage, pruneHeroProtections, playDamageSfx } from './abilityExecutor.js';
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, 
+         runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, 
+         retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny, buildPermanentKOCountMap, pruneFoeDoubleDamage, 
+         pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -956,6 +958,11 @@ export async function tryBlockPendingHeroDamage(state = gameState) {
     const s = state || gameState;
     const pending = s.pendingDamageHero;
     if (!pending) return false;
+
+    if (isProtectionDisabledForHero(pending.heroId, s)) {
+        console.log("[damageHero] Damage block prevented due to protection disable flag.");
+        return false;
+    }
 
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     for (const hid of heroIds) {
@@ -1839,6 +1846,12 @@ export async function startHeroTurn(state, opts = {}) {
         return;
     }
 
+    try {
+        triggerRuleEffects("turnStart", { state });
+    } catch (err) {
+        console.warn("[startHeroTurn] turnStart triggers failed", err);
+    }
+
     // Clear any lingering discard requests from prior turns
     if (state.discardMode) {
         state.discardMode = null;
@@ -2620,11 +2633,19 @@ export async function endCurrentHeroTurn(gameState) {
     // Reset last damage causer at start of end-turn damage check
     gameState.lastDamageCauser = null;
 
+    // Run team-specific end-turn triggers (e.g., teamHeroEndTurn(Bat))
+    try {
+        triggerRuleEffects(`teamHeroEndTurn(${heroObj.team || heroObj.heroTeam || heroObj.faction || ""})`, { currentHeroId: heroId, state: gameState });
+    } catch (err) {
+        console.warn("[endCurrentHeroTurn] teamHeroEndTurn triggers failed", err);
+    }
+
     // Clear travel/draw dampeners if expiring after this turn
     clearDampenersIfExpired();
     try { await runTurnEndDamageTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndWasDamaged triggers failed", e); }
     try { await runOverlordTurnEndAttackedTriggers(heroId, gameState); } catch (e) { console.warn("[endCurrentHeroTurn] overlord turnEndWasAttacked triggers failed", e); }
     try { await runTurnEndNotEngagedTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndNotEngaged triggers failed", e); }
+    try { triggerRuleEffects("turnEnd", { state: gameState }); } catch (e) { console.warn("[endCurrentHeroTurn] turnEnd triggers failed", e); }
 
     if (typeof heroState.cityIndex === "number") {
 

@@ -301,6 +301,17 @@ function getBystandersKOdCount(state = gameState) {
     return koList.filter(entry => entry && String(entry.type || "").toLowerCase() === "bystander").length;
 }
 
+function isProtectionDisabledForHero(heroId, state = gameState) {
+    const s = state || gameState;
+    const disableList = Array.isArray(s.disableProtectTeams) ? s.disableProtectTeams : [];
+    if (!disableList.length || heroId == null) return false;
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) return false;
+
+    return disableList.some(team => heroMatchesTeam(heroObj, team));
+}
+
 function cardDisablesScan(card, state = gameState) {
     if (!card) return false;
     const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
@@ -564,6 +575,25 @@ function evaluateCondition(condStr, heroId, state = gameState) {
     if (lowerCond === "turnendnotengaged") {
         // Always register; actual trigger handled at end of turn when foe not engaged
         return true;
+    }
+
+    if (lowerCond === "turnstart") {
+        // Registration allowed; actual firing handled in turn order
+        return true;
+    }
+
+    if (lowerCond === "turnend") {
+        // Registration allowed; actual firing handled in turn order
+        return true;
+    }
+
+    const teamEndMatch = condStr.match(/^teamheroendturn\(([^)]+)\)$/i);
+    if (teamEndMatch) {
+        const teamName = teamEndMatch[1];
+        if (!teamName) return false;
+        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+        if (!heroObj) return false;
+        return heroMatchesTeam(heroObj, teamName);
     }
 
     if (lowerCond === "onlyonshove") {
@@ -3634,6 +3664,10 @@ function blockDamage(state = gameState) {
         return false;
     }
     const targetId = s.pendingDamageHero.heroId;
+    if (isProtectionDisabledForHero(targetId, s)) {
+        console.log("[blockDamage] Protection is disabled for this hero; block ignored.");
+        return false;
+    }
     const heroName = heroes.find(h => String(h.id) === String(targetId))?.name || `Hero ${targetId}`;
     console.log(`[blockDamage] Blocking all pending damage to ${heroName}.`, s.pendingDamageHero);
     s.pendingDamageHero = null;
@@ -3642,6 +3676,19 @@ function blockDamage(state = gameState) {
 
 EFFECT_HANDLERS.blockDamage = function(args = [], card, selectedData = {}) {
     return blockDamage(gameState);
+};
+
+EFFECT_HANDLERS.disableProtectOn = function(args = [], card, selectedData = {}) {
+    const team = args?.[0];
+    if (!team) return;
+    const s = selectedData?.state || gameState;
+    if (!Array.isArray(s.disableProtectTeams)) s.disableProtectTeams = [];
+    const key = String(team).toLowerCase().trim();
+    if (!s.disableProtectTeams.includes(key)) {
+        s.disableProtectTeams.push(key);
+    }
+    appendGameLogEntry(`Damage blocks are disabled for ${team} heroes.`, s);
+    saveGameState(s);
 };
 
 function isHeroSelectorValue(val) {
@@ -5643,13 +5690,24 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
     const condNorm = normalizeConditionString(condition);
     if (!condNorm) return;
 
+    const cardsToCheck = [];
+
+    // Active tactics
     const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
     const activeTactics = (s.tactics || [])
         .map(id => tacticMap.get(String(id)))
         .filter(Boolean);
+    cardsToCheck.push(...activeTactics);
 
-    activeTactics.forEach(tacticCard => {
-        const effects = Array.isArray(tacticCard.abilitiesEffects) ? tacticCard.abilitiesEffects : [];
+    // Active scenario (top of stack)
+    if (Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {
+        const scenarioId = String(s.scenarioStack[s.scenarioStack.length - 1]);
+        const scenarioCard = scenarios.find(sc => String(sc.id) === scenarioId);
+        if (scenarioCard) cardsToCheck.push(scenarioCard);
+    }
+
+    cardsToCheck.forEach(card => {
+        const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
 
         effects.forEach((eff, idx) => {
             const effCond = normalizeConditionString(eff?.condition);
@@ -5657,9 +5715,9 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
             if (!eff?.effect) return;
 
             try {
-                executeEffectSafely(eff.effect, tacticCard, { ...payload, state: s, tacticId: tacticCard.id });
+                executeEffectSafely(eff.effect, card, { ...payload, state: s, tacticId: card.id });
             } catch (err) {
-                console.warn(`[triggerRuleEffects] Failed to run effect ${idx} on ${tacticCard.name}:`, err);
+                console.warn(`[triggerRuleEffects] Failed to run effect ${idx} on ${card.name}:`, err);
             }
         });
     });

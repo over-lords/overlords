@@ -12,7 +12,7 @@ export const scenarios = [
         hp: "10",
         abilitiesText: [
             {
-                text: `All [ICON:Justice] Heroes deal half damage.`
+                text: `All [ICON:Justice] Heroes deal half Damage.`
             }
         ],
         abilitiesNamePrint: [
@@ -56,11 +56,11 @@ export const scenarios = [
         name: "Knightfall",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
-                text: `[ICON:Bat] Heroes take 1 Damage at the end of their turns.`
+                text: `All [ICON:Bat] Heroes take 1 Damage at the end of their turns.`
             }
         ],
         abilitiesNamePrint: [
@@ -70,9 +70,9 @@ export const scenarios = [
         ],
         abilitiesEffects: [
             {
-                type: `passive`,
+                type: `quick`,
                 condition: `teamHeroEndTurn(Bat)`,
-                effect: `damageHero(1,current)`
+                effect: `damageHero(1,current,ignoreDT)`
             }
         ]
     },
@@ -105,7 +105,7 @@ export const scenarios = [
         name: "Public Enemies",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
@@ -120,8 +120,8 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `quick`,
-                condition: `turnStart()`,
-                effect: `drawEaA(1)`
+                condition: `turnStart`,
+                effect: `enemyDraw(1)`
             }
         ]
     },
@@ -145,7 +145,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `quick`,
-                condition: `turnEnd()`,
+                condition: `turnEnd`,
                 effect: `koBystander(1)`
             }
         ]
@@ -155,11 +155,11 @@ export const scenarios = [
         name: "Kryptonite Meteor",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
-                text: `[ICON:Super] Heroes deal half Damage.`
+                text: `All [ICON:Super] Heroes deal half Damage.`
             }
         ],
         abilitiesNamePrint: [
@@ -170,7 +170,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: `halfDamage(Super,permanent)`
+                effect: `halfDamage(Super)`
             }
         ]
     },
@@ -203,11 +203,11 @@ export const scenarios = [
         name: "Broken Trust",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
-                text: `[ICON:Wonder] Heroes cannot be Blocked.`
+                text: `All [ICON:Wonder] Heroes cannot be Blocked.`
             }
         ],
         abilitiesNamePrint: [
