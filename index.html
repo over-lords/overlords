@@ -217,6 +217,7 @@
         document.getElementById("profilePicTitle").addEventListener("click", toggleProfileDisplay);
 
         let githubImages = [];
+        let unlockedImages = [];
         let selectedFilename = null;
 
         let showWinrate = false;
@@ -243,12 +244,21 @@
                     filename: item.name.trim(),
                     url: item.download_url
                 }));
+        }
 
-            // Fill thumbnail list
-            githubImages.forEach(imgData => {
+        function renderProfileList() {
+            listContainer.innerHTML = "";
+            const sortedUnlocked = [...unlockedImages];
+            const sortedBase = [...githubImages].sort((a, b) => a.filename.localeCompare(b.filename));
+            const combined = [...sortedUnlocked, ...sortedBase];
+
+            combined.forEach(imgData => {
                 const img = document.createElement("img");
                 img.src = imgData.url;
                 img.alt = imgData.filename;
+                if (imgData.isUnlock) {
+                    img.style.boxShadow = "0 0 12px rgba(100, 180, 255, 0.8)";
+                }
 
                 img.addEventListener("click", () => {
                     document.querySelectorAll(".profilePicList img")
@@ -270,7 +280,7 @@
 
             const { data: user, error } = await supabase
                 .from("users")
-                .select("username, profile_picture, wins, games_played")
+                .select("username, profile_picture, wins, games_played, flags")
                 .eq("id", uid)
                 .single();
 
@@ -290,7 +300,33 @@
 
             const normalized = user.profile_picture?.trim()?.toLowerCase();
 
-            const match = githubImages.find(img => img.filename.toLowerCase() === normalized);
+            // Build unlocked list from flags that match unlockable filenames
+            unlockedImages = [];
+            const flags = Array.isArray(user.flags) ? user.flags.map(String) : [];
+            const unlockableRepoPath = "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Unlockable%20Profile%20Pictures";
+            try {
+                const res = await fetch(unlockableRepoPath);
+                if (res.ok) {
+                    const files = await res.json();
+                    if (Array.isArray(files)) {
+                        const unlockables = files
+                            .filter(item => item.type === "file" && item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i))
+                            .map(item => ({ filename: item.name.trim(), url: item.download_url }));
+                        unlockables.forEach(file => {
+                            const baseName = file.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "");
+                            if (flags.includes(baseName)) {
+                                unlockedImages.push({ ...file, isUnlock: true });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to load unlockable profile pictures", e);
+            }
+
+            renderProfileList();
+
+            const match = [...unlockedImages, ...githubImages].find(img => img.filename.toLowerCase() === normalized);
 
             if (match) {
                 currentDisplay.style.backgroundImage = `url('${match.url}')`;
