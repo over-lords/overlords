@@ -7,6 +7,51 @@
     <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
+    <style>
+        #rotator-text-wrapper {
+            position: relative;
+            width: 100%;
+            height: 18px;
+            overflow: hidden;
+        }
+        .rotator-line {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            font-size: 14px;
+            line-height: 1.3;
+            color: #111;
+            text-shadow: 1px 1px 0 #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transform: translateY(-120%);
+            opacity: 0;
+        }
+        .rotator-active {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .rotator-hidden {
+            transform: translateY(-120%);
+            opacity: 0;
+        }
+        .rotator-anim-in {
+            animation: rotatorSlideIn 0.45s ease forwards;
+        }
+        .rotator-anim-out {
+            animation: rotatorSlideOut 0.45s ease forwards;
+        }
+        @keyframes rotatorSlideIn {
+            from { transform: translateY(-120%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes rotatorSlideOut {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(120%); opacity: 0; }
+        }
+    </style>
     <title>Overlords</title>
 </head>
 <body style="background-color:white;">
@@ -17,10 +62,33 @@
 
         <div id="close-box" onclick="location.href='multi.html'">X</div>
 
-        <div class="deck-box" id="launch-btn" style="cursor: pointer; margin-top: -60px;">
+        <div class="deck-box" id="launch-btn" style="display: none; cursor: pointer; margin-top: -60px;">
             <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Launch!</h1>
         </div>
-        <br><br><br><br><br><br><br><br>
+
+        <br><br><br><br><br><br>
+
+        <div style="margin-top: 10px; width: 100%; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div id="privacy-readout" style="font-size: 32px; font-family: 'Racing Sans One', sans-serif; color: #fff; text-shadow: 0 0 6px #000; padding-left: 10px;"></div>
+            </div>
+        </div>
+
+        <div id="lobby-rotator" style="position: fixed; right: 15px; top: 88%; transform: translateY(-50%); width: 320px; height: 60px; background: #ededed; border: 6px solid #000; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); padding: 4px 8px; color: #222; font-family: 'Racing Sans One', sans-serif; pointer-events: none; z-index: 9;">
+            <div id="rotator-difficulty" style="font-size: 20px; text-shadow: 1px 1px 0 #fff;">Difficulty:</div>
+            <div style="margin-top: 2px; padding: 4px; background: #fff; border: 3px solid #000; border-radius: 6px; min-height: 0px; display: flex; align-items: center; justify-content: flex-start;">
+                <div id="rotator-text-wrapper">
+                    <div id="rotator-text-a" class="rotator-line rotator-active"></div>
+                    <div id="rotator-text-b" class="rotator-line rotator-hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="join-key-box" style="position: fixed; right: 15px; top: 50%; transform: translateY(-50%); width: 300px; height: 70px; background: #ededed; border: 6px solid black; color: #000; font-family: 'Racing Sans One', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-radius: 8px; padding: 8px; box-sizing: border-box; display: flex; align-items: center; justify-content: flex-start; text-align: left; pointer-events: auto; z-index: 10; overflow: hidden;">
+            <span id="join-key-text" style="font-size: 2.8rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+            <button id="join-key-copy" type="button" style="position: absolute; right: -12px; top: 50%; transform: translateY(-50%); height: 44px; padding: 0 14px; border: none; border-radius: 4px; background: #222; color: #fff; font-weight: bold; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); font-size: 1.5rem; margin-right: 14px; line-height: 50px;">⧉</button>
+        </div>
+        <div id="join-key-note" style="position: fixed; right: 15px; top: calc(50% + 70px); transform: translateY(-50%); width: 300px; color: #333; font-family: 'Racing Sans One', sans-serif; font-size: 16px; text-align: center; text-shadow: 1px 1px 0 #fff;">Copy and share this key with your friends to join your game!</div>
     </div>
 
     <script type="module">
@@ -78,6 +146,59 @@
             const henchMap    = new Map(henchmen.map(h => [String(h.id), h]));
             const villainMap  = new Map(villains.map(v => [String(v.id), v]));
 
+            // Update privacy readout banner
+            const privacyReadoutEl = document.getElementById("privacy-readout");
+            let isPrivate = false;
+            if (privacyReadoutEl) {
+                isPrivate = data.privacy === true || String(data.privacy).toLowerCase() === "private";
+                privacyReadoutEl.textContent = isPrivate ? "Private Lobby" : "Public Lobby";
+            }
+
+            // Populate join key box and copy handler
+            const joinKeyText = document.getElementById("join-key-text");
+            const joinKeyBtn  = document.getElementById("join-key-copy");
+            const joinKeyBox  = document.getElementById("join-key-box");
+            const joinKeyNote = document.getElementById("join-key-note");
+            const joinKeyVal  = data.key || "";
+
+            if (!isPrivate) {
+                if (joinKeyBox) joinKeyBox.style.display = "none";
+                if (joinKeyNote) {
+                    joinKeyNote.textContent = "";
+                    joinKeyNote.style.display = "none";
+                }
+            } else {
+                if (joinKeyBox) joinKeyBox.style.display = "flex";
+                if (joinKeyNote) {
+                    joinKeyNote.textContent = "Copy and share this key with your friends to join your game!";
+                    joinKeyNote.style.display = "";
+                }
+            }
+
+            if (joinKeyText) {
+                joinKeyText.textContent = joinKeyVal || "No Join Key";
+            }
+
+            if (joinKeyBtn) {
+                joinKeyBtn.disabled = !joinKeyVal;
+                joinKeyBtn.style.opacity = joinKeyVal ? "1" : "0.6";
+                const baseTransform = joinKeyBtn.style.transform || "translateY(-50%)";
+                joinKeyBtn.dataset.baseTransform = baseTransform;
+
+                joinKeyBtn.addEventListener("click", async () => {
+                    if (!joinKeyVal) return;
+                    joinKeyBtn.style.transform = `${joinKeyBtn.dataset.baseTransform} scale(0.92)`;
+                    setTimeout(() => {
+                        joinKeyBtn.style.transform = joinKeyBtn.dataset.baseTransform;
+                    }, 160);
+                    try {
+                        await navigator.clipboard.writeText(joinKeyVal);
+                    } catch (err) {
+                        console.warn("[JoinKey] Clipboard write failed", err);
+                    }
+                });
+            }
+
             const overlordList = (data.overlords || [])
                 .map(id => overlordMap.get(String(id)) || { name:`Unknown (ID ${id})`, hp:'?', level:'?' })
                 .sort((a,b) => (Number(a.level) || 0) - (Number(b.level) || 0) || (Number(a.hp) || 0) - (Number(b.hp) || 0));
@@ -115,8 +236,123 @@
             const villainIds = Array.isArray(villainDeck.villains) ? villainDeck.villains : [];
             const villainList = villainIds.map(id => villainMap.get(String(id)) || { name:`Unknown (ID ${id})`, hp:'?' });
 
-            // ---------- Build HTML ----------
+            // Rotating lobby info
+            const rotA = document.getElementById("rotator-text-a");
+            const rotB = document.getElementById("rotator-text-b");
+            const rotWrapper = document.getElementById("rotator-text-wrapper");
+            const rotDiff = document.getElementById("rotator-difficulty");
+            let activeRotatorLine = rotA;
+            let inactiveRotatorLine = rotB;
+            if (rotDiff) {
+                const diffRaw = data.difficulty ?? "Unknown";
+                const diffCap = typeof diffRaw === "string" && diffRaw.length
+                    ? diffRaw.charAt(0).toUpperCase() + diffRaw.slice(1)
+                    : diffRaw;
+                rotDiff.textContent = `Difficulty: ${diffCap}`;
+            }
 
+            const setIdleStates = () => {
+                activeRotatorLine.className = "rotator-line rotator-active";
+                inactiveRotatorLine.className = "rotator-line rotator-hidden";
+            };
+
+            const swapRotatorText = (html, animate = true) => {
+                if (!rotWrapper || !activeRotatorLine || !inactiveRotatorLine) return;
+                if (!animate) {
+                    activeRotatorLine.innerHTML = html;
+                    setIdleStates();
+                    return;
+                }
+
+                inactiveRotatorLine.innerHTML = html;
+                inactiveRotatorLine.className = "rotator-line rotator-hidden";
+                activeRotatorLine.className = "rotator-line rotator-active";
+
+                // Reset animations
+                activeRotatorLine.style.animation = "none";
+                inactiveRotatorLine.style.animation = "none";
+                // Force layout so the animation restart sticks
+                activeRotatorLine.getBoundingClientRect();
+                inactiveRotatorLine.getBoundingClientRect();
+                activeRotatorLine.style.animation = "";
+                inactiveRotatorLine.style.animation = "";
+
+                let finished = 0;
+                const handleDone = () => {
+                    finished += 1;
+                    if (finished === 2) {
+                        [activeRotatorLine, inactiveRotatorLine] = [inactiveRotatorLine, activeRotatorLine];
+                        setIdleStates();
+                    }
+                };
+
+                activeRotatorLine.addEventListener("animationend", handleDone, { once: true });
+                inactiveRotatorLine.addEventListener("animationend", handleDone, { once: true });
+
+                activeRotatorLine.classList.add("rotator-anim-out");
+                inactiveRotatorLine.classList.add("rotator-anim-in");
+            };
+
+            const randPick = (list) => list.length ? list[Math.floor(Math.random() * list.length)] : null;
+            const snippets = [];
+
+            if (overlordList.length) {
+                const o = randPick(overlordList);
+                if (o) snippets.push(`Overlord: ${o.name}`);
+            }
+            if (tacticList.length) {
+                const t = randPick(tacticList);
+                if (t) snippets.push(`Tactic: ${t.name}`);
+            }
+            if (enemiesList.length) {
+                const e = randPick(enemiesList);
+                if (e) snippets.push(`Enemy: ${e.name}`);
+            }
+            if (alliesList.length) {
+                const a = randPick(alliesList);
+                if (a) snippets.push(`Ally: ${a.name}`);
+            }
+            if (villainList.length) {
+                const v = randPick(villainList);
+                if (v) snippets.push(`Villain: ${v.name}`);
+            }
+
+            const uniqueHench = (() => {
+                const map = new Map();
+                (henchList || []).forEach(h => {
+                    if (!h || !h.name) return;
+                    if (!map.has(h.name)) map.set(h.name, h);
+                });
+                return Array.from(map.values());
+            })();
+            if (uniqueHench.length) {
+                const h = randPick(uniqueHench);
+                if (h) snippets.push(`Henchmen: ${h.name}`);
+            }
+
+            if (scenariosList.length) {
+                const s = randPick(scenariosList);
+                if (s) snippets.push(`Scenario: ${s.name}`);
+            }
+
+            const shuffled = snippets
+                .map(v => ({ v, r: Math.random() }))
+                .sort((a, b) => a.r - b.r)
+                .map(o => o.v);
+
+            let rotIndex = 0;
+            const rotate = () => {
+                if (!shuffled.length) return;
+                swapRotatorText(`<span style="text-decoration: underline;">Coming Up:</span> ${shuffled[rotIndex]}`);
+                rotIndex = (rotIndex + 1) % shuffled.length;
+            };
+            if (shuffled.length) {
+                swapRotatorText(`<span style="text-decoration: underline;">Coming Up:</span> ${shuffled[rotIndex]}`, false);
+                rotIndex = (rotIndex + 1) % shuffled.length;
+                setInterval(rotate, 5000);
+            }
+
+            /*
             const area = document.createElement("div");
             area.style.color = "black";
             area.style.marginTop = "40px";
@@ -128,7 +364,7 @@
 
             area.innerHTML = `
                 <h2>Lobby Created</h2>
-                <p><b>Privacy:</b> ${data.privacy}</p>
+                <p><b>Privacy:</b> ${data.privacy === true || data.privacy === "private" ? "Private Lobby" : "Public Lobby"}</p>
                 ${privacyBlock}
                 <p><b>Difficulty:</b> ${data.difficulty}</p>
 
@@ -196,8 +432,8 @@
 
                 <br>
             `;
-
             document.querySelector(".container").appendChild(area);
+            */
 
             // --- Send data to game.html (same method as single.html) ---
             async function encryptData(data, secretKey) {
