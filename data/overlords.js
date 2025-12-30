@@ -29,22 +29,36 @@ export const overlords = [
         condition: `turnEndWasAttacked`,
         uses: `999`,
         shared: `no`,
-        effect: `damageAttacker(1)`
+        effect: `damageHero(1,current,ignoreDT)`
       }
     ],
     mightNamePrint: [
       {
           text: `Either they burn, or you do!`
+      },
+      {
+          text: `KO 2 Bystanders`
+      },
+      {
+          text: `KO 2 cards from your discard pile`
       }
     ],
     mightEffects: [
       {
-        type: `might`,
+        type: `chooseOption`,
+        effect: `chooseYourEffect`,
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `askToKOorKOBystanders(2)`
-      }
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`koBystander(2)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`koTopHeroDiscard(current)`,`koTopHeroDiscard(current)`]
+      },
     ],
     evilWinsNamePrint: [
       {
@@ -55,9 +69,7 @@ export const overlords = [
       {
         type: `evilWins`,
         condition: `bystandersKOD(10)`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `evilWins()`
       }
     ]
   },
@@ -74,7 +86,7 @@ export const overlords = [
         text: `At the start of the game, Joker's Hit Points are increased by 3 for every active [ICON:Bat] Hero. <span class="line-gap"></span>
                Might of the Overlord: Draw 1 card from the Villain Deck for every active Hero. <span class="line-gap"></span>
                Bonus Feature: If there are 3 or more active [ICON:Bat] Heroes at the start of the game, Joker implements this feature. At the end of every 
-               Hero's turn, they must KO a card from their discard pile or take 2 Damage.`
+               Hero's turn, they must CHOOSE: KO the top card of their discard pile. OR Take 2 Damage.`
       }
     ],
     abilitiesNamePrint: [
@@ -87,8 +99,7 @@ export const overlords = [
         type: `quick`,
         condition: `gameStart`,
         uses: `1`,
-        shared: `no`,
-        effect: `gainLife(3*count(Bat))`
+        effect: `damageOverlord(-3*getActiveTeamCount(Bat))`
       }
     ],
     mightNamePrint: [
@@ -102,22 +113,36 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `villainDraw(1*active)`
+        effect: `villainDraw(1*getActiveTeamCount())`
       }
     ],
     bonusNamePrint: [
       {
         text: `Bonus Round!`
+      },
+      {
+        text: `KO a card from your discard pile`
+      },
+      {
+        text: `Take 2 Damage`
       }
     ],
     bonusEffects: [
       {
-        type: `endTurn`,
-        condition: `batActive(3)`,
+        type: `chooseOption`,
+        effect: `chooseYourEffect`,
+        condition: [`endTurn`,`getActiveTeamCount(Bat)`], // Is 3 or higher check needed
         uses: `999`,
         shared: `no`,
-        effect: `koCardorTakeDamage(2)`
-      }
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`koTopHeroDiscard(current)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`damageHero(2,current)`]
+      },
     ]
   },
   {
@@ -131,7 +156,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `If a Hero is KO'd: Next turn do not draw from the Villain Deck, that Hero enters as a Villain. <span class="line-gap"></span>
-               Might of the Overlord: Of the next 5 cards in the Villain Deck, play all of the Henchmen and Villains. <span class="line-gap"></span>
+               Might of the Overlord: Draw 3 Henchmen or Villains from the Villain Deck. <span class="line-gap"></span>
                Bonus Feature: After the first Hero is KO'd, Psimon implements this feature. Heroes cannot Scan.`
       }
     ],
@@ -160,7 +185,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `villainPlay(5,hench+villains)`
+        effect: `rallyNextHenchVillains(5)`
       }
     ],
     bonusNamePrint: [
@@ -174,7 +199,7 @@ export const overlords = [
         condition: `heroKOd`,
         uses: `0`,
         shared: `no`,
-        effect: `disableScan`
+        effect: `disableScan()`
       }
     ]
   },
@@ -316,7 +341,7 @@ export const overlords = [
         condition: `overlordReducedToHP(0)`,
         uses: `1`,
         shared: `no`,
-        effect: `healOverlord(25)`
+        effect: `damageOverlord(-25)`
       }
     ],
     mightNamePrint: [
@@ -398,7 +423,7 @@ export const overlords = [
         condition: `cityEmpty(coastal)`,
         uses: `999`,
         shared: `no`,
-        effect: `destroyNextCity`
+        effect: `destroyCity(1)`
       }
     ],
     bonusNamePrint: [
@@ -409,9 +434,7 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `gothamDestroyed`,
-        uses: `0`,
-        shared: `no`,
+        condition: `isCityDestroyed(10)`,
         effect: `increaseRetreat(all,1)`
       }
     ]
@@ -932,9 +955,7 @@ export const overlords = [
       {
         type: `evilWins`,
         condition: `bystandersKOD(15)`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `evilWins()`
       }
     ]
   },
@@ -1164,9 +1185,7 @@ export const overlords = [
       {
         type: `evilWins`,
         condition: `bystandersKOD(15)`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `evilWins()`
       }
     ]
   },
@@ -1581,9 +1600,7 @@ export const overlords = [
       {
         type: `evilWins`,
         condition: `bystandersKOD(10)`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `evilWins()`
       }
     ]
   },

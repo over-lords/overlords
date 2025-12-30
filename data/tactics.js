@@ -57,7 +57,7 @@ export const tactics = [
     name: "Metropolis Bank Robbery",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: "no",
     multiTacticReq: "no",
     multiOverlordReq: "no",
@@ -91,8 +91,7 @@ export const tactics = [
         type: `might`,
         condition: `might`,
         uses: `999`,
-        shared: `no`,
-        effect: `koAllBystandersCapture(metropolis,2)`
+        effect: [`koCapturedBystander(all)`,`foeCaptureBystander(8,2)`]
       }
     ],
     evilWinsNamePrint: [
@@ -104,9 +103,7 @@ export const tactics = [
       {
         type: `evilWins`,
         condition: `bystandersKOD(10)`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `evilWins()`
       }
     ]
   },
@@ -115,7 +112,7 @@ export const tactics = [
     name: "Welcome to Hell",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: ["allEnemies","min(30)"],
     multiTacticReq: "yes",
     multiOverlordReq: "yes",
@@ -149,22 +146,7 @@ export const tactics = [
         type: `might`,
         condition: `might`,
         uses: `999`,
-        shared: `no`,
-        effect: [`enemiesDraw(2)`,`villainDraw(1)`]
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: [`enemyDraw(2)`,`villainDraw(1)`]
       }
     ]
   },
@@ -173,13 +155,13 @@ export const tactics = [
     name: "Kryptonian Strength Enhancer",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: ["no"],
     multiTacticReq: "no",
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `The Overlord is immune to Damage that would reduce them to 0 HP while there is an active Henchman or Villain. <span class="line-gap"></span>
+        text: `The first time each turn the Overlord is Damaged, the Hero that dealt the Damage takes 1 in return. <span class="line-gap"></span>
                Might of the Overlord: The Overlord gains 10 HP.`
       }
     ],
@@ -191,10 +173,10 @@ export const tactics = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `wouldTakeDamageWhileCityOccupied()`,
+        condition: `overlordFirstAttackPerTurn`,
         uses: `999`,
         shared: `no`,
-        effect: `ignoreDamage()`
+        effect: `damageHero(1,current,ignoreDT)`
       }
     ],
     mightNamePrint: [
@@ -208,21 +190,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `overlordGainLife(10)`
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `damageOverlord(-10)`
       }
     ]
   },
@@ -268,20 +236,6 @@ export const tactics = [
         shared: `no`,
         effect: [`rallyNextHenchVillains(1)`]
       }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
-      }
     ]
   },
   {
@@ -301,16 +255,16 @@ export const tactics = [
     ],
     abilitiesNamePrint: [
       {
-        text: `na`
+        text: `Fried...`
       }
     ],
     abilitiesEffects: [
       {
-        type: `none`,
+        type: `passive`,
         condition: `none`,
         uses: `0`,
         shared: `no`,
-        effect: `none`
+        effect: `disableScan()`
       }
     ],
     mightNamePrint: [
@@ -324,21 +278,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `koTopHeroCard(all,1)`
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `Evil Wins!`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `evilWins`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `koTopHeroCard(1,all)`
       }
     ]
   },
@@ -353,8 +293,12 @@ export const tactics = [
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `Might of the Overlord: Draw from the E&A. <span class="line-gap"></span> Also, the current turn Hero must CHOOSE: KO 1 Bystander. <span class="line-gap"></span> OR <span class="line-gap"></span> Destroy the Rightmost City. <span class="line-gap"></span><span class="line-gap"></span>
-              Bonus Evil Wins Condition: Evil Wins when 10 Bystanders have been KO'd.`
+        text: `Might of the Overlord: Draw from the E&A. <span class="line-gap"></span> 
+                  Also, the current turn Hero must CHOOSE: KO 1 Bystander. <span class="line-gap"></span> 
+                    OR <span class="line-gap"></span> 
+                  Destroy the Rightmost City. <span class="line-gap"></span><span class="line-gap"></span>
+
+               Bonus Evil Wins Condition: Evil Wins when 10 Bystanders have been KO'd.`
       }
     ],
     abilitiesNamePrint: [
@@ -377,6 +321,12 @@ export const tactics = [
       },
       {
         text: `Choose!`
+      },
+      {
+        text: `KO a Bystander`
+      },
+      {
+        text: `Destroy a City`
       }
     ],
     mightEffects: [
@@ -385,15 +335,23 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`enemiesDraw(1)`]
+        effect: [`enemyDraw(1)`]
       },
       {
-        type: `choose()`,
+        type: `chooseOption`,
+        effect: `chooseYourEffect`,
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`koBystander(1)`,`destroyNextCity()`]
-      }
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`koBystander(1)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`destroyCity(1)`]
+      },
     ],
     evilWinsNamePrint: [
       {
@@ -404,9 +362,7 @@ export const tactics = [
       {
         type: `evilWins`,
         condition: `bystandersKOD(10)`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `evilWins()`
       }
     ]
   },
@@ -415,13 +371,13 @@ export const tactics = [
     name: "Overwhelming Might",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: ["no"],
     multiTacticReq: "no",
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `Might of the Overlord: Draw 5 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect).`
+        text: `Might of the Overlord: Draw 3 Henchmen or Villains from the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -449,21 +405,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `drawVillainIgnoreMights(5)`
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
+        effect: `rallyNextHenchVillains(3)`
       }
     ]
   },
@@ -507,21 +449,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `heroTakeFoeDamage(all)`
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `Evil Wins!`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `evilWins`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `damageHero(engagedFoeDamage,all)`
       }
     ]
   },
@@ -537,7 +465,7 @@ export const tactics = [
     abilitiesText: [
       {
         text: `All Villains gain Charge 1. <span class="line-gap"></span>
-                Might of the Overlord: Draw 3 from the Villain Deck (ignore additional Mights of the Overlord drawn by this effect).`
+                Might of the Overlord: Draw 3 Henchmen or Villains from the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -565,21 +493,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `drawVillainIgnoreMights(3)`
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `Evil Wins!`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `evilWins`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
+        effect: `rallyNextHenchVillains(3)`
       }
     ]
   },
@@ -625,20 +539,6 @@ export const tactics = [
         shared: `no`,
         effect: `reviveKodFoe(first)`
       }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `Evil Wins!`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `evilWins`,
-        condition: `none`,
-        uses: `1`,
-        shared: `no`,
-        effect: `evilWins`
-      }
     ]
   },
   {
@@ -681,20 +581,6 @@ export const tactics = [
         uses: `999`,
         shared: `no`,
         effect: `koCardFromHandORDiscard(1)`
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
       }
     ]
   },
@@ -740,20 +626,6 @@ export const tactics = [
         shared: `no`,
         effect: [`damageHero(rescuedBystandersCount,all)`]
       }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
-      }
     ]
   },
   {
@@ -783,20 +655,6 @@ export const tactics = [
         uses: `999`,
         shared: `no`,
         effect: `koRescuedBystander()`
-      }
-    ],
-    mightNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    mightEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `999`,
-        shared: `no`,
-        effect: [`none`]
       }
     ],
     heroWinsNamePrint: [
@@ -866,20 +724,6 @@ export const tactics = [
         shared: `no`,
         effect: [`enemyDraw(3)`]
       }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
-      }
     ]
   },
   {
@@ -936,20 +780,6 @@ export const tactics = [
         uses: `999`,
         shared: `no`,
         effect: [`koHero(1)`]
-      }
-    ],
-    evilWinsNamePrint: [
-      {
-        text: `none`
-      }
-    ],
-    evilWinsEffects: [
-      {
-        type: `none`,
-        condition: `none`,
-        uses: `0`,
-        shared: `no`,
-        effect: `none`
       }
     ]
   },

@@ -167,7 +167,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
          appendGameLogEntry, removeGameLogEntryById } from './pageSetup.js';
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
-         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers, 
+         maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
          getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny,
          buildPermanentKOCountMap, pruneFoeDoubleDamage, pruneHeroProtections, playDamageSfx } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
@@ -1743,6 +1743,8 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
     state.koCards.push(...newlyKOd);
     const totalKOd = state.koCards.filter(c => c && c.type === "Bystander").length;
 
+    try { maybeTriggerEvilWinsConditions(state); } catch (err) { console.warn("[BYSTANDER] Evil Wins check failed", err); }
+
     let nameList = newlyKOd
         .map(c => (c && c.name ? String(c.name) : "Bystander"))
         .join(", ");
@@ -2574,6 +2576,7 @@ export async function endCurrentHeroTurn(gameState) {
     // Clear travel/draw dampeners if expiring after this turn
     clearDampenersIfExpired();
     try { await runTurnEndDamageTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndWasDamaged triggers failed", e); }
+    try { await runOverlordTurnEndAttackedTriggers(heroId, gameState); } catch (e) { console.warn("[endCurrentHeroTurn] overlord turnEndWasAttacked triggers failed", e); }
     try { await runTurnEndNotEngagedTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndNotEngaged triggers failed", e); }
 
     if (typeof heroState.cityIndex === "number") {
@@ -3482,8 +3485,23 @@ export function checkGameEndConditions(state) {
         return;
     }
 
+    try {
+        maybeTriggerEvilWinsConditions(s);
+    } catch (err) {
+        console.warn("[checkGameEndConditions] Evil Wins check failed", err);
+    }
+
+    if (s.gameOver) {
+        return;
+    }
+
     let outcome = null;   // "win" | "loss"
     let reason = "";
+
+    if (s.forcedOutcome && s.forcedOutcome.outcome) {
+        outcome = s.forcedOutcome.outcome;
+        reason = s.forcedOutcome.reason || "";
+    }
 
     // ------------------------------------------------------------
     // WIN CONDITION:
@@ -3545,6 +3563,10 @@ export function checkGameEndConditions(state) {
     // No end state reached
     if (!outcome) {
         return;
+    }
+
+    if (!reason) {
+        reason = outcome === "win" ? "All Overlords were defeated." : "Loss condition met.";
     }
 
     // ------------------------------------------------------------

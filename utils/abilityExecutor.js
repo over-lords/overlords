@@ -295,6 +295,68 @@ function incrementRescuedBystanders(heroId, count, state = gameState) {
     };
 }
 
+function getBystandersKOdCount(state = gameState) {
+    const s = state || gameState;
+    const koList = Array.isArray(s.koCards) ? s.koCards : [];
+    return koList.filter(entry => entry && String(entry.type || "").toLowerCase() === "bystander").length;
+}
+
+export function maybeTriggerEvilWinsConditions(state = gameState) {
+    const s = state || gameState;
+    const totalKOd = getBystandersKOdCount(s);
+
+    if (totalKOd <= 0) return;
+
+    const cardsToCheck = [];
+
+    // Current Overlord (only the active one matters)
+    const ovId = Array.isArray(s.overlords) ? s.overlords[0] : null;
+    if (ovId != null) {
+        const ovCard = findCardInAllSources(ovId);
+        if (ovCard) cardsToCheck.push(ovCard);
+    }
+
+    // Active tactics
+    const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+    const activeTactics = (s.tactics || [])
+        .map(id => tacticMap.get(String(id)))
+        .filter(Boolean);
+    cardsToCheck.push(...activeTactics);
+
+    cardsToCheck.forEach(card => {
+        const effects = Array.isArray(card?.evilWinsEffects) ? card.evilWinsEffects : [];
+        effects.forEach((eff, idx) => {
+            if (!eff || !eff.effect) return;
+            const cond = String(eff.condition || "").trim().toLowerCase();
+            const match = cond.match(/^bystanderskod\((\d+)\)$/);
+            if (!match) return;
+            const threshold = Number(match[1]);
+            if (!Number.isFinite(threshold) || totalKOd < threshold) return;
+
+            const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+            const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+
+            if (!s.evilWinsAbilityUses) s.evilWinsAbilityUses = {};
+            const key = `${card.type || card.cardType || "Card"}:${card.id ?? card.name ?? "unknown"}::${idx}`;
+            const remaining = s.evilWinsAbilityUses[key] == null ? usesMax : s.evilWinsAbilityUses[key];
+            if (remaining <= 0) return;
+
+            s.evilWinsAbilityUses[key] = hasFiniteUses
+                ? Math.max(0, remaining - 1)
+                : usesMax;
+
+            const effectsArr = Array.isArray(eff.effect) ? eff.effect : [eff.effect];
+            effectsArr.forEach(effectString => {
+                try {
+                    executeEffectSafely(effectString, card, { state: s });
+                } catch (err) {
+                    console.warn("[maybeTriggerEvilWinsConditions] Failed to execute evilWins effect", err);
+                }
+            });
+        });
+    });
+}
+
 function getOverlordLevel(state = gameState) {
     const s = state || gameState;
     try {
@@ -505,6 +567,15 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         return result;
     }
 
+    const byKodMatch = condStr.match(/^bystanderskod\((\d+)\)$/i);
+    if (byKodMatch) {
+        const threshold = Number(byKodMatch[1]);
+        const total = getBystandersKOdCount(s);
+        const pass = total >= threshold;
+        console.log(`[bystandersKOD] total=${total} threshold=${threshold} -> ${pass}`);
+        return pass;
+    }
+
     // Fallback: unknown condition -> false
     return false;
 }
@@ -547,6 +618,60 @@ export async function runTurnEndDamageTriggers(state = gameState) {
     }
 
     s.foeDamagedThisTurn = {};
+}
+
+export async function runOverlordTurnEndAttackedTriggers(heroId, state = gameState) {
+    const s = state || gameState;
+    if (heroId == null) return;
+
+    const info = getCurrentOverlordInfo(s);
+    const currentOvId = info?.id != null ? String(info.id) : null;
+    if (!currentOvId) return;
+
+    const turnCount = typeof s.turnCounter === "number" ? s.turnCounter : 0;
+    const record = s.overlordWasAttackedThisTurn?.[heroId];
+
+    const sameTurn = record && record.turn === turnCount;
+    const sameOverlord = record && (!record.overlordId || String(record.overlordId) === currentOvId);
+
+    if (!sameTurn || !sameOverlord) {
+        if (record && s.overlordWasAttackedThisTurn) delete s.overlordWasAttackedThisTurn[heroId];
+        return;
+    }
+
+    const cardData = info.card;
+    const effects = Array.isArray(cardData?.abilitiesEffects) ? cardData.abilitiesEffects : [];
+
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        if (!eff || !eff.effect) continue;
+        const condNorm = normalizeConditionString(eff.condition || "none");
+        if (condNorm !== "turnendwasattacked") continue;
+
+        const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+        const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+
+        if (!s.overlordAbilityUses) s.overlordAbilityUses = {};
+        const key = `${currentOvId}::${i}`;
+        const remaining = s.overlordAbilityUses[key] == null ? usesMax : s.overlordAbilityUses[key];
+        if (remaining <= 0) continue;
+
+        if (hasFiniteUses) {
+            s.overlordAbilityUses[key] = Math.max(0, remaining - 1);
+        } else {
+            s.overlordAbilityUses[key] = usesMax;
+        }
+
+        try {
+            executeEffectSafely(eff.effect, cardData, { state: s, currentHeroId: heroId, target: "overlord" });
+        } catch (err) {
+            console.warn("[runOverlordTurnEndAttackedTriggers] Failed to run turnEndWasAttacked effect", err);
+        }
+    }
+
+    if (s.overlordWasAttackedThisTurn) {
+        delete s.overlordWasAttackedThisTurn[heroId];
+    }
 }
 
 export async function runTurnEndNotEngagedTriggers(state = gameState) {
@@ -908,6 +1033,48 @@ function runFoeFirstAttackPerTurnTriggers(entry, slotIndex, state = gameState) {
     }
 
     saveGameState(s);
+}
+
+function runOverlordFirstAttackPerTurnTriggers(state = gameState, heroId = null) {
+    const s = state || gameState;
+    const info = getCurrentOverlordInfo(s);
+    const cardData = info?.card;
+    if (!cardData || !Array.isArray(cardData.abilitiesEffects)) return;
+
+    const effects = cardData.abilitiesEffects;
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        if (!eff || !eff.effect) continue;
+        const condNorm = normalizeConditionString(eff.condition || "none");
+        if (condNorm !== "firstattackperturn") continue;
+
+        const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+        const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+
+        if (!s.overlordAbilityUses) s.overlordAbilityUses = {};
+        const key = `${info.id ?? "overlord"}::${i}`;
+        const remaining = s.overlordAbilityUses[key] == null ? usesMax : s.overlordAbilityUses[key];
+        if (remaining <= 0) continue;
+
+        if (hasFiniteUses) {
+            s.overlordAbilityUses[key] = Math.max(0, remaining - 1);
+        } else {
+            s.overlordAbilityUses[key] = usesMax;
+        }
+
+        try {
+            executeEffectSafely(eff.effect, cardData, { state: s, currentHeroId: heroId, target: "overlord" });
+        } catch (err) {
+            console.warn("[runOverlordFirstAttackPerTurnTriggers] Failed to run firstAttackPerTurn effect", err);
+        }
+    }
+
+    // Allow tactics (rule effects) to react to the Overlord's first attack trigger as well
+    try {
+        triggerRuleEffects("overlordFirstAttackPerTurn", { currentHeroId: heroId, target: "overlord" }, s);
+    } catch (err) {
+        console.warn("[runOverlordFirstAttackPerTurnTriggers] Failed to run tactic rule effects", err);
+    }
 }
 
 function shouldIgnoreDamageFromCard(entry, cardId) {
@@ -1712,6 +1879,8 @@ EFFECT_HANDLERS.koBystander = function(args = [], cardData, selectedData = {}) {
         appendGameLogEntry(msg, state);
     }
 
+    maybeTriggerEvilWinsConditions(state);
+
     try {
         if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
             window.renderKOBar(state);
@@ -1796,6 +1965,72 @@ EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData
     rescueCapturedBystander(flag, heroId, gameState);
 };
 
+function foeCaptureBystander(cityIndex, count = 1, state = gameState) {
+    const s = state || gameState;
+    const idx = Number(cityIndex);
+    const amt = Math.max(0, Number(count) || 0);
+    if (!Number.isInteger(idx) || amt <= 0) {
+        console.warn("[foeCaptureBystander] Invalid arguments", { cityIndex, count });
+        return;
+    }
+
+    if (!Array.isArray(s.cities) || !s.cities[idx] || s.cities[idx].id == null) {
+        console.log("[foeCaptureBystander] No foe present at city slot", idx);
+        return;
+    }
+
+    const entry = s.cities[idx];
+    if (!Array.isArray(entry.capturedBystanders)) {
+        const prevCount = Math.max(0, Number(entry.capturedBystanders) || 0);
+        entry.capturedBystanders = [];
+        for (let i = 0; i < prevCount; i++) {
+            entry.capturedBystanders.push({
+                id: `bystander_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                name: "Bystander",
+                type: "Bystander"
+            });
+        }
+    }
+
+    const foeCard = findCardInAllSources(entry.id);
+    if (foeCard && !Array.isArray(foeCard.capturedBystanders)) {
+        foeCard.capturedBystanders = [];
+    }
+
+    const addedNames = [];
+
+    for (let i = 0; i < amt; i++) {
+        const pick = bystanders[Math.floor(Math.random() * bystanders.length)] || {};
+        const payload = {
+            id: pick.id ?? `bystander_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+            name: pick.name || "Bystander",
+            type: pick.type || "Bystander"
+        };
+        entry.capturedBystanders.push(payload);
+        if (foeCard && Array.isArray(foeCard.capturedBystanders)) {
+            foeCard.capturedBystanders.push({ ...payload });
+        }
+        addedNames.push(payload.name || "Bystander");
+    }
+
+    const cityName = getCityNameFromIndex(idx + 1) || `city ${idx}`;
+    const foeName = foeCard?.name || `Foe ${entry.id}`;
+    const nameList = addedNames.join(", ");
+    appendGameLogEntry(
+        addedNames.length === 1
+            ? `${foeName} captured ${nameList} in ${cityName}.`
+            : `${foeName} captured bystanders (${nameList}) in ${cityName}.`,
+        s
+    );
+
+    saveGameState(s);
+}
+
+EFFECT_HANDLERS.foeCaptureBystander = function(args = [], card, selectedData = {}) {
+    const [cityIdx, count] = args;
+    foeCaptureBystander(cityIdx, count ?? 1, selectedData?.state || gameState);
+};
+
 function koCapturedBystander(flag = "all", state = gameState) {
     const s = state || gameState;
     const norm = String(flag || "all").toLowerCase();
@@ -1810,6 +2045,16 @@ function koCapturedBystander(flag = "all", state = gameState) {
         });
     };
 
+    const clearCapturedOnCard = (entry) => {
+        if (!entry) return;
+        const foeId = entry.id;
+        if (foeId == null) return;
+        const foeCard = findCardInAllSources(foeId);
+        if (foeCard && Array.isArray(foeCard.capturedBystanders)) {
+            foeCard.capturedBystanders = [];
+        }
+    };
+
     const entries = Array.isArray(s.cities) ? s.cities : [];
 
     if (norm === "all") {
@@ -1819,9 +2064,11 @@ function koCapturedBystander(flag = "all", state = gameState) {
             if (Array.isArray(captured) && captured.length > 0) {
                 captured.forEach(b => addKo(b, `city-${idx}`));
                 entry.capturedBystanders = [];
+                clearCapturedOnCard(entry);
             } else if (Number(captured) > 0) {
                 for (let i = 0; i < Number(captured); i++) addKo({ name: "Bystander" }, `city-${idx}`);
                 entry.capturedBystanders = [];
+                clearCapturedOnCard(entry);
             }
         });
     } else if (norm === "random") {
@@ -1843,6 +2090,7 @@ function koCapturedBystander(flag = "all", state = gameState) {
             } else {
                 pick.entry.capturedBystanders = Math.max(0, Number(pick.entry.capturedBystanders || 1) - 1);
             }
+            clearCapturedOnCard(pick.entry);
         }
     } else {
         console.warn("[koCapturedBystander] Unknown flag:", flag);
@@ -1865,6 +2113,8 @@ function koCapturedBystander(flag = "all", state = gameState) {
         console.warn("[koCapturedBystander] Failed to render KO bar", err);
     }
 
+    maybeTriggerEvilWinsConditions(s);
+
     const total = koList.length;
     const names = koList.map(k => k.name || "Bystander").join(", ");
     appendGameLogEntry(
@@ -1880,6 +2130,17 @@ function koCapturedBystander(flag = "all", state = gameState) {
 EFFECT_HANDLERS.koCapturedBystander = function(args = [], card, selectedData = {}) {
     const flag = args?.[0] ?? "all";
     koCapturedBystander(flag, selectedData?.state || gameState);
+};
+
+EFFECT_HANDLERS.evilWins = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    const reason = selectedData?.reason || `Evil Wins condition triggered by ${card?.name || "a card"}.`;
+    s.forcedOutcome = { outcome: "loss", reason };
+    try {
+        checkGameEndConditions(s);
+    } catch (err) {
+        console.warn("[evilWins] Failed to process game over", err);
+    }
 };
 
 function addPermanentKOTag(heroState, cardId) {
@@ -5500,6 +5761,8 @@ export async function handleVillainEscape(entry, state) {
             });
         }
 
+        maybeTriggerEvilWinsConditions(state);
+
         const total = captured.length;
 
         let nameList = captured
@@ -6963,6 +7226,8 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
     const currentHP = info.currentHP;
     let actualDamage = Math.max(0, Math.min(amount, currentHP));
     let newHP     = Math.max(0, currentHP - amount);
+    const healed = Math.max(0, newHP - currentHP);
+    const isHeal = amount < 0 && healed > 0;
     const heroName  = heroId != null
         ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
         : "Hero";
@@ -6976,6 +7241,31 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
     }
 
     playDamageSfx(actualDamage);
+
+    const turnCount = typeof s.turnCounter === "number" ? s.turnCounter : 0;
+    const ovIdStr = ovId != null ? String(ovId) : null;
+
+    if (actualDamage > 0) {
+        if (ovIdStr) {
+            if (!s.overlordLastDamagedTurn) s.overlordLastDamagedTurn = {};
+            if (s.overlordLastDamagedTurn[ovIdStr] !== turnCount) {
+                try {
+                    runOverlordFirstAttackPerTurnTriggers(s, heroId);
+                } catch (err) {
+                    console.warn("[damageOverlord] Failed to run firstAttackPerTurn triggers for Overlord.", err);
+                }
+                s.overlordLastDamagedTurn[ovIdStr] = turnCount;
+            }
+        }
+
+        if (heroId != null) {
+            if (!s.overlordWasAttackedThisTurn) s.overlordWasAttackedThisTurn = {};
+            s.overlordWasAttackedThisTurn[heroId] = {
+                turn: turnCount,
+                overlordId: ovIdStr
+            };
+        }
+    }
 
     if (heroId != null) {
         if (!s.heroDamageToOverlord) s.heroDamageToOverlord = {};
@@ -7002,7 +7292,11 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
 
         // If Scenario not dead, update panel + persist and return
         if (newHP > 0) {
-            appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
+            if (isHeal && healed > 0) {
+                appendGameLogEntry(`${overlordName} gained ${healed} HP.`, s);
+            } else {
+                appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
+            }
             try {
                 if (ovCard) {
                     setCurrentOverlord(ovCard);
@@ -7085,8 +7379,13 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         }
         s.overlordData.currentHP = newHP;
 
-        console.log(`Overlord ${ovId} took ${amount} damage -> ${newHP} HP`);
-        appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
+        if (isHeal && healed > 0) {
+            console.log(`Overlord ${ovId} gained ${healed} HP -> ${newHP} HP`);
+            appendGameLogEntry(`${overlordName} gained ${healed} HP.`, s);
+        } else {
+            console.log(`Overlord ${ovId} took ${amount} damage -> ${newHP} HP`);
+            appendGameLogEntry(`${heroName} dealt ${actualDamage} damage to ${overlordName}.`, s);
+        }
 
         // If not dead, update panel + persist and return
         if (newHP > 0) {

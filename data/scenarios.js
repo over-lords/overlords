@@ -96,7 +96,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: `reduceTeamDTtoX(flash,1)`
+                effect: `setHeroDTtoX(Flash,1,permanent)`
             }
         ]
     },
@@ -170,7 +170,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: `halfDamage(Super)`
+                effect: `halfDamage(Super,permanent)`
             }
         ]
     },
@@ -266,7 +266,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: `doubleDamageAgainst(Lantern)`
+                effect: `doubleDamageAgainst(Lantern,permanent)`
             }
         ]
     },
@@ -290,7 +290,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: [`doubleDamageAgainst(Squad)`,`doubleDamageAgainst(Legion)`]
+                effect: [`doubleDamageAgainst(Squad,permanent)`,`doubleDamageAgainst(Legion,permanent)`]
             }
         ]
     },
