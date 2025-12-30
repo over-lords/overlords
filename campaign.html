@@ -15,11 +15,205 @@
         <div class="title-box" id="title-box"></div>
         <h1 class="glow-red" style="pointer-events: none;">Overlords</h1>
 
-        <div id="close-box" onclick="location.href='play.html'">X</div>
+        <div id="close-box" onclick="location.href='singlePlayer.html'">X</div>
 
-        <div class="deck-box" id="deck-box" onclick="location.href='single.html'" style="cursor: pointer; margin-top: -50px;">
-            <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Custom Game</h1>
+        <br><br><br><br><br><br>
+
+        <!-- Campaign selector -->
+        <div style="margin-top: 10px; width: 100%; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="font-size: 32px; font-family: 'Racing Sans One', sans-serif; color: #fff; text-shadow: 0 0 6px #000; padding-left: 10px;">Campaign</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-left: 10px;">
+                <label for="world-input" style="font-size: 22px; font-family: 'Racing Sans One', sans-serif; color: #fff; text-shadow: 0 0 6px #000;">World:</label>
+                <select id="world-input" style="width: 110px; padding: 6px 8px; border-radius: 10px; border: 2px solid #333; background:#161623; color:#fff;">
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: nowrap; width: 100%; padding-left: 10px; padding-right: 30px; overflow-x: auto;">
+                <div id="level-list" style="flex: 1 1 60%; min-width: 260px; max-height: 65vh; overflow-y: auto; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 10px;"></div>
+                <div style="flex: 1 1 30%; min-width: 220px; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; justify-content: center; margin-right: 20px;">
+                    <div id="selected-label" style="color:#fff; font-size:16px;">Select a level to play.</div>
+                    <button id="play-btn" disabled style="padding: 12px 14px; font-size: 18px; font-weight: 800; border: 3px solid #000; border-radius: 12px; background: #444; color: #bbb; cursor: not-allowed;">Play</button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <script>
+        // Elements
+        const listEl = document.getElementById("level-list");
+        const playBtn = document.getElementById("play-btn");
+        const selectedLabel = document.getElementById("selected-label");
+        const worldInput = document.getElementById("world-input");
+
+        let currentWorld = 1;
+        let selectedLevel = null;
+
+        async function fetchWorlds() {
+            // Prefer GitHub directory listing
+            try {
+                const apiUrl = `https://api.github.com/repos/over-lords/overlords/contents/data/campaignLevels?ref=main`;
+                const res = await fetch(apiUrl);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        const worlds = data
+                            .map(item => item?.name)
+                            .filter(name => /^world\d+$/i.test(String(name || "")));
+                        // Verify each has at least one level
+                        const available = [];
+                        for (const wName of worlds) {
+                            const num = Number(wName.replace(/[^0-9]/g, "")) || 0;
+                            const levels = await fetchLevels(num, { skipWorldsCheck: true });
+                            if (levels.length) available.push(num);
+                        }
+                        if (available.length) return Array.from(new Set(available)).sort((a,b)=>a-b);
+                    }
+                }
+            } catch (_) {
+                // ignore
+            }
+            // Fallback to world1
+            return [1];
+        }
+
+        async function fetchLevels(world, opts = {}) {
+            const base = `./data/campaignLevels/world${world}`;
+
+            const normalizeList = (list) => Array.from(new Set(
+                (list || [])
+                    .map(name => String(name || ""))
+                    .filter(n => n.toLowerCase().endsWith(".json"))
+                    .map(n => n.replace(/\.json$/i, ""))
+            ));
+
+            // Try GitHub API (lists directory contents) unless skipped by caller
+            if (!opts.skipWorldsCheck) {
+                try {
+                    const apiUrl = `https://api.github.com/repos/over-lords/overlords/contents/data/campaignLevels/world${world}?ref=main`;
+                    const res = await fetch(apiUrl);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (Array.isArray(data)) {
+                            const names = data
+                                .map(item => item?.name)
+                                .filter(name => typeof name === "string" && name.toLowerCase().endsWith(".json"));
+                            const norm = normalizeList(names);
+                            if (norm.length) return norm;
+                        }
+                    }
+                } catch (_) {
+                    // ignore and fall through
+                }
+            }
+
+            // Fallback: attempt directory scrape (works if server indexes dirs)
+            try {
+                const res = await fetch(`${base}/`);
+                if (!res.ok) throw new Error(`Failed to fetch levels: ${res.status}`);
+                const text = await res.text();
+                const matches = [...text.matchAll(/href=\"([^\"]+\.json)\"/gi)];
+                const names = matches
+                    .map(m => m[1])
+                    .filter(name => !name.startsWith("."))
+                    .map(name => name.replace(/\.json$/i, ""));
+                return Array.from(new Set(names));
+            } catch (err) {
+                console.warn("[Campaign] Could not load levels", err);
+                return [];
+            }
+        }
+
+        function renderLevels(levels) {
+            listEl.innerHTML = "";
+            if (!levels.length) {
+                listEl.innerHTML = `<div style="color:#fff; font-size:16px;">No levels found for world ${currentWorld}.</div>`;
+                selectedLevel = null;
+                updatePlay();
+                return;
+            }
+
+            levels.forEach(name => {
+                const row = document.createElement("div");
+                row.textContent = name;
+                row.style.cssText = `
+                    padding: 12px 14px;
+                    margin: 6px 0;
+                    border-radius: 10px;
+                    background: #1f1f2e;
+                    border: 2px solid ${name === selectedLevel ? "#ffd800" : "transparent"};
+                    color: #fff;
+                    cursor: pointer;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    box-shadow: ${name === selectedLevel ? "0 0 10px rgba(255,216,0,0.5)" : "none"};
+                `;
+                row.onclick = () => {
+                    selectedLevel = name === selectedLevel ? null : name;
+                    renderLevels(levels); // re-render to update selection highlight
+                    updatePlay();
+                };
+                listEl.appendChild(row);
+            });
+        }
+
+        function updatePlay() {
+            if (selectedLevel) {
+                selectedLabel.textContent = ``;
+                playBtn.disabled = false;
+                playBtn.style.background = "#ffd800";
+                playBtn.style.color = "#000";
+                playBtn.style.cursor = "pointer";
+                playBtn.textContent = `Play`;
+            } else {
+                selectedLabel.textContent = "Select a level to play.";
+                playBtn.disabled = true;
+                playBtn.style.background = "#444";
+                playBtn.style.color = "#bbb";
+                playBtn.style.cursor = "not-allowed";
+                playBtn.textContent = "Play";
+            }
+        }
+
+        async function loadWorld(world) {
+            currentWorld = world;
+            selectedLevel = null;
+            updatePlay();
+            const levels = await fetchLevels(world);
+            renderLevels(levels);
+        }
+
+        playBtn.onclick = () => {
+            if (!selectedLevel) return;
+            const path = `world${currentWorld}/${selectedLevel}.json`;
+            window.location.href = `play.html?campaign=${encodeURIComponent(path)}`;
+        };
+
+        async function populateWorlds() {
+            const worlds = await fetchWorlds();
+            worldInput.innerHTML = "";
+            worlds.forEach(w => {
+                const opt = document.createElement("option");
+                opt.value = w;
+                opt.textContent = (Number(w) === 1) ? "DC Comics" : `World ${w}`;
+                worldInput.appendChild(opt);
+            });
+            const first = worlds[0] || 1;
+            currentWorld = first;
+            worldInput.value = String(first);
+            await loadWorld(first);
+        }
+
+        worldInput.onchange = () => {
+            const w = Math.max(1, Number(worldInput.value) || 1);
+            currentWorld = w;
+            loadWorld(w);
+        };
+
+        // Initial load
+        populateWorlds();
+    </script>
 </body>
 </html>
