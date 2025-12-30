@@ -435,6 +435,74 @@ async function executeMightEffectSafe(effectString) {
     }
 }
 
+async function runMightEffectsList(effects = [], names = []) {
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        if (!eff) continue;
+
+        const typeStr = String(eff.type || "").toLowerCase();
+
+        // ---------- CHOOSE OPTION ----------
+        if (typeStr === "chooseoption") {
+            const header = names?.[i]?.text || "Choose";
+            const options = [];
+            const optionEffects = [];
+            let j = i + 1;
+
+            while (
+                j < effects.length &&
+                /^chooseoption\(\d+\)$/i.test(String(effects[j]?.type || ""))
+            ) {
+                const label =
+                    names?.[j]?.text ||
+                    `Option ${options.length + 1}`;
+
+                options.push({ label });
+                optionEffects.push(effects[j]);
+                j++;
+            }
+
+            if (!options.length) {
+                console.warn("[MIGHT] chooseOption has no options; skipping.");
+                continue;
+            }
+
+            let chosenIndex = 0;
+            try {
+                if (typeof window !== "undefined" && typeof window.showChooseAbilityPrompt === "function") {
+                    chosenIndex = await window.showChooseAbilityPrompt({ header, options });
+                }
+            } catch (err) {
+                console.warn("[MIGHT] choose prompt failed; defaulting to first option.", err);
+            }
+
+            const chosen = optionEffects[chosenIndex];
+            if (chosen) {
+                const arr = Array.isArray(chosen.effect) ? chosen.effect : [chosen.effect];
+                for (const sub of arr) {
+                    if (typeof sub !== "string") continue;
+                    await executeMightEffectSafe(sub);
+                }
+            } else {
+                console.warn("[MIGHT] Invalid chosen option index:", chosenIndex);
+            }
+
+            i = j - 1; // skip consumed option blocks
+            continue;
+        }
+
+        // ---------- NORMAL EFFECT ----------
+        const effString = eff.effect;
+        if (typeof effString === "string") {
+            await executeMightEffectSafe(effString);
+        } else if (Array.isArray(effString)) {
+            for (const sub of effString) {
+                await executeMightEffectSafe(sub);
+            }
+        }
+    }
+}
+
 function markCityDestroyed(upperIdx, gameState, opts = {}) {
     if (!gameState.destroyedCities) {
         gameState.destroyedCities = {};
@@ -1133,23 +1201,12 @@ async function handleMightDraw(villainId, cardData, state) {
 
         if (overlordObj) {
             if (!scenarioCurrentlyActive) {
-                if (Array.isArray(overlordObj.mightNamePrint)) {
-                    for (const line of overlordObj.mightNamePrint) {
-                        await showMightBanner(line.text, 2000);
-                    }
+                if (Array.isArray(overlordObj.mightNamePrint) && overlordObj.mightNamePrint[0]) {
+                    await showMightBanner(overlordObj.mightNamePrint[0].text, 2000);
                 }
 
                 if (Array.isArray(overlordObj.mightEffects)) {
-                    for (const eff of overlordObj.mightEffects) {
-                        const effString = eff.effect;
-                        if (typeof effString === "string") {
-                            await executeMightEffectSafe(effString);
-                        } else if (Array.isArray(effString)) {
-                            for (const sub of effString) {
-                                await executeMightEffectSafe(sub);
-                            }
-                        }
-                    }
+                    await runMightEffectsList(overlordObj.mightEffects, overlordObj.mightNamePrint || []);
                 }
             } else {
                 console.log("[MIGHT] Overlord Might suppressed because a Scenario is active.");
@@ -1165,23 +1222,12 @@ async function handleMightDraw(villainId, cardData, state) {
             .filter(Boolean);
 
         for (const t of currentTacticsArr) {
-            if (Array.isArray(t.mightNamePrint)) {
-                for (const line of t.mightNamePrint) {
-                    await showMightBanner(line.text, 2000);
-                }
+            if (Array.isArray(t.mightNamePrint) && t.mightNamePrint[0]) {
+                await showMightBanner(t.mightNamePrint[0].text, 2000);
             }
 
             if (Array.isArray(t.mightEffects)) {
-                for (const eff of t.mightEffects) {
-                    const effString = eff.effect;
-                    if (typeof effString === "string") {
-                        await executeMightEffectSafe(effString);
-                    } else if (Array.isArray(effString)) {
-                        for (const sub of effString) {
-                            await executeMightEffectSafe(sub);
-                        }
-                    }
-                }
+                await runMightEffectsList(t.mightEffects, t.mightNamePrint || []);
             }
         }
     }

@@ -32,7 +32,7 @@ export const scenarios = [
         name: "Enemy Telepath",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {

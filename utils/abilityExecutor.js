@@ -301,6 +301,52 @@ function getBystandersKOdCount(state = gameState) {
     return koList.filter(entry => entry && String(entry.type || "").toLowerCase() === "bystander").length;
 }
 
+function cardDisablesScan(card, state = gameState) {
+    if (!card) return false;
+    const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
+
+    for (const eff of effects) {
+        if (!eff || (String(eff.type || "").toLowerCase() !== "passive")) continue;
+
+        const cond = String(eff.condition || "none").trim();
+        if (cond && cond.toLowerCase() !== "none") {
+            // If the condition isn't met, skip this passive.
+            if (!evaluateCondition(cond, null, state)) continue;
+        }
+
+        const effList = Array.isArray(eff.effect) ? eff.effect : [eff.effect];
+        if (effList.some(e => typeof e === "string" && /^disablescan/i.test(e.trim()))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function isScanBlocked(state = gameState) {
+    const s = state || gameState;
+    if (s.scanDisabled) return true;
+
+    // Active Overlord/Scenario
+    try {
+        const info = getCurrentOverlordInfo(s);
+        if (info?.card && cardDisablesScan(info.card, s)) return true;
+    } catch (err) {
+        console.warn("[isScanBlocked] getCurrentOverlordInfo failed", err);
+    }
+
+    // Active Tactics
+    const tacticMap = new Map(tactics.map(t => [String(t.id), t]));
+    const activeTactics = (s.tactics || [])
+        .map(id => tacticMap.get(String(id)))
+        .filter(Boolean);
+    for (const t of activeTactics) {
+        if (cardDisablesScan(t, s)) return true;
+    }
+
+    return false;
+}
+
 export function maybeTriggerEvilWinsConditions(state = gameState) {
     const s = state || gameState;
     const totalKOd = getBystandersKOdCount(s);
@@ -2031,6 +2077,14 @@ EFFECT_HANDLERS.foeCaptureBystander = function(args = [], card, selectedData = {
     foeCaptureBystander(cityIdx, count ?? 1, selectedData?.state || gameState);
 };
 
+EFFECT_HANDLERS.disableScan = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    s.scanDisabled = true;
+    appendGameLogEntry("Scanning is disabled.", s);
+    console.log("[disableScan] Scanning disabled via effect.");
+    saveGameState(s);
+};
+
 function koCapturedBystander(flag = "all", state = gameState) {
     const s = state || gameState;
     const norm = String(flag || "all").toLowerCase();
@@ -2159,15 +2213,29 @@ export function buildPermanentKOCountMap(heroState) {
     return map;
 }
 
-function koTopHeroDiscard(flag = "all", state = gameState) {
+function koTopHeroDiscard(countOrFlag = "all", who = "all", state = gameState) {
     const s = state || gameState;
     const heroesArr = Array.isArray(s.heroes) ? s.heroes : [];
     if (!heroesArr.length) return;
 
+    let count = 1;
+    let targetSpec = who;
+
+    if (Number.isFinite(Number(countOrFlag))) {
+        count = Math.max(1, Number(countOrFlag) || 1);
+    } else {
+        targetSpec = countOrFlag;
+    }
+
+    const norm = String(targetSpec || "all").toLowerCase();
     const pickHeroes = () => {
         const withDiscard = heroesArr.filter(hid => (s.heroData?.[hid]?.discard || []).length > 0);
         if (!withDiscard.length) return [];
-        const norm = String(flag || "all").toLowerCase();
+        if (norm === "current") {
+            const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
+            const hid = heroesArr[idx];
+            return hid ? [hid] : [];
+        }
         if (norm === "random") {
             const pick = withDiscard[Math.floor(Math.random() * withDiscard.length)];
             return [pick];
@@ -2186,28 +2254,31 @@ function koTopHeroDiscard(flag = "all", state = gameState) {
     targets.forEach(hid => {
         const hState = s.heroData?.[hid];
         if (!hState || !Array.isArray(hState.discard) || !hState.discard.length) return;
-        const cardId = hState.discard.pop();
-        const cardData = findCardInAllSources(cardId);
-        const cardName = cardData?.name || `Card ${cardId}`;
-        const cardType = cardData?.type || "";
+        for (let i = 0; i < count; i++) {
+            if (!hState.discard.length) break;
+            const cardId = hState.discard.pop();
+            const cardData = findCardInAllSources(cardId);
+            const cardName = cardData?.name || `Card ${cardId}`;
+            const cardType = cardData?.type || "";
 
-        if (String(cardType).toLowerCase() === "main") {
-            // Permanently KO main cards stay in discard and are never drawn again.
-            addPermanentKOTag(hState, cardId);
-            hState.discard.push(cardId);
-            try {
-                appendGameLogEntry(`${cardName} is permanently KO'd for Hero ${hid}.`, s);
-            } catch (err) {
-                console.warn("[koTopHeroDiscard] Failed to log permanent KO.", err);
+            if (String(cardType).toLowerCase() === "main") {
+                // Permanently KO main cards stay in discard and are never drawn again.
+                addPermanentKOTag(hState, cardId);
+                hState.discard.push(cardId);
+                try {
+                    appendGameLogEntry(`${cardName} is permanently KO'd for Hero ${hid}.`, s);
+                } catch (err) {
+                    console.warn("[koTopHeroDiscard] Failed to log permanent KO.", err);
+                }
+            } else {
+                koList.push({
+                    id: cardId,
+                    name: cardName,
+                    type: cardType || "Hero Card",
+                    source: "koTopHeroDiscard",
+                    heroId: hid
+                });
             }
-        } else {
-            koList.push({
-                id: cardId,
-                name: cardName,
-                type: cardType || "Hero Card",
-                source: "koTopHeroDiscard",
-                heroId: hid
-            });
         }
     });
 
@@ -2234,8 +2305,92 @@ function koTopHeroDiscard(flag = "all", state = gameState) {
 }
 
 EFFECT_HANDLERS.koTopHeroDiscard = function(args = [], card, selectedData = {}) {
-    const flag = args?.[0] ?? "all";
-    koTopHeroDiscard(flag, selectedData?.state || gameState);
+    const a0 = args?.[0];
+    const a1 = args?.[1];
+    const count = Number.isFinite(Number(a0)) ? a0 : 1;
+    const who = Number.isFinite(Number(a0)) ? (a1 ?? "all") : (a0 ?? "all");
+    koTopHeroDiscard(count, who, selectedData?.state || gameState);
+};
+
+function koTopHeroCard(count = 1, who = "current", state = gameState) {
+    const s = state || gameState;
+    const heroesArr = Array.isArray(s.heroes) ? s.heroes : [];
+    if (!heroesArr.length) return;
+
+    const num = Math.max(1, Number(count) || 1);
+    const norm = String(who || "current").toLowerCase();
+    const targetHeroes = norm === "all"
+        ? heroesArr
+        : (() => {
+            const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
+            const hid = heroesArr[idx];
+            return hid ? [hid] : [];
+        })();
+
+    const koList = [];
+
+    targetHeroes.forEach(hid => {
+        const hState = s.heroData?.[hid];
+        if (!hState || !Array.isArray(hState.deck)) return;
+        if (!Array.isArray(hState.discard)) hState.discard = [];
+
+        for (let i = 0; i < num; i++) {
+            if (!hState.deck.length) break;
+            const cardId = hState.deck.shift();
+            const cardData = findCardInAllSources(cardId);
+            const cardName = cardData?.name || `Card ${cardId}`;
+            const cardType = cardData?.type || "";
+
+            // Move to discard first
+            hState.discard.push(cardId);
+
+            if (String(cardType).toLowerCase() === "main") {
+                addPermanentKOTag(hState, cardId);
+                try {
+                    appendGameLogEntry(`${cardName} is permanently KO'd for Hero ${hid}.`, s);
+                } catch (err) {
+                    console.warn("[koTopHeroCard] Failed to log permanent KO.", err);
+                }
+            } else {
+                // Remove from discard and add to KO pile
+                hState.discard.pop();
+                koList.push({
+                    id: cardId,
+                    name: cardName,
+                    type: cardType || "Hero Card",
+                    source: "koTopHeroCard",
+                    heroId: hid
+                });
+            }
+        }
+    });
+
+    if (koList.length) {
+        if (!Array.isArray(s.koCards)) s.koCards = [];
+        s.koCards.push(...koList);
+        try {
+            if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
+                window.renderKOBar(s);
+            }
+        } catch (err) {
+            console.warn("[koTopHeroCard] Failed to render KO bar.", err);
+        }
+        const names = koList.map(k => k.name || "Card").join(", ");
+        appendGameLogEntry(
+            koList.length === 1
+                ? `${names} was KO'd from the top of a deck.`
+                : `Cards KO'd from decks: ${names}.`,
+            s
+        );
+    }
+
+    saveGameState(s);
+}
+
+EFFECT_HANDLERS.koTopHeroCard = function(args = [], card, selectedData = {}) {
+    const count = args?.[0] ?? 1;
+    const who = args?.[1] ?? "current";
+    koTopHeroCard(count, who, selectedData?.state || gameState);
 };
 
 function shuffleHeroDeck(who = "current", state = gameState) {
@@ -4103,6 +4258,17 @@ async function maybeRunHeroIconDamageOptionals(heroId) {
 function scanDeck(whichRaw, howMany = 1, selectedData = {}) {
     const which = String(whichRaw || "").toLowerCase();
     const count = Math.max(1, Number(howMany) || 1);
+
+    if (isScanBlocked(gameState)) {
+        const turn = typeof gameState.turnCounter === "number" ? gameState.turnCounter : null;
+        const shouldLog = turn == null || gameState._scanBlockLogTurn !== turn;
+        if (shouldLog) {
+            appendGameLogEntry("Scanning is disabled.", gameState);
+            gameState._scanBlockLogTurn = turn;
+        }
+        console.log("[scanDeck] Scanning is currently disabled.");
+        return;
+    }
 
     let deck = [];
     let ptr = 0;

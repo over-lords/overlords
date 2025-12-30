@@ -243,7 +243,7 @@ export const tactics = [
     name: "Computer Virus",
     image: `${cardArtFolder}/Tactic.jpg`,
     type: "Tactic",
-    doNotShow: "true",
+    doNotShow: "false",
     limitEaA: "no",
     multiTacticReq: "no",
     multiOverlordReq: "no",

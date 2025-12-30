@@ -10,11 +10,11 @@ export const overlords = [
     type: "Overlord",
     level: "3",
     hp: "150",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
-        text: `At the end of a Hero's turn, if they engaged Darkseid, they take 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span>
-               Might of the Overlord: KO 2 Bystanders unless a Hero KO's 2 random cards from their discard pile. <span class="line-gap"></span>
+        text: `At the end of a Hero's turn, if they dealt Damage to Darkseid, they take 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span>
+               Might of the Overlord: CHOOSE : KO 2 Bystanders OR KO the top 2 cards of your Hero's discard pile. <span class="line-gap"></span>
                Bonus Evil Wins Condition: Evil Wins when 10 Bystanders have been KO'd. `
       }
     ],
@@ -57,7 +57,7 @@ export const overlords = [
       },
       {
           type: `chooseOption(2)`,
-          effect: [`koTopHeroDiscard(current)`,`koTopHeroDiscard(current)`]
+          effect: `koTopHeroDiscard(2,current)`
       },
     ],
     evilWinsNamePrint: [
