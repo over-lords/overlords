@@ -248,8 +248,11 @@
 
         function renderProfileList() {
             listContainer.innerHTML = "";
+            const unlockNames = new Set(unlockedImages.map(u => u.filename.toLowerCase()));
             const sortedUnlocked = [...unlockedImages];
-            const sortedBase = [...githubImages].sort((a, b) => a.filename.localeCompare(b.filename));
+            const sortedBase = [...githubImages]
+                .filter(img => !unlockNames.has(img.filename.toLowerCase()))
+                .sort((a, b) => a.filename.localeCompare(b.filename));
             const combined = [...sortedUnlocked, ...sortedBase];
 
             combined.forEach(imgData => {
@@ -317,6 +320,15 @@
                             if (flags.includes(baseName)) {
                                 unlockedImages.push({ ...file, isUnlock: true });
                             }
+                        });
+                        // Preserve the order of flags (first flag should appear first)
+                        const order = new Map(flags.map((f, i) => [f.toLowerCase(), i]));
+                        unlockedImages.sort((a, b) => {
+                            const aKey = a.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
+                            const bKey = b.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
+                            const ai = order.has(aKey) ? order.get(aKey) : Number.MAX_SAFE_INTEGER;
+                            const bi = order.has(bKey) ? order.get(bKey) : Number.MAX_SAFE_INTEGER;
+                            return ai - bi;
                         });
                     }
                 }
