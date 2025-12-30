@@ -7,6 +7,75 @@
     <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
+    <style>
+        #join-list {
+            position: fixed;
+            left: 15px;
+            top: 65%;
+            transform: translateY(-50%);
+            width: 360px;
+            background: rgba(247,247,247,0.94);
+            border: 6px solid #000;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+            font-family: 'Racing Sans One', sans-serif;
+            color: #111;
+            overflow: hidden;
+            z-index: 9;
+            --join-col-username: 1.2fr;
+            --join-col-difficulty: 1.1fr;
+            --join-col-players: 1.4fr;
+        }
+        .join-list-header {
+            display: grid;
+            grid-template-columns: var(--join-col-username) var(--join-col-difficulty) var(--join-col-players);
+            gap: 6px;
+            padding: 10px;
+            background: #111;
+            color: #fff;
+            font-size: 16px;
+            border-bottom: 4px solid #000;
+            box-sizing: border-box;
+        }
+        .join-rows {
+            display: flex;
+            flex-direction: column;
+            max-height: calc(4 * 40px);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .join-row {
+            display: grid;
+            grid-template-columns: var(--join-col-username) var(--join-col-difficulty) var(--join-col-players);
+            gap: 6px;
+            padding: 10px;
+            min-height: 40px;
+            align-items: center;
+            background: #e0e0e0;
+            border-bottom: 2px solid #c3c3c3;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.1s ease;
+            box-sizing: border-box;
+        }
+        .join-row:last-child {
+            border-bottom: none;
+        }
+        .join-row:hover {
+            background: #f3f3f3;
+            transform: translateX(2px);
+        }
+        .join-row.selected {
+            background: #ffd84d;
+            border-color: #e2b700;
+        }
+        .join-cell {
+            font-size: 15px;
+            line-height: 1.3;
+        }
+        .join-cell.players {
+            text-align: center;
+        }
+    </style>
     <title>Overlords</title>
 </head>
 <body style="background-color:white;">
@@ -17,9 +86,94 @@
 
         <div id="close-box" onclick="location.href='multi.html'">X</div>
 
-        <div class="deck-box" id="deck-box" onclick="location.href='lobby.html'" style="cursor: pointer; margin-top: -50px;">
+        <div class="deck-box" id="deck-box" onclick="location.href='lobby.html'" style="display: none; cursor: pointer; margin-top: -50px;">
             <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Open Lobbies</h1>
         </div>
+
+        <div id="join-list">
+            <div class="join-list-header">
+                <div>Username</div>
+                <div>Difficulty</div>
+                <div>Players in Room</div>
+            </div>
+            <div class="join-rows" id="join-rows"></div>
+        </div>
+
+        <div id="join-key-box" style="position: fixed; right: 15px; top: 50%; transform: translateY(-50%); width: 320px; background: #ededed; border: 6px solid black; color: #000; font-family: 'Racing Sans One', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: flex-start; text-align: left; pointer-events: auto; z-index: 10; gap: 8px;">
+            <input id="join-key-input" type="text" placeholder="Enter lobby key" style="flex: 1; height: 44px; font-size: 1.2rem; border: 3px solid #000; border-radius: 6px; padding: 6px 10px; box-sizing: border-box; font-family: 'Racing Sans One', sans-serif;">
+            <button id="join-key-paste" type="button" style="height: 44px; padding: 0 10px; border: none; border-radius: 4px; background: #222; color: #fff; font-weight: bold; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); font-size: 2rem;">⎘</button>
+        </div>
+        <div style="position: fixed; right: 15px; top: calc(50% + 80px); transform: translateY(-50%); width: 320px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; font-family: 'Racing Sans One', sans-serif; z-index: 10;">
+            <button id="join-submit" type="button" style="height: 48px; border: 4px solid #000; border-radius: 8px; background: gold; color: black; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25);">Join Game</button>
+            <div id="join-error" style="color: red; font-size: 1rem; min-height: 18px; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; text-align: center;"></div>
+        </div>
     </div>
+
+    <script>
+        const joinRowsData = [
+            { username: "Test", difficulty: "Normal", players: "2 / 6" },
+            { username: "Kieran", difficulty: "Hard", players: "5 / 6" },
+            { username: "ur_doom", difficulty: "Easy", players: "1 / 6" },
+            { username: "Banana", difficulty: "Knightmare", players: "3 / 6" },
+            { username: "Hurk", difficulty: "Normal", players: "2 / 6" },
+        ];
+
+        const rowsContainer = document.getElementById("join-rows");
+        let selectedRowIndex = null;
+
+        const updateSelection = () => {
+            const rowEls = rowsContainer.querySelectorAll(".join-row");
+            rowEls.forEach((row, idx) => {
+                row.classList.toggle("selected", idx === selectedRowIndex);
+            });
+        };
+
+        const buildRows = () => {
+            rowsContainer.innerHTML = "";
+            joinRowsData.forEach((row, idx) => {
+                const rowEl = document.createElement("div");
+                rowEl.className = "join-row";
+                rowEl.innerHTML = `
+                    <div class="join-cell">${row.username}</div>
+                    <div class="join-cell">${row.difficulty}</div>
+                    <div class="join-cell players">${row.players}</div>
+                `;
+                rowEl.addEventListener("click", () => {
+                    selectedRowIndex = selectedRowIndex === idx ? null : idx;
+                    updateSelection();
+                });
+                rowsContainer.appendChild(rowEl);
+            });
+            updateSelection();
+        };
+
+        buildRows();
+
+        // Paste + Join handling
+        const pasteBtn = document.getElementById("join-key-paste");
+        const keyInput = document.getElementById("join-key-input");
+        const joinBtn  = document.getElementById("join-submit");
+        const joinErr  = document.getElementById("join-error");
+
+        if (pasteBtn && keyInput) {
+            pasteBtn.addEventListener("click", async () => {
+                if (!navigator.clipboard || !navigator.clipboard.readText) return;
+                try {
+                    const text = await navigator.clipboard.readText();
+                    keyInput.value = text;
+                    joinErr.textContent = "";
+                } catch (err) {
+                    joinErr.textContent = "Clipboard read failed.";
+                }
+            });
+        }
+
+        if (joinBtn && keyInput && joinErr) {
+            joinBtn.addEventListener("click", () => {
+                // Placeholder failure handling
+                joinErr.textContent = "Key not valid";
+            });
+        }
+    </script>
 </body>
 </html>
