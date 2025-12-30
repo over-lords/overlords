@@ -15,6 +15,7 @@ import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButto
          enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout, destroyCitiesByCount, restoreCitiesByCount } from "./turnOrder.js";
 
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
+import { playSoundEffect } from './soundHandler.js';
 import { gameState } from "../data/gameState.js";
 import { saveGameState } from "./stateManager.js";
 
@@ -43,6 +44,13 @@ const HERO_TEAM_SET = (() => {
     });
     return set;
 })();
+
+export function playDamageSfx(amount) {
+    const dmg = Math.max(0, Number(amount) || 0);
+    if (dmg <= 0) return;
+    const clip = dmg >= 3 ? "highDamage" : "lowDamage";
+    try { playSoundEffect(clip); } catch (e) { /* ignore */ }
+}
 
 const EFFECT_HANDLERS = {};
 
@@ -2661,12 +2669,13 @@ function heroRetrieveFromDiscard(count = 1, who = "current", state = gameState) 
     const takeFrom = (hid) => {
         const eligible = getEligible(hid);
         if (!eligible.length) return;
+        const hState = s.heroData?.[hid];
+        const perma = Array.isArray(hState?.permanentKO) ? hState.permanentKO.map(String) : [];
         const toTake = Math.min(Number(count) || 1, eligible.length);
         for (let i = 0; i < toTake; i++) {
             const idx = Math.floor(Math.random() * eligible.length);
             const cardId = eligible.splice(idx, 1)[0];
             // remove one instance from discard (first matching occurrence)
-            const hState = s.heroData?.[hid];
             const pos = hState.discard.findIndex(id => String(id) === String(cardId) && !perma.includes(String(id)));
             if (pos >= 0) hState.discard.splice(pos, 1);
             if (!Array.isArray(hState.hand)) hState.hand = [];
@@ -3447,6 +3456,8 @@ async function applyDamageToHero(heroId, amount, options = {}) {
     heroState.hp = Math.max(0, before - amt);
     heroObj.currentHP = heroState.hp;
     heroState.lastDamageAmount = amt;
+    const appliedDamage = Math.max(0, Math.min(amt, before));
+    playDamageSfx(appliedDamage);
 
     // Low HP music toggle if this is the active hero
     try {
@@ -5354,6 +5365,7 @@ async function runCharge(cardId, distance) {
         }
 
         if (stepsMoved > 0) {
+            try { playSoundEffect("charge"); } catch (_) {}
             try {
                 const cardData = findCardInAllSources(cardId);
                 const foeName = cardData?.name || `Enemy ${cardId}`;
@@ -6188,6 +6200,8 @@ export async function onHeroCardActivated(cardId, meta = {}) {
         return;
     }
 
+    try { playSoundEffect("activate"); } catch (_) {}
+
     // Reset damage context for this activation (used by afterDamage effects)
     gameState._lastDamageContext = null;
     // Reset pending damage accumulator for this activation
@@ -6822,6 +6836,8 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         newHP = 1;
         actualDamage = Math.max(0, currentHP - newHP);
     }
+
+    playDamageSfx(actualDamage);
 
     if (heroId != null) {
         if (!s.heroDamageToOverlord) s.heroDamageToOverlord = {};
@@ -7657,6 +7673,7 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
         : "Hero";
     const appliedDamage = Math.max(0, Math.min(effWithFoeMods, currentHP));
+    playDamageSfx(appliedDamage);
 
     // Sync per-instance representations (DO NOT mutate foeCard.currentHP)
     entry.maxHP = baseHP;

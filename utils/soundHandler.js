@@ -2,7 +2,9 @@ const MUSIC_API = "https://api.github.com/repos/over-lords/overlords/contents/Pu
 const STORAGE_KEY = "gameMusicState";
 const VOLUME_KEY = "gameMusicVolume";
 const LOW_HP_URL = "https://raw.githubusercontent.com/over-lords/overlords/main/Public/Sounds/Music/low_hp_epic_music.mp3";
-const BASE_GAIN = 0.1; // global attenuation (2%)
+const BASE_GAIN = 0.1; // global attenuation
+const SFX_BASE_GAIN = 0.35;
+const SFX_VOLUME_KEY = "gameSFXVolume";
 const SAVE_INTERVAL_MS = 2000;
 
 let audioEl = null;
@@ -13,6 +15,7 @@ let pendingPosition = 0;
 let lowHpAudio = null;
 let lowHpActive = false;
 let normalWasPlaying = false;
+let sfxVolume = 0.5;
 
 function getGameKey() {
     try {
@@ -71,6 +74,22 @@ function loadVolume() {
     }
 }
 
+function loadSfxVolume() {
+    try {
+        const raw = localStorage.getItem(SFX_VOLUME_KEY);
+        const num = Number(raw);
+        if (Number.isFinite(num) && num >= 0 && num <= 1) {
+            sfxVolume = num;
+        }
+    } catch (_) {
+        // ignore
+    }
+}
+
+function saveSfxVolume(vol) {
+    try { localStorage.setItem(SFX_VOLUME_KEY, String(vol)); } catch (_) {}
+}
+
 function saveVolume(vol) {
     try { localStorage.setItem(VOLUME_KEY, String(vol)); } catch (_) {}
 }
@@ -99,6 +118,7 @@ function setupAudio() {
     audioEl = new Audio();
     audioEl.loop = false;
     loadVolume();
+    loadSfxVolume();
     audioEl.volume = currentVolume * BASE_GAIN;
     audioEl.addEventListener("ended", handleTrackEnded);
     audioEl.addEventListener("loadedmetadata", () => {
@@ -158,6 +178,42 @@ function setLowHpMode(isLow) {
     }
 }
 
+export async function playSoundEffect(name) {
+    if (!name) return;
+    const vol = (Number(sfxVolume) || 0) * SFX_BASE_GAIN;
+    if (vol <= 0) return;
+
+    const candidates = [];
+    if (String(name).includes(".")) {
+        candidates.push(`https://raw.githubusercontent.com/over-lords/overlords/main/Public/Sounds/Effects/${name}`);
+    } else {
+        const preferred = {
+            activate: ["mp3", "wav", "ogg", "aiff"],
+            heroKOd: ["aiff", "mp3", "wav", "ogg"],
+        };
+        const exts = preferred[name] || ["wav", "mp3", "ogg", "aiff"];
+        exts.forEach(ext => {
+            candidates.push(`https://raw.githubusercontent.com/over-lords/overlords/main/Public/Sounds/Effects/${name}.${ext}`);
+        });
+    }
+
+    let lastErr = null;
+    for (const url of candidates) {
+        try {
+            const audio = new Audio(url);
+            audio.crossOrigin = "anonymous";
+            audio.volume = vol;
+            await audio.play();
+            return;
+        } catch (err) {
+            lastErr = err;
+        }
+    }
+    if (lastErr) {
+        console.warn("[soundHandler] Failed to play SFX", name, lastErr);
+    }
+}
+
 function handleTrackEnded() {
     if (!currentState) return;
     currentState.position = 0;
@@ -200,6 +256,12 @@ if (typeof window !== "undefined") {
         if (audioEl) audioEl.volume = clamped * BASE_GAIN;
         if (lowHpAudio) lowHpAudio.volume = clamped * BASE_GAIN;
         saveVolume(clamped);
+    };
+
+    window.setSFXVolume = (val) => {
+        const clamped = Math.max(0, Math.min(1, Number(val) || 0));
+        sfxVolume = clamped;
+        saveSfxVolume(clamped);
     };
 
     window.setLowHpMode = setLowHpMode;

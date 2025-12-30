@@ -16,6 +16,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
          showRetreatButtonForCurrentHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
+import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
 
 let currentOverlord = null;
@@ -1253,7 +1254,25 @@ try {
     volMusic.value = 20;
 }
 
-volSFX.addEventListener("input", () => { }); // DUMMY FOR NOW
+try {
+    const savedSfxVol = localStorage.getItem("gameSFXVolume");
+    if (savedSfxVol != null) {
+        const num = Math.max(0, Math.min(1, Number(savedSfxVol) || 0));
+        volSFX.value = Math.round(num * 100);
+    } else {
+        volSFX.value = 50;
+    }
+} catch (_) {
+    volSFX.value = 50;
+}
+
+volSFX.addEventListener("input", () => {
+    const val = Math.max(0, Math.min(100, Number(volSFX.value) || 0));
+    if (typeof window.setSFXVolume === "function") {
+        window.setSFXVolume(val / 100);
+    }
+    try { localStorage.setItem("gameSFXVolume", String(val / 100)); } catch (_) {}
+});
 volMusic.addEventListener("input", () => {
     const val = Math.max(0, Math.min(100, Number(volMusic.value) || 0));
     if (typeof window.setMusicVolume === "function") {

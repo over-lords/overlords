@@ -154,6 +154,7 @@ import { heroCards } from '../data/heroCards.js';
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
 import { recordCampaignWin } from './campaignProgress.js';
+import { playSoundEffect } from './soundHandler.js';
 import { overlords } from '../data/overlords.js';
 
 import { tactics } from '../data/tactics.js';
@@ -168,7 +169,7 @@ import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVi
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, runTurnEndNotEngagedTriggers, 
          getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny,
-         buildPermanentKOCountMap, pruneFoeDoubleDamage, pruneHeroProtections } from './abilityExecutor.js';
+         buildPermanentKOCountMap, pruneFoeDoubleDamage, pruneHeroProtections, playDamageSfx } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -606,6 +607,7 @@ function applyCountdownLandingEffects(upperIdx, gameState) {
 
             const currentHP = (typeof hState.hp === "number") ? hState.hp : 0;
             hState.hp = Math.max(0, currentHP - dmg);
+            playDamageSfx(Math.max(0, Math.min(dmg, currentHP)));
 
             // Move hero back to HQ (cityIndex = null)
             hState.cityIndex = null;
@@ -1474,6 +1476,8 @@ export async function villainDraw(count = 1) {
         } catch (err) {
             console.warn("[VILLAIN DRAW] Failed to append game log entry", err);
         }
+
+        try { playSoundEffect("enter"); } catch (_) {}
 
         switch (kind) {
             case "countdown":
@@ -2621,7 +2625,10 @@ export async function endCurrentHeroTurn(gameState) {
                     const pending = gameState.pendingDamageHero;
 
                     if (!blocked && pending) {
-                        heroState.hp -= foeDamage;
+                        const beforeHP = heroState.hp;
+                        heroState.hp = Math.max(0, heroState.hp - foeDamage);
+                        const applied = Math.max(0, Math.min(foeDamage, beforeHP));
+                        playDamageSfx(applied);
                         flashScreenRed();
                         appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
                     } else {
@@ -2984,6 +2991,8 @@ async function performHeroStartingTravel(gameState, heroId, cityIndex) {
         `[TRAVEL] ${heroName} traveling to city ${cityIndex}. ` +
         `currentTravel before=${beforeTravel}, after=${afterTravel}.`
     );
+
+    try { playSoundEffect("enter"); } catch (_) {}
 
     initializeTurnUI(gameState);
 
@@ -3843,7 +3852,10 @@ async function retreatHeroToHQ(gameState, heroId) {
                         const pending = gameState.pendingDamageHero;
 
                         if (!blocked && pending) {
-                            heroState.hp -= foeDamage;
+                            const beforeHP = heroState.hp;
+                            heroState.hp = Math.max(0, heroState.hp - foeDamage);
+                            const applied = Math.max(0, Math.min(foeDamage, beforeHP));
+                            playDamageSfx(applied);
                             flashScreenRed();
                             appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
                         } else {
@@ -3925,6 +3937,9 @@ async function retreatHeroToHQ(gameState, heroId) {
 function openRetreatConfirm(gameState, heroId) {
     const overlay = document.getElementById("retreat-popup-overlay");
     if (!overlay) return;
+    if (overlay.style.display === "flex" || overlay.dataset.open === "true" || window.__retreatConfirmOpen) return;
+    overlay.dataset.open = "true";
+    window.__retreatConfirmOpen = true;
 
     const heroList = (typeof window !== "undefined" && Array.isArray(window.heroes))
         ? window.heroes
@@ -3955,10 +3970,14 @@ function openRetreatConfirm(gameState, heroId) {
         if (retreatBtn) retreatBtn.style.display = "none";
 
         overlay.style.display = "none";
+        overlay.dataset.open = "false";
+        window.__retreatConfirmOpen = false;
     };
 
     noBtn.onclick = () => {
         overlay.style.display = "none";
+        overlay.dataset.open = "false";
+        window.__retreatConfirmOpen = false;
     };
 }
 
@@ -4042,6 +4061,8 @@ async function performHeroTravelToOverlord(gameState, heroId) {
         `[OVERLORD] ${heroName} spends 1 travel to face the Overlord. ` +
         `currentTravel ${currentTravel} → ${heroState.currentTravel}.`
     );
+
+    try { playSoundEffect("enter"); } catch (_) {}
 
     heroState.isFacingOverlord = true;
     refreshOverlordFacingGlow(gameState);
@@ -4556,6 +4577,8 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
   // Remember where the active hero was (if any)
   const previousIndex = (typeof activeState.cityIndex === "number") ? activeState.cityIndex : null;
 
+  try { playSoundEffect("enter"); } catch (_) {}
+
   initializeTurnUI(state);
 
   // =========================================================
@@ -4650,7 +4673,10 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
         const pending = state.pendingDamageHero;
 
         if (!blocked && pending) {
-          activeState.hp = Number(activeState.hp || 0) - foeDamage;
+          const beforeHP = Number(activeState.hp || 0);
+          activeState.hp = Math.max(0, beforeHP - foeDamage);
+          const applied = Math.max(0, Math.min(foeDamage, beforeHP));
+          playDamageSfx(applied);
           console.log(
             `[SHOVE-ENTRY] ${heroName} took ${foeDamage} damage for forcing a hero from the fight.`
           );
@@ -5003,6 +5029,7 @@ export function handleHeroKnockout(heroId, heroState, state, options = {}) {
     }
 
     if (!alreadyKO) {
+        try { playSoundEffect("heroKOd"); } catch (_) {}
         try {
             const heroObj = heroes.find(h => String(h.id) === String(heroId));
             const heroName = heroObj?.name || `Hero ${heroId}`;
@@ -5115,16 +5142,23 @@ async function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, conte
                     // Match end-of-turn damage behavior: only if foeDamage >= DT
                     if (foeDamage >= dt) {
                         flagPendingHeroDamage(heroId, foeDamage, foe.name, gameState);
-                        const blocked = await tryBlockPendingHeroDamage(gameState);
-            const pending = gameState.pendingDamageHero;
+                        const blockedByAbility = await tryBlockPendingHeroDamage(gameState);
+                        const pending = gameState.pendingDamageHero;
 
-            if (!blocked && pending) {
-                heroState.hp -= foeDamage;
-                flashScreenRed();
-                appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
-            } else {
-                gameState.pendingDamageHero = null;
-            }
+                        if (!blockedByAbility && pending) {
+                            const blockedByProtection = consumeHeroProtectionIfAny(heroId, gameState);
+                            if (!blockedByProtection) {
+                                const beforeHP = heroState.hp;
+                                heroState.hp = Math.max(0, heroState.hp - foeDamage);
+                                const applied = Math.max(0, Math.min(foeDamage, beforeHP));
+                                playDamageSfx(applied);
+                                flashScreenRed();
+                                appendGameLogEntry(`${heroName} took ${foeDamage} damage from ${foe.name}.`, gameState);
+                            } else {
+                                appendGameLogEntry(`${heroName} avoids damage from ${foe.name}.`, gameState);
+                            }
+                        }
+                        gameState.pendingDamageHero = null;
 
             if (heroState.hp <= 0) {
                 heroState.hp = 0;
