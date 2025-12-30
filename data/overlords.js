@@ -80,7 +80,7 @@ export const overlords = [
     type: "Overlord",
     level: "1",
     hp: "40",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `At the start of the game, Joker's Hit Points are increased by 3 for every active [ICON:Bat] Hero. <span class="line-gap"></span>
@@ -97,7 +97,7 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `gameStart`,
+        condition: `turnStart`,
         uses: `1`,
         effect: `damageOverlord(-3*getActiveTeamCount(Bat))`
       }
@@ -113,7 +113,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `villainDraw(1*getActiveTeamCount())`
+        effect: `villainDraw(getActiveTeamCount(all))`
       }
     ],
     bonusNamePrint: [
@@ -131,7 +131,7 @@ export const overlords = [
       {
         type: `chooseOption`,
         effect: `chooseYourEffect`,
-        condition: [`endTurn`,`getActiveTeamCount(Bat)`], // Is 3 or higher check needed
+        condition: [`turnEnd`,`isGreaterThanX(3,getActiveTeamCount(Bat))`],
         uses: `999`,
         shared: `no`,
       },

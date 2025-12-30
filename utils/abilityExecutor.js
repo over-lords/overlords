@@ -282,21 +282,24 @@ function markFoeDamagedThisTurn(entry, state = gameState) {
 
 function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     if (!teamName) return 0;
+    const teamKey = String(teamName).toLowerCase().trim();
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     let count = 0;
+    const excludeSelf = teamKey !== "all";
 
     heroIds.forEach(id => {
-        if (heroId != null && String(id) === String(heroId)) return; // exclude activating hero
+        if (excludeSelf && heroId != null && String(id) === String(heroId)) return; // exclude activating hero unless counting all
         const hObj = heroes.find(h => String(h.id) === String(id));
         if (!hObj) return;
         const hState = s.heroData?.[id];
         const alive = hState ? (typeof hState.hp === "number" ? hState.hp > 0 : true) : true;
         if (!alive) return;
-        if (heroMatchesTeam(hObj, teamName)) count += 1;
+        if (teamKey === "all" || heroMatchesTeam(hObj, teamName)) count += 1;
     });
 
-    console.log(`[getActiveTeamCount] Team ${teamName} active count (excluding hero ${heroId ?? "n/a"}): ${count}`);
+    const label = teamKey === "all" ? "all heroes" : `Team ${teamName}`;
+    console.log(`[getActiveTeamCount] ${label} active count (excluding hero ${heroId ?? "n/a"}): ${count}`);
     return count;
 }
 
@@ -492,7 +495,7 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     const lower = val.toLowerCase();
 
     // Simple multiplier support, e.g., "3*findKOdHeroes"
-    const multMatch = val.match(/^(\d+)\s*\*\s*([A-Za-z0-9_()]+)$/);
+    const multMatch = val.match(/^([+-]?\d+)\s*\*\s*([A-Za-z0-9_()]+)$/);
     if (multMatch) {
         const factor = Number(multMatch[1]) || 0;
         const rhsRaw = multMatch[2];
@@ -551,6 +554,16 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         const hState = s.heroData?.[heroId];
         if (!hState || typeof hState.hp !== "number") return false;
         return dir === "less" ? hState.hp <= threshold : hState.hp >= threshold;
+    }
+
+    const greaterThanMatch = condStr.match(/^isgreaterthanx\(\s*([+-]?\d+)\s*,\s*([^)]+)\)$/i);
+    if (greaterThanMatch) {
+        const threshold = Number(greaterThanMatch[1]) || 0;
+        const helperRaw = greaterThanMatch[2].trim();
+        const helperVal = resolveNumericValue(helperRaw, heroId, s);
+        const pass = helperVal >= threshold;
+        console.log(`[isGreaterThanX] helper=${helperRaw} value=${helperVal} threshold=${threshold} -> ${pass}`);
+        return pass;
     }
 
     const activeHeroMatch = condStr.match(/^activehero\(([^)]+)\)$/i);
@@ -1896,8 +1909,8 @@ EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
     const heroId = selectedData?.currentHeroId ?? null;
     const raw = args?.[0];
     let amount = resolveNumericValue(raw, heroId, state);
-    if (!Number.isFinite(amount) || amount <= 0) {
-        amount = Number(raw) || 1;
+    if (!Number.isFinite(amount)) {
+        amount = Number(raw) || 0;
     }
     damageOverlord(amount, state, heroId);
 };
@@ -5162,9 +5175,18 @@ EFFECT_HANDLERS.henchEntryBonusHp = function(args = [], card, selectedData = {})
     if (cardData) cardData.currentHP = nextCurrent;
 };
 
-EFFECT_HANDLERS.villainDraw = function(args) {
-    const count = Number(args[0]) || 1;
-    villainDraw(count);
+EFFECT_HANDLERS.villainDraw = function(args, card, selectedData) {
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+    const raw = args?.[0];
+    let count = resolveNumericValue(raw, heroId, state);
+    if (!Number.isFinite(count)) {
+        count = Number(raw);
+    }
+    if (!Number.isFinite(count)) {
+        count = 1;
+    }
+    villainDraw(Math.max(0, count));
 };
 
 EFFECT_HANDLERS.setCardDamageTo = function(args = [], card, selectedData = {}) {
@@ -5956,6 +5978,10 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
         if (scenarioCard) cardsToCheck.push(scenarioCard);
     }
 
+    // Current overlord (supports conditions like turnStart/turnEnd on overlords)
+    const currentOv = getCurrentOverlordInfo(s);
+    if (currentOv?.card) cardsToCheck.push(currentOv.card);
+
     cardsToCheck.forEach(card => {
         const effects = Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : [];
 
@@ -6046,8 +6072,9 @@ export function runGameStartAbilities(selectedData) {
         for (const eff of effects) {
             if (!eff.condition) continue;
 
-            // Must match EXACT condition format from your data:
-            if (eff.condition.trim() === "gameStart") {
+            const condList = Array.isArray(eff.condition) ? eff.condition : [eff.condition];
+            const hasGameStart = condList.some(c => typeof c === "string" && normalizeConditionString(c) === "gamestart");
+            if (hasGameStart) {
 
                 const effectString = eff.effect;
 
