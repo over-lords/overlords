@@ -1060,6 +1060,15 @@ export const heroCards = [
     abilitiesNamePrint: [
       {
         text: `Time Boom!`
+      },
+      {
+        text: `Choose`
+      },
+      {
+        text: `Follow Shoved Foe`
+      },
+      {
+        text: `Retreat to Headquarters`
       }
     ],
     abilitiesEffects: [
