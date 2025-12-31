@@ -1,5 +1,9 @@
 const newsData = [
     {
+        date: "December 31st, 2025",
+        text: "Happy New Year! Added a campaign with 3 missions (so far), and beating them will grant YOU extra profile picture choices!"
+    },
+    {
         date: "December 29th, 2025",
         text: "The beginner game is finally done!"
     },
