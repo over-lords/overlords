@@ -2,7 +2,7 @@ const CACHE_NAME = "overlords-static-v0.1.7"; // Version number - update when so
 
 const ASSETS = [
   // Unchanging - air quotes...
-  "Public/Images/Site Assets/favicon.png",
+  "/favicon.png",
   "manifest.json",
   "supabaseClient.js",
   "utils/session.js",
