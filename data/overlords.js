@@ -778,7 +778,7 @@ export const overlords = [
     bonusEffects: [
       {
         type: `passive`,
-        condition: `heroKod()`,
+        condition: `heroKod`,
         uses: `999`,
         shared: `no`,
         effect: `healAbandonedFoe(5)`
@@ -792,12 +792,12 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "70",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `Decrease [ICON:Lantern] Heroes' Damage Thresholds by 1 (to a minimum of 1). <span class="line-gap"></span>
                Might of the Overlord: All Henchmen and Villains regain up to 5 HP. <span class="line-gap"></span>
-               Bonus Feature: If a [ICON:Lantern] Hero is KO'd, Sinestro regains 10 HP.`
+               Bonus Feature: If a [ICON:Lantern] Hero is KO'd, Sinestro gains 10 HP.`
       }
     ],
     abilitiesNamePrint: [
@@ -810,7 +810,7 @@ export const overlords = [
         type: `quick`,
         condition: `turnStart`,
         uses: `1`,
-        effect: `decreaseHeroDT(Lantern,1)`
+        effect: `decreaseHeroDT(Lantern,1,permanent)`
       }
     ],
     mightNamePrint: [
@@ -838,7 +838,7 @@ export const overlords = [
         condition: `heroKod(Lantern)`,
         uses: `999`,
         shared: `no`,
-        effect: `healOverlord(10)`
+        effect: `damageOverlord(-10)`
       }
     ]
   },
@@ -849,7 +849,7 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "70",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `Decrease [ICON:Flash] Heroes' Damage Thresholds by 1 (to a minimum of 1). <span class="line-gap"></span>
@@ -867,7 +867,7 @@ export const overlords = [
         type: `quick`,
         condition: `turnStart`,
         uses: `1`,
-        effect: `decreaseHeroDT(Flash,1)`
+        effect: `decreaseHeroDT(Flash,1,permanent)`
       }
     ],
     mightNamePrint: [

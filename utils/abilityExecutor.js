@@ -3223,6 +3223,31 @@ EFFECT_HANDLERS.setHeroDTtoX = function(args = [], card, selectedData = {}) {
     saveGameState(s);
 };
 
+EFFECT_HANDLERS.decreaseHeroDT = function(args = [], card, selectedData = {}) {
+    const teamRaw = args?.[0] ?? "current";
+    const amount = Math.max(0, Number(args?.[1] ?? 0) || 0);
+    const duration = args?.[2] ?? "permanent";
+    const sourceIdArg = args?.[3] ?? null;
+    const s = selectedData?.state || gameState;
+    if (!s || !Array.isArray(s.heroes)) return;
+
+    const meta = {
+        sourceType: selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect"),
+        sourceId: selectedData?.scenarioId || card?.id || sourceIdArg || null
+    };
+
+    const teamKey = String(teamRaw || "").toLowerCase();
+    s.heroes.forEach(hid => {
+        const hObj = heroes.find(h => String(h.id) === String(hid));
+        if (!hObj) return;
+        if (teamKey !== "all" && !heroMatchesTeam(hObj, teamKey)) return;
+        const baseDT = Number(hObj.damageThreshold || 1) || 1;
+        const newVal = Math.max(1, baseDT - amount);
+        setHeroDTforHero(hid, newVal, duration || "permanent", s, meta);
+    });
+    saveGameState(s);
+};
+
 function loseIconUseForHero(heroId, count = 1, mode = "random", state = gameState) {
     const s = state || gameState;
     if (!heroId) return;
@@ -4614,7 +4639,7 @@ function isHeroSelectorValue(val) {
         return heroes.some(h => String(h.id) === String(val));
     }
     const lower = String(val).toLowerCase();
-    if (["random", "all", "current", "coastal"].includes(lower)) return true;
+    if (["random", "all", "current", "coastal", "highesthp"].includes(lower)) return true;
     return HERO_TEAM_SET.has(lower);
 }
 
@@ -4645,6 +4670,22 @@ function resolveHeroTargets(selectorRaw, state = gameState, defaultHeroId = null
         if (hid == null) return [];
         const hp = s.heroData?.[hid]?.hp;
         return hp == null || hp > 0 ? [hid] : [];
+    }
+
+    if (lower === "highesthp") {
+        if (!activeHeroes.length) return [];
+        let maxHp = -Infinity;
+        activeHeroes.forEach(hid => {
+            const hp = typeof s.heroData?.[hid]?.hp === "number" ? s.heroData[hid].hp : 1;
+            if (hp > maxHp) maxHp = hp;
+        });
+        const top = activeHeroes.filter(hid => {
+            const hp = typeof s.heroData?.[hid]?.hp === "number" ? s.heroData[hid].hp : 1;
+            return hp === maxHp;
+        });
+        if (!top.length) return [];
+        const pick = top[Math.floor(Math.random() * top.length)];
+        return [pick];
     }
 
     if (lower === "coastal") {
@@ -6760,6 +6801,20 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
             } else {
                 const effCond = normalizeConditionString(rawCond);
                 matchesEvent = !!effCond && effCond === condNorm;
+            }
+
+            // Special-case heroKod(team) with team filter
+            if (!matchesEvent && condNorm === "herokod" && typeof rawCond === "string") {
+                const m = rawCond.trim().toLowerCase().match(/^herokod\(([^)]+)\)$/);
+                if (m) {
+                    const teamKey = m[1].trim();
+                    const targetHeroId = payload?.targetHeroId ?? null;
+                    const targetHeroObj = heroes.find(h => String(h.id) === String(targetHeroId));
+                    if (targetHeroObj && heroMatchesTeam(targetHeroObj, teamKey)) {
+                        matchesEvent = true;
+                        extraConds = [];
+                    }
+                }
             }
 
             if (!matchesEvent) return;
