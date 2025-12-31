@@ -3152,7 +3152,7 @@ EFFECT_HANDLERS.disableRetreat = function(args = [], card, selectedData = {}) {
     setRetreatDampener(who, howLong, selectedData?.state || gameState);
 };
 
-function setHeroDTforHero(heroId, value, duration = "next", state = gameState) {
+function setHeroDTforHero(heroId, value, duration = "next", state = gameState, meta = {}) {
     const s = state || gameState;
     if (!heroId || s == null) return;
     if (typeof s.turnCounter !== "number") s.turnCounter = 0;
@@ -3168,7 +3168,9 @@ function setHeroDTforHero(heroId, value, duration = "next", state = gameState) {
 
     heroState.tempDT = {
         value: Number(value) || 0,
-        expiresAtTurnCounter
+        expiresAtTurnCounter,
+        sourceType: meta.sourceType || null,
+        sourceId: meta.sourceId || null
     };
 
     const durationText =
@@ -3186,21 +3188,27 @@ EFFECT_HANDLERS.setHeroDTtoX = function(args = [], card, selectedData = {}) {
     const who = String(whoRaw).toLowerCase();
     const val = Number(args?.[1] ?? 0) || 0;
     const duration = args?.[2] ?? "next";
+    const sourceIdArg = args?.[3] ?? null;
     const s = selectedData?.state || gameState;
     if (!s || !Array.isArray(s.heroes)) return;
 
+    const meta = {
+        sourceType: selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect"),
+        sourceId: selectedData?.scenarioId || card?.id || sourceIdArg || null
+    };
+
     const heroIds = s.heroes;
     if (who === "all") {
-        heroIds.forEach(hid => setHeroDTforHero(hid, val, duration, s));
+        heroIds.forEach(hid => setHeroDTforHero(hid, val, duration, s, meta));
     } else if (who === "random") {
         const alive = heroIds.filter(hid => s.heroData?.[hid]);
         if (!alive.length) return;
         const pick = alive[Math.floor(Math.random() * alive.length)];
-        setHeroDTforHero(pick, val, duration, s);
+        setHeroDTforHero(pick, val, duration, s, meta);
     } else if (who === "current") {
         const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
         const currentId = heroIds[idx];
-        if (currentId != null) setHeroDTforHero(currentId, val, duration, s);
+        if (currentId != null) setHeroDTforHero(currentId, val, duration, s, meta);
     } else {
         // Team handling: apply to all heroes matching the provided team key
         const teamKey = String(whoRaw || "").toLowerCase();
@@ -3208,7 +3216,7 @@ EFFECT_HANDLERS.setHeroDTtoX = function(args = [], card, selectedData = {}) {
             const hObj = heroes.find(h => String(h.id) === String(hid));
             if (!hObj) return;
             if (heroMatchesTeam(hObj, teamKey)) {
-                setHeroDTforHero(hid, val, duration, s);
+                setHeroDTforHero(hid, val, duration, s, meta);
             }
         });
     }
@@ -3296,7 +3304,7 @@ function pruneDoubleDamageMods(state = gameState) {
     });
 }
 
-function addDoubleDamageModifier(whoRaw = "current", duration = "next", state = gameState) {
+function addDoubleDamageModifier(whoRaw = "current", duration = "next", state = gameState, meta = {}) {
     const s = state || gameState;
     if (!s) return;
     if (typeof s.turnCounter !== "number") s.turnCounter = 0;
@@ -3334,7 +3342,9 @@ function addDoubleDamageModifier(whoRaw = "current", duration = "next", state = 
         s.doubleDamageHeroModifiers.push({
             ...mod,
             expiresAtTurnCounter,
-            active: true
+            active: true,
+            sourceType: meta.sourceType || null,
+            sourceId: meta.sourceId || null
         });
     });
 
@@ -3477,7 +3487,12 @@ function getHeroGlobalDamageBonus(heroId, baseDamage, state = gameState) {
 EFFECT_HANDLERS.doubleDamageAgainst = function(args = [], card, selectedData = {}) {
     const who = args?.[0] ?? "current";
     const duration = args?.[1] ?? "next";
-    addDoubleDamageModifier(who, duration, selectedData?.state || gameState);
+    const sourceIdArg = args?.[2] ?? null;
+    const meta = {
+        sourceType: selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect"),
+        sourceId: selectedData?.scenarioId || card?.id || sourceIdArg || null
+    };
+    addDoubleDamageModifier(who, duration, selectedData?.state || gameState, meta);
 };
 
 export function pruneFoeDoubleDamage(state = gameState) {
@@ -8715,6 +8730,19 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         }
         if (s.scenarioHP) {
             delete s.scenarioHP[ovId];
+        }
+        // Clear any temp DT and damage modifiers sourced from this scenario
+        if (s.heroData) {
+            Object.keys(s.heroData).forEach(hid => {
+                const hState = s.heroData?.[hid];
+                if (!hState || !hState.tempDT) return;
+                if (hState.tempDT.sourceType === "scenario" && String(hState.tempDT.sourceId) === String(ovId)) {
+                    delete hState.tempDT;
+                }
+            });
+        }
+        if (Array.isArray(s.doubleDamageHeroModifiers)) {
+            s.doubleDamageHeroModifiers = s.doubleDamageHeroModifiers.filter(mod => !(mod && mod.sourceType === "scenario" && String(mod.sourceId) === String(ovId)));
         }
         if (Array.isArray(s.halfDamageModifiers)) {
             s.halfDamageModifiers = s.halfDamageModifiers.filter(mod => !(mod && mod.sourceType === "scenario" && String(mod.sourceId) === String(ovId)));

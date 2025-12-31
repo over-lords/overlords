@@ -81,7 +81,7 @@ export const scenarios = [
         name: "Flashpoint",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
@@ -96,7 +96,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: `setHeroDTtoX(Flash,1,permanent)`
+                effect: `setHeroDTtoX(Flash,1,permanent,5204)`
             }
         ]
     },
@@ -251,7 +251,7 @@ export const scenarios = [
         name: "Sinestro Corps War",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
@@ -266,7 +266,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: `doubleDamageAgainst(Lantern,permanent)`
+                effect: `doubleDamageAgainst(Lantern,permanent,5211)`
             }
         ]
     },
