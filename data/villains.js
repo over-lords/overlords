@@ -273,7 +273,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `uponDefeat`,
-        effect: [`damageFoe(3,any)`,`damageFoe(3,any)`]
+        effect: `damageFoeMulti(3,2,any)`
       }
     ]
   },
@@ -1613,6 +1613,41 @@ export const villains = [
         type: `quick`,
         condition: `uponDefeat`,
         effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5642",
+    name: "Green Lantern (Hal Jordan)",
+    image: `${cardArtFolder}/greenLanternHal.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "20",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Your Hero's DT becomes 3 until the end of their next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `My Sector`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `setHeroDTtoX(current,3,nextEnd)`
       }
     ]
   },

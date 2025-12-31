@@ -383,17 +383,17 @@ export const heroCards = [
     damage: "5",
     abilitiesText: [
       {
-        text: `All other Henchmen and Villains take 2 Damage.`
+        text: `All other Henchmen and Villains take 3 Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Airstrike!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `damageFoe(3,allOthers)`
       }
     ]
   },
@@ -412,12 +412,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `I'm Not Afraid`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `disableVillainDraw(1)`
       }
     ]
   },
@@ -431,18 +431,27 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Draw from the E&A. <span class="line-gap"></span> If Discarded: Deal 3 Damage to the Overlord.`
+        text: `OPTIONAL : Draw from the E&A. <span class="line-gap"></span> If Discarded: Deal 3 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Draw from the E&A`
+      },
+      {
+        text: `Taste this Will!`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `optional`,
+        effect: [`enemyDraw(1)`]
+      },
+      {
+        type: `quick`,
+        condition: `ifDiscarded`,
+        effect: `damageOverlord(3)`
+      },
     ]
   },
   {
@@ -460,12 +469,13 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Freeze Damaged Foe`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `afterDamage`,
+        effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]
   },
@@ -484,13 +494,14 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `I'm sorry...`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: [`draw(2)`,`discard(1)`]
+      },
     ]
   },
   {
@@ -508,13 +519,20 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1`
+      },
+      {
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        effect: `draw(1)`
+      },
+      {
+        type: `optional`,
+        effect: [`enemyDraw(1)`]
+      },
     ]
   },
   {
@@ -532,13 +550,14 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Meet my Wingmen`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: [`increaseCardDamage(getActiveTeamCount(Justice))`]
+      },
     ]
   },
   {
@@ -551,17 +570,17 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Increase Green Lantern's Damage Threshold by 1 until the end of this turn.`
+        text: `Increase Green Lantern's Damage Threshold to 3 until the end of his next turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Armor Up!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `setHeroDTtoX(current,3,nextEnd)`
       }
     ]
   },
@@ -580,12 +599,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Boom! Boom! Boom!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `damageFoeMulti(1,3,any)`
       }
     ]
   },
@@ -599,17 +618,17 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Lock a Henchman or Villain in their City and reduce their Damage to 0 until the start of Green Lantern's next turn.`
+        text: `Lock a Henchman or Villain in their City until the end of Green Lantern's next turn, and also reduce their Damage to 0 permanently.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Sit Tight.`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: [`freezeVillain(any,next)`,`disableVillain(lastFrozen,next)`]
       }
     ]
   },
@@ -623,17 +642,25 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Gain a Sidekick. <span class="line-gap"></span> [ICON:Lantern]: Increase this card's Damage by 1.`
+        text: `Gain a Sidekick. <span class="line-gap"></span> [ICON:Lantern]: Increase this card's Damage by 2.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Welcome to the Corps`
+      },
+      {
+        text: `Nice Assist!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `gainSidekick(1)`
+      },
+      {
+        type: `quick`,
+        condition: [`activeHero(Lantern)`],
+        effect: [`increaseCardDamage(2)`]
       }
     ]
   },

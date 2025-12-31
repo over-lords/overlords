@@ -112,6 +112,10 @@
       // === Find hero data ===
       const heroData = heroes.find(h => h.name === heroName);
       const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/dd9ae2da28accbb5f3dc8ea6a92612e64df47042/Public/Images/Card%20Assets/Misc";
+      const teamIconMap = {
+        Lantern: `${teamFolder}/Green Lantern.png`,
+      };
+      const getTeamIcon = (team) => teamIconMap[team] || `${teamFolder}/${encodeURIComponent(team)}.png`;
 
       // === Update title and hero name dynamically ===
       if (heroData) {
@@ -177,7 +181,7 @@
         teamDiv.appendChild(teamLabel);
         heroData.teams.forEach(t => {
           const img = document.createElement('img');
-          img.src = `${teamFolder}/${t}.png`;
+          img.src = getTeamIcon(t);
           img.style.width = '28px';
           img.style.height = 'auto';
           img.style.marginLeft = '5px';

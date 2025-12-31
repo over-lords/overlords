@@ -227,6 +227,18 @@ function isStandardEffectLive(effectVal, heroId, state = gameState) {
     return true;
 }
 
+function hasUsedStandardThisTurn(heroState, abilityIndex, turnCounter) {
+    if (!heroState || typeof abilityIndex !== "number") return false;
+    const usedTurn = heroState.standardTurnUsed?.[abilityIndex];
+    return typeof usedTurn === "number" && usedTurn === turnCounter;
+}
+
+function markStandardUsedThisTurn(heroState, abilityIndex, turnCounter) {
+    if (!heroState || typeof abilityIndex !== "number") return;
+    if (!heroState.standardTurnUsed) heroState.standardTurnUsed = {};
+    heroState.standardTurnUsed[abilityIndex] = turnCounter;
+}
+
 function getHeroStandardEffects(heroId, state = gameState) {
     if (iconAbilitiesDisabledForHero(heroId, state)) return [];
 
@@ -235,6 +247,7 @@ function getHeroStandardEffects(heroId, state = gameState) {
 
     const { effects, names } = getHeroAbilitiesWithTemp(heroId, state);
     const hState = state.heroData?.[heroId] || {};
+    const turnCounter = typeof state.turnCounter === "number" ? state.turnCounter : 0;
 
     const results = [];
 
@@ -243,6 +256,11 @@ function getHeroStandardEffects(heroId, state = gameState) {
         const maxUses = Number(eff.uses || 0);
         const remaining = hState.currentUses?.[i] == null ? maxUses : hState.currentUses[i];
         if (remaining <= 0) return;
+
+        const normHowOften = String(eff.howOften || "").toLowerCase();
+        if (normHowOften === "opt" && hasUsedStandardThisTurn(hState, i, turnCounter)) {
+            return; // once per turn enforcement
+        }
 
         const live = isStandardEffectLive(eff.effect, heroId, state);
         if (!live) return;
@@ -253,7 +271,8 @@ function getHeroStandardEffects(heroId, state = gameState) {
             label,
             usesLeft: remaining,
             usesMax: maxUses,
-            effect: eff.effect
+            effect: eff.effect,
+            howOften: normHowOften
         });
     });
 
@@ -284,6 +303,7 @@ async function runStandardAbility(option, heroId, state = gameState) {
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     const hState = state.heroData?.[heroId];
     if (!heroObj || !hState) return;
+    const turnCounter = typeof state.turnCounter === "number" ? state.turnCounter : 0;
 
     const effectsArray = Array.isArray(option.effect) ? option.effect : [option.effect];
     const skipUseDecrement = effectsArray.some(eff => typeof eff === "string" && /^discardCardsAtWill/i.test(eff));
@@ -306,6 +326,10 @@ async function runStandardAbility(option, heroId, state = gameState) {
         : Math.max(0, remaining - 1);
     heroObj.currentUses = heroObj.currentUses || {};
     heroObj.currentUses[option.index] = hState.currentUses[option.index];
+
+    if (String(option.howOften || "").toLowerCase() === "opt") {
+        markStandardUsedThisTurn(hState, option.index, turnCounter);
+    }
 
     const heroName = heroObj.name || `Hero ${heroId}`;
     appendGameLogEntry(`${heroName} used ${option.label}.`, state);

@@ -1595,28 +1595,49 @@ document.getElementById("villain-panel-close").addEventListener("click", () => {
         document.getElementById("villain-panel").classList.remove("open");
 });
 
-function getFoeCurrentAndMaxHP(foeCard) {
+function getFoeCurrentAndMaxHP(foeCard, opts = {}) {
     if (!foeCard) {
         return { currentHP: 0, maxHP: 0 };
     }
 
     const maxHP = Number(foeCard.hp) || 0;
     const idStr = String(foeCard.id);
+    const instRaw = opts.instanceId ?? foeCard.instanceId ?? null;
+    const instKey = instRaw != null ? String(instRaw) : null;
+    const entry = opts.entry || null;
 
-    let currentHP = foeCard.currentHP;
+    let currentHP = null;
+
+    // 0) If an entry is provided, prefer its currentHP
+    if (entry && typeof entry.currentHP === "number") {
+        currentHP = Number(entry.currentHP);
+    }
 
     // 1) If we don't have a runtime currentHP, try gameState
     if (currentHP == null) {
-        // Prefer villainHP map
-        if (gameState.villainHP && typeof gameState.villainHP[idStr] === "number") {
+        // Prefer villainHP map by instance, then by id
+        if (instKey && gameState.villainHP && typeof gameState.villainHP[instKey] === "number") {
+            currentHP = Number(gameState.villainHP[instKey]);
+        } else if (gameState.villainHP && typeof gameState.villainHP[idStr] === "number") {
             currentHP = Number(gameState.villainHP[idStr]);
         } else if (Array.isArray(gameState.cities)) {
-            // Fallback: look at any city entry with matching id
-            const cityEntry = gameState.cities.find(c => c && String(c.id) === idStr);
+            // Fallback: look at any city entry with matching instance or id
+            const cityEntry = gameState.cities.find(c =>
+                c &&
+                (
+                    (instKey && getInstanceKey(c) === instKey) ||
+                    String(c.id) === idStr
+                )
+            );
             if (cityEntry && typeof cityEntry.currentHP === "number") {
                 currentHP = Number(cityEntry.currentHP);
             }
         }
+    }
+
+    // 1b) If the card itself carries a runtime currentHP (e.g., override object), use it next
+    if (currentHP == null && typeof foeCard.currentHP === "number") {
+        currentHP = Number(foeCard.currentHP);
     }
 
     // 2) If still null, just use full HP
@@ -1629,6 +1650,7 @@ function getFoeCurrentAndMaxHP(foeCard) {
 
     if (!gameState.villainHP) gameState.villainHP = {};
     gameState.villainHP[idStr] = currentHP;
+    if (instKey) gameState.villainHP[instKey] = currentHP;
 
     return { currentHP, maxHP };
 }
@@ -2140,6 +2162,14 @@ export function buildVillainPanel(villainCard, opts = {}) {
                 });
 
                 window.__freezeSelectMode = null;
+                try {
+                    if (Array.isArray(window.__afterFreezeCallbacks)) {
+                        const cbs = window.__afterFreezeCallbacks.splice(0);
+                        cbs.forEach(cb => { try { cb(); } catch (err) { console.warn("[freeze] afterFreeze callback failed", err); } });
+                    }
+                } catch (e) {
+                    console.warn("[freeze] Failed to run afterFreeze callbacks", e);
+                }
                 try { if (typeof window !== "undefined" && typeof window.__clearDamageFoeHighlights === "function") window.__clearDamageFoeHighlights(); } catch (e) {}
             });
             return;
@@ -2297,16 +2327,21 @@ export function buildVillainPanel(villainCard, opts = {}) {
     leftCol.className = "villain-card-scale";
     leftCol.appendChild(renderCard(villainCard.id, leftCol));
 
+    // Locate current board entry for live stats
+    const { entry: villainEntry } = findCityEntryForVillainCard(villainCard, gameState, opts);
+
     // Right-side stats/text
     const rightCol = document.createElement("div");
     rightCol.className = "villain-right-column";
-    const { currentHP, maxHP } = getFoeCurrentAndMaxHP(villainCard);
+    const { currentHP, maxHP } = getFoeCurrentAndMaxHP(villainCard, {
+        instanceId: opts.instanceId,
+        entry: villainEntry
+    });
     const hpDisplay = (currentHP === maxHP)
         ? `${maxHP}`
         : `${currentHP} / ${maxHP}`;
 
     // Effective damage (respect per-instance damagePenalty/currentDamage)
-    const { entry: villainEntry } = findCityEntryForVillainCard(villainCard, gameState, opts);
     let effectiveDamage = (typeof villainCard.currentDamage === "number")
         ? villainCard.currentDamage
         : Number(villainCard.damage ?? villainCard.dmg ?? 0) || 0;

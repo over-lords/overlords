@@ -42,7 +42,7 @@ export const heroes = [
     image: `${cardArtFolder}/Hal Jordan.jpg`,
     type: "Hero",
     category: "Guardian",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "green",
     teams: ["Lantern","Justice"],
     hp: "16",
@@ -51,21 +51,22 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, Deal 2 Damage to all Henchmen and Villains.`
+        text: `3/Game: Once per turn, Deal 3 Damage to all Henchmen and Villains.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Deal 2 Damage to all Henchmen and Villains`
+        text: `Deal 3 Damage to all Henchmen and Villains`
       }
     ],
     abilitiesEffects: [
       {
         type: `standard`,
         condition: `none`,
+        howOften: `OPT`,
         uses: `3`,
         shared: `no`,
-        effect: `damageFoe(2,all)`
+        effect: `damageFoe(3,all)`
       }
     ]
   },

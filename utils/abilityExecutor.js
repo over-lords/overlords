@@ -1004,6 +1004,19 @@ function applyFreezeToEntry(entry, slotIndex, state = gameState, opts = {}) {
         villains.find(v => String(v.id) === String(entry.id));
     if (foeCard) foeCard.isFrozen = true;
 
+    // Track last frozen foe for follow-up effects
+    try {
+        if (!s.lastFrozenFoe) s.lastFrozenFoe = {};
+        s.lastFrozenFoe = {
+            instanceId: key,
+            foeId: String(entry.id ?? ""),
+            slotIndex,
+            heroId
+        };
+    } catch (err) {
+        console.warn("[applyFreezeToEntry] Failed to set lastFrozenFoe", err);
+    }
+
     // Log the freeze event
     try {
         const heroName = heroId != null
@@ -1845,6 +1858,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "all";
         } else if (typeof raw === "string" && raw.toLowerCase() === "allhenchmen") {
             flag = "allHenchmen";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "allothers") {
+            flag = "allothers";
         } else if (typeof raw === "string" && raw.toLowerCase() === "any") {
             flag = "any";
         } else if (typeof raw === "string" && raw.toLowerCase() === "anyhenchman") {
@@ -1860,6 +1875,10 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
+    }
+
+    if (typeof flag === "string") {
+        flag = flag.toLowerCase();
     }
 
     // Selected foe (only required for true single-target damage)
@@ -2467,6 +2486,49 @@ EFFECT_HANDLERS.evilWins = function(args = [], card, selectedData = {}) {
     }
 };
 
+// Looping variant: repeat a damageFoe selection multiple times (only supports "any" flag for now)
+EFFECT_HANDLERS.damageFoeMulti = function (args = [], card, selectedData = {}) {
+    const heroId =
+        selectedData?.currentHeroId
+        ?? gameState.heroes?.[gameState.heroTurnIndex ?? 0]
+        ?? null;
+    const state = selectedData?.state || gameState;
+    const amount = Number(args?.[0]) || 0;
+    const times = Math.max(1, Number(args?.[1]) || 1);
+    const flag = (args?.[2] ?? "any").toString().toLowerCase();
+
+    if (flag !== "any") {
+        console.warn("[damageFoeMulti] Only 'any' flag is supported currently.");
+        return;
+    }
+    if (typeof window === "undefined") {
+        console.warn("[damageFoeMulti] Requires browser UI for selection.");
+        return;
+    }
+
+    let remaining = times;
+
+    const runNext = () => {
+        if (remaining <= 0) return;
+        remaining -= 1;
+
+        // Queue the single selection
+        damageFoe(amount, flag, heroId, state, { flag: "any" });
+
+        // Wait for the selection flow to clear before starting another
+        const waitForClear = () => {
+            if (window.__damageFoeSelectMode) {
+                setTimeout(waitForClear, 60);
+            } else {
+                runNext();
+            }
+        };
+        waitForClear();
+    };
+
+    runNext();
+};
+
 function addPermanentKOTag(heroState, cardId) {
     if (!heroState) return;
     if (!Array.isArray(heroState.permanentKO)) heroState.permanentKO = [];
@@ -2768,9 +2830,16 @@ function setIconAbilityDampener(target = "current", duration = "next", state = g
     const normTarget = String(target || "current").toLowerCase();
     const normDuration = String(duration || "next").toLowerCase();
     let expiresAtTurnCounter = null;
-    if (normDuration === "current") expiresAtTurnCounter = s.turnCounter;
-    else if (normDuration === "next") expiresAtTurnCounter = s.turnCounter + 1;
-    else if (normDuration === "permanent") expiresAtTurnCounter = null;
+    if (normDuration === "current") {
+        expiresAtTurnCounter = s.turnCounter;
+    } else if (normDuration === "next") {
+        expiresAtTurnCounter = s.turnCounter + 1;
+    } else if (normDuration === "nextend" || normDuration === "endnext") {
+        // Lasts through the end of the hero's next turn
+        expiresAtTurnCounter = s.turnCounter + 2;
+    } else if (normDuration === "permanent") {
+        expiresAtTurnCounter = null;
+    }
 
     let heroId = null;
     if (normTarget === "current") {
@@ -2875,7 +2944,9 @@ function setHeroDTforHero(heroId, value, duration = "next", state = gameState) {
     const durationText =
         normDuration === "permanent"
             ? "for the rest of the game"
-            : (normDuration === "next" ? "until the start of their next turn" : "for this turn");
+            : (normDuration === "nextend" || normDuration === "endnext"
+                ? "until the end of their next turn"
+                : (normDuration === "next" ? "until the start of their next turn" : "for this turn"));
     appendGameLogEntry(`${heroObj.name}'s Damage Threshold is now ${Number(value) || 0} ${durationText}.`, s);
     try { updateBoardHeroHP(heroId); } catch (e) {}
 }
@@ -3443,6 +3514,16 @@ function openDeckSelectUI(heroId, count = 1, state = gameState) {
     } catch (e) {
         console.warn("[openDeckSelectUI] Failed to open deck view via discard tab", e);
     }
+    // Re-render after panel/tab updates to ensure buttons/cards populate on first open
+    try {
+        setTimeout(() => {
+            try { if (typeof renderDiscardSlide === "function") renderDiscardSlide(s); } catch (err) {
+                console.warn("[openDeckSelectUI] Delayed render failed", err);
+            }
+        }, 50);
+    } catch (e) {
+        console.warn("[openDeckSelectUI] Failed to schedule delayed render", e);
+    }
     try { showMightBanner(`Choose ${count} card(s) from ${heroName}'s deck`, 1800); } catch (e) {}
 }
 
@@ -3776,6 +3857,57 @@ EFFECT_HANDLERS.disableVillain = function(args = [], card, selectedData = {}) {
                 console.log("[disableVillain] No foes available to disable.");
             }
         }
+    } else if (norm === "lastfrozen") {
+        const info = s.lastFrozenFoe;
+        if (!info && typeof window !== "undefined" && window.__freezeSelectMode && !selectedData?._afterFreeze) {
+            // Freeze selection pending; defer disable until freeze completes
+            if (!Array.isArray(window.__afterFreezeCallbacks)) window.__afterFreezeCallbacks = [];
+            window.__afterFreezeCallbacks.push(() => {
+                try {
+                    EFFECT_HANDLERS.disableVillain(args, card, { ...selectedData, _afterFreeze: true });
+                } catch (err) {
+                    console.warn("[disableVillain] Deferred lastFrozen handling failed", err);
+                }
+            });
+            console.log("[disableVillain] Deferring lastFrozen until freeze selection resolves.");
+            return;
+        }
+
+        if (info && Array.isArray(cities)) {
+            const key = info.instanceId ?? null;
+            let entry = null;
+            let idx = null;
+
+            if (key) {
+                const foundIdx = cities.findIndex(e => e && getEntryKey(e) === key);
+                if (foundIdx !== -1) {
+                    entry = cities[foundIdx];
+                    idx = foundIdx;
+                }
+            }
+            if (!entry && Number.isInteger(info.slotIndex)) {
+                idx = info.slotIndex;
+                entry = cities[idx] || null;
+            }
+            if (!entry && info.foeId) {
+                for (let i = 0; i < cities.length; i++) {
+                    const e = cities[i];
+                    if (e && String(e.id) === String(info.foeId)) {
+                        entry = e;
+                        idx = i;
+                        break;
+                    }
+                }
+            }
+
+            if (entry && entry.id != null) {
+                applied = disableFoe(entry, idx, s) || applied;
+            } else {
+                console.warn("[disableVillain] lastFrozen not found on board.");
+            }
+        } else {
+            console.warn("[disableVillain] No lastFrozenFoe recorded.");
+        }
     } else {
         const idx = Number(whoRaw);
         if (Number.isInteger(idx) && idx >= 0 && idx < cities.length) {
@@ -4015,12 +4147,14 @@ function resolveHeroTargets(selectorRaw, state = gameState, defaultHeroId = null
         return hp == null || hp > 0 ? [matchId] : [];
     }
 
+    const isTeamSelector = HERO_TEAM_SET.has(lower);
     // Team target
     const teamTargets = activeHeroes.filter(hid => {
         const heroObj = heroes.find(h => String(h.id) === String(hid));
         return heroMatchesTeam(heroObj, selector);
     });
     if (teamTargets.length) return teamTargets;
+    if (isTeamSelector) return [];
 
     // Fallback to default/current hero
     if (defaultHeroId != null) {
@@ -7418,6 +7552,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             + `[ID ${foeSummary.foeId}] HP: ${foeSummary.currentHP}`,
             { heroId, heroName, foe: foeSummary }
         );
+        gameState._currentFoeForCard = foeSummary;
     } else {
         console.log(
             `[AbilityExecutor] ${heroName} currently has no engaged foe `
@@ -7427,6 +7562,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 heroName
             }
         );
+        gameState._currentFoeForCard = null;
     }
 
     const rawDamage =
@@ -7830,6 +7966,9 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             );
         }
     }
+
+    // Clear current foe cache for this card
+    gameState._currentFoeForCard = null;
 
     // ------------------------------------------------------
     // POST-DAMAGE EFFECTS (e.g., afterDamage)
@@ -8640,6 +8779,84 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         return;
     }
 
+    // ============================================================
+    // FLAG: "allOthers" — damage all city foes except the one the hero is facing
+    // If hero is facing the Overlord, hit all city foes.
+    // ============================================================
+    if (flag === "allothers") {
+        if (!Array.isArray(s.cities)) {
+            console.warn("[damageFoe] No cities array; cannot apply 'allOthers' damage.");
+            return;
+        }
+
+        const heroState = heroId && s.heroData ? s.heroData[heroId] : null;
+        const isFacingOverlord = !!heroState?.isFacingOverlord;
+        // Determine the engaged foe and slot: prefer cached foe summary
+        let engagedUpperSlot = null;
+        const currentFoe = s?._currentFoeForCard;
+        const engagedInstanceId = currentFoe?.instanceId ?? null;
+        if (currentFoe && currentFoe.source === "city-upper" && Number.isInteger(currentFoe.slotIndex)) {
+            engagedUpperSlot = currentFoe.slotIndex;
+        } else if (!isFacingOverlord && Number.isInteger(Number(heroState?.cityIndex))) {
+            engagedUpperSlot = Number(heroState.cityIndex) - 1; // lower index maps to upper slot
+        }
+
+        // If we lack a valid engaged slot (hero not in a city), skip the AoE entirely
+        if (engagedUpperSlot == null || engagedUpperSlot < 0) {
+            console.log("[damageFoe][allOthers] No engaged slot found; skipping AoE.");
+            return;
+        }
+
+        console.log("[damageFoe][allOthers] debug", {
+            heroId,
+            engagedUpperSlot,
+            engagedInstanceId,
+            engagedFoeId: currentFoe?.foeId
+        });
+
+        const targets = [];
+
+        for (let slotIndex = 0; slotIndex < s.cities.length; slotIndex++) {
+            const entry = s.cities[slotIndex];
+            if (!entry || entry.id == null) continue;
+            // Skip the engaged foe by slot or instance match
+            if (slotIndex === engagedUpperSlot) continue;
+            if (engagedInstanceId && getEntryKey(entry) === String(engagedInstanceId)) continue;
+            if (currentFoe && String(currentFoe.foeId || "") === String(entry.id)) continue;
+
+            const foeIdStr = String(entry.id);
+            const foeCard =
+                villains.find(v => String(v.id) === foeIdStr) ||
+                henchmen.find(h => String(h.id) === foeIdStr);
+
+            if (!foeCard) continue;
+            if (String(foeCard.type || "").toLowerCase() === "overlord") continue; // never include overlord in allOthers sweep
+
+            targets.push({
+                foeType: foeCard.type || "Enemy",
+                foeId: foeIdStr,
+                instanceId: getInstanceKey(entry),
+                foeName: foeCard.name,
+                currentHP: entry.currentHP ?? foeCard.hp,
+                slotIndex,
+                source: "city-upper"
+            });
+        }
+
+        if (!targets.length) {
+            console.log("[damageFoe] No qualifying foes for 'allOthers'.");
+            return;
+        }
+
+        console.log("[damageFoe][allOthers] targets", targets.map(t => ({ foeId: t.foeId, slotIndex: t.slotIndex, instanceId: t.instanceId })));
+
+        for (const foe of targets) {
+            damageFoe(amount, foe, heroId, s, { flag: "single", fromAll: true });
+        }
+
+        return;
+    }
+
     // ------------------------------------------------------------
     // Validation / input normalization
     // ------------------------------------------------------------
@@ -8857,10 +9074,28 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         playDamageSfx(appliedDamage);
     }
 
-    // Sync per-instance representations (DO NOT mutate foeCard.currentHP)
+    // Sync per-instance representations (DO NOT mutate foeCard.currentHP on the template)
     entry.maxHP = baseHP;
     entry.currentHP = newHP;
     s.villainHP[entryKey] = newHP;
+    s.villainHP[String(entry.id)] = newHP; // also track by base id for panels that key on id
+
+    // If the villain panel for this foe is open, refresh it to show updated HP
+    try {
+        const panel = (typeof document !== "undefined") ? document.getElementById("villain-panel") : null;
+        if (panel && panel.classList.contains("open") && String(panel.dataset.villainId || "") === foeIdStr) {
+            const builder = (typeof window !== "undefined" && typeof window.buildVillainPanel === "function")
+                ? window.buildVillainPanel
+                : (typeof buildVillainPanel === "function" ? buildVillainPanel : null);
+            if (builder) {
+                // Pass a live copy with currentHP and instanceId from the board entry
+                const liveCard = { ...foeCard, currentHP: newHP, instanceId: entryKey };
+                builder(liveCard, { instanceId: entryKey, slotIndex, entry });
+            }
+        }
+    } catch (err) {
+        console.warn("[damageFoe] Failed to refresh villain panel", err);
+    }
 
     if (isHeal) {
         console.log(`[damageFoe] ${foeCard.name} healed ${appliedHeal} (${currentHP} -> ${newHP}).`);

@@ -51,6 +51,10 @@
     <script type="module">
         import { heroes } from './data/faceCards.js';
         const teamFolder = "https://raw.githubusercontent.com/over-lords/overlords/dd9ae2da28accbb5f3dc8ea6a92612e64df47042/Public/Images/Card%20Assets/Misc";
+        const teamIconMap = {
+            Lantern: `${teamFolder}/Green Lantern.png`,
+        };
+        const getTeamIcon = (team) => teamIconMap[team] || `${teamFolder}/${encodeURIComponent(team)}.png`;
 
         function groupByCategory(data) {
         return data.reduce((acc, hero) => {
@@ -215,7 +219,7 @@
             // team1 image
             const team1 = hero.teams[0]; 
             const team1Img = document.createElement('img');
-            team1Img.src = `${teamFolder}/${team1}.png`; // full URL
+            team1Img.src = getTeamIcon(team1); // full URL with fallback for mapped teams
             team1Img.style.width = "25px";
             team1Img.style.height = "auto";
             team1Img.style.marginLeft = "0.5rem";
@@ -267,7 +271,7 @@
             teamDiv.appendChild(teamLabel);
             hero.teams.forEach(t => {
                 const img = document.createElement('img');
-                img.src = `${teamFolder}/${t}.png`;
+                img.src = getTeamIcon(t);
                 img.style.width = "25px";
                 img.style.height = "auto";
                 img.style.marginRight = "0.25rem";
