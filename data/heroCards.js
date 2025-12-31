@@ -642,7 +642,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Gain a Sidekick. <span class="line-gap"></span> [ICON:Lantern]: Increase this card's Damage by 2.`
+        text: `Draw 1 and Gain a Sidekick. <span class="line-gap"></span> [ICON:Lantern]: Increase this card's Damage by 2.`
       }
     ],
     abilitiesNamePrint: [
@@ -655,7 +655,8 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: `gainSidekick(1)`
+        type: `quick`,
+        effect: [`draw(1)`,`gainSidekick(1)`]
       },
       {
         type: `quick`,
@@ -1034,12 +1035,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Around the World`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `increaseCardDamage(hasTraveled)`
       }
     ]
   },
@@ -1053,17 +1054,33 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `After damaging them, move Flash's engaged Henchman or Villain right one space. <span class="line-gap"></span> CHOOSE: Flash can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+        text: `After damaging them, move Flash's engaged Henchman or Villain right up to two spaces. <span class="line-gap"></span> CHOOSE: Flash can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Time Boom!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `afterDamage`,
+        effect: `shoveVillain(lastDamagedFoe,4)`
+      },
+      {
+        condition: [`afterDamage`,`onlyOnShove`],
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(1)`,
+        effect: [`travelTo(lastShovedVillainDestination)`]
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(2)`,
+        effect: [`retreatHeroToHQ()`]
       }
     ]
   },
@@ -1082,12 +1099,13 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `optional`,
+        effect: [`enemyDraw(1)`]
       }
     ]
   },
@@ -1101,17 +1119,26 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Gain a Sidekick. <span class="line-gap"></span> [ICON:Flash]: Increase this card's Damage by 1.`
+        text: `Draw 1 and Gain a Sidekick. <span class="line-gap"></span> [ICON:Flash]: Increase this card's Damage by 1.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1 and Gain a Sidekick`
+      },
+      {
+        text: `Increase Card Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        effect: [`draw(1)`,`gainSidekick(1)`]
+      },
+      {
+        type: `quick`,
+        condition: [`activeHero(Flash)`],
+        effect: [`increaseCardDamage(1)`]
       }
     ]
   },
@@ -1125,17 +1152,18 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `OPTIONAL : This card deals no Damage, and next turn all of Flash's cards gain +1 Damage.`
+        text: `OPTIONAL : This card deals no Damage, and next turn all of Flash's cards deal double Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Deal no Damage to deal Double next turn`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `optional`,
+        effect: [`setCardDamageTo(0)`,`doubleDamage(current,next)`]
       }
     ]
   },
@@ -1145,7 +1173,7 @@ export const heroCards = [
     name: "Transcend Time and Space",
     hero: "Flash (Barry Allen)",
     image: `${cardArtFolder}/Barry Allen/Trancend.jpg`,
-    perDeck: "1",
+    perDeck: "2",
     damage: "1",
     abilitiesText: [
       {
@@ -1154,12 +1182,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Rewind!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `heroRetrieveFromDiscard(2,current)`
       }
     ]
   },
@@ -1173,17 +1201,25 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Draw 1. <span class="line-gap"></span><span class="line-gap"></span> Each time Flash KO's a Henchman or Villain this turn, he can Rescue a Bystander.`
+        text: `Draw 1. <span class="line-gap"></span><span class="line-gap"></span> Each time Flash KO's a Henchman or Villain this turn, he Rescues a Bystander.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1`
+      },
+      {
+        text: `Save a Life`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `draw(1)`
+      },
+      {
+        type: `passive`,
+        condition: `foeKOd`,
+        effect: `rescueBystander(1)`
       }
     ]
   },
@@ -1202,12 +1238,13 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Freeze Damaged Foe`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `afterDamage`,
+        effect: `freezeVillain(lastDamagedFoe,next)`
       }
     ]
   },
@@ -1226,12 +1263,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Sorry I'm Late`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `draw(1,all)`
       }
     ]
   },
@@ -1241,7 +1278,7 @@ export const heroCards = [
     name: "Bullet Time",
     hero: "Flash (Barry Allen)",
     image: `${cardArtFolder}/Barry Allen/Bullet Time.jpg`,
-    perDeck: "2",
+    perDeck: "1",
     damage: "0",
     abilitiesText: [
       {
@@ -1250,12 +1287,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Stop Motion`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `giveHeroPassive(blockDamage(1),next)`
       }
     ]
   },
@@ -1274,12 +1311,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Just One`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: [`draw(1)`,`rescueBystander(1)`]
       }
     ]
   },
@@ -1293,17 +1330,23 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2. Flash can only use them against Henchmen and Villains that other Heroes are engaged against. He does not need to Travel to do so.`
+        text: `Draw 2. <span class="line-gap"></span><span class="line-gap"></span> Until the end of this turn, Flash can shove Heroes out of Cities without taking Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1`
+      },
+      {
+        text: `Ignore Shove Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `draw(2)`
+      },
+      {
+        effect: `ignoreShoveDamage(currentHero,endOfTurn)`
       }
     ]
   },

@@ -171,7 +171,7 @@ import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVi
          runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
          getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, 
          retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny, buildPermanentKOCountMap, pruneFoeDoubleDamage, 
-         pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero } from './abilityExecutor.js';
+         pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero, applyNextTurnDoubleDamageIfAny } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
 
@@ -1985,6 +1985,12 @@ export async function startHeroTurn(state, opts = {}) {
     }
 
     appendGameLogEntry(`${activeHeroName} started their turn.`, state);
+
+    try {
+        applyNextTurnDoubleDamageIfAny(activeHeroId, state);
+    } catch (err) {
+        console.warn("[startHeroTurn] Failed to apply pending next-turn double damage.", err);
+    }
 
     // Refresh standard-speed UI immediately when turn starts
     try {
@@ -4793,7 +4799,15 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
       console.log("[SHOVE ENTRY] Effective foe damage (after passives)", { foeDamage, foeId, entryKey: foeEntry?.instanceId ?? foeEntry?.uniqueId ?? null, damagePenalty: foeEntry?.damagePenalty, currentDamage: foeEntry?.currentDamage });
       const dt = getCurrentHeroDT(heroId, gameState);
 
-      if (foeDamage >= dt && foeDamage > 0) {
+      const turn = typeof state.turnCounter === "number" ? state.turnCounter : 0;
+      const ignoreShoveDamage =
+        typeof activeState.ignoreShoveDamageUntilTurn === "number" &&
+        turn <= activeState.ignoreShoveDamageUntilTurn;
+
+      if (ignoreShoveDamage) {
+        state.pendingDamageHero = null;
+        appendGameLogEntry(`${heroName} ignores shove damage this turn.`, state);
+      } else if (foeDamage >= dt && foeDamage > 0) {
         if (consumeHeroProtectionIfAny(activeHeroId, state)) {
           state.pendingDamageHero = null;
           return;
@@ -5090,6 +5104,18 @@ async function maybeShowHeroTopPreviewWithBeforeDraw(state, heroId, previewCount
         }
     } catch (e) {
         console.warn("[beforeDraw] icon optionals failed", e);
+    }
+    const heroState = state.heroData?.[heroId];
+    const skipCount = heroState ? Number(heroState.skipSelectionDraw || 0) : 0;
+    if (skipCount > 0) {
+        heroState.skipSelectionDraw = 0;
+        try {
+            await executeEffectSafely(`draw(${skipCount})`, null, { currentHeroId: heroId, state });
+        } catch (err) {
+            console.warn("[beforeDraw] Failed to execute skipSelectionDraw effect.", err);
+        }
+        state._pendingBeforeDrawHero = null;
+        return;
     }
     const desiredPreview = Number(state.heroData?.[heroId]?.pendingDrawPreviewCount ?? previewCount ?? 3) || 3;
     showHeroTopPreview(heroId, state, desiredPreview);

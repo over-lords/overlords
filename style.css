@@ -1906,6 +1906,27 @@ html, body {
   transform: translateX(0);
 }
 
+/* Add-from-Deck Panel (mirrors discard) */
+#add-slide-panel {
+  position: fixed;
+  top: 10%;
+  bottom: 10%;
+  right: 0;
+  width: 100%;
+  background: rgba(0,0,0,0.85);
+  transform: translateX(100%);
+  transition: transform 0.45s ease;
+  z-index: 9600;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  font-family: 'Racing Sans One', sans-serif;
+}
+
+#add-slide-panel.open {
+  transform: translateX(0);
+}
+
 /* Close Button */
 #discard-slide-close {
   position: fixed;
@@ -1933,6 +1954,14 @@ html, body {
 ================================ */
 
 #discard-slide-cards {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  overflow-x: auto;
+  pointer-events: auto;
+}
+
+#add-slide-cards {
   display: flex;
   flex: 1;
   align-items: center;

@@ -2,6 +2,7 @@ const isSinglePlayer = (window.GAME_MODE === "single");
 const isMultiplayer = (window.GAME_MODE === "multi");
 
 import { heroes } from '../data/faceCards.js';
+import { heroCards } from '../data/heroCards.js';
 import { overlords } from '../data/overlords.js';
 import { scenarios } from "../data/scenarios.js";
 import { tactics } from '../data/tactics.js';
@@ -44,6 +45,191 @@ const HERO_TEAM_SET = (() => {
     });
     return set;
 })();
+
+// Lightweight fallback renderer for deck select; ensures add() works even immediately after refresh
+function ensureDeckSelectRenderer() {
+    if (typeof window === "undefined") return;
+    if (typeof window.renderDeckSelectSlide === "function") return;
+
+    window.renderDeckSelectSlide = function fallbackRenderDeckSelectSlide(st = gameState) {
+        const addPanel = document.getElementById("add-slide-panel");
+        const addCardsRow = document.getElementById("add-slide-cards");
+        if (!addPanel || !addCardsRow) return;
+
+        const ctx = window.__deckSelectContext || st.deckSelectContext;
+        if (!ctx || ctx.heroId == null) return;
+
+        const heroId = ctx.heroId;
+        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+        const heroName = heroObj?.name || `Hero ${heroId}`;
+        const hState = st.heroData?.[heroId] || st.heroData?.[String(heroId)] || {};
+        const deckList = Array.isArray(ctx.deckSnapshot) && ctx.deckSnapshot.length
+            ? ctx.deckSnapshot.slice()
+            : (Array.isArray(hState.deck) ? hState.deck.slice() : []);
+
+        addPanel.style.display = "flex";
+        addPanel.classList.add("open");
+        addCardsRow.innerHTML = "";
+
+        // Label at top (match main renderer)
+        const sizeLabel = document.createElement("div");
+        sizeLabel.textContent = `${heroName}'s Deck: ${deckList.length} cards`;
+        sizeLabel.style.marginTop = "10px";
+        sizeLabel.style.marginRight = "10px";
+        sizeLabel.style.marginBottom = "0";
+        sizeLabel.style.marginLeft = "10px";
+        sizeLabel.style.color = "#fff";
+        sizeLabel.style.fontSize = "24px";
+        sizeLabel.style.fontWeight = "bold";
+        sizeLabel.style.flex = "0 0 auto";
+        addCardsRow.style.display = "flex";
+        addCardsRow.style.flexDirection = "column";
+        addCardsRow.style.alignItems = "stretch";
+        addCardsRow.style.justifyContent = "flex-start";
+        addCardsRow.style.height = "100%";
+        addCardsRow.appendChild(sizeLabel);
+
+        const bar = document.createElement("div");
+        bar.style.display = "flex";
+        bar.style.flexWrap = "nowrap";
+        bar.style.overflowX = "auto";
+        bar.style.overflowY = "hidden";
+        bar.style.gap = "0";
+        bar.style.marginTop = "-230px";
+        bar.style.padding = "8px";
+        bar.style.alignItems = "center";
+        bar.style.flex = "1 1 auto";
+
+        const maxSel = Math.max(1, Number(ctx.count) || 1);
+        let currentSel = Array.isArray(ctx.selectedCardIds) ? ctx.selectedCardIds : [];
+        const selectedSet = new Set(currentSel.map(String));
+
+        const applyChooseState = (btn, hasSel) => {
+            btn.style.display = "inline-block";
+            btn.disabled = !hasSel;
+            btn.style.backgroundColor = hasSel ? "gold" : "#444";
+            btn.style.color = hasSel ? "#000" : "#ddd";
+        };
+
+        if (!deckList.length) {
+            const emptyMsg = document.createElement("div");
+            emptyMsg.textContent = `${heroName} has no cards in deck.`;
+            emptyMsg.style.color = "#fff";
+            emptyMsg.style.fontSize = "22px";
+            emptyMsg.style.padding = "16px";
+            bar.appendChild(emptyMsg);
+            addCardsRow.appendChild(bar);
+            return;
+        }
+
+        deckList.forEach(id => {
+            const idStr = String(id);
+            const wrap = document.createElement("div");
+            wrap.style.height = "110px";
+            wrap.style.marginLeft = "-30px";
+            wrap.style.marginRight = "-70px";
+            wrap.style.position = "relative";
+
+            const scaleWrapper = document.createElement("div");
+            scaleWrapper.style.transform = "scale(0.5)";
+            scaleWrapper.style.transformOrigin = "center center";
+            scaleWrapper.style.filter = "drop-shadow(0px 0px 8px rgba(0,0,0,0.8))";
+
+            const rendered = renderCard(idStr);
+            scaleWrapper.appendChild(rendered);
+            wrap.appendChild(scaleWrapper);
+
+            const applySel = (on) => {
+                scaleWrapper.style.boxShadow = on ? "0 0 0 6px gold" : "";
+                scaleWrapper.style.border = on ? "4px solid #000" : "";
+            };
+            applySel(selectedSet.has(idStr));
+
+            wrap.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                try {
+                    const data = findCardInAllSources(idStr);
+                    if (data) buildMainCardPanel(data);
+                } catch (_) {}
+
+                let sel = Array.isArray(window.__deckSelectContext?.selectedCardIds)
+                    ? [...window.__deckSelectContext.selectedCardIds]
+                    : [...currentSel];
+
+                if (maxSel === 1) {
+                    const already = sel.length === 1 && String(sel[0]) === idStr;
+                    sel = already ? [] : [idStr];
+                    // Clear siblings
+                    bar.querySelectorAll("div").forEach(div => {
+                        if (div !== wrap) {
+                            div.style.boxShadow = "";
+                            div.style.border = "";
+                        }
+                    });
+                } else {
+                    const idxSel = sel.findIndex(cid => String(cid) === idStr);
+                    if (idxSel >= 0) sel.splice(idxSel, 1);
+                    else if (sel.length < maxSel) sel.push(idStr);
+                }
+
+                currentSel = sel;
+                window.__deckSelectContext = { ...ctx, selectedCardIds: sel };
+                st.deckSelectContext = { ...window.__deckSelectContext };
+                saveGameState(st);
+                applySel(sel.some(cid => String(cid) === idStr));
+                applyChooseState(chooseBtn, sel.length > 0);
+            });
+
+            bar.appendChild(wrap);
+        });
+
+        // Footer + choose button pinned to bottom
+        const footer = document.createElement("div");
+        footer.style.display = "flex";
+        footer.style.justifyContent = "flex-end";
+        footer.style.alignItems = "center";
+        footer.style.margin = "8px 10px 10px 10px";
+        footer.style.marginTop = "auto";
+        footer.style.marginTop = "auto";
+
+        let chooseBtn = document.getElementById("add-choose-button");
+        if (!chooseBtn) {
+            chooseBtn = document.createElement("button");
+            chooseBtn.id = "add-choose-button";
+            chooseBtn.textContent = "Choose";
+            chooseBtn.style.padding = "10px 16px";
+            chooseBtn.style.fontSize = "16px";
+        }
+        applyChooseState(chooseBtn, currentSel.length > 0);
+        footer.appendChild(chooseBtn);
+
+        chooseBtn.onclick = () => {
+            const ctxNow = window.__deckSelectContext || ctx;
+            const selIds = Array.isArray(ctxNow.selectedCardIds) ? ctxNow.selectedCardIds : [];
+            if (!selIds.length) return;
+            const picks = selIds.slice(0, Math.max(1, Number(ctxNow.count) || 1));
+            const liveState = st.heroData?.[heroId];
+            if (!liveState) return;
+            if (!Array.isArray(liveState.hand)) liveState.hand = [];
+            if (!Array.isArray(liveState.deck)) liveState.deck = [];
+            picks.forEach(cardId => {
+                const pos = liveState.deck.findIndex(x => String(x) === String(cardId));
+                if (pos >= 0) liveState.deck.splice(pos, 1);
+                liveState.hand.push(cardId);
+            });
+            window.__deckSelectContext = null;
+            st.deckSelectContext = null;
+            saveGameState(st);
+            try { renderHeroHandBar(st); } catch (_) {}
+            addPanel.classList.remove("open");
+        };
+
+        addCardsRow.appendChild(bar);
+        addCardsRow.appendChild(footer);
+    };
+}
+
 
 function createDeferred() {
     let resolveFn;
@@ -506,6 +692,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "getcardsdiscarded") {
         return getCardsDiscarded(heroId, state);
     }
+    if (lower === "hastraveled") {
+        return hasTraveled(heroId, state);
+    }
     if (lower === "gettravelused") {
         return getTravelUsed(heroId, state);
     }
@@ -674,6 +863,13 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         const matchesHero = heroId == null || (last && String(last.heroId) === String(heroId));
         const result = !!last && matchesHero;
         console.log(`[kodHenchman condition] ${result ? "true" : "false"}${last ? ` (hero=${last.heroId}, foe=${last.foeId}, inst=${last.instanceId})` : ""}`);
+        return result;
+    }
+    if (lowerCond === "foekod") {
+        const last = state?._lastKOdFoe;
+        const matchesHero = heroId == null || (last && String(last.heroId) === String(heroId));
+        const result = !!last && matchesHero;
+        console.log(`[foeKOd condition] ${result ? "true" : "false"}${last ? ` (hero=${last.heroId}, foe=${last.foeId}, inst=${last.instanceId})` : ""}`);
         return result;
     }
 
@@ -1458,6 +1654,11 @@ function buildHeroPassiveAbility(effectSpec, opts = {}) {
         type = type || "standard";
         uses = uses ?? 1;
         if (!opts.label) label = cityLabel();
+    } else if (fnName === "blockdamage") {
+        effectText = "blockDamage()";
+        type = type || "optional";
+        uses = uses ?? (Number(argSection) || 1);
+        if (!opts.label) label = "Block damage";
     } else if (fnName === "retreatherotohq") {
         type = type || "standard";
         uses = uses ?? 1;
@@ -1471,6 +1672,11 @@ function buildHeroPassiveAbility(effectSpec, opts = {}) {
         uses = uses ?? 999;
         effectText = "discardCardsAtWill()";
         if (!opts.label) label = "Discard cards at will";
+    } else if (fnName === "ignoreshovedamage") {
+        effectText = `ignoreShoveDamage(${argSection || "currentHero,endOfTurn"})`;
+        type = type || "passive";
+        uses = uses ?? 0;
+        if (!opts.label) label = "Ignore shove damage";
     }
 
     if (!type) type = "passive";
@@ -1802,6 +2008,30 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     logDraw(heroId, drew);
     saveGameState(gameState);
     renderHeroHandBar(gameState);
+};
+
+// Marker handler; global damage bonus applied during card damage resolution.
+EFFECT_HANDLERS.increaseAllCardDamage = function() {};
+
+EFFECT_HANDLERS.skipSelectionDraw = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+    const countRaw = resolveNumericValue(args?.[0] ?? 1, heroId, state);
+    const count = Math.max(1, Number(countRaw) || 0);
+
+    if (heroId == null) {
+        console.warn("[skipSelectionDraw] No heroId available.");
+        return;
+    }
+
+    if (!state.heroData) state.heroData = {};
+    if (!state.heroData[heroId]) state.heroData[heroId] = {};
+
+    state.heroData[heroId].skipSelectionDraw = count;
+
+    try {
+        console.log(`[skipSelectionDraw] Hero ${heroId} will skip preview and draw ${count} card(s).`);
+    } catch (e) {}
 };
 
 EFFECT_HANDLERS.enemyDraw = function(args, card, selectedData) {
@@ -3202,6 +3432,48 @@ function applyHeroOutgoingDoubleDamage(amount, heroId, state = gameState) {
     return active ? amount * 2 : amount;
 }
 
+export function applyNextTurnDoubleDamageIfAny(heroId, state = gameState) {
+    const s = state || gameState;
+    if (!heroId || !s.heroData?.[heroId]) return;
+    const hState = s.heroData[heroId];
+    const pending = Number(hState.pendingNextTurnDoubleDamage || 0);
+    if (pending > 0) {
+        hState.pendingNextTurnDoubleDamage = Math.max(0, pending - 1);
+        addHeroOutgoingDoubleDamage(heroId, "current", s);
+        const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+        appendGameLogEntry(`${heroName}'s damage is doubled this turn.`, s);
+        saveGameState(s);
+    }
+}
+
+function getHeroGlobalDamageBonus(heroId, baseDamage, state = gameState) {
+    const s = state || gameState;
+    if (!heroId || baseDamage <= 0) return 0;
+
+    const { effects } = getHeroAbilitiesWithTemp(heroId, s);
+    let bonus = 0;
+
+    effects.forEach(eff => {
+        if (!eff || (String(eff.type || "").toLowerCase() !== "passive")) return;
+        const effList = Array.isArray(eff.effect) ? eff.effect : [eff.effect];
+        effList.forEach(spec => {
+            if (typeof spec !== "string") return;
+            const match = spec.trim().match(/^increaseallcarddamage\(([^)]+)\)$/i);
+            if (!match) return;
+            const val = resolveNumericValue(match[1], heroId, s);
+            if (val > 0) bonus += val;
+        });
+    });
+
+    if (bonus > 0) {
+        try {
+            console.log(`[increaseAllCardDamage] Applying +${bonus} damage bonus for hero ${heroId}.`);
+        } catch (e) {}
+    }
+
+    return bonus;
+}
+
 EFFECT_HANDLERS.doubleDamageAgainst = function(args = [], card, selectedData = {}) {
     const who = args?.[0] ?? "current";
     const duration = args?.[1] ?? "next";
@@ -3475,55 +3747,273 @@ EFFECT_HANDLERS.heroRetrieveFromDiscard = function(args = [], card, selectedData
 function openDeckSelectUI(heroId, count = 1, state = gameState) {
     const s = state || gameState;
     if (typeof window === "undefined") return;
-    if (!s || !s.heroData?.[heroId]) return;
+    ensureDeckSelectRenderer();
+    if (!s.heroData) s.heroData = {};
+    let hState =
+        s.heroData?.[heroId] ??
+        s.heroData?.[String(heroId)] ??
+        null;
+    if (!hState && heroId != null) {
+        hState = s.heroData[heroId] = {};
+    }
+    if (!s || !hState) return;
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
-    const deckArr = Array.isArray(s.heroData?.[heroId]?.deck) ? s.heroData[heroId].deck : [];
+    // Ensure arrays exist
+    if (!Array.isArray(hState.deck)) hState.deck = [];
+    if (!Array.isArray(hState.hand)) hState.hand = [];
+    if (!Array.isArray(hState.discard)) hState.discard = [];
+
+    const shuffleInPlace = (arr) => {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+    };
+
+    const buildDeckForHero = (heroObjLocal) => {
+        if (!heroObjLocal) return [];
+        const cards = heroCards.filter(c => c.hero === heroObjLocal.name);
+        const deck = [];
+        cards.forEach(card => {
+            const qty = Number(card.perDeck || 0);
+            for (let i = 0; i < qty; i++) deck.push(card.id);
+        });
+        shuffleInPlace(deck);
+        return deck;
+    };
+
+    let deckArr = hState.deck;
+    if ((!deckArr.length) && hState.discard.length) {
+        const pool = [...hState.discard];
+        shuffleInPlace(pool);
+        hState.deck = pool;
+        hState.discard = [];
+        deckArr = hState.deck;
+    }
+    if (!deckArr.length && heroObj?.name) {
+        const rebuilt = buildDeckForHero(heroObj);
+        hState.deck = Array.isArray(rebuilt) ? [...rebuilt] : [];
+        shuffleInPlace(hState.deck);
+        deckArr = hState.deck;
+    }
     if (!deckArr.length) {
-        console.log("[addFromDeck] No cards in deck to select.");
+        console.log("[addFromDeck] No cards in deck to select for hero", heroId);
         return;
     }
+    try { saveGameState(s); } catch (_) {}
     const ctx = {
         heroId,
         count: Math.max(1, Number(count) || 1),
-        state: s,
-        selectedCardIds: []
+        selectedCardIds: [],
+        deckSnapshot: deckArr.slice()
     };
     window.__deckSelectContext = ctx;
     s.deckSelectContext = {
         heroId: ctx.heroId,
         count: ctx.count,
-        selectedCardIds: []
+        selectedCardIds: [],
+        deckSnapshot: ctx.deckSnapshot
     };
     saveGameState(s);
-    try {
-        // Force render into deck mode immediately
-        if (typeof renderDiscardSlide === "function") renderDiscardSlide(s);
-    } catch (e) {
-        console.warn("[openDeckSelectUI] Failed to render deck select slide", e);
-    }
-    try {
-        const panel = document.getElementById("discard-slide-panel");
-        if (panel) panel.classList.add("open");
-    } catch (e) {
-        console.warn("[openDeckSelectUI] Failed to open discard panel for deck select", e);
-    }
-    try {
-        const tab = document.getElementById("discard-tab-button");
-        if (tab) tab.click();
-    } catch (e) {
-        console.warn("[openDeckSelectUI] Failed to open deck view via discard tab", e);
-    }
-    // Re-render after panel/tab updates to ensure buttons/cards populate on first open
-    try {
-        setTimeout(() => {
-            try { if (typeof renderDiscardSlide === "function") renderDiscardSlide(s); } catch (err) {
-                console.warn("[openDeckSelectUI] Delayed render failed", err);
+
+    // Fallback inline renderer if the main pageSetup hook is unavailable
+    if (typeof window.renderDeckSelectSlide !== "function") {
+        window.renderDeckSelectSlide = function fallbackRenderDeckSelectSlide(st = gameState) {
+            const addPanel = document.getElementById("add-slide-panel");
+            const addCardsRow = document.getElementById("add-slide-cards");
+            if (!addPanel || !addCardsRow) return;
+            const localCtx = window.__deckSelectContext || st.deckSelectContext;
+            if (!localCtx || localCtx.heroId == null) return;
+            const hid = localCtx.heroId;
+            const heroObjLocal = heroes.find(h => String(h.id) === String(hid));
+            const heroNameLocal = heroObjLocal?.name || `Hero ${hid}`;
+            const hStateLocal = st.heroData?.[hid] || {};
+            const deckListLocal = Array.isArray(localCtx.deckSnapshot) && localCtx.deckSnapshot.length
+                ? localCtx.deckSnapshot.slice()
+                : (Array.isArray(hStateLocal.deck) ? hStateLocal.deck.slice() : []);
+
+            addPanel.style.display = "flex";
+            addPanel.classList.add("open");
+            addCardsRow.innerHTML = "";
+
+            const footer = document.createElement("div");
+            footer.style.display = "flex";
+            footer.style.justifyContent = "space-between";
+            footer.style.alignItems = "center";
+            footer.style.margin = "8px 10px 0 10px";
+
+            let chooseBtn = document.getElementById("add-choose-button");
+            if (!chooseBtn) {
+                chooseBtn = document.createElement("button");
+                chooseBtn.id = "add-choose-button";
+                chooseBtn.textContent = "Choose";
+                chooseBtn.style.padding = "10px 16px";
+                chooseBtn.style.fontSize = "16px";
+                chooseBtn.style.display = "none";
             }
-        }, 50);
-    } catch (e) {
-        console.warn("[openDeckSelectUI] Failed to schedule delayed render", e);
+            footer.appendChild(chooseBtn);
+
+            const setChooseState = (has) => {
+                chooseBtn.style.display = "inline-block";
+                chooseBtn.disabled = !has;
+                chooseBtn.style.backgroundColor = has ? "gold" : "#444";
+                chooseBtn.style.color = has ? "#000" : "#ddd";
+            };
+
+            const currentSel = Array.isArray(localCtx.selectedCardIds) ? localCtx.selectedCardIds : [];
+            setChooseState(currentSel.length > 0);
+
+            const bar = document.createElement("div");
+            bar.style.display = "flex";
+            bar.style.flexWrap = "nowrap";
+            bar.style.overflowX = "auto";
+            bar.style.gap = "0";
+            bar.style.marginTop = "24px";
+            bar.style.padding = "8px";
+            bar.style.alignItems = "center";
+
+            if (!deckListLocal.length) {
+                const emptyMsg = document.createElement("div");
+                emptyMsg.textContent = `${heroNameLocal} has no cards in deck.`;
+                emptyMsg.style.color = "#fff";
+                emptyMsg.style.fontSize = "24px";
+                emptyMsg.style.padding = "16px";
+                bar.appendChild(emptyMsg);
+                addCardsRow.appendChild(bar);
+                addCardsRow.appendChild(footer);
+                return;
+            }
+
+            const sizeLabel = document.createElement("div");
+            sizeLabel.textContent = `${heroNameLocal}'s Deck: ${deckListLocal.length} cards`;
+            sizeLabel.style.color = "#fff";
+            sizeLabel.style.fontSize = "24px";
+            sizeLabel.style.marginLeft = "10px";
+            addCardsRow.appendChild(sizeLabel);
+
+            const maxSel = Math.max(1, Number(localCtx.count) || 1);
+            const selectedSet = new Set(currentSel.map(String));
+
+            deckListLocal.forEach(id => {
+                const idStr = String(id);
+                const wrap = document.createElement("div");
+                wrap.style.transform = "scale(0.8)";
+                wrap.style.marginRight = "-60px";
+                wrap.style.marginLeft = "-30px";
+                wrap.style.cursor = "pointer";
+
+                const cardNode = renderCard(idStr);
+                wrap.appendChild(cardNode);
+                const applySel = (on) => {
+                    wrap.style.boxShadow = on ? "0 0 0 6px gold" : "";
+                    wrap.style.border = on ? "4px solid #000" : "";
+                };
+                applySel(selectedSet.has(idStr));
+
+                wrap.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    let sel = Array.isArray(window.__deckSelectContext?.selectedCardIds)
+                        ? [...window.__deckSelectContext.selectedCardIds]
+                        : [];
+                    if (maxSel === 1) {
+                        const already = sel.length === 1 && String(sel[0]) === idStr;
+                        sel = already ? [] : [idStr];
+                        // clear siblings
+                        bar.querySelectorAll("div").forEach(div => {
+                            if (div !== wrap) {
+                                div.style.boxShadow = "";
+                                div.style.border = "";
+                            }
+                        });
+                    } else {
+                        const idxSel = sel.findIndex(cid => String(cid) === idStr);
+                        if (idxSel >= 0) sel.splice(idxSel, 1);
+                        else if (sel.length < maxSel) sel.push(idStr);
+                    }
+                    applySel(sel.some(cid => String(cid) === idStr));
+                    window.__deckSelectContext = { ...localCtx, selectedCardIds: sel };
+                    st.deckSelectContext = { ...window.__deckSelectContext };
+                    saveGameState(st);
+                    setChooseState(sel.length > 0);
+                });
+
+                bar.appendChild(wrap);
+            });
+
+            chooseBtn.onclick = () => {
+                const ctxNow = window.__deckSelectContext || localCtx;
+                const selIds = Array.isArray(ctxNow.selectedCardIds) ? ctxNow.selectedCardIds : [];
+                if (!selIds.length) return;
+                const picks = selIds.slice(0, Math.max(1, Number(ctxNow.count) || 1));
+                const hStateLive = st.heroData?.[hid];
+                if (!hStateLive) return;
+                if (!Array.isArray(hStateLive.hand)) hStateLive.hand = [];
+                if (!Array.isArray(hStateLive.deck)) hStateLive.deck = [];
+
+                picks.forEach(cardId => {
+                    const pos = hStateLive.deck.findIndex(x => String(x) === String(cardId));
+                    if (pos >= 0) hStateLive.deck.splice(pos, 1);
+                    hStateLive.hand.push(cardId);
+                });
+                window.__deckSelectContext = null;
+                st.deckSelectContext = null;
+                saveGameState(st);
+                try { renderHeroHandBar(st); } catch (_) {}
+                addPanel.classList.remove("open");
+            };
+
+            addCardsRow.appendChild(bar);
+            addCardsRow.appendChild(footer);
+        };
     }
+
+    const renderDeckSelect = () => {
+        try {
+            if (typeof window !== "undefined" && typeof window.renderDeckSelectSlide === "function") {
+                console.log("[addFromDeck] Rendering deck select via window.renderDeckSelectSlide", {
+                    heroId,
+                    deckLen: deckArr.length,
+                    count
+                });
+                window.renderDeckSelectSlide(s);
+            } else if (typeof renderDeckSelectSlide === "function") {
+                console.log("[addFromDeck] Rendering deck select via global renderDeckSelectSlide", {
+                    heroId,
+                    deckLen: deckArr.length,
+                    count
+                });
+                renderDeckSelectSlide(s);
+            } else {
+                console.warn("[addFromDeck] No renderDeckSelectSlide available on window or global.", {
+                    heroId,
+                    deckLen: deckArr.length
+                });
+            }
+        } catch (err) {
+            console.warn("[openDeckSelectUI] Render deck select failed", err);
+        }
+    };
+
+    try {
+        const panel = document.getElementById("add-slide-panel");
+        if (panel) {
+            panel.style.display = "flex";
+            panel.classList.add("open");
+        } else {
+            console.warn("[addFromDeck] add-slide-panel not found in DOM.");
+        }
+    } catch (e) {
+        console.warn("[openDeckSelectUI] Failed to open add panel for deck select", e);
+    }
+
+    renderDeckSelect();
+    setTimeout(renderDeckSelect, 50);
+    setTimeout(renderDeckSelect, 150);
+    setTimeout(renderDeckSelect, 300);
+    setTimeout(renderDeckSelect, 600);
+
     try { showMightBanner(`Choose ${count} card(s) from ${heroName}'s deck`, 1800); } catch (e) {}
 }
 
@@ -4052,6 +4542,39 @@ EFFECT_HANDLERS.blockDamage = function(args = [], card, selectedData = {}) {
     return blockDamage(gameState);
 };
 
+EFFECT_HANDLERS.ignoreShoveDamage = function(args = [], card, selectedData = {}) {
+    const targetRaw = args?.[0] ?? "current";
+    const durationRaw = String(args?.[1] ?? "current").toLowerCase();
+    const state = selectedData?.state || gameState;
+    const heroIds = state?.heroes || [];
+    const heroId =
+        String(targetRaw).toLowerCase() === "current"
+            ? (selectedData?.currentHeroId ?? heroIds[state.heroTurnIndex ?? 0] ?? null)
+            : targetRaw;
+
+    if (heroId == null) {
+        console.warn("[ignoreShoveDamage] No heroId resolved.");
+        return;
+    }
+
+    if (!state.heroData) state.heroData = {};
+    if (!state.heroData[heroId]) state.heroData[heroId] = {};
+
+    const turn = typeof state.turnCounter === "number" ? state.turnCounter : 0;
+    let expiresAt = turn;
+    if (durationRaw === "next" || durationRaw === "nextturn") {
+        expiresAt = turn + 1;
+    } else if (durationRaw.includes("endofturn") || durationRaw === "current" || durationRaw === "thisturn") {
+        expiresAt = turn;
+    }
+
+    state.heroData[heroId].ignoreShoveDamageUntilTurn = expiresAt;
+
+    const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+    appendGameLogEntry(`${heroName} will ignore shove damage until end of this turn.`, state);
+    saveGameState(state);
+};
+
 EFFECT_HANDLERS.disableProtectOn = function(args = [], card, selectedData = {}) {
     const team = args?.[0];
     if (!team) return;
@@ -4415,6 +4938,7 @@ EFFECT_HANDLERS.doubleDamage = function(args = [], card, selectedData = {}) {
     const flagsRaw = [arg0, arg1].filter(a => typeof a === "string").join(",").toLowerCase();
     const ignoreText = flagsRaw.includes("ignoreeffecttext");
     const nextCardOnly = flagsRaw.includes("nextcardonly");
+    const nextTurnOnly = flagsRaw.includes("nextturnonly");
     const normDuration = String(arg1 || "").toLowerCase();
 
     // Resolve hero target (for nextCardOnly support)
@@ -4432,6 +4956,17 @@ EFFECT_HANDLERS.doubleDamage = function(args = [], card, selectedData = {}) {
         s.heroData[resolvedHeroId].nextCardDamageMultiplier = prev * 2;
         const heroName = heroes.find(h => String(h.id) === String(resolvedHeroId))?.name || `Hero ${resolvedHeroId}`;
         appendGameLogEntry(`${heroName}'s next card deals double damage.`, s);
+        saveGameState(s);
+        return;
+    }
+
+    if (nextTurnOnly && resolvedHeroId != null) {
+        if (!s.heroData) s.heroData = {};
+        if (!s.heroData[resolvedHeroId]) s.heroData[resolvedHeroId] = {};
+        const heroName = heroes.find(h => String(h.id) === String(resolvedHeroId))?.name || `Hero ${resolvedHeroId}`;
+        const currentPending = Number(s.heroData[resolvedHeroId].pendingNextTurnDoubleDamage || 0);
+        s.heroData[resolvedHeroId].pendingNextTurnDoubleDamage = currentPending + 1;
+        appendGameLogEntry(`${heroName}'s next turn damage will be doubled.`, s);
         saveGameState(s);
         return;
     }
@@ -7904,6 +8439,10 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     if (gameState._pendingSetDamage != null) {
         damageAmount = Number(gameState._pendingSetDamage) || 0;
     }
+    const travelDamageBonus = getHeroGlobalDamageBonus(heroId, baseDamageAmount, gameState);
+    if (travelDamageBonus > 0 && damageAmount > 0) {
+        damageAmount += travelDamageBonus;
+    }
     gameState._pendingDamage = 0;
     gameState._pendingSetDamage = null;
     gameState._pendingCardDamageMultiplier = 1;
@@ -9185,6 +9724,18 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         };
 
     }
+    s._lastKOdFoe = {
+        foeId: foeIdStr,
+        instanceId: entryKey,
+        heroId: heroId ?? null,
+        type: String(foeCard.type || "").toLowerCase()
+    };
+
+    try {
+        triggerRuleEffects("foeKOd", { currentHeroId: heroId }, s);
+    } catch (err) {
+        console.warn("[damageFoe] foeKOd trigger failed", err);
+    }
 
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);
     s._pendingDamageTarget = null;
@@ -9381,6 +9932,9 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     if (s._lastKOdHenchman && s._lastKOdHenchman.instanceId === entryKey) {
         s._lastKOdHenchman = null;
     }
+    if (s._lastKOdFoe && s._lastKOdFoe.instanceId === entryKey) {
+        s._lastKOdFoe = null;
+    }
 
     // 4) APPEND FOE TO KO ARRAY
     if (!Array.isArray(s.koCards)) s.koCards = [];
@@ -9450,6 +10004,15 @@ export function getTravelUsed(heroId, state = gameState) {
         console.log(`[getTravelUsed] Hero ${heroId} travel used this turn: ${used}`);
     } catch (e) {}
     return used;
+}
+
+export function hasTraveled(heroId, state = gameState) {
+    const used = getTravelUsed(heroId, state);
+    const traveled = used >= 1 ? 1 : 0;
+    try {
+        console.log(`[hasTraveled] Hero ${heroId} traveled this turn: ${traveled ? "yes" : "no"} (raw: ${used})`);
+    } catch (e) {}
+    return traveled;
 }
 
 export function getLastDamageAmount(heroId, state = gameState) {

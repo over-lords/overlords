@@ -1024,7 +1024,7 @@ export const heroes = [
     image: `${cardArtFolder}/Barry Allen.jpg`,
     type: "Hero",
     category: "Striker",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "red",
     teams: ["Flash","Justice"],
     hp: "10",
@@ -1047,17 +1047,14 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `Travel`,
-        uses: `0`,
-        shared: `no`,
-        effect: `increaseDamage(1)`
+        effect: `increaseAllCardDamage(getTravelUsed)`
       },
       {
-        type: `quick`,
-        condition: `wouldDrawAtStart`,
+        type: `optional`,
+        condition: `beforeDraw`,
         uses: `2`,
-        shared: `no`,
-        effect: `skipSelectionDraw2`
+        howOften: `OPT`,
+        effect: `skipSelectionDraw(2)`
       },
     ]
   },

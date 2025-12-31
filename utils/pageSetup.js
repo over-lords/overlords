@@ -1,4 +1,5 @@
 import { heroes } from '../data/faceCards.js';
+import { heroCards } from '../data/heroCards.js';
 import { overlords } from '../data/overlords.js';
 import { tactics } from '../data/tactics.js';
 import { enemies } from '../data/enemies.js';
@@ -1108,9 +1109,235 @@ closeBtn.onclick = () => {
 
 // Restore deck-select mode after refresh if persisted
 if (gameState.deckSelectContext) {
-  window.__deckSelectContext = { ...gameState.deckSelectContext, state: gameState };
-  slidePanel.classList.add("open");
-  renderDiscardSlide(gameState);
+  window.__deckSelectContext = { ...gameState.deckSelectContext };
+
+  const ensureSnapshot = () => {
+    const ctx = window.__deckSelectContext || gameState.deckSelectContext || {};
+    const heroId = ctx.heroId;
+    if (heroId == null) return ctx;
+    const heroState =
+      gameState.heroData?.[heroId] ??
+      gameState.heroData?.[String(heroId)] ??
+      null;
+    if (!heroState) return ctx;
+
+    let snapshot = Array.isArray(ctx.deckSnapshot) ? ctx.deckSnapshot.slice() : [];
+    if (!snapshot.length) {
+      if (Array.isArray(heroState.deck) && heroState.deck.length) {
+        snapshot = heroState.deck.slice();
+      } else if (Array.isArray(heroState.discard) && heroState.discard.length) {
+        snapshot = heroState.discard.slice();
+      } else {
+        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+        if (heroObj) {
+          snapshot = heroCards
+            .filter(c => c.hero === heroObj.name)
+            .reduce((arr, card) => {
+              const qty = Number(card.perDeck || 0);
+              for (let i = 0; i < qty; i++) arr.push(card.id);
+              return arr;
+            }, []);
+        }
+      }
+      window.__deckSelectContext = { ...ctx, deckSnapshot: snapshot };
+      gameState.deckSelectContext = { ...window.__deckSelectContext };
+      saveGameState(gameState);
+    }
+    return window.__deckSelectContext;
+  };
+
+  const restoreDeckSelect = (attempt = 0) => {
+    const ctx = ensureSnapshot();
+    if (!ctx || ctx.heroId == null) return;
+
+    const panel = document.getElementById("add-slide-panel");
+    const row = document.getElementById("add-slide-cards");
+    if (!panel || !row) {
+      if (attempt < 5) setTimeout(() => restoreDeckSelect(attempt + 1), 100);
+      return;
+    }
+    panel.classList.add("open");
+    panel.style.display = "flex";
+
+    const maybeRender = (tries = 0) => {
+      let fn = (typeof window.renderDeckSelectSlide === "function")
+        ? window.renderDeckSelectSlide
+        : (typeof renderDeckSelectSlide === "function" ? renderDeckSelectSlide : null);
+
+      if (!fn && tries >= 30) {
+        // As a last resort, register an inline renderer so the panel isn't blank.
+        fn = function fallbackDeckSelect(st = gameState) {
+          const addPanel = document.getElementById("add-slide-panel");
+          const addCardsRow = document.getElementById("add-slide-cards");
+          if (!addPanel || !addCardsRow) return;
+          const ctxLocal = window.__deckSelectContext || st.deckSelectContext;
+          if (!ctxLocal || ctxLocal.heroId == null) return;
+          const heroId = ctxLocal.heroId;
+        const heroObj = heroes.find(h => String(h.id) === String(heroId));
+        const heroName = heroObj?.name || `Hero ${heroId}`;
+        const hState = st.heroData?.[heroId] || st.heroData?.[String(heroId)] || {};
+        const deckList = Array.isArray(ctxLocal.deckSnapshot) && ctxLocal.deckSnapshot.length
+          ? ctxLocal.deckSnapshot.slice()
+          : (Array.isArray(hState.deck) ? hState.deck.slice() : []);
+
+        addPanel.classList.add("open");
+        addPanel.style.display = "flex";
+        addCardsRow.innerHTML = "";
+        addCardsRow.style.display = "flex";
+        addCardsRow.style.flexDirection = "column";
+        addCardsRow.style.alignItems = "stretch";
+        addCardsRow.style.justifyContent = "flex-start";
+        addCardsRow.style.height = "100%";
+
+        const sizeLabel = document.createElement("div");
+        sizeLabel.textContent = `${heroName}'s Deck: ${deckList.length} cards`;
+        sizeLabel.style.marginTop = "10px";
+        sizeLabel.style.marginRight = "10px";
+        sizeLabel.style.marginBottom = "0";
+        sizeLabel.style.marginLeft = "10px";
+        sizeLabel.style.color = "#fff";
+        sizeLabel.style.fontSize = "24px";
+        sizeLabel.style.fontWeight = "bold";
+        sizeLabel.style.flex = "0 0 auto";
+        addCardsRow.appendChild(sizeLabel);
+
+          const bar = document.createElement("div");
+          bar.style.display = "flex";
+          bar.style.flexWrap = "nowrap";
+          bar.style.overflowX = "auto";
+          bar.style.overflowY = "hidden";
+          bar.style.gap = "0";
+          bar.style.marginTop = "-230px";
+          bar.style.padding = "8px";
+          bar.style.alignItems = "center";
+          bar.style.flex = "1 1 auto";
+
+          const maxSel = Math.max(1, Number(ctxLocal.count) || 1);
+          let sel = Array.isArray(ctxLocal.selectedCardIds) ? ctxLocal.selectedCardIds : [];
+          const selectedSet = new Set(sel.map(String));
+
+          deckList.forEach(id => {
+            const idStr = String(id);
+            const wrap = document.createElement("div");
+            wrap.style.height = "110px";
+            wrap.style.marginLeft = "-30px";
+            wrap.style.marginRight = "-70px";
+            wrap.style.position = "relative";
+
+            const scaleWrapper = document.createElement("div");
+            scaleWrapper.style.transform = "scale(0.5)";
+            scaleWrapper.style.transformOrigin = "center center";
+            scaleWrapper.style.filter = "drop-shadow(0px 0px 8px rgba(0,0,0,0.8))";
+
+            const rendered = renderCard(idStr);
+            scaleWrapper.appendChild(rendered);
+            wrap.appendChild(scaleWrapper);
+
+            const applySel = (on) => {
+              scaleWrapper.style.boxShadow = on ? "0 0 0 6px gold" : "";
+              scaleWrapper.style.border = on ? "4px solid #000" : "";
+            };
+            applySel(selectedSet.has(idStr));
+
+            wrap.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              try {
+                const data = findCardInAllSources(idStr);
+                if (data) buildMainCardPanel(data);
+              } catch (_) {}
+              if (maxSel === 1) {
+                const already = sel.length === 1 && String(sel[0]) === idStr;
+                sel = already ? [] : [idStr];
+                bar.querySelectorAll("div").forEach(div => {
+                  if (div !== wrap) {
+                    div.style.boxShadow = "";
+                    div.style.border = "";
+                  }
+                });
+              } else {
+                const idxSel = sel.findIndex(cid => String(cid) === idStr);
+                if (idxSel >= 0) sel.splice(idxSel, 1);
+                else if (sel.length < maxSel) sel.push(idStr);
+              }
+              applySel(sel.some(cid => String(cid) === idStr));
+              window.__deckSelectContext = { ...ctxLocal, selectedCardIds: sel };
+              st.deckSelectContext = { ...window.__deckSelectContext };
+              saveGameState(st);
+              setChooseState(chooseBtn, sel.length > 0);
+            });
+
+            bar.appendChild(wrap);
+          });
+
+        const footer = document.createElement("div");
+        footer.style.display = "flex";
+        footer.style.justifyContent = "flex-end";
+        footer.style.alignItems = "center";
+        footer.style.margin = "8px 10px 10px 10px";
+        footer.style.marginTop = "auto";
+
+        let chooseBtn = document.getElementById("add-choose-button");
+        if (!chooseBtn) {
+            chooseBtn = document.createElement("button");
+            chooseBtn.id = "add-choose-button";
+            chooseBtn.textContent = "Choose";
+            chooseBtn.style.padding = "10px 16px";
+            chooseBtn.style.fontSize = "16px";
+          }
+          const setChooseState = (btn, hasSel) => {
+            btn.style.display = "inline-block";
+            btn.disabled = !hasSel;
+            btn.style.backgroundColor = hasSel ? "gold" : "#444";
+            btn.style.color = hasSel ? "#000" : "#ddd";
+          };
+          setChooseState(chooseBtn, sel.length > 0);
+
+          chooseBtn.onclick = () => {
+            const picks = sel.slice(0, maxSel);
+            const live = st.heroData?.[heroId];
+            if (!live) return;
+            if (!Array.isArray(live.hand)) live.hand = [];
+            if (!Array.isArray(live.deck)) live.deck = [];
+            picks.forEach(cardId => {
+              const pos = live.deck.findIndex(x => String(x) === String(cardId));
+              if (pos >= 0) live.deck.splice(pos, 1);
+              live.hand.push(cardId);
+            });
+            window.__deckSelectContext = null;
+            st.deckSelectContext = null;
+            saveGameState(st);
+            try { renderHeroHandBar(st); } catch (_) {}
+            addPanel.classList.remove("open");
+          };
+
+          footer.appendChild(chooseBtn);
+          addCardsRow.appendChild(bar);
+          addCardsRow.appendChild(footer);
+        };
+        window.renderDeckSelectSlide = fn;
+      }
+
+      if (fn) {
+        try { fn(gameState); } catch (e) { console.warn("[deckSelect restore] render failed", e); }
+      } else if (tries < 30) {
+        setTimeout(() => maybeRender(tries + 1), 100);
+      }
+    };
+    maybeRender();
+  };
+
+  const startRestore = () => {
+    restoreDeckSelect();
+    setTimeout(restoreDeckSelect, 80);
+    setTimeout(restoreDeckSelect, 200);
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", startRestore);
+  } else {
+    startRestore();
+  }
 }
 
 const menuBtn = document.getElementById("gameMenu-box");
@@ -3716,23 +3943,10 @@ function renderDiscardSlide(state = gameState) {
 
   if (!cardsRow) return;
   cardsRow.innerHTML = "";
-  let deckSelectCtx = (typeof window !== "undefined") ? window.__deckSelectContext : null;
-  if (!deckSelectCtx && state.deckSelectContext) {
-    deckSelectCtx = { ...state.deckSelectContext, state };
-    if (typeof window !== "undefined") window.__deckSelectContext = deckSelectCtx;
-  }
-  const isDeckSelect = deckSelectCtx && String(deckSelectCtx.heroId) === String(heroId);
-  const setChooseState = (hasSelection) => {
-    deckChooseBtn.style.backgroundColor = hasSelection ? "gold" : "#444";
-    deckChooseBtn.style.color = hasSelection ? "#000" : "#ddd";
-    deckChooseBtn.style.cursor = hasSelection ? "pointer" : "not-allowed";
-    deckChooseBtn.disabled = !hasSelection;
-  };
-
-  const hasInitialSelection = isDeckSelect && deckSelectCtx?.selectedCardIds?.length > 0;
-  deckChooseBtn.style.display = isDeckSelect ? "inline-block" : "none";
-  setChooseState(hasInitialSelection);
-  closeBtn.style.display = isDeckSelect ? "none" : "block";
+  const isDeckSelect = false;
+  const setChooseState = () => {};
+  deckChooseBtn.style.display = "none";
+  closeBtn.style.display = "block";
 
   // Layout container so we can put a label under the horizontal scroller
   cardsRow.style.display = "flex";
@@ -3753,7 +3967,7 @@ function renderDiscardSlide(state = gameState) {
   bar.style.alignItems = "center";
   bar.style.pointerEvents = "auto";
 
-  const deckList = Array.isArray(heroState.deck) ? heroState.deck.slice() : [];
+  let deckList = Array.isArray(heroState.deck) ? heroState.deck.slice() : [];
   const discardList = [...heroState.discard].reverse(); // left is latest
   const cardList = isDeckSelect ? deckList : discardList;
   const selectedSet = new Set(isDeckSelect && deckSelectCtx?.selectedCardIds ? deckSelectCtx.selectedCardIds.map(String) : []);
@@ -3950,8 +4164,323 @@ function renderDiscardSlide(state = gameState) {
                   w.style.border = "";
                 }
               });
-            }
+  }
+}
+
+function renderDeckSelectSlide(state = gameState) {
+  const addPanel = document.getElementById("add-slide-panel");
+  const addCardsRow = document.getElementById("add-slide-cards");
+  if (!addCardsRow || !addPanel) return;
+  console.log("[DeckSelectRender] entry", {
+    hasPanel: !!addPanel,
+    hasRow: !!addCardsRow
+  });
+  let ctx = (typeof window !== "undefined" && window.__deckSelectContext)
+    ? window.__deckSelectContext
+    : state.deckSelectContext;
+
+  // Fallback: build a context from the active hero if missing
+  if ((!ctx || ctx.heroId == null) && state?.heroes?.length) {
+    const heroIds = state.heroes || [];
+    const activeIndex = state.heroTurnIndex ?? 0;
+    const activeHeroId = heroIds[activeIndex];
+    if (activeHeroId != null) {
+      ctx = {
+        heroId: activeHeroId,
+        count: 1,
+        selectedCardIds: [],
+        deckSnapshot: []
+      };
+      window.__deckSelectContext = ctx;
+      state.deckSelectContext = { ...ctx };
+    }
+  }
+  if (!ctx || ctx.heroId == null) return;
+
+  const heroId = ctx.heroId;
+  const heroObj = heroes.find(h => String(h.id) === String(heroId));
+  const heroName = heroObj?.name || `Hero ${heroId}`;
+  const s = state || gameState;
+  if (!s.heroData) s.heroData = {};
+  let heroState =
+    s.heroData?.[heroId] ??
+    s.heroData?.[String(heroId)] ??
+    null;
+  if (!heroState && heroId != null) {
+    heroState = s.heroData[heroId] = {};
+  }
+  if (!heroState) return;
+  if (!Array.isArray(heroState.deck)) heroState.deck = [];
+  if (!Array.isArray(heroState.discard)) heroState.discard = [];
+
+  const shuffleInPlace = (arr) => {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  };
+
+  let deckList = [];
+  if (Array.isArray(ctx.deckSnapshot) && ctx.deckSnapshot.length) {
+    deckList = ctx.deckSnapshot.slice();
+  } else if (heroState.deck.length) {
+    deckList = heroState.deck.slice();
+  }
+  if (!deckList.length && heroState.discard.length) {
+    shuffleInPlace(heroState.discard);
+    heroState.deck = heroState.discard.splice(0, heroState.discard.length);
+    deckList = heroState.deck.slice();
+  }
+  if (!deckList.length && heroObj?.name) {
+    const rebuilt = heroCards
+      .filter(c => c.hero === heroObj.name)
+      .reduce((arr, card) => {
+        const qty = Number(card.perDeck || 0);
+        for (let i = 0; i < qty; i++) arr.push(card.id);
+        return arr;
+      }, []);
+    shuffleInPlace(rebuilt);
+    heroState.deck = Array.isArray(rebuilt) ? [...rebuilt] : [];
+    deckList = heroState.deck.slice();
+  }
+
+  // Persist snapshot so refresh keeps the same list
+  window.__deckSelectContext = {
+    heroId,
+    count: ctx.count,
+    selectedCardIds: ctx.selectedCardIds || [],
+    deckSnapshot: deckList.slice()
+  };
+  s.deckSelectContext = { ...window.__deckSelectContext };
+  saveGameState(s);
+
+  try {
+    console.log("[DeckSelectRender]", {
+      heroId,
+      deckLen: deckList.length,
+      liveDeck: heroState.deck?.length || 0,
+      discardLen: heroState.discard?.length || 0
+    });
+  } catch (_) {}
+
+  // Ensure panel is visible
+  addPanel.style.display = "flex";
+  addPanel.classList.add("open");
+
+  try {
+    const liveDeckLen = Array.isArray(heroState?.deck) ? heroState.deck.length : "n/a";
+    const ctxLen = Array.isArray(ctx.deckSnapshot) ? ctx.deckSnapshot.length : "n/a";
+    console.log("[DeckSelect] heroId", heroId, "deck len (ctx)", ctxLen, "deck len (state)", liveDeckLen);
+  } catch (_) {}
+
+  addCardsRow.innerHTML = "";
+
+  let addChooseBtn = document.getElementById("add-choose-button");
+  if (!addChooseBtn) {
+    addChooseBtn = document.createElement("button");
+    addChooseBtn.id = "add-choose-button";
+    addChooseBtn.textContent = "Choose";
+  }
+  // Normalize button styling every render to match fallback
+  addChooseBtn.style.padding = "10px 16px";
+  addChooseBtn.style.fontSize = "16px";
+  addChooseBtn.style.display = "inline-block";
+  addChooseBtn.style.margin = "0";
+  addChooseBtn.style.alignSelf = "auto";
+
+  const footer = document.createElement("div");
+  footer.style.display = "flex";
+  footer.style.justifyContent = "flex-end";
+  footer.style.alignItems = "center";
+  footer.style.margin = "8px 10px 10px 10px";
+  footer.style.marginTop = "auto";
+
+  footer.appendChild(addChooseBtn);
+
+  const setChooseState = (hasSelection) => {
+    addChooseBtn.style.backgroundColor = hasSelection ? "gold" : "#444";
+    addChooseBtn.style.color = hasSelection ? "#000" : "#ddd";
+    addChooseBtn.style.cursor = hasSelection ? "pointer" : "not-allowed";
+    addChooseBtn.disabled = !hasSelection;
+  };
+
+  const currentSel = Array.isArray(ctx.selectedCardIds) ? ctx.selectedCardIds : [];
+  addChooseBtn.style.display = "inline-block";
+  setChooseState(currentSel.length > 0);
+
+  // Layout container
+  addCardsRow.style.display = "flex";
+  addCardsRow.style.flexDirection = "column";
+  addCardsRow.style.alignItems = "stretch";
+  addCardsRow.style.justifyContent = "flex-start";
+  addCardsRow.style.height = "100%";
+  addCardsRow.style.overflow = "hidden";
+
+  const bar = document.createElement("div");
+  bar.style.display = "flex";
+  bar.style.flexWrap = "nowrap";
+  bar.style.overflowX = "auto";
+  bar.style.overflowY = "hidden"; // remove vertical scrolling entirely
+  bar.style.gap = "0";
+  bar.style.marginTop = "-230px"; // adjust card row position
+  bar.style.padding = "8px";
+  bar.style.alignItems = "center";
+  bar.style.pointerEvents = "auto";
+  bar.style.flex = "1 1 auto";
+
+  const cardList = deckList;
+  const selectedSet = new Set(currentSel.map(String));
+
+  if (!cardList.length) {
+    const emptyMsg = document.createElement("div");
+    emptyMsg.textContent = `${heroName} has no cards in deck.`;
+    emptyMsg.style.marginTop = "80px";
+    emptyMsg.style.padding = "16px";
+    emptyMsg.style.fontSize = "24px";
+    emptyMsg.style.fontStyle = "italic";
+    emptyMsg.style.color = "#fff";
+    bar.appendChild(emptyMsg);
+    addCardsRow.appendChild(bar);
+    addCardsRow.appendChild(footer);
+    return;
+  }
+
+  const sizeLabel = document.createElement("div");
+  sizeLabel.textContent = `${heroName}'s Deck: ${cardList.length} cards`;
+  sizeLabel.style.marginTop = "10px";
+  sizeLabel.style.marginRight = "10px";
+  sizeLabel.style.marginBottom = "0";
+  sizeLabel.style.marginLeft = "10px";
+  sizeLabel.style.color = "#fff";
+  sizeLabel.style.fontSize = "24px";
+  sizeLabel.style.fontWeight = "bold";
+  sizeLabel.style.textAlign = "left";
+  sizeLabel.style.flex = "0 0 auto";
+  addCardsRow.appendChild(sizeLabel);
+
+  const maxSel = Math.max(1, Number(ctx.count) || 1);
+
+  for (const id of cardList) {
+    const idStr = String(id);
+    const cardDiv = document.createElement("div");
+    cardDiv.className = "ko-card";
+    cardDiv.style.height = "110px";
+    cardDiv.style.marginLeft = "-30px";
+    cardDiv.style.marginRight = "-70px";
+    cardDiv.style.position = "relative";
+
+    const scaleWrapper = document.createElement("div");
+    // Clamp to 50% scale so visuals and spacing both shrink
+    scaleWrapper.style.transform = "scale(0.5)";
+    scaleWrapper.style.transformOrigin = "center center";
+    scaleWrapper.style.filter = "drop-shadow(0px 0px 8px rgba(0,0,0,0.8))";
+    scaleWrapper.style.transition = "box-shadow 0.2s ease, border 0.2s ease";
+
+    const rendered = renderCard(idStr);
+    scaleWrapper.appendChild(rendered);
+    cardDiv.appendChild(scaleWrapper);
+    bar.appendChild(cardDiv);
+
+    const applySelectionStyle = (selected) => {
+      scaleWrapper.style.boxShadow = selected ? "0 0 0 6px gold" : "";
+      scaleWrapper.style.border = selected ? "4px solid #000" : "";
+    };
+    applySelectionStyle(selectedSet.has(idStr));
+
+    scaleWrapper.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      try {
+        const data = findCardInAllSources(idStr);
+        if (data) buildMainCardPanel(data);
+      } catch (_) {}
+
+      let sel = Array.isArray(window.__deckSelectContext?.selectedCardIds)
+        ? [...window.__deckSelectContext.selectedCardIds]
+        : [];
+
+      if (maxSel === 1) {
+        const already = sel.length === 1 && String(sel[0]) === idStr;
+        if (already) {
+          sel = [];
+          applySelectionStyle(false);
+        } else {
+          sel = [idStr];
+          applySelectionStyle(true);
+          if (bar) {
+            const wrappers = bar.querySelectorAll(".ko-card > div");
+            wrappers.forEach(w => {
+              if (w !== scaleWrapper) {
+                w.style.boxShadow = "";
+                w.style.border = "";
+              }
+            });
           }
+        }
+      } else {
+        const idxSel = sel.findIndex(cid => String(cid) === idStr);
+        if (idxSel >= 0) {
+          sel.splice(idxSel, 1);
+          applySelectionStyle(false);
+        } else if (sel.length < maxSel) {
+          sel.push(idStr);
+          applySelectionStyle(true);
+        }
+      }
+
+      window.__deckSelectContext = { ...ctx, selectedCardIds: sel };
+      gameState.deckSelectContext = { heroId: ctx.heroId, count: ctx.count, selectedCardIds: sel, deckSnapshot: deckList };
+      saveGameState(gameState);
+      setChooseState(sel.length > 0);
+    });
+  }
+
+  addChooseBtn.onclick = () => {
+    const ctxNow = window.__deckSelectContext || { ...ctx };
+    const selIds = Array.isArray(ctxNow.selectedCardIds) ? ctxNow.selectedCardIds : [];
+    if (!selIds.length) return;
+    const maxPick = Math.max(1, Number(ctxNow.count) || 1);
+    const picks = selIds.slice(0, maxPick);
+    const hState = gameState.heroData?.[heroId];
+    if (!hState || !Array.isArray(hState.deck)) return;
+    if (!Array.isArray(hState.hand)) hState.hand = [];
+
+    picks.forEach(cardId => {
+      const pos = hState.deck.findIndex(id => String(id) === String(cardId));
+      if (pos >= 0) hState.deck.splice(pos, 1);
+      hState.hand.push(cardId);
+      const cardName = findCardInAllSources(cardId)?.name || `Card ${cardId}`;
+      appendGameLogEntry(`${heroName} drew ${cardName} from their deck.`, gameState);
+    });
+
+    window.__deckSelectContext = null;
+    gameState.deckSelectContext = null;
+    saveGameState(gameState);
+    renderHeroHandBar(gameState);
+    addChooseBtn.style.display = "none";
+    try {
+      addPanel.classList.remove("open");
+    } catch (e) {}
+  };
+
+  addCardsRow.appendChild(bar);
+  footer.style.marginTop = "auto";
+  addCardsRow.appendChild(footer);
+}
+
+if (typeof window !== "undefined") {
+  window.renderDeckSelectSlide = renderDeckSelectSlide;
+  // If a deck-select context exists (e.g., after refresh), rerender with the full renderer
+  try {
+    if (gameState.deckSelectContext) {
+      setTimeout(() => {
+        try { renderDeckSelectSlide(gameState); } catch (_) {}
+      }, 0);
+    }
+  } catch (_) {}
+}
         } else {
           const idxSel = currentSel.findIndex(cid => String(cid) === idStr);
           if (idxSel >= 0) {
