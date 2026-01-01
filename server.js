@@ -11,6 +11,24 @@ const LOBBY_TTL_MS = 1000 * 60 * 30; // 30 minutes
 app.use(compression());
 app.use(express.json({ limit: "1mb" }));
 
+const ALLOWED_ORIGINS = new Set([
+  "https://overlords.app",
+  "https://over-lords.github.io",
+  "http://localhost:3000"
+]);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
+  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 // Static assets
 app.use("/Public", express.static(path.join(__dirname, "Public"), {
   maxAge: "1y",

@@ -91,7 +91,7 @@
             <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Open Lobbies</h1>
         </div>
 
-                <div id="join-list">
+        <div id="join-list">
             <div class="join-list-header">
                 <div>Username</div>
                 <div>Difficulty</div>
@@ -125,6 +125,8 @@
             });
         };
 
+        const API_BASE = "https://overlords-app-43e6e621c6d2.herokuapp.com";
+
         const buildRows = () => {
             rowsContainer.innerHTML = "";
             joinRowsData.forEach((row, idx) => {
@@ -150,7 +152,7 @@
         const loadPublicLobbies = async () => {
             console.log("[join] Loading public lobbies...");
             try {
-                const res = await fetch("/api/lobbies");
+                const res = await fetch(`${API_BASE}/api/lobbies`);
                 const json = await res.json();
                 const lobbies = json?.lobbies || [];
                 joinRowsData.splice(0, joinRowsData.length, ...lobbies.map(l => ({
@@ -193,7 +195,7 @@
             joinErr.textContent = "";
             try {
                 console.log("[join] Looking up lobby", key);
-                const res = await fetch(`/api/lobbies/${encodeURIComponent(key)}`);
+                const res = await fetch(`${API_BASE}/api/lobbies/${encodeURIComponent(key)}`);
                 if (!res.ok) {
                     joinErr.textContent = "Key not valid";
                     return;
@@ -201,7 +203,7 @@
                 const { lobby } = await res.json();
                 const playerName = `Player-${Math.floor(Math.random() * 1000)}`;
                 console.log("[join] Recording join for", playerName);
-                await fetch("/api/lobbies/join", {
+                await fetch(`${API_BASE}/api/lobbies/join`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ key, player: playerName })

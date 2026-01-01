@@ -135,8 +135,8 @@
                 document.body.insertAdjacentHTML("beforeend","<p style='color:red'>Failed to decrypt lobby data.</p>");
                 return;
             }
-            const apiBase = window.location.origin;
-            const apiAvailable = apiBase && !apiBase.includes("127.0.0.1:5500") && !apiBase.startsWith("file:");
+            const apiBase = "https://overlords-app-43e6e621c6d2.herokuapp.com";
+            const apiAvailable = !!apiBase;
 
             const joinKeyVal = data.key || data.joinKey || "";
             const lobbyHost = data.username || data.host || "Host";
