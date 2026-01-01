@@ -74,11 +74,10 @@ app.post("/api/lobbies/join", (req, res) => {
   pruneStaleLobbies();
   const lobby = lobbies.get(key);
   if (!lobby) return res.status(404).json({ error: "Lobby not found" });
-  if (player) {
-    const set = new Set(lobby.players || []);
-    set.add(player);
-    lobby.players = Array.from(set);
-  }
+  const set = new Set(lobby.players || []);
+  if (lobby.host) set.add(lobby.host);
+  if (player) set.add(player);
+  lobby.players = Array.from(set);
   lobby.updatedAt = Date.now();
   lobby.lastSeenAt = Date.now();
   console.log(`[lobbies] Player join recorded ${player || "(unknown)"} for lobby ${key} | total=${lobby.players.length}`);

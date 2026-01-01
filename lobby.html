@@ -189,7 +189,7 @@
             }
 
             const existingHost = existingLobby?.host;
-            const lobbyHost = data.username || data.host || existingHost || sessionUsername;
+            const lobbyHost = existingHost || data.username || data.host || sessionUsername;
             const playerList = Array.isArray(data.players) && data.players.length ? data.players : [lobbyHost];
 
             const renderPlayers = (list) => {
