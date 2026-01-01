@@ -166,7 +166,6 @@
             }
 
             let joinKeyVal = data.key || data.joinKey || "";
-            const lobbyHost = data.username || data.host || sessionUsername;
 
             // Ensure every lobby (even public) has a key so it can be listed/joined
             if (!joinKeyVal) {
@@ -175,6 +174,22 @@
                 console.log("[lobby] Generated join key for public lobby", joinKeyVal);
             }
 
+            // Fetch existing lobby first to capture host/players
+            let existingLobby = null;
+            if (apiAvailable && joinKeyVal) {
+                try {
+                    const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        existingLobby = json?.lobby || null;
+                    }
+                } catch (e) {
+                    console.warn("[lobby] Could not prefetch existing lobby", e);
+                }
+            }
+
+            const existingHost = existingLobby?.host;
+            const lobbyHost = data.username || data.host || existingHost || sessionUsername;
             const playerList = Array.isArray(data.players) && data.players.length ? data.players : [lobbyHost];
 
             const renderPlayers = (list) => {
@@ -215,16 +230,7 @@
             if (joinKeyVal && apiAvailable) {
                 console.log("[lobby] Registering lobby with server", { joinKeyVal, lobbyHost, playerList, difficulty: data.difficulty, isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private" });
                 try {
-                    let existingPlayers = [];
-                    try {
-                        const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
-                        if (res.ok) {
-                            const json = await res.json();
-                            existingPlayers = Array.isArray(json?.lobby?.players) ? json.lobby.players : [];
-                        }
-                    } catch (e) {
-                        console.warn("[lobby] Could not fetch existing lobby before upsert", e);
-                    }
+                    const existingPlayers = Array.isArray(existingLobby?.players) ? existingLobby.players : [];
                     const mergedPlayers = mergePlayers(existingPlayers, playerList);
 
                     const upsertRes = await fetch(`${apiBase}/api/lobbies/upsert`, {
