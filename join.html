@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
     <link href='https://fonts.googleapis.com/css?family=Racing Sans One' rel='stylesheet'>
-    <link rel="icon" href="/favicon.png">
+    <link rel="icon" href="favicon.png">
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <style>
@@ -91,7 +91,7 @@
             <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Open Lobbies</h1>
         </div>
 
-        <div id="join-list">
+                <div id="join-list">
             <div class="join-list-header">
                 <div>Username</div>
                 <div>Difficulty</div>
@@ -100,25 +100,21 @@
             <div class="join-rows" id="join-rows"></div>
         </div>
 
-        <div id="join-key-box" style="position: fixed; right: 15px; top: 50%; transform: translateY(-50%); width: 320px; background: #ededed; border: 6px solid black; color: #000; font-family: 'Racing Sans One', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: flex-start; text-align: left; pointer-events: auto; z-index: 10; gap: 8px;">
-            <input id="join-key-input" type="text" placeholder="Enter lobby key" style="flex: 1; height: 44px; font-size: 1.2rem; border: 3px solid #000; border-radius: 6px; padding: 6px 10px; box-sizing: border-box; font-family: 'Racing Sans One', sans-serif;">
-            <button id="join-key-paste" type="button" style="height: 44px; padding: 0 10px; border: none; border-radius: 4px; background: #222; color: #fff; font-weight: bold; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); font-size: 2rem;">⎘</button>
+        <div id="join-private-wrap" style="position: fixed; right: 15px; top: calc(50% + 100px); transform: translateY(-50%); width: 320px; display: flex; flex-direction: column; align-items: stretch; gap: 10px; font-family: 'Racing Sans One', sans-serif; z-index: 10;">
+            <div id="join-key-box" style="background: #ededed; border: 6px solid black; color: #000; font-family: 'Racing Sans One', sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: flex-start; text-align: left; pointer-events: auto; gap: 8px;">
+                <input id="join-key-input" type="text" placeholder="Enter lobby key" style="flex: 1; height: 44px; font-size: 1.2rem; border: 3px solid #000; border-radius: 6px; padding: 6px 10px; box-sizing: border-box; font-family: 'Racing Sans One', sans-serif;">
+                <button id="join-key-paste" type="button" style="height: 44px; padding: 0 10px; border: none; border-radius: 4px; background: #222; color: #fff; font-weight: bold; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.25); font-size: 2rem;">⎘</button>
+            </div>
+            <button id="join-submit-private" type="button" style="height: 48px; border: 4px solid #000; border-radius: 8px; background: gold; color: black; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25);">Join Private Game</button>
         </div>
-        <div style="position: fixed; right: 15px; top: calc(50% + 80px); transform: translateY(-50%); width: 320px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; font-family: 'Racing Sans One', sans-serif; z-index: 10;">
-            <button id="join-submit" type="button" style="height: 48px; border: 4px solid #000; border-radius: 8px; background: gold; color: black; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25);">Join Game</button>
+
+        <div style="position: fixed; right: 15px; top: calc(50% - 20px); transform: translateY(-50%); width: 320px; display: flex; flex-direction: column; align-items: stretch; gap: 8px; font-family: 'Racing Sans One', sans-serif; z-index: 10;">
+            <button id="join-submit-public" type="button" style="height: 48px; border: 4px solid #000; border-radius: 8px; background: #6ce6ff; color: black; font-size: 1.3rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.25);">Join Public Game</button>
             <div id="join-error" style="color: red; font-size: 1rem; min-height: 18px; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; text-align: center;"></div>
         </div>
-    </div>
 
     <script>
-        const joinRowsData = [
-            { username: "Test", difficulty: "Normal", players: "2 / 6" },
-            { username: "Kieran", difficulty: "Hard", players: "5 / 6" },
-            { username: "ur_doom", difficulty: "Easy", players: "1 / 6" },
-            { username: "Banana", difficulty: "Knightmare", players: "3 / 6" },
-            { username: "Hurk", difficulty: "Normal", players: "2 / 6" },
-        ];
-
+        const joinRowsData = [];
         const rowsContainer = document.getElementById("join-rows");
         let selectedRowIndex = null;
 
@@ -142,18 +138,42 @@
                 rowEl.addEventListener("click", () => {
                     selectedRowIndex = selectedRowIndex === idx ? null : idx;
                     updateSelection();
+                    const keyInput = document.getElementById("join-key-input");
+                    if (selectedRowIndex !== null && joinRowsData[selectedRowIndex]?.key && keyInput) {
+                        keyInput.value = joinRowsData[selectedRowIndex].key;
+                    }
                 });
                 rowsContainer.appendChild(rowEl);
             });
             updateSelection();
         };
+        const loadPublicLobbies = async () => {
+            console.log("[join] Loading public lobbies...");
+            try {
+                const res = await fetch("/api/lobbies");
+                const json = await res.json();
+                const lobbies = json?.lobbies || [];
+                joinRowsData.splice(0, joinRowsData.length, ...lobbies.map(l => ({
+                    key: l.key,
+                    username: l.host || "Unknown",
+                    difficulty: l.difficulty || "Unknown",
+                    playersCount: Array.isArray(l.players) ? l.players.length : 0,
+                    players: `${(Array.isArray(l.players) ? l.players.length : 0)} / 6`
+                })));
+                console.log("[join] Public lobbies", joinRowsData);
+                buildRows();
+            } catch (err) {
+                console.error("[join] Failed to load lobbies", err);
+            }
+        };
 
-        buildRows();
+        loadPublicLobbies();
 
         // Paste + Join handling
         const pasteBtn = document.getElementById("join-key-paste");
         const keyInput = document.getElementById("join-key-input");
-        const joinBtn  = document.getElementById("join-submit");
+        const joinBtnPrivate  = document.getElementById("join-submit-private");
+        const joinBtnPublic   = document.getElementById("join-submit-public");
         const joinErr  = document.getElementById("join-error");
 
         if (pasteBtn && keyInput) {
@@ -169,12 +189,62 @@
             });
         }
 
-        if (joinBtn && keyInput && joinErr) {
-            joinBtn.addEventListener("click", () => {
-                // Placeholder failure handling
-                joinErr.textContent = "Key not valid";
+        async function joinByKey(key) {
+            joinErr.textContent = "";
+            try {
+                console.log("[join] Looking up lobby", key);
+                const res = await fetch(`/api/lobbies/${encodeURIComponent(key)}`);
+                if (!res.ok) {
+                    joinErr.textContent = "Key not valid";
+                    return;
+                }
+                const { lobby } = await res.json();
+                const playerName = `Player-${Math.floor(Math.random() * 1000)}`;
+                console.log("[join] Recording join for", playerName);
+                await fetch("/api/lobbies/join", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ key, player: playerName })
+                });
+                if (lobby?.encrypted) {
+                    console.log("[join] Redirecting with stored encrypted payload");
+                    window.location.href = `lobby.html?data=${encodeURIComponent(lobby.encrypted)}`;
+                } else {
+                    console.log("[join] Redirecting with key fallback (no encrypted payload)");
+                    window.location.href = `lobby.html?key=${encodeURIComponent(key)}`;
+                }
+            } catch (err) {
+                console.error("[join] Join failed", err);
+                joinErr.textContent = "Join failed";
+            }
+        }
+
+        if (joinBtnPrivate && keyInput && joinErr) {
+            joinBtnPrivate.addEventListener("click", async () => {
+                const key = (keyInput.value || "").trim();
+                if (!key) {
+                    joinErr.textContent = "Enter a key";
+                    return;
+                }
+                await joinByKey(key);
+            });
+        }
+
+        if (joinBtnPublic && joinErr) {
+            joinBtnPublic.addEventListener("click", async () => {
+                if (selectedRowIndex === null || !joinRowsData[selectedRowIndex]) {
+                    joinErr.textContent = "Select a public lobby first";
+                    return;
+                }
+                const key = joinRowsData[selectedRowIndex].key;
+                if (!key) {
+                    joinErr.textContent = "Selected lobby is missing a key";
+                    return;
+                }
+                await joinByKey(key);
             });
         }
     </script>
 </body>
 </html>
+
