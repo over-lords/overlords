@@ -149,27 +149,40 @@
             });
             updateSelection();
         };
+        let isLoadingLobbies = false;
         const loadPublicLobbies = async () => {
+            if (isLoadingLobbies) return;
+            isLoadingLobbies = true;
             console.log("[join] Loading public lobbies...");
             try {
                 const res = await fetch(`${API_BASE}/api/lobbies`);
                 const json = await res.json();
                 const lobbies = json?.lobbies || [];
-                joinRowsData.splice(0, joinRowsData.length, ...lobbies.map(l => ({
-                    key: l.key,
-                    username: l.host || l.username || "Unknown",
-                    difficulty: l.difficulty || "Unknown",
-                    playersCount: Array.isArray(l.players) ? l.players.length : 0,
-                    players: `${(Array.isArray(l.players) ? l.players.length : 0)} / 6`
-                })));
+                const mapped = lobbies.map(l => {
+                    const diffRaw = l.difficulty || "Unknown";
+                    const diffCap = (typeof diffRaw === "string" && diffRaw.length)
+                        ? diffRaw.charAt(0).toUpperCase() + diffRaw.slice(1)
+                        : diffRaw;
+                    return {
+                        key: l.key,
+                        username: l.host || l.username || "Unknown",
+                        difficulty: diffCap,
+                        playersCount: Array.isArray(l.players) ? l.players.length : 0,
+                        players: `${(Array.isArray(l.players) ? l.players.length : 0)} / 6`
+                    };
+                });
+                joinRowsData.splice(0, joinRowsData.length, ...mapped);
                 console.log("[join] Public lobbies", joinRowsData);
                 buildRows();
             } catch (err) {
                 console.error("[join] Failed to load lobbies", err);
+            } finally {
+                isLoadingLobbies = false;
             }
         };
 
         loadPublicLobbies();
+        setInterval(loadPublicLobbies, 1000);
 
         // Paste + Join handling
         const pasteBtn = document.getElementById("join-key-paste");
