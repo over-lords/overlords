@@ -138,9 +138,17 @@
             const apiBase = "https://overlords-app-43e6e621c6d2.herokuapp.com";
             const apiAvailable = !!apiBase;
 
-            const joinKeyVal = data.key || data.joinKey || "";
+            let joinKeyVal = data.key || data.joinKey || "";
             const lobbyHost = data.username || data.host || "Host";
-            const playerList = Array.isArray(data.players) && data.players.length ? data.players : (joinKeyVal ? [lobbyHost] : []);
+
+            // Ensure every lobby (even public) has a key so it can be listed/joined
+            if (!joinKeyVal) {
+                joinKeyVal = Math.random().toString().slice(2, 10);
+                data.key = joinKeyVal;
+                console.log("[lobby] Generated join key for public lobby", joinKeyVal);
+            }
+
+            const playerList = Array.isArray(data.players) && data.players.length ? data.players : [lobbyHost];
 
             if (joinKeyVal && apiAvailable) {
                 console.log("[lobby] Registering lobby with server", { joinKeyVal, lobbyHost, playerList, difficulty: data.difficulty, isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private" });
