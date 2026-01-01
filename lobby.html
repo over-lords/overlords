@@ -240,7 +240,8 @@
             async function pollPlayers() {
                 if (!apiAvailable || !joinKeyVal) return;
                 try {
-                    const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
+                    const playerQuery = sessionUsername || lobbyHost || "Unknown";
+                    const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}?player=${encodeURIComponent(playerQuery)}`);
                     if (res.ok) {
                         const json = await res.json();
                         if (json?.lobby?.host) {
@@ -337,7 +338,7 @@
                     await fetch(`${apiBase}/api/lobbies/heartbeat`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ key: joinKeyVal })
+                        body: JSON.stringify({ key: joinKeyVal, player: sessionUsername || lobbyHost })
                     });
                 } catch (e) {
                     console.warn("[lobby] Heartbeat failed", e);

@@ -6,7 +6,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 const lobbies = new Map(); // key -> lobby record
 const LOBBY_TTL_MS = 1000 * 60 * 30; // 30 minutes
-const LOBBY_STALE_MS = 1000 * 2; // 2 seconds without heartbeat
+const LOBBY_STALE_MS = 1000 * 2; // 2 seconds without lobby heartbeat
+const LOBBY_PLAYER_STALE_MS = 1000 * 2; // 2 seconds without player poll/heartbeat
 
 // Middleware
 app.use(compression());
@@ -48,11 +49,28 @@ function pruneStaleLobbies() {
   }
 }
 
+function pruneStalePlayers(lobby) {
+  if (!lobby || !Array.isArray(lobby.players)) return;
+  const now = Date.now();
+  lobby.playerLastSeen = lobby.playerLastSeen || {};
+  const keep = [];
+  for (const p of lobby.players) {
+    const last = lobby.playerLastSeen[p];
+    if (last && now - last <= LOBBY_PLAYER_STALE_MS) {
+      keep.push(p);
+    } else {
+      delete lobby.playerLastSeen[p];
+    }
+  }
+  lobby.players = keep;
+}
+
 app.post("/api/lobbies/upsert", (req, res) => {
   const { key, encrypted, isPrivate = false, difficulty = "Unknown", host = "Unknown", players = [] } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   pruneStaleLobbies();
   const playersSafe = Array.isArray(players) ? Array.from(new Set(players.filter(Boolean))) : [];
+  const now = Date.now();
   lobbies.set(key, {
     key,
     encrypted: typeof encrypted === "string" ? encrypted : null,
@@ -60,9 +78,10 @@ app.post("/api/lobbies/upsert", (req, res) => {
     difficulty,
     host,
     players: playersSafe,
+    playerLastSeen: Object.fromEntries(playersSafe.map(p => [p, now])),
     started: false,
-    updatedAt: Date.now(),
-    lastSeenAt: Date.now()
+    updatedAt: now,
+    lastSeenAt: now
   });
   console.log(`[lobbies] Upsert lobby ${key} | private=${!!isPrivate} | host=${host} | players=${playersSafe.length}`);
   return res.json({ ok: true });
@@ -78,20 +97,30 @@ app.post("/api/lobbies/join", (req, res) => {
   if (lobby.host) set.add(lobby.host);
   if (player) set.add(player);
   lobby.players = Array.from(set);
-  lobby.updatedAt = Date.now();
-  lobby.lastSeenAt = Date.now();
+  const now = Date.now();
+  lobby.playerLastSeen = lobby.playerLastSeen || {};
+  lobby.playerLastSeen[player || lobby.host] = now;
+  lobby.updatedAt = now;
+  lobby.lastSeenAt = now;
+  pruneStalePlayers(lobby);
   console.log(`[lobbies] Player join recorded ${player || "(unknown)"} for lobby ${key} | total=${lobby.players.length}`);
   return res.json({ ok: true, lobby });
 });
 
 // Heartbeat to keep lobby active
 app.post("/api/lobbies/heartbeat", (req, res) => {
-  const { key } = req.body || {};
+  const { key, player } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   const lobby = lobbies.get(key);
   if (!lobby) return res.status(404).json({ error: "Lobby not found" });
-  lobby.lastSeenAt = Date.now();
-  lobby.updatedAt = Date.now();
+  const now = Date.now();
+  lobby.lastSeenAt = now;
+  lobby.updatedAt = now;
+  if (player) {
+    lobby.playerLastSeen = lobby.playerLastSeen || {};
+    lobby.playerLastSeen[player] = now;
+  }
+  pruneStalePlayers(lobby);
   return res.json({ ok: true });
 });
 
@@ -113,6 +142,10 @@ app.get("/api/lobbies", (req, res) => {
   const publicOnly = req.query.publicOnly !== "false";
   const now = Date.now();
   const list = Array.from(lobbies.values())
+    .map(l => {
+      pruneStalePlayers(l);
+      return l;
+    })
     .filter(l => (publicOnly ? !l.isPrivate : true))
     .filter(l => !l.started)
     .filter(l => (Array.isArray(l.players) ? l.players.length : 0) < 6)
@@ -127,6 +160,12 @@ app.get("/api/lobbies/:key", (req, res) => {
   const key = req.params.key;
   const lobby = lobbies.get(key);
   if (!lobby) return res.status(404).json({ error: "Lobby not found" });
+  const playerParam = req.query.player;
+  if (playerParam) {
+    lobby.playerLastSeen = lobby.playerLastSeen || {};
+    lobby.playerLastSeen[playerParam] = Date.now();
+  }
+  pruneStalePlayers(lobby);
   return res.json({ ok: true, lobby });
 });
 
