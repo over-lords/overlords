@@ -157,7 +157,13 @@
             try {
                 const res = await fetch(`${API_BASE}/api/lobbies`);
                 const json = await res.json();
-                const lobbies = json?.lobbies || [];
+                const now = Date.now();
+                const lobbies = (json?.lobbies || []).filter(l => {
+                    const tooMany = Array.isArray(l.players) ? l.players.length >= 6 : false;
+                    const started = !!l.started;
+                    const stale = l.lastSeenAt ? (now - Number(l.lastSeenAt)) > 90000 : false;
+                    return !tooMany && !started && !stale;
+                });
                 const mapped = lobbies.map(l => {
                     const diffRaw = l.difficulty || "Unknown";
                     const diffCap = (typeof diffRaw === "string" && diffRaw.length)

@@ -93,6 +93,8 @@
     </div>
 
     <script type="module">
+        import { supabase } from './supabaseClient.js';
+        import { getSessionUserId } from './utils/session.js';
         import { overlords } from './data/overlords.js';
         import { tactics } from './data/tactics.js';
         import { enemies } from './data/enemies.js';
@@ -138,8 +140,25 @@
             const apiBase = "https://overlords-app-43e6e621c6d2.herokuapp.com";
             const apiAvailable = !!apiBase;
 
+            let sessionUsername = "Host";
+            try {
+                const uid = getSessionUserId();
+                if (uid) {
+                    const { data: user, error } = await supabase
+                        .from("users")
+                        .select("username")
+                        .eq("id", uid)
+                        .single();
+                    if (user?.username && !error) {
+                        sessionUsername = user.username;
+                    }
+                }
+            } catch (e) {
+                console.warn("[lobby] Failed to load session username", e);
+            }
+
             let joinKeyVal = data.key || data.joinKey || "";
-            const lobbyHost = data.username || data.host || "Host";
+            const lobbyHost = data.username || data.host || sessionUsername;
 
             // Ensure every lobby (even public) has a key so it can be listed/joined
             if (!joinKeyVal) {
@@ -185,6 +204,29 @@
             } else {
                 console.warn("[lobby] API not available in this environment; skipping server broadcast");
             }
+
+            // Heartbeat to keep lobby active in listing
+            const heartbeat = async () => {
+                if (!apiAvailable || !joinKeyVal) return;
+                try {
+                    await fetch(`${apiBase}/api/lobbies/heartbeat`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ key: joinKeyVal })
+                    });
+                } catch (e) {
+                    console.warn("[lobby] Heartbeat failed", e);
+                }
+            };
+            heartbeat();
+            const hbInterval = setInterval(heartbeat, 30000);
+            window.addEventListener("beforeunload", () => {
+                clearInterval(hbInterval);
+                if (navigator.sendBeacon && apiAvailable && joinKeyVal) {
+                    const blob = new Blob([JSON.stringify({ key: joinKeyVal })], { type: "application/json" });
+                    navigator.sendBeacon(`${apiBase}/api/lobbies/heartbeat`, blob);
+                }
+            });
 
             // ---------- Build readable lists ----------
 
@@ -513,6 +555,19 @@
 
                 const url = new URL("./game.html", window.location.href);
                 url.searchParams.set("data", encrypted);
+
+                // Mark lobby started so it disappears from listings
+                try {
+                    if (apiAvailable && joinKeyVal) {
+                        await fetch(`${apiBase}/api/lobbies/start`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ key: joinKeyVal })
+                        });
+                    }
+                } catch (e) {
+                    console.warn("[lobby] Failed to mark lobby started", e);
+                }
 
                 window.open(url.toString(), "_self");
             });

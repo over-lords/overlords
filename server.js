@@ -6,6 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const lobbies = new Map(); // key -> lobby record
 const LOBBY_TTL_MS = 1000 * 60 * 30; // 30 minutes
+const LOBBY_STALE_MS = 1000 * 90; // 90 seconds without heartbeat
 
 // Middleware
 app.use(compression());
@@ -59,7 +60,9 @@ app.post("/api/lobbies/upsert", (req, res) => {
     difficulty,
     host,
     players: playersSafe,
-    updatedAt: Date.now()
+    started: false,
+    updatedAt: Date.now(),
+    lastSeenAt: Date.now()
   });
   console.log(`[lobbies] Upsert lobby ${key} | private=${!!isPrivate} | host=${host} | players=${playersSafe.length}`);
   return res.json({ ok: true });
@@ -77,17 +80,46 @@ app.post("/api/lobbies/join", (req, res) => {
     lobby.players = Array.from(set);
   }
   lobby.updatedAt = Date.now();
+  lobby.lastSeenAt = Date.now();
   console.log(`[lobbies] Player join recorded ${player || "(unknown)"} for lobby ${key} | total=${lobby.players.length}`);
   return res.json({ ok: true, lobby });
+});
+
+// Heartbeat to keep lobby active
+app.post("/api/lobbies/heartbeat", (req, res) => {
+  const { key } = req.body || {};
+  if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
+  const lobby = lobbies.get(key);
+  if (!lobby) return res.status(404).json({ error: "Lobby not found" });
+  lobby.lastSeenAt = Date.now();
+  lobby.updatedAt = Date.now();
+  return res.json({ ok: true });
+});
+
+// Mark lobby started
+app.post("/api/lobbies/start", (req, res) => {
+  const { key } = req.body || {};
+  if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
+  const lobby = lobbies.get(key);
+  if (!lobby) return res.status(404).json({ error: "Lobby not found" });
+  lobby.started = true;
+  lobby.updatedAt = Date.now();
+  lobby.lastSeenAt = Date.now();
+  console.log(`[lobbies] Lobby started ${key}`);
+  return res.json({ ok: true });
 });
 
 app.get("/api/lobbies", (req, res) => {
   pruneStaleLobbies();
   const publicOnly = req.query.publicOnly !== "false";
+  const now = Date.now();
   const list = Array.from(lobbies.values())
     .filter(l => (publicOnly ? !l.isPrivate : true))
+    .filter(l => !l.started)
+    .filter(l => (Array.isArray(l.players) ? l.players.length : 0) < 6)
+    .filter(l => !l.lastSeenAt || now - l.lastSeenAt <= LOBBY_STALE_MS)
     .sort((a, b) => b.updatedAt - a.updatedAt)
-    .map(({ key, isPrivate, difficulty, host, players }) => ({ key, isPrivate, difficulty, host, players }));
+    .map(({ key, isPrivate, difficulty, host, players, lastSeenAt, started }) => ({ key, isPrivate, difficulty, host, players, lastSeenAt, started }));
   return res.json({ ok: true, lobbies: list });
 });
 
