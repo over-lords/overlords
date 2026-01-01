@@ -6,7 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const lobbies = new Map(); // key -> lobby record
 const LOBBY_TTL_MS = 1000 * 60 * 30; // 30 minutes
-const LOBBY_STALE_MS = 1000 * 10; // 20 seconds without heartbeat
+const LOBBY_STALE_MS = 1000 * 2; // 2 seconds without heartbeat
 
 // Middleware
 app.use(compression());

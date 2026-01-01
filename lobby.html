@@ -128,6 +128,7 @@
         (async () => {
             const params = new URLSearchParams(window.location.search);
             const encrypted = params.get("data");
+            const keyParam = params.get("key") || "";
             const SECRET = "GeimonHeroKey42";
             const playerListEl = document.getElementById("player-list");
             const playerCountEl = document.getElementById("player-list-count");
@@ -165,7 +166,7 @@
                 console.warn("[lobby] Failed to load session username", e);
             }
 
-            let joinKeyVal = data.key || data.joinKey || "";
+            let joinKeyVal = data.key || data.joinKey || keyParam || "";
 
             // Ensure every lobby (even public) has a key so it can be listed/joined
             if (!joinKeyVal) {
@@ -192,12 +193,18 @@
             const lobbyHost = existingHost || data.username || data.host || sessionUsername;
             const playerList = Array.isArray(data.players) && data.players.length ? data.players : [lobbyHost];
 
+            let serverHost = lobbyHost;
             const renderPlayers = (list) => {
                 if (!playerListEl || !playerCountEl) return;
                 const safeList = Array.isArray(list) ? list.filter(Boolean) : [];
+                const hostToUse = serverHost || lobbyHost;
                 // Ensure host is present at least once
-                if (safeList.length === 0 || !safeList.includes(lobbyHost)) {
-                    safeList.unshift(lobbyHost);
+                if (hostToUse && !safeList.includes(hostToUse)) {
+                    safeList.unshift(hostToUse);
+                }
+                // Ensure current session user is listed
+                if (sessionUsername && !safeList.includes(sessionUsername)) {
+                    safeList.push(sessionUsername);
                 }
                 playerCountEl.textContent = `${safeList.length} player${safeList.length === 1 ? "" : "s"}`;
                 playerListEl.innerHTML = "";
@@ -219,19 +226,63 @@
                 });
             };
 
-            const mergePlayers = (existing, local) => {
+            const mergePlayers = (existing, local, extras = []) => {
                 const set = new Set();
                 (Array.isArray(existing) ? existing : []).forEach(p => set.add(p));
                 (Array.isArray(local) ? local : []).forEach(p => set.add(p));
+                (Array.isArray(extras) ? extras : []).forEach(p => set.add(p));
                 if (!set.has(lobbyHost)) set.add(lobbyHost);
                 return Array.from(set);
             };
+
+            // Poll players directly for more frequent updates (started after successful upsert)
+            let pollInterval = null;
+            async function pollPlayers() {
+                if (!apiAvailable || !joinKeyVal) return;
+                try {
+                    const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json?.lobby?.host) {
+                            serverHost = json.lobby.host;
+                        }
+                        const players = json?.lobby?.players;
+                        if (Array.isArray(players)) {
+                            // Self-heal if this client or host is missing from server record
+                            const needsSelf = sessionUsername && !players.includes(sessionUsername);
+                            const needsHost = (serverHost || lobbyHost) && !players.includes(serverHost || lobbyHost);
+                            if (needsSelf || needsHost) {
+                                try {
+                                    await fetch(`${apiBase}/api/lobbies/join`, {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            key: joinKeyVal,
+                                            player: sessionUsername || lobbyHost
+                                        })
+                                    });
+                                } catch (e) {
+                                    console.warn("[lobby] Self-heal join failed", e);
+                                }
+                            }
+                            renderPlayers(players);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("[lobby] Poll players failed", e);
+                }
+            }
+            function startPolling() {
+                if (pollInterval) return;
+                pollPlayers();
+                pollInterval = setInterval(pollPlayers, 1000);
+            }
 
             if (joinKeyVal && apiAvailable) {
                 console.log("[lobby] Registering lobby with server", { joinKeyVal, lobbyHost, playerList, difficulty: data.difficulty, isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private" });
                 try {
                     const existingPlayers = Array.isArray(existingLobby?.players) ? existingLobby.players : [];
-                    const mergedPlayers = mergePlayers(existingPlayers, playerList);
+                    const mergedPlayers = mergePlayers(existingPlayers, playerList, [sessionUsername]);
 
                     const upsertRes = await fetch(`${apiBase}/api/lobbies/upsert`, {
                         method: "POST",
@@ -247,6 +298,17 @@
                     });
                     console.log("[lobby] upsert status", upsertRes.status);
                     if (upsertRes.ok) {
+                        // Record this client as joined to ensure presence server-side
+                        try {
+                            await fetch(`${apiBase}/api/lobbies/join`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ key: joinKeyVal, player: sessionUsername })
+                            });
+                        } catch (e) {
+                            console.warn("[lobby] Failed to record join for session user", e);
+                        }
+
                         const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
                         console.log("[lobby] fetch lobby status", res.status);
                         if (res.ok) {
@@ -257,6 +319,7 @@
                                 renderPlayers(json.lobby.players);
                             }
                         }
+                        startPolling();
                     }
                 } catch (err) {
                     console.error("[lobby] Failed to register lobby", err);
@@ -281,23 +344,7 @@
                 }
             };
             heartbeat();
-            const hbInterval = setInterval(heartbeat, 5000);
-
-            // Poll players directly for more frequent updates
-            const pollPlayers = async () => {
-                if (!apiAvailable || !joinKeyVal) return;
-                try {
-                    const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (json?.lobby?.players) renderPlayers(json.lobby.players);
-                    }
-                } catch (e) {
-                    console.warn("[lobby] Poll players failed", e);
-                }
-            };
-            pollPlayers();
-            const pollInterval = setInterval(pollPlayers, 5000);
+            const hbInterval = setInterval(heartbeat, 1000);
 
             window.addEventListener("beforeunload", () => {
                 clearInterval(hbInterval);
@@ -625,7 +672,13 @@
                 return btoa(String.fromCharCode(...combined));
             }
 
-            document.getElementById("launch-btn").addEventListener("click", async () => {
+            const launchBtn = document.getElementById("launch-btn");
+            if (!launchBtn) {
+                console.warn("[lobby] launch button not found; skipping start binding");
+                return;
+            }
+
+            launchBtn.addEventListener("click", async () => {
                 const SECRET = "GeimonHeroKey42";
 
                 data.playerUsernames = data.playerUsernames || [];

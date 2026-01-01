@@ -120,11 +120,14 @@
         const joinRowsData = [];
         const rowsContainer = document.getElementById("join-rows");
         let selectedRowIndex = null;
+        let selectedKey = null;
 
         const updateSelection = () => {
             const rowEls = rowsContainer.querySelectorAll(".join-row");
             rowEls.forEach((row, idx) => {
-                row.classList.toggle("selected", idx === selectedRowIndex);
+                const rowKey = joinRowsData[idx]?.key;
+                const isSelected = (selectedKey && rowKey === selectedKey) || idx === selectedRowIndex;
+                row.classList.toggle("selected", isSelected);
             });
         };
 
@@ -141,13 +144,18 @@
                     <div class="join-cell players">${row.players}</div>
                 `;
                 rowEl.addEventListener("click", () => {
-                    selectedRowIndex = selectedRowIndex === idx ? null : idx;
+                    selectedKey = row.key;
+                    selectedRowIndex = idx;
                     updateSelection();
                     const keyInput = document.getElementById("join-key-input");
-                    if (selectedRowIndex !== null && joinRowsData[selectedRowIndex]?.key && keyInput) {
-                        keyInput.value = joinRowsData[selectedRowIndex].key;
+                    if (selectedKey && keyInput) {
+                        keyInput.value = selectedKey;
                     }
                 });
+                // preserve selection by key across refreshes
+                if (selectedKey && row.key === selectedKey) {
+                    selectedRowIndex = idx;
+                }
                 rowsContainer.appendChild(rowEl);
             });
             updateSelection();
@@ -251,7 +259,7 @@
                 });
                 if (lobby?.encrypted) {
                     console.log("[join] Redirecting with stored encrypted payload");
-                    window.location.href = `lobby.html?data=${encodeURIComponent(lobby.encrypted)}`;
+                    window.location.href = `lobby.html?data=${encodeURIComponent(lobby.encrypted)}&key=${encodeURIComponent(key)}`;
                 } else {
                     console.log("[join] Redirecting with key fallback (no encrypted payload)");
                     window.location.href = `lobby.html?key=${encodeURIComponent(key)}`;
@@ -275,11 +283,7 @@
 
         if (joinBtnPublic && joinErr) {
             joinBtnPublic.addEventListener("click", async () => {
-                if (selectedRowIndex === null || !joinRowsData[selectedRowIndex]) {
-                    joinErr.textContent = "Select a public lobby first";
-                    return;
-                }
-                const key = joinRowsData[selectedRowIndex].key;
+                const key = selectedKey || (selectedRowIndex !== null ? joinRowsData[selectedRowIndex]?.key : null);
                 if (!key) {
                     joinErr.textContent = "Selected lobby is missing a key";
                     return;
