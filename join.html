@@ -157,7 +157,7 @@
                 const lobbies = json?.lobbies || [];
                 joinRowsData.splice(0, joinRowsData.length, ...lobbies.map(l => ({
                     key: l.key,
-                    username: l.host || "Unknown",
+                    username: l.host || l.username || "Unknown",
                     difficulty: l.difficulty || "Unknown",
                     playersCount: Array.isArray(l.players) ? l.players.length : 0,
                     players: `${(Array.isArray(l.players) ? l.players.length : 0)} / 6`

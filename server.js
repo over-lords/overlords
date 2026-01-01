@@ -14,7 +14,8 @@ app.use(express.json({ limit: "1mb" }));
 const ALLOWED_ORIGINS = new Set([
   "https://overlords.app",
   "https://over-lords.github.io",
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "http://127.0.0.1:5500"
 ]);
 
 app.use((req, res, next) => {
