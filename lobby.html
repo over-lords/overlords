@@ -204,9 +204,29 @@
                 });
             };
 
+            const mergePlayers = (existing, local) => {
+                const set = new Set();
+                (Array.isArray(existing) ? existing : []).forEach(p => set.add(p));
+                (Array.isArray(local) ? local : []).forEach(p => set.add(p));
+                if (!set.has(lobbyHost)) set.add(lobbyHost);
+                return Array.from(set);
+            };
+
             if (joinKeyVal && apiAvailable) {
                 console.log("[lobby] Registering lobby with server", { joinKeyVal, lobbyHost, playerList, difficulty: data.difficulty, isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private" });
                 try {
+                    let existingPlayers = [];
+                    try {
+                        const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
+                        if (res.ok) {
+                            const json = await res.json();
+                            existingPlayers = Array.isArray(json?.lobby?.players) ? json.lobby.players : [];
+                        }
+                    } catch (e) {
+                        console.warn("[lobby] Could not fetch existing lobby before upsert", e);
+                    }
+                    const mergedPlayers = mergePlayers(existingPlayers, playerList);
+
                     const upsertRes = await fetch(`${apiBase}/api/lobbies/upsert`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -216,7 +236,7 @@
                             isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private",
                             difficulty: data.difficulty || "Unknown",
                             host: lobbyHost,
-                            players: playerList
+                            players: mergedPlayers
                         })
                     });
                     console.log("[lobby] upsert status", upsertRes.status);
