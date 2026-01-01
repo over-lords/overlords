@@ -1,4 +1,4 @@
-const CACHE_NAME = "overlords-static-v0.1.7"; // Version number - update when something significant happens
+const CACHE_NAME = "overlords-static-v0.1.8"; // Version number - update when something significant happens
 
 const ASSETS = [
   // Unchanging - air quotes...
