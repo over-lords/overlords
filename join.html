@@ -113,7 +113,10 @@
             <div id="join-error" style="color: red; font-size: 1rem; min-height: 18px; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; text-align: center;"></div>
         </div>
 
-    <script>
+    <script type="module">
+        import { supabase } from "./supabaseClient.js";
+        import { getSessionUserId } from "./utils/session.js";
+
         const joinRowsData = [];
         const rowsContainer = document.getElementById("join-rows");
         let selectedRowIndex = null;
@@ -150,6 +153,25 @@
             updateSelection();
         };
         let isLoadingLobbies = false;
+        const randomFallbackName = () => `Player-${Math.floor(Math.random() * 1000)}`;
+
+        const localPlayerNamePromise = (async () => {
+            try {
+                const uid = getSessionUserId();
+                if (!uid) return randomFallbackName();
+                const { data: user, error } = await supabase
+                    .from("users")
+                    .select("username")
+                    .eq("id", uid)
+                    .single();
+                if (error || !user?.username) return randomFallbackName();
+                return user.username;
+            } catch (e) {
+                console.warn("[join] Failed to load user", e);
+                return randomFallbackName();
+            }
+        })();
+
         const loadPublicLobbies = async () => {
             if (isLoadingLobbies) return;
             isLoadingLobbies = true;
@@ -220,7 +242,7 @@
                     return;
                 }
                 const { lobby } = await res.json();
-                const playerName = `Player-${Math.floor(Math.random() * 1000)}`;
+                const playerName = await localPlayerNamePromise;
                 console.log("[join] Recording join for", playerName);
                 await fetch(`${API_BASE}/api/lobbies/join`, {
                     method: "POST",

@@ -75,6 +75,12 @@
             </div>
         </div>
 
+        <div id="player-list-box" style="margin-top: 20px; width: 320px; background: #ededed; border: 6px solid #000; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); padding: 10px; color: #111; font-family: 'Racing Sans One', sans-serif;">
+            <div style="font-size: 22px; font-weight: bold; margin-bottom: 8px; text-shadow: 1px 1px 0 #fff;">Players in Lobby</div>
+            <div id="player-list-count" style="font-size: 16px; margin-bottom: 6px;"></div>
+            <ul id="player-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;"></ul>
+        </div>
+
         <div id="lobby-rotator" style="position: fixed; right: 15px; top: 88%; transform: translateY(-50%); width: 320px; height: 60px; background: #ededed; border: 6px solid #000; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); padding: 4px 8px; color: #222; font-family: 'Racing Sans One', sans-serif; pointer-events: none; z-index: 9;">
             <div id="rotator-difficulty" style="font-size: 20px; text-shadow: 1px 1px 0 #fff;">Difficulty:</div>
             <div style="margin-top: 2px; padding: 4px; background: #fff; border: 3px solid #000; border-radius: 6px; min-height: 0px; display: flex; align-items: center; justify-content: flex-start;">
@@ -123,6 +129,8 @@
             const params = new URLSearchParams(window.location.search);
             const encrypted = params.get("data");
             const SECRET = "GeimonHeroKey42";
+            const playerListEl = document.getElementById("player-list");
+            const playerCountEl = document.getElementById("player-list-count");
 
             if (!encrypted) {
                 document.body.insertAdjacentHTML("beforeend","<p style='color:red'>No lobby data found.</p>");
@@ -169,6 +177,33 @@
 
             const playerList = Array.isArray(data.players) && data.players.length ? data.players : [lobbyHost];
 
+            const renderPlayers = (list) => {
+                if (!playerListEl || !playerCountEl) return;
+                const safeList = Array.isArray(list) ? list.filter(Boolean) : [];
+                // Ensure host is present at least once
+                if (safeList.length === 0 || !safeList.includes(lobbyHost)) {
+                    safeList.unshift(lobbyHost);
+                }
+                playerCountEl.textContent = `${safeList.length} player${safeList.length === 1 ? "" : "s"}`;
+                playerListEl.innerHTML = "";
+                if (!safeList.length) {
+                    const li = document.createElement("li");
+                    li.textContent = "No players yet";
+                    playerListEl.appendChild(li);
+                    return;
+                }
+                safeList.forEach(name => {
+                    const li = document.createElement("li");
+                    li.textContent = name;
+                    li.style.fontSize = "16px";
+                    li.style.padding = "2px 6px";
+                    li.style.border = "1px solid #ccc";
+                    li.style.borderRadius = "6px";
+                    li.style.background = "#fff";
+                    playerListEl.appendChild(li);
+                });
+            };
+
             if (joinKeyVal && apiAvailable) {
                 console.log("[lobby] Registering lobby with server", { joinKeyVal, lobbyHost, playerList, difficulty: data.difficulty, isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private" });
                 try {
@@ -193,6 +228,7 @@
                             console.log("[lobby] Server lobby snapshot", json);
                             if (json?.lobby?.players) {
                                 console.log("[lobby] Players in lobby:", json.lobby.players);
+                                renderPlayers(json.lobby.players);
                             }
                         }
                     }
@@ -219,9 +255,27 @@
                 }
             };
             heartbeat();
-            const hbInterval = setInterval(heartbeat, 30000);
+            const hbInterval = setInterval(heartbeat, 5000);
+
+            // Poll players directly for more frequent updates
+            const pollPlayers = async () => {
+                if (!apiAvailable || !joinKeyVal) return;
+                try {
+                    const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json?.lobby?.players) renderPlayers(json.lobby.players);
+                    }
+                } catch (e) {
+                    console.warn("[lobby] Poll players failed", e);
+                }
+            };
+            pollPlayers();
+            const pollInterval = setInterval(pollPlayers, 5000);
+
             window.addEventListener("beforeunload", () => {
                 clearInterval(hbInterval);
+                clearInterval(pollInterval);
                 if (navigator.sendBeacon && apiAvailable && joinKeyVal) {
                     const blob = new Blob([JSON.stringify({ key: joinKeyVal })], { type: "application/json" });
                     navigator.sendBeacon(`${apiBase}/api/lobbies/heartbeat`, blob);
