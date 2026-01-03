@@ -1490,6 +1490,11 @@ html, body {
 
   background-color: #000;      /* internal color: black */
   border: 3px solid gray;      /* border color: gray */
+  color: #ffd54f;              /* text color: gold */
+  font-weight: 700;
+  font-size: 26px;
+  text-align: center;
+  line-height: 40px;
 
   /* Trapezoid with shorter top edge */
   clip-path: polygon(10% 0, 90% 0, 100% 100%, 0% 100%);

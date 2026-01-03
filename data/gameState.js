@@ -1,4 +1,5 @@
 export const gameState = {
+    gameMode: "single",
     heroes: [],
     overlords: [],
     tactics: [],
@@ -15,6 +16,7 @@ export const gameState = {
     enemyAllyDeck: [],
     enemyAllyDeckPointer: 0,
     enemyAllyDiscard: [],
+    turnTimerRemaining: null,
 };
 
 export const CITY_EXIT_UPPER = 0; // Star

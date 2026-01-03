@@ -3244,20 +3244,24 @@ async function performHeroStartingTravel(gameState, heroId, cityIndex) {
 
 let turnTimerInterval = null;
 
-function resetTurnTimerForHero() {
+export function resetTurnTimerForHero(overrideSeconds = null) {
     const timerBox = document.getElementById("bottom-turn-timer");
     if (!timerBox) return;
 
     if (isSinglePlayer) {
         timerBox.style.display = "none";
         if (turnTimerInterval) clearInterval(turnTimerInterval);
+        gameState.turnTimerRemaining = null;
         return;
     }
     else if (isMultiplayer) {
         timerBox.style.display = "block";
 
-        let remaining = 180; // 3 minutes in seconds
+        let remaining = Number.isFinite(overrideSeconds)
+            ? Math.max(0, overrideSeconds)
+            : (Number.isFinite(gameState.turnTimerRemaining) ? Math.max(0, gameState.turnTimerRemaining) : 180); // 3 minutes in seconds
         timerBox.textContent = formatTimer(remaining);
+        gameState.turnTimerRemaining = remaining;
 
         if (turnTimerInterval) clearInterval(turnTimerInterval);
 
@@ -3266,10 +3270,12 @@ function resetTurnTimerForHero() {
             if (remaining <= 0) {
                 clearInterval(turnTimerInterval);
                 timerBox.textContent = "00:00";
+                gameState.turnTimerRemaining = 0;
                 autoEndTurnDueToTimeout();
                 return;
             }
             timerBox.textContent = formatTimer(remaining);
+            gameState.turnTimerRemaining = remaining;
         }, 1000);
     }
 }
@@ -3283,6 +3289,7 @@ function formatTimer(sec) {
 async function autoEndTurnDueToTimeout() {
     const gs = window.gameState;
     await endCurrentHeroTurn(gs);
+    gameState.turnTimerRemaining = null;
 }
 
 function showTravelPopup(gameState, heroId, cityIndex) {

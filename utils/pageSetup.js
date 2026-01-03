@@ -14,7 +14,7 @@ import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe,
          freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, 
          renderScannedPreview, processQueuedHeroDamage, getCurrentHeroDT, refreshGameModeFlags as refreshAbilityGameModeFlags } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, 
-         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags } from "./turnOrder.js";
+         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags, resetTurnTimerForHero } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
@@ -697,6 +697,9 @@ async function restoreUIFromState(state) {
     if (saved) {
         console.log("=== RESUMING SAVED GAME ===");
         Object.assign(gameState, saved);
+        window.GAME_MODE = saved.gameMode || window.GAME_MODE || "single";
+        refreshAbilityGameModeFlags(window.GAME_MODE);
+        refreshTurnGameModeFlags(window.GAME_MODE);
         window.gameState = gameState;
 
         restoreDropdownContentFromState(gameState);
@@ -727,6 +730,7 @@ async function restoreUIFromState(state) {
 
         if (heroCount > 0) {
             currentTurn(restoredIndex, heroIds);
+            resetTurnTimerForHero(gameState.turnTimerRemaining);
         }
 
         if (typeof saved.turnCounter === "number") {
@@ -785,6 +789,7 @@ async function restoreUIFromState(state) {
         runGameStartAbilities(selectedData);
 
         Object.assign(gameState, {
+            gameMode: window.GAME_MODE,
             heroes: selectedData.heroes,
             overlords: selectedData.overlords,
             tactics: selectedData.tactics,
