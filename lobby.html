@@ -328,6 +328,50 @@
                     console.warn("[lobby] Failed to save local ready state", e);
                 }
             };
+            const decodePlayerEntry = (entry) => {
+                if (typeof entry !== "string") return { name: String(entry || ""), heroes: [], ready: false };
+                const idx = entry.indexOf("||ready=");
+                if (idx === -1) return { name: entry, heroes: [], ready: false };
+                const name = entry.slice(0, idx);
+                const meta = entry.slice(idx + 2); // skip leading "||"
+                const parts = meta.split(";");
+                let ready = false;
+                let heroes = [];
+                parts.forEach(p => {
+                    const [k, v] = p.split("=");
+                    if (k === "ready") ready = v === "1";
+                    if (k === "heroes" && v) heroes = v.split(",").filter(Boolean);
+                });
+                return { name, heroes, ready };
+            };
+            const encodePlayerEntry = (name) => {
+                const info = readyState[name];
+                if (!info || (!info.ready && !(info.heroes || []).length)) return name;
+                const heroesStr = Array.isArray(info.heroes) ? info.heroes.join(",") : "";
+                const readyFlag = info.ready ? "1" : "0";
+                return `${name}||ready=${readyFlag};heroes=${heroesStr}`;
+            };
+            const decodeAndMergePlayers = (list = []) => {
+                const names = [];
+                (Array.isArray(list) ? list : []).forEach(entry => {
+                    const decoded = decodePlayerEntry(entry);
+                    const name = decoded.name || entry;
+                    if (!name) return;
+                    names.push(name);
+                    const hasMeta = decoded.ready || (decoded.heroes && decoded.heroes.length);
+                    if (hasMeta) {
+                        readyState[name] = {
+                            ready: decoded.ready,
+                            heroes: decoded.heroes ? decoded.heroes.map(String) : []
+                        };
+                        if (decoded.ready) readyPlayers.add(name);
+                        if (decoded.heroes && decoded.heroes.length) {
+                            playerSelections.set(name, decoded.heroes.map(String));
+                        }
+                    }
+                });
+                return names;
+            };
 
             // Fetch existing lobby first to capture host/players
             let existingLobby = null;
@@ -339,6 +383,9 @@
                         existingLobby = json?.lobby || null;
                         if (existingLobby?.readyState) {
                             readyState = existingLobby.readyState;
+                        }
+                        if (Array.isArray(existingLobby?.players)) {
+                            currentPlayers = decodeAndMergePlayers(existingLobby.players);
                         }
                     }
                 } catch (e) {
@@ -370,7 +417,6 @@
             const henchMap    = new Map(henchmen.map(h => [String(h.id), h]));
             const villainMap  = new Map(villains.map(v => [String(v.id), v]));
             const heroMap     = new Map(heroes.map(h => [String(h.id), h]));
-
             let serverHost = lobbyHost;
             const applyReadyState = (stateObj = {}) => {
                 readyPlayers.clear();
@@ -398,7 +444,9 @@
             };
             const renderPlayers = (list) => {
                 if (!playerListEl || !playerCountEl) return;
-                const safeList = Array.isArray(list) ? list.filter(Boolean) : [];
+                const names = decodeAndMergePlayers(list);
+                if (names.length) currentPlayers = names;
+                const safeList = currentPlayers.filter(Boolean);
                 const hostToUse = serverHost || lobbyHost;
                 // Ensure host is present at least once
                 if (hostToUse && !safeList.includes(hostToUse)) {
@@ -481,7 +529,7 @@
                             isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private",
                             difficulty: data.difficulty || "Unknown",
                             host: lobbyHost,
-                            players: currentPlayers,
+                            players: currentPlayers.map(encodePlayerEntry),
                             readyState
                         })
                     });
@@ -564,9 +612,13 @@
 
             const mergePlayers = (existing, local, extras = []) => {
                 const set = new Set();
-                (Array.isArray(existing) ? existing : []).forEach(p => set.add(p));
-                (Array.isArray(local) ? local : []).forEach(p => set.add(p));
-                (Array.isArray(extras) ? extras : []).forEach(p => set.add(p));
+                const pushDecoded = (arr) => (Array.isArray(arr) ? arr : []).forEach(p => {
+                    const name = decodePlayerEntry(p).name || p;
+                    if (name) set.add(name);
+                });
+                pushDecoded(existing);
+                pushDecoded(local);
+                pushDecoded(extras);
                 if (!set.has(lobbyHost)) set.add(lobbyHost);
                 return Array.from(set);
             };
@@ -579,36 +631,36 @@
                     const playerQuery = sessionUsername || lobbyHost || "Unknown";
                     const res = await fetch(`${apiBase}/api/lobbies/${encodeURIComponent(joinKeyVal)}?player=${encodeURIComponent(playerQuery)}`);
                     if (res.ok) {
-                        const json = await res.json();
-                        if (json?.lobby?.host) {
-                            serverHost = json.lobby.host;
-                        }
-                        if (json?.lobby?.readyState) {
-                            readyState = json.lobby.readyState;
-                            applyReadyState(readyState);
-                        }
-                        const players = json?.lobby?.players;
-                        if (Array.isArray(players)) {
-                            // Self-heal if this client or host is missing from server record
-                            const needsSelf = sessionUsername && !players.includes(sessionUsername);
-                            const needsHost = (serverHost || lobbyHost) && !players.includes(serverHost || lobbyHost);
-                            if (needsSelf || needsHost) {
-                                try {
-                                    await fetch(`${apiBase}/api/lobbies/join`, {
-                                        method: "POST",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({
-                                            key: joinKeyVal,
-                                            player: sessionUsername || lobbyHost
-                                        })
-                                    });
-                                } catch (e) {
-                                    console.warn("[lobby] Self-heal join failed", e);
-                                }
-                            }
-                            renderPlayers(players);
-                        }
+                    const json = await res.json();
+                    if (json?.lobby?.host) {
+                        serverHost = json.lobby.host;
                     }
+                    if (json?.lobby?.readyState) {
+                        readyState = json.lobby.readyState;
+                    }
+                    const players = json?.lobby?.players;
+                    if (Array.isArray(players)) {
+                        currentPlayers = decodeAndMergePlayers(players);
+                        // Self-heal if this client or host is missing from server record
+                        const needsSelf = sessionUsername && !currentPlayers.includes(sessionUsername);
+                        const needsHost = (serverHost || lobbyHost) && !currentPlayers.includes(serverHost || lobbyHost);
+                        if (needsSelf || needsHost) {
+                            try {
+                                await fetch(`${apiBase}/api/lobbies/join`, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                        key: joinKeyVal,
+                                        player: sessionUsername || lobbyHost
+                                    })
+                                });
+                            } catch (e) {
+                                console.warn("[lobby] Self-heal join failed", e);
+                            }
+                        }
+                        renderPlayers(players);
+                    }
+                }
                 } catch (e) {
                     console.warn("[lobby] Poll players failed", e);
                 }
@@ -664,7 +716,7 @@
                             isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private",
                             difficulty: data.difficulty || "Unknown",
                             host: lobbyHost,
-                            players: mergedPlayers,
+                            players: mergedPlayers.map(encodePlayerEntry),
                             readyState
                         })
                     });
