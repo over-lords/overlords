@@ -1115,6 +1115,7 @@
                 data.playerUsernames = [...currentPlayers];
                 data.players = [...currentPlayers];
                 const heroesByPlayer = currentPlayers.map(p => playerSelections.get(p) || []);
+                data.gameMode = "multi";
 
                 // Construct hero turn order by player count rules
                 const orderedHeroes = [];

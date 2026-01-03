@@ -755,6 +755,8 @@ async function restoreUIFromState(state) {
         selectedHeroes = selectedData.heroes || [];
         const selectedOverlords = selectedData.overlords || [];
         const selectedTactics = selectedData.tactics || [];
+        window.GAME_MODE = selectedData.gameMode || window.GAME_MODE || "single";
+        console.log(`[game] Running in ${window.GAME_MODE === "single" ? "Singleplayer" : "Multiplayer"} mode`);
 
         heroMap = new Map(heroes.map(h => [String(h.id), h]));
         const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
