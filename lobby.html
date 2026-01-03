@@ -303,6 +303,32 @@
                 console.log("[lobby] Generated join key for public lobby", joinKeyVal);
             }
 
+            let readyState = {};
+            const getReadyStorageKey = () => joinKeyVal ? `lobbyReady-${joinKeyVal}-${sessionUsername || "anon"}` : null;
+            const loadLocalReadyState = () => {
+                try {
+                    const key = getReadyStorageKey();
+                    if (!key) return null;
+                    const raw = localStorage.getItem(key);
+                    if (!raw) return null;
+                    return JSON.parse(raw);
+                } catch (e) {
+                    console.warn("[lobby] Failed to load local ready state", e);
+                    return null;
+                }
+            };
+            const saveLocalReadyState = () => {
+                try {
+                    const key = getReadyStorageKey();
+                    if (!key) return;
+                    const selfState = readyState[sessionUsername];
+                    if (!selfState) return;
+                    localStorage.setItem(key, JSON.stringify(selfState));
+                } catch (e) {
+                    console.warn("[lobby] Failed to save local ready state", e);
+                }
+            };
+
             // Fetch existing lobby first to capture host/players
             let existingLobby = null;
             if (apiAvailable && joinKeyVal) {
@@ -311,10 +337,17 @@
                     if (res.ok) {
                         const json = await res.json();
                         existingLobby = json?.lobby || null;
+                        if (existingLobby?.readyState) {
+                            readyState = existingLobby.readyState;
+                        }
                     }
                 } catch (e) {
                     console.warn("[lobby] Could not prefetch existing lobby", e);
                 }
+            }
+            const localSelfReady = loadLocalReadyState();
+            if (localSelfReady) {
+                readyState[sessionUsername] = localSelfReady;
             }
 
             const existingHost = existingLobby?.host;
@@ -328,8 +361,41 @@
             const selectedHeroes = [];
             const playerSelections = new Map();
             const readyPlayers = new Set();
+            const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
+            const tacticMap   = new Map(tactics.map(t => [String(t.id), t]));
+            const enemyMap    = new Map(enemies.map(e => [String(e.id), e]));
+            const allyMap     = new Map(allies.map(a => [String(a.id), a]));
+            const bystanderMap= new Map(bystanders.map(b => [String(b.id), b]));
+            const scenarioMap = new Map(scenarios.map(s => [String(s.id), s]));
+            const henchMap    = new Map(henchmen.map(h => [String(h.id), h]));
+            const villainMap  = new Map(villains.map(v => [String(v.id), v]));
+            const heroMap     = new Map(heroes.map(h => [String(h.id), h]));
 
             let serverHost = lobbyHost;
+            const applyReadyState = (stateObj = {}) => {
+                readyPlayers.clear();
+                playerSelections.clear();
+                Object.entries(stateObj).forEach(([player, info]) => {
+                    if (info?.heroes) {
+                        playerSelections.set(player, info.heroes);
+                    }
+                    if (info?.ready) {
+                        readyPlayers.add(player);
+                    }
+                });
+                const selfState = stateObj[sessionUsername];
+                if (selfState?.heroes?.length) {
+                    selectedHeroes.length = 0;
+                    selectedHeroes.push(...selfState.heroes.map(String));
+                }
+                if (readyBtn) {
+                    readyBtn.dataset.ready = selfState?.ready ? "true" : "false";
+                }
+                updateHeroBadges();
+                updateReadyButtonState();
+                updateStartButtonState();
+                saveLocalReadyState();
+            };
             const renderPlayers = (list) => {
                 if (!playerListEl || !playerCountEl) return;
                 const safeList = Array.isArray(list) ? list.filter(Boolean) : [];
@@ -365,9 +431,6 @@
                     li.style.background = isReadyPlayer ? "#c8f7c5" : "#fff";
                     playerListEl.appendChild(li);
                 });
-                if (readyBtn && readyBtn.dataset.ready === "true") {
-                    readyPlayers.add(sessionUsername);
-                }
                 updateStartButtonState();
             };
 
@@ -390,7 +453,7 @@
                 const hasThree = selectedHeroes.length === 3;
                 const isReady = readyBtn.dataset.ready === "true";
                 const label = readyBtn.querySelector(".menu-text");
-                if (label) label.textContent = isReady ? "Readied" : "Ready";
+                if (label) label.textContent = isReady ? "Ready!" : "Ready?";
                 if (hasThree || isReady) {
                     readyBtn.classList.add("clickable");
                 } else {
@@ -398,10 +461,40 @@
                 }
             };
 
+            const persistSelfReadyState = () => {
+                readyState[sessionUsername] = {
+                    ready: readyBtn?.dataset.ready === "true",
+                    heroes: [...selectedHeroes]
+                };
+                saveLocalReadyState();
+            };
+
+            const sendReadyState = async () => {
+                if (!apiAvailable || !joinKeyVal) return;
+                try {
+                    await fetch(`${apiBase}/api/lobbies/upsert`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            key: joinKeyVal,
+                            encrypted,
+                            isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private",
+                            difficulty: data.difficulty || "Unknown",
+                            host: lobbyHost,
+                            players: currentPlayers,
+                            readyState
+                        })
+                    });
+                } catch (e) {
+                    console.warn("[lobby] Failed to sync ready state", e);
+                }
+            };
+
             const updateStartButtonState = () => {
                 if (!launchBtn) return;
                 const allReady = currentPlayers.every(p => readyPlayers.has(p));
-                if (isHost && allReady) {
+                const enoughPlayers = currentPlayers.length >= 2;
+                if (isHost && allReady && enoughPlayers) {
                     launchBtn.classList.add("clickable");
                 } else {
                     launchBtn.classList.remove("clickable");
@@ -419,6 +512,8 @@
                 if (readyBtn && readyBtn.dataset.ready === "true") {
                     readyBtn.dataset.ready = "false";
                     readyPlayers.delete(sessionUsername);
+                    persistSelfReadyState();
+                    sendReadyState();
                 }
                 updateHeroBadges();
                 updateReadyButtonState();
@@ -488,6 +583,10 @@
                         if (json?.lobby?.host) {
                             serverHost = json.lobby.host;
                         }
+                        if (json?.lobby?.readyState) {
+                            readyState = json.lobby.readyState;
+                            applyReadyState(readyState);
+                        }
                         const players = json?.lobby?.players;
                         if (Array.isArray(players)) {
                             // Self-heal if this client or host is missing from server record
@@ -535,13 +634,20 @@
                     } else {
                         readyPlayers.delete(sessionUsername);
                     }
+                    persistSelfReadyState();
                     updateReadyButtonState();
                     updateStartButtonState();
+                    sendReadyState();
                 });
             }
 
             renderHeroSelector();
+            applyReadyState(readyState);
             renderPlayers(playerList);
+            saveLocalReadyState();
+            if (localSelfReady) {
+                sendReadyState();
+            }
 
             if (joinKeyVal && apiAvailable) {
                 console.log("[lobby] Registering lobby with server", { joinKeyVal, lobbyHost, playerList, difficulty: data.difficulty, isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private" });
@@ -558,7 +664,8 @@
                             isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private",
                             difficulty: data.difficulty || "Unknown",
                             host: lobbyHost,
-                            players: mergedPlayers
+                            players: mergedPlayers,
+                            readyState
                         })
                     });
                     console.log("[lobby] upsert status", upsertRes.status);
@@ -582,6 +689,10 @@
                             if (json?.lobby?.players) {
                                 console.log("[lobby] Players in lobby:", json.lobby.players);
                                 renderPlayers(json.lobby.players);
+                            }
+                            if (json?.lobby?.readyState) {
+                                readyState = json.lobby.readyState;
+                                applyReadyState(readyState);
                             }
                         }
                         startPolling();
@@ -621,16 +732,6 @@
             });
 
             // ---------- Build readable lists ----------
-
-            const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
-            const tacticMap   = new Map(tactics.map(t => [String(t.id), t]));
-            const enemyMap    = new Map(enemies.map(e => [String(e.id), e]));
-            const allyMap     = new Map(allies.map(a => [String(a.id), a]));
-            const bystanderMap= new Map(bystanders.map(b => [String(b.id), b]));
-            const scenarioMap = new Map(scenarios.map(s => [String(s.id), s]));
-            const henchMap    = new Map(henchmen.map(h => [String(h.id), h]));
-            const villainMap  = new Map(villains.map(v => [String(v.id), v]));
-            const heroMap     = new Map(heroes.map(h => [String(h.id), h]));
 
             // Update privacy readout banner
             const privacyReadoutEl = document.getElementById("privacy-readout");
@@ -950,10 +1051,59 @@
                 data.playerUsernames = data.playerUsernames || [];
                 data.heroesByPlayer = data.heroesByPlayer || [];
                 data.players = currentPlayers;
-                const heroesByPlayer = Array.from(playerSelections.entries()).map(([player, heroes]) => ({ player, heroes }));
-                if (heroesByPlayer.length) {
-                    data.heroesByPlayer = heroesByPlayer;
+                const heroesByPlayer = currentPlayers.map(p => playerSelections.get(p) || []);
+
+                // Construct hero turn order by player count rules
+                const orderedHeroes = [];
+                const count = heroesByPlayer.length;
+                if (count === 2) {
+                    for (let round = 0; round < 3; round++) {
+                        for (let p = 0; p < 2; p++) {
+                            const hero = heroesByPlayer[p][round];
+                            if (hero != null) orderedHeroes.push(hero);
+                        }
+                    }
+                } else if (count === 3) {
+                    for (let round = 0; round < 2; round++) {
+                        for (let p = 0; p < 3; p++) {
+                            const hero = heroesByPlayer[p][round];
+                            if (hero != null) orderedHeroes.push(hero);
+                        }
+                    }
+                } else if (count === 4) {
+                    for (let p = 0; p < 4; p++) {
+                        const hero = heroesByPlayer[p][0];
+                        if (hero != null) orderedHeroes.push(hero);
+                    }
+                    const hostExtras = heroesByPlayer[0] || [];
+                    if (hostExtras[1] != null) orderedHeroes.push(hostExtras[1]);
+                    if (hostExtras[2] != null) orderedHeroes.push(hostExtras[2]);
+                } else if (count === 5) {
+                    for (let p = 0; p < 5; p++) {
+                        const hero = heroesByPlayer[p][0];
+                        if (hero != null) orderedHeroes.push(hero);
+                    }
+                    const hostExtras = heroesByPlayer[0] || [];
+                    if (hostExtras[1] != null) orderedHeroes.push(hostExtras[1]);
+                } else if (count >= 6) {
+                    for (let p = 0; p < count; p++) {
+                        const hero = heroesByPlayer[p][0];
+                        if (hero != null) orderedHeroes.push(hero);
+                    }
+                } else {
+                    heroesByPlayer.forEach(list => list.forEach(h => { if (h != null) orderedHeroes.push(h); }));
                 }
+
+                data.heroesByPlayer = heroesByPlayer.map((heroes, idx) => ({ player: currentPlayers[idx], heroes }));
+                data.heroes = orderedHeroes;
+                data.heroTurnOrder = orderedHeroes;
+                data.selectedHeroes = orderedHeroes;
+                data.heroData = data.heroData || {};
+                orderedHeroes.forEach((hid, i) => {
+                    const key = String(hid);
+                    if (!data.heroData[key]) data.heroData[key] = {};
+                    data.heroData[key].owner = data.heroData[key].owner || currentPlayers[i % currentPlayers.length];
+                });
 
                 const encrypted = await encryptData(data, SECRET);
 
