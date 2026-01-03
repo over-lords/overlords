@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/1f800f5e7239f7001906ac9630f85b62e07b94b5/Public/Images/Card%20Assets/Villains";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/9f43e31dbcb6c27a33f79e1ddf8c60f1044fe2b6/Public/Images/Card%20Assets/Villains";
 
 // ids 5601-7000
 
@@ -2038,6 +2038,60 @@ export const villains = [
         type: `quick`,
         condition: `uponDefeat`,
         effect: `damageFoe(1,any)`
+      }
+    ]
+  },
+  {
+    id: "5652",
+    name: "Icicle Jr",
+    image: `${cardArtFolder}/icicleJr.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5653",
+    name: "Mr Twister",
+    image: `${cardArtFolder}/misterTwister.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "9",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Shove a Henchman or Villain up to 5 spaces right.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `shoveVillain(any,10)`
       }
     ]
   },
