@@ -1360,7 +1360,7 @@ export const overlords = [
     type: "Overlord",
     level: "3",
     hp: "80",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `All Villains gain Teleport. <span class="line-gap"></span>
@@ -1377,10 +1377,8 @@ export const overlords = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `villainDrawn`,
-        uses: `0`,
-        shared: `no`,
-        effect: `villainTeleports`
+        condition: `villainDrawn()`,
+        effect: `villainTeleports()`
       }
     ],
     mightNamePrint: [
@@ -1394,7 +1392,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `destroyCity(rightmost)`
+        effect: `destroyCity(1)`
       }
     ],
     bonusNamePrint: [

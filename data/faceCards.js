@@ -2049,7 +2049,7 @@ export const heroes = [
     type: "Hero",
     category: "Tactician",
     doNotShow: "true",
-    color: "yellow",
+    color: "green",
     teams: ["Arrow","Justice"],
     hp: "11",
     damageThreshold: "2",

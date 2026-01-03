@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Card%20Assets/Villains";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/1f800f5e7239f7001906ac9630f85b62e07b94b5/Public/Images/Card%20Assets/Villains";
 
 // ids 5601-7000
 
@@ -1026,10 +1026,10 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `I Am Your Downfall!`
+        text: `Charge!`
       },
       {
-        text: `Charge!`
+        text: `I Am Your Downfall!`
       },
       {
         text: `Reward!`
@@ -1038,13 +1038,13 @@ export const villains = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `onEscape`,
-        effect: `takeover(1)`
+        condition: `onEntry`,
+        effect: `charge(1)`
       },
       {
         type: `quick`,
-        condition: `onEntry`,
-        effect: `charge(1)`
+        condition: `onEscape`,
+        effect: `takeover(1)`
       },
       {
         type: `quick`,
@@ -1686,6 +1686,361 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5644",
+    name: "The Key",
+    image: `${cardArtFolder}/theKey.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+                Might of the Overlord: Destroy the Rightmost City. <span class="line-gap"></span> 
+                  Teleport <span class="line-gap"></span> 
+                    Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I'll Just Let Myself In`
+      },
+      {
+        text: `You Left the Door Open`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Ha! That Was Easy!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`destroyCity(1)`]
+      }
+    ],
+  },
+  {
+    id: "5645",
+    name: "Mongul",
+    image: `${cardArtFolder}/mongul.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "25",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 3 <span class="line-gap"></span> 
+                Might of the Overlord: Destroy the Rightmost City. <span class="line-gap"></span> 
+                  Charge 1 <span class="line-gap"></span> 
+                    Reward: Deal 5 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Come For Superman!`
+      },
+      {
+        text: `Kneel!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(3)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(5)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `You're Pathetic!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`destroyCity(1)`]
+      }
+    ],
+  },
+  {
+    id: "5646",
+    name: "Star Sapphire",
+    image: `${cardArtFolder}/starSapphire.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "15",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+                 Heroes cannot Retreat when engaging Star Sapphire. <span class="line-gap"></span> 
+                   Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Look Lovely...`
+      },
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+  },
+  {
+    id: "5647",
+    name: "Ma'alefa'ak",
+    image: `${cardArtFolder}/maAlefaAk.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+                   Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Boo...`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+  },
+  {
+    id: "5648",
+    name: "Black Manta",
+    image: `${cardArtFolder}/blackManta.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Aquaman",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+                Might of the Overlord: All Heroes take 2 Damage. <span class="line-gap"></span><span class="line-gap"></span> 
+                  Charge 1 <span class="line-gap"></span> 
+                    Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Manta Troops, Advance!`
+      },
+      {
+        text: `Prepare for Slaughter!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Gut You!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        condition: `might`,
+        uses: `999`,
+        shared: `no`,
+        effect: [`damageHero(2,all)`]
+      }
+    ],
+  },
+  {
+    id: "5649",
+    name: "Floronic Man",
+    image: `${cardArtFolder}/floronicMan.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "11",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+                 If unengaged at the end of a Hero's turn, Floronic Man regains up to 3 HP. <span class="line-gap"></span> 
+                   Reward: Your Hero's Damage Threshold increases by 1 until the end of their next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Travel the Green`
+      },
+      {
+        text: `Recharging`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageFoe(-3,current)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `increaseHeroDT(currentHero,1,endNextTurn)`
+      }
+    ],
+  },
+  {
+    id: "5650",
+    name: "Siren",
+    image: `${cardArtFolder}/siren.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Aquaman",
+    hp: "8",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: KO a Henchman or Villain in either Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageFoe(999,anyCoastal)`
+      }
+    ]
+  },
+  {
+    id: "5651",
+    name: "Harm",
+    image: `${cardArtFolder}/harmNew.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "4",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 1 Damage to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageFoe(1,any)`
+      }
+    ]
+  },
 ]
 
 // A: appelaxian golem, arkillo, atomica, atrocitus, azrael
@@ -1693,20 +2048,20 @@ export const villains = [
 // C: captain boomerang, captain cold, cheshire, chucko, cinderblock, clock king, copperhead, count vertigo, curare, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
 // D: dawnbreaker, deathstorm, dee dee, desaad, devastation, devastator, dr light, drowned, dr sivana
 // E: envy, everyman
-// F: felix faust, floronic man, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
+// F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
 // G: gcpd batman, general eiling, general zod, gentleman ghost, ghoul, gilotina, girder, gizmo, gluttony, golden glider, grail, greed, grid
 // H: harley quinn, harm, heatwave, hush, hyperclan
 // I: icicle junior, imperiex prime, inertia, inque
 // J: jericho, jinx, johnny quick
 // K: kgbeast, killer croc, killer frost, king kobra, king shark, klarion, krona
 // L: lashina, lust, lyssa drak
-// M: maAlefaAk, mad harriet, mad hatter, mammoth, match, merciless, mister twister, mongul, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine, mutant leader
+// M: mad harriet, mad hatter, mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine, mutant leader
 // O: oblivion, owlman
 // P: penguin, phantasm, pied piper, poison ivy, power ring, prometheus, psycho pirate
 // Q: queen bee
 // R: rainbow raider, ravager (rose), red death, reign, reverse flash, riddler
-// S: scar, scarecrow, shade, shimmer, shriek, siren, sloth, solomon grundy, soranik sinestro, spellbinder, sportsmaster, star sapphire, steppenwolf, stompa, superwoman
-// T: talia al ghul, talon, tar pit, terror twins, the brain, the elite, the key, the top, the trickster, the turtle, two face
+// S: scar, scarecrow, shade, shimmer, shriek, siren, sloth, solomon grundy, soranik sinestro, spellbinder, sportsmaster, steppenwolf, stompa, superwoman
+// T: talia al ghul, talon, tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle, two face
 // U: upside down man
 // V: victor zsasz, vigilante
 // W: woof, wrath, white lanterns: anti-monitor, deadman, swamp thing

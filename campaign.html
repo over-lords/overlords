@@ -293,13 +293,20 @@
                     selectedLabel.textContent = "Select a level to play.";
                     return;
                 }
-                const overlordNames = (levelData.overlords || [])
+                const overlordList = Array.isArray(levelData.overlords) ? levelData.overlords : [];
+                const heroList = Array.isArray(levelData.heroes) ? levelData.heroes : [];
+
+                const overlordNames = overlordList
                     .map(id => overlordNameMap.get(String(id)) || `#${id}`)
                     .join(", ") || "None";
-                const heroNames = (levelData.heroes || [])
+                const heroNames = heroList
                     .map(id => heroNameMap.get(String(id)) || `#${id}`)
                     .join(", ") || "None";
-                selectedLabel.innerHTML = `<strong>Overlord(s):</strong> ${escapeHtml(overlordNames)}<br><br><strong>Heroes:</strong> ${escapeHtml(heroNames)}`;
+
+                const overlordLabel = overlordList.length === 1 ? "Overlord:" : "Overlords:";
+                const heroLabel = heroList.length === 1 ? "Hero:" : "Heroes:";
+
+                selectedLabel.innerHTML = `<strong>${escapeHtml(overlordLabel)}</strong> ${escapeHtml(overlordNames)}<br><br><strong>${escapeHtml(heroLabel)}</strong> ${escapeHtml(heroNames)}`;
             } catch (err) {
                 console.warn("[Campaign] Failed to render selection info", err);
                 selectedLabel.textContent = "Select a level to play.";

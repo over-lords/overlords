@@ -547,6 +547,11 @@ function markCityDestroyed(upperIdx, gameState, opts = {}) {
         if (!gameState.destroyedByCountdown) gameState.destroyedByCountdown = {};
         gameState.destroyedByCountdown[upperIdx] = true;
     }
+    try {
+        triggerRuleEffects("cityDestroyed", { state: gameState, cityIndex: upperIdx, reason: opts.by || null });
+    } catch (err) {
+        console.warn("[markCityDestroyed] cityDestroyed trigger failed", err);
+    }
 
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
@@ -569,7 +574,22 @@ function markCityDestroyed(upperIdx, gameState, opts = {}) {
             if (getComputedStyle(area).position === "static") {
                 area.style.position = "relative";
             }
-            area.style.zIndex = "1";
+            area.style.zIndex = "2";
+        }
+
+        let dimmer = slot.querySelector(".destroyed-city-dimmer");
+        if (!dimmer) {
+            dimmer = document.createElement("div");
+            dimmer.className = "destroyed-city-dimmer";
+            dimmer.style.position = "absolute";
+            dimmer.style.top = "0";
+            dimmer.style.left = "0";
+            dimmer.style.right = "0";
+            dimmer.style.bottom = "0";
+            dimmer.style.background = "rgba(0,0,0,0.5)";
+            dimmer.style.pointerEvents = "none";
+            dimmer.style.zIndex = "0";
+            slot.appendChild(dimmer);
         }
 
         let overlay = slot.querySelector(".destroyed-city-overlay");
@@ -589,7 +609,7 @@ function markCityDestroyed(upperIdx, gameState, opts = {}) {
             overlay.style.fontWeight = "bold";
             overlay.style.color = "red";
             overlay.style.textShadow = "0 0 8px black";
-            overlay.style.zIndex = "0";
+            overlay.style.zIndex = "3";
             overlay.textContent = "X";
             slot.appendChild(overlay);
         }
@@ -612,6 +632,8 @@ function unmarkCityDestroyed(upperIdx, gameState) {
         slot.style.backgroundColor = "";
         const overlay = slot.querySelector(".destroyed-city-overlay");
         if (overlay) overlay.remove();
+        const dimmer = slot.querySelector(".destroyed-city-dimmer");
+        if (dimmer) dimmer.remove();
         const area = slot.querySelector(".city-card-area");
         if (area) area.style.zIndex = "";
     });
@@ -1177,6 +1199,26 @@ function cardHasTeleport(cardData) {
     return false;
 }
 
+function getTeleportBannerText(cardData, { forcedTeleport = false } = {}) {
+    if (forcedTeleport) return "Teleport!";
+    if (!cardData) return null;
+
+    const effects = Array.isArray(cardData.abilitiesEffects) ? cardData.abilitiesEffects : [];
+    for (let i = 0; i < effects.length; i++) {
+        const eff = effects[i];
+        if (!eff) continue;
+
+        const raw = eff.effect;
+        const list = Array.isArray(raw) ? raw : [raw];
+        const hasTeleport = list.some(x => typeof x === "string" && (x.trim() === "teleport" || x.trim() === "teleport()"));
+        if (!hasTeleport) continue;
+
+        const name = cardData.abilitiesNamePrint?.[i]?.text;
+        return name || "Teleport!";
+    }
+    return "Teleport!";
+}
+
 function cardChargeDistance(cardData) {
     if (!cardData) return 0;
 
@@ -1439,11 +1481,16 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
  * Handles Teleport, Charge, and normal shove.
  * `fromDeck: true` means it may revert the pointer & reveal top card for Teleport.
  */
-async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false, bonusCharge = 0 } = {}) {
-    const hasTeleport = cardHasTeleport(cardData);
-    const chargeDist = cardChargeDistance(cardData) + (Number(bonusCharge) || 0);
+async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false, bonusCharge = 0, forcedTeleport = false } = {}) {
+    const hasTeleport = forcedTeleport || cardHasTeleport(cardData);
+    const chargeDist = forcedTeleport ? 0 : cardChargeDistance(cardData) + (Number(bonusCharge) || 0);
 
     if (hasTeleport) {
+        const bannerText = getTeleportBannerText(cardData, { forcedTeleport });
+        if (bannerText) {
+            try { await showMightBanner(bannerText, 2000); } catch (err) { console.warn("[TELEPORT] Failed to show banner", err); }
+        }
+
         const activeOrder = getActiveUpperOrder(state);
         const openSlots = activeOrder.filter(idx => !state.cities?.[idx]);
 
@@ -1548,6 +1595,11 @@ export async function villainDraw(count = 1) {
         gameState.revealedTopVillain = false;
 
         const data = findCardInAllSources(villainId);
+        try {
+            triggerRuleEffects("villainDrawn", { state: gameState, cardId: villainId, cardData: data });
+        } catch (err) {
+            console.warn("[VILLAIN DRAW] villainDrawn trigger failed", err);
+        }
         const kind = classifyVillainCard(villainId, data);
         const cardName = data?.name || `Card ${villainId}`;
         let blockedReason = null;
@@ -1584,9 +1636,15 @@ export async function villainDraw(count = 1) {
                     Array.isArray(gameState.tactics) &&
                     gameState.tactics.some(id => String(id) === "5409");
                 const isVillainCard = String(data?.type || "").toLowerCase() === "villain";
+                const forcedTeleport =
+                    isVillainCard &&
+                    gameState._forceTeleportNextVillain === true &&
+                    (!gameState._forceTeleportVillainId || String(gameState._forceTeleportVillainId) === String(villainId));
+                gameState._forceTeleportNextVillain = false;
+                gameState._forceTeleportVillainId = null;
                 const baseCharge = cardChargeDistance(data);
-                const bonusCharge = (hasChargeTactic && isVillainCard && baseCharge === 0) ? 1 : 0;
-                handlerResult = await handleEnemyEntry(villainId, data, gameState, { fromDeck: true, bonusCharge });
+                const bonusCharge = (!forcedTeleport && hasChargeTactic && isVillainCard && baseCharge === 0) ? 1 : 0;
+                handlerResult = await handleEnemyEntry(villainId, data, gameState, { fromDeck: true, bonusCharge, forcedTeleport });
                 if (handlerResult?.blocked) {
                     blockedReason = handlerResult.reason || "Blocked";
                 }

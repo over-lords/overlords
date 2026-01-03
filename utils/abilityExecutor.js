@@ -282,6 +282,66 @@ function getActiveTacticsFromState(state = gameState) {
         .filter(Boolean);
 }
 
+function collectOverlordReductionSteps(state = gameState) {
+    const s = state || gameState;
+    const steps = new Set();
+    const cards = [];
+
+    const ovInfo = getCurrentOverlordInfo(s);
+    if (ovInfo?.card) cards.push(ovInfo.card);
+
+    if (Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {
+        const scenarioId = String(s.scenarioStack[s.scenarioStack.length - 1]);
+        const scenarioCard = scenarios.find(sc => String(sc.id) === scenarioId);
+        if (scenarioCard) cards.push(scenarioCard);
+    }
+
+    const activeTactics = getActiveTacticsFromState(s);
+    cards.push(...activeTactics);
+
+    const scanConds = (condVal) => {
+        const rawList = Array.isArray(condVal) ? condVal : [condVal];
+        rawList.forEach(c => {
+            if (!c) return;
+            const match = String(c).match(/overlordreducedbyxfrommax\s*\(\s*([^)]+)\s*\)/i);
+            if (!match) return;
+            const stepVal = Number(match[1]);
+            if (!Number.isNaN(stepVal) && stepVal > 0) {
+                steps.add(stepVal);
+            }
+        });
+    };
+
+    cards.forEach(card => {
+        if (!card) return;
+        const effects = [
+            ...(Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : []),
+            ...(Array.isArray(card.mightEffects) ? card.mightEffects : []),
+            ...(Array.isArray(card.bonusEffects) ? card.bonusEffects : []),
+            ...(Array.isArray(card.evilWinsEffects) ? card.evilWinsEffects : [])
+        ];
+        effects.forEach(eff => scanConds(eff?.condition));
+    });
+
+    return Array.from(steps);
+}
+
+function getOverlordReductionThresholdsCrossed(prevHP, newHP, baseHP, step) {
+    const list = [];
+    const base = Number(baseHP) || 0;
+    const inc = Number(step) || 0;
+    if (inc <= 0 || base <= 0) return list;
+    if (prevHP <= newHP) return list; // only when HP decreases
+
+    for (let t = base - inc; t >= 0; t -= inc) {
+        if (prevHP > t && newHP <= t) {
+            list.push(t);
+        }
+    }
+
+    return list;
+}
+
 export function playDamageSfx(amount) {
     const dmg = Math.max(0, Number(amount) || 0);
     if (dmg <= 0) return;
@@ -3166,9 +3226,11 @@ function setHeroDTforHero(heroId, value, duration = "next", state = gameState, m
     if (!heroObj || !heroState) return;
 
     const normDuration = String(duration || "next").toLowerCase();
+    const isEndNext = ["endnext", "endnextturn", "nextend", "end_of_next", "end_of_next_turn"].includes(normDuration);
     let expiresAtTurnCounter = null;
     if (normDuration === "current") expiresAtTurnCounter = s.turnCounter;
     else if (normDuration === "next") expiresAtTurnCounter = s.turnCounter + 1;
+    else if (isEndNext) expiresAtTurnCounter = s.turnCounter + 2;
     else if (normDuration === "permanent") expiresAtTurnCounter = null;
 
     heroState.tempDT = {
@@ -3181,7 +3243,7 @@ function setHeroDTforHero(heroId, value, duration = "next", state = gameState, m
     const durationText =
         normDuration === "permanent"
             ? "for the rest of the game"
-            : (normDuration === "nextend" || normDuration === "endnext"
+            : (isEndNext
                 ? "until the end of their next turn"
                 : (normDuration === "next" ? "until the start of their next turn" : "for this turn"));
     appendGameLogEntry(`${heroObj.name}'s Damage Threshold is now ${Number(value) || 0} ${durationText}.`, s);
@@ -3250,6 +3312,58 @@ EFFECT_HANDLERS.decreaseHeroDT = function(args = [], card, selectedData = {}) {
         const newVal = Math.max(1, baseDT - amount);
         setHeroDTforHero(hid, newVal, duration || "permanent", s, meta);
     });
+    saveGameState(s);
+};
+
+EFFECT_HANDLERS.increaseHeroDT = function(args = [], card, selectedData = {}) {
+    const whoRaw = args?.[0] ?? "current";
+    const amount = Math.max(0, Number(args?.[1] ?? 0) || 0);
+    const duration = args?.[2] ?? "permanent";
+    const sourceIdArg = args?.[3] ?? null;
+    const s = selectedData?.state || gameState;
+    if (!s || !Array.isArray(s.heroes)) return;
+
+    const meta = {
+        sourceType: selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect"),
+        sourceId: selectedData?.scenarioId || card?.id || sourceIdArg || null
+    };
+
+    const heroIds = s.heroes;
+    const normWho = String(whoRaw || "current").toLowerCase();
+
+    const applyToHero = (hid) => {
+        const hObj = heroes.find(h => String(h.id) === String(hid));
+        if (!hObj) return;
+        const baseDT = Number(hObj.damageThreshold || 1) || 1;
+        const newVal = Math.max(1, baseDT + amount);
+        setHeroDTforHero(hid, newVal, duration || "permanent", s, meta);
+    };
+
+    if (normWho === "all") {
+        heroIds.forEach(applyToHero);
+    } else if (normWho === "random") {
+        const alive = heroIds.filter(hid => s.heroData?.[hid]);
+        if (!alive.length) return;
+        const pick = alive[Math.floor(Math.random() * alive.length)];
+        applyToHero(pick);
+    } else if (normWho === "current" || normWho === "currenthero") {
+        let target = selectedData?.currentHeroId;
+        if (target == null) {
+            const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
+            target = heroIds[idx];
+        }
+        if (target != null) applyToHero(target);
+    } else {
+        // Team key support
+        heroIds.forEach(hid => {
+            const hObj = heroes.find(h => String(h.id) === String(hid));
+            if (!hObj) return;
+            if (heroMatchesTeam(hObj, normWho)) {
+                applyToHero(hid);
+            }
+        });
+    }
+
     saveGameState(s);
 };
 
@@ -5991,6 +6105,18 @@ EFFECT_HANDLERS.villainDraw = function(args, card, selectedData) {
     villainDraw(Math.max(0, count));
 };
 
+EFFECT_HANDLERS.villainTeleports = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const cardData = selectedData?.cardData || null;
+    const cardId = selectedData?.cardId ?? selectedData?.villainId ?? cardData?.id ?? null;
+    const typeStr = String(cardData?.type || "").toLowerCase();
+
+    if (typeStr !== "villain") return;
+
+    state._forceTeleportNextVillain = true;
+    state._forceTeleportVillainId = cardId != null ? String(cardId) : null;
+};
+
 EFFECT_HANDLERS.setCardDamageTo = function(args = [], card, selectedData = {}) {
     const state = selectedData?.state || gameState;
     const heroId = selectedData?.currentHeroId ?? null;
@@ -8680,6 +8806,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
 
     const ovId      = info.id;
     const ovCard    = info.card;
+    const prevHP    = info.currentHP;
     const currentHP = info.currentHP;
     let actualDamage = Math.max(0, Math.min(amount, currentHP));
     let newHP     = Math.max(0, currentHP - amount);
@@ -8692,6 +8819,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
     const overlordName = ovCard?.name || "Overlord";
     const isFinalOverlord = info.kind !== "scenario" && Array.isArray(s.overlords) && s.overlords.length === 1;
     const upperRowOccupied = isFinalOverlord && UPPER_ORDER.some(idx => isCityOccupied(s, idx));
+    const reductionSteps = (!isHeal && info.kind !== "scenario") ? collectOverlordReductionSteps(s) : [];
 
     if (isFinalOverlord && upperRowOccupied && newHP <= 0) {
         newHP = 1;
@@ -8837,6 +8965,24 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         // ===================================================================
         // ORIGINAL OVERLORD BRANCH (unchanged behavior)
         // ===================================================================
+
+        if (!isHeal && reductionSteps.length) {
+            reductionSteps.forEach(step => {
+                const crossed = getOverlordReductionThresholdsCrossed(prevHP, newHP, info.baseHP, step);
+                crossed.forEach(threshold => {
+                    try {
+                        triggerRuleEffects(`overlordReducedByXFromMax(${step})`, {
+                            state: s,
+                            baseHP: info.baseHP,
+                            threshold,
+                            currentHP: newHP
+                        });
+                    } catch (err) {
+                        console.warn("[damageOverlord] Failed to trigger overlordReducedByXFromMax", err);
+                    }
+                });
+            });
+        }
 
         if (!s.overlordHP) s.overlordHP = {};
         s.overlordHP[ovId] = newHP;
