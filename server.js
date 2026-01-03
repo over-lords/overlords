@@ -66,20 +66,35 @@ function pruneStalePlayers(lobby) {
 }
 
 app.post("/api/lobbies/upsert", (req, res) => {
-  const { key, encrypted, isPrivate = false, difficulty = "Unknown", host = "Unknown", players = [] } = req.body || {};
+  const {
+    key,
+    encrypted,
+    isPrivate = false,
+    difficulty = "Unknown",
+    host = "Unknown",
+    players = [],
+    readyState = null,
+    launchUrl = null
+  } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   pruneStaleLobbies();
+  const existing = lobbies.get(key) || {};
   const playersSafe = Array.isArray(players) ? Array.from(new Set(players.filter(Boolean))) : [];
   const now = Date.now();
+  const playerLastSeen = existing.playerLastSeen || {};
+  playersSafe.forEach(p => { playerLastSeen[p] = now; });
   lobbies.set(key, {
     key,
-    encrypted: typeof encrypted === "string" ? encrypted : null,
+    encrypted: typeof encrypted === "string" ? encrypted : existing.encrypted || null,
     isPrivate: Boolean(isPrivate),
     difficulty,
     host,
     players: playersSafe,
-    playerLastSeen: Object.fromEntries(playersSafe.map(p => [p, now])),
-    started: false,
+    playerLastSeen,
+    started: existing.started || false,
+    launchUrl: typeof launchUrl === "string" ? launchUrl : existing.launchUrl || null,
+    launchedAt: existing.launchedAt || null,
+    readyState: readyState && typeof readyState === "object" ? readyState : existing.readyState || {},
     updatedAt: now,
     lastSeenAt: now
   });
@@ -124,17 +139,24 @@ app.post("/api/lobbies/heartbeat", (req, res) => {
   return res.json({ ok: true });
 });
 
-// Mark lobby started
+// Mark lobby started (and optionally provide a launch URL)
 app.post("/api/lobbies/start", (req, res) => {
-  const { key } = req.body || {};
+  const { key, launchUrl, encrypted } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   const lobby = lobbies.get(key);
   if (!lobby) return res.status(404).json({ error: "Lobby not found" });
   lobby.started = true;
+  if (typeof launchUrl === "string") {
+    lobby.launchUrl = launchUrl;
+    lobby.launchedAt = Date.now();
+  }
+  if (typeof encrypted === "string") {
+    lobby.encrypted = encrypted;
+  }
   lobby.updatedAt = Date.now();
   lobby.lastSeenAt = Date.now();
   console.log(`[lobbies] Lobby started ${key}`);
-  return res.json({ ok: true });
+  return res.json({ ok: true, lobby });
 });
 
 app.get("/api/lobbies", (req, res) => {

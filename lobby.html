@@ -144,6 +144,7 @@
             width: 62px;
             height: 62px;
             object-fit: cover;
+            object-position: 50% 30%;
             border: 2px solid #000;
             border-radius: 6px;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -529,8 +530,7 @@
                 saveLocalReadyState();
             };
 
-            const maybeRedirectToGame = () => {
-                const launchUrl = readyState?.__launchUrl;
+            const maybeRedirectToGame = (launchUrl) => {
                 if (!launchUrl || window.__didLaunchRedirect) return;
                 window.__didLaunchRedirect = true;
                 window.location.href = launchUrl;
@@ -656,7 +656,9 @@
                     }
                     if (json?.lobby?.readyState) {
                         readyState = json.lobby.readyState;
-                        maybeRedirectToGame();
+                    }
+                    if (json?.lobby?.launchUrl) {
+                        maybeRedirectToGame(json.lobby.launchUrl);
                     }
                     const players = json?.lobby?.players;
                     if (Array.isArray(players)) {
@@ -765,7 +767,9 @@
                             if (json?.lobby?.readyState) {
                                 readyState = json.lobby.readyState;
                                 applyReadyState(readyState);
-                                maybeRedirectToGame();
+                            }
+                            if (json?.lobby?.launchUrl) {
+                                maybeRedirectToGame(json.lobby.launchUrl);
                             }
                         }
                         startPolling();
@@ -1182,25 +1186,21 @@
                 const url = new URL("./game.html", window.location.href);
                 url.searchParams.set("data", encrypted);
 
-                // Broadcast launch URL so all lobby clients follow to game
-                readyState.__launchUrl = url.toString();
-                readyState.__started = true;
-                window.__didLaunchRedirect = true;
-                await sendReadyState();
-
                 // Mark lobby started so it disappears from listings
                 try {
                     if (apiAvailable && joinKeyVal) {
                         await fetch(`${apiBase}/api/lobbies/start`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ key: joinKeyVal })
+                            body: JSON.stringify({ key: joinKeyVal, launchUrl: url.toString(), encrypted })
                         });
                     }
                 } catch (e) {
                     console.warn("[lobby] Failed to mark lobby started", e);
                 }
 
+                // Host navigates immediately
+                window.__didLaunchRedirect = true;
                 window.open(url.toString(), "_self");
             });
         })();
