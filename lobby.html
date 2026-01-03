@@ -529,6 +529,13 @@
                 saveLocalReadyState();
             };
 
+            const maybeRedirectToGame = () => {
+                const launchUrl = readyState?.__launchUrl;
+                if (!launchUrl || window.__didLaunchRedirect) return;
+                window.__didLaunchRedirect = true;
+                window.location.href = launchUrl;
+            };
+
             const sendReadyState = async () => {
                 if (!apiAvailable || !joinKeyVal) return;
                 try {
@@ -649,6 +656,7 @@
                     }
                     if (json?.lobby?.readyState) {
                         readyState = json.lobby.readyState;
+                        maybeRedirectToGame();
                     }
                     const players = json?.lobby?.players;
                     if (Array.isArray(players)) {
@@ -757,6 +765,7 @@
                             if (json?.lobby?.readyState) {
                                 readyState = json.lobby.readyState;
                                 applyReadyState(readyState);
+                                maybeRedirectToGame();
                             }
                         }
                         startPolling();
@@ -1170,9 +1179,14 @@
                 });
 
                 const encrypted = await encryptData(data, SECRET);
-
                 const url = new URL("./game.html", window.location.href);
                 url.searchParams.set("data", encrypted);
+
+                // Broadcast launch URL so all lobby clients follow to game
+                readyState.__launchUrl = url.toString();
+                readyState.__started = true;
+                window.__didLaunchRedirect = true;
+                await sendReadyState();
 
                 // Mark lobby started so it disappears from listings
                 try {
