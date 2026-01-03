@@ -17,4 +17,5 @@ export const keywords = {
     "Withdraw": "Retreat without taking Damage, no Retreat Roll is made.",
     "Knockback": "Return an active Henchman or Villain to the top of the Villain Deck.",
     "E&A": "The Enemies and Allies Deck",
+    "Retreat": "Exit current city to return to HQ, but possibly get hit on your way out.",
 }

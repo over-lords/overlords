@@ -52,33 +52,160 @@
             from { transform: translateY(0); opacity: 1; }
             to { transform: translateY(120%); opacity: 0; }
         }
+        /* Host start button states */
+        #launch-btn {
+            background: #b5b5b5;
+            border: 4px solid #777;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+            border-radius: 6px;
+            pointer-events: none;
+            cursor: not-allowed;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+        }
+        #launch-btn.clickable {
+            background: #ffd54f;
+            border-color: #c59b00;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            cursor: pointer;
+            opacity: 1;
+        }
+        #launch-btn .menu-text {
+            color: #111;
+            text-shadow: none;
+            font-weight: bold;
+            font-size: 20px;
+            padding: 10px 18px;
+        }
+        /* Ready button states */
+        #ready-btn {
+            background: #b5b5b5;
+            border: 4px solid #777;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+            border-radius: 6px;
+            pointer-events: none;
+            cursor: not-allowed;
+            opacity: 0.8;
+            transition: all 0.2s ease;
+        }
+        #ready-btn.clickable {
+            background: #ffd54f;
+            border-color: #c59b00;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            cursor: pointer;
+            opacity: 1;
+        }
+        #ready-btn .menu-text {
+            color: #111;
+            text-shadow: none;
+            font-weight: bold;
+            font-size: 20px;
+            padding: 10px 18px;
+        }
+        /* Hero selector rail */
+        #hero-selector {
+            position: fixed;
+            left: 5px;
+            top: 75px;
+            width: 360px;
+            height: 180px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.9);
+            border: 4px solid #000;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+            padding: 6px;
+            z-index: 11;
+        }
+        .hero-category-block {
+            margin-bottom: 6px;
+            border: 2px solid #000;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .hero-category-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin: 0 0 4px 0;
+        }
+        .hero-card-small {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            margin: 0 4px 6px 0;
+            cursor: pointer;
+            position: relative;
+            width: 72px;
+        }
+        .hero-card-small img {
+            width: 62px;
+            height: 62px;
+            object-fit: cover;
+            border: 2px solid #000;
+            border-radius: 6px;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .hero-card-small.selected img {
+            box-shadow: 0 0 10px 4px #ffd54f;
+            transform: scale(1.04);
+        }
+        .hero-card-small .hero-name {
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.1;
+            max-width: 72px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .hero-card-small .hero-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #ffd54f;
+            border: 2px solid #000;
+            color: #000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+        }
     </style>
     <title>Overlords</title>
 </head>
 <body style="background-color:white;">
     <div class="bg-image" alt="" style="opaCity: 35%;"></div>
     <div class="container">
-        <div class="title-box" id="title-box"></div>
-        <h1 class="glow-red" style="pointer-events: none;">Lobby</h1>
+        <div class="title-box" id="title-box" style="margin-top: -30px;"></div>
+        <h1 class="glow-red" style="pointer-events: none;"><div id="privacy-readout" style="font-size: 3rem;"></div></h1>
 
         <div id="close-box" onclick="location.href='multi.html'">X</div>
 
-        <div class="deck-box" id="launch-btn" style="display: none; cursor: pointer; margin-top: -60px;">
-            <h1 class="menu-text" style="margin-top: 0px; pointer-events: none;">Launch!</h1>
+        <div id="launch-btn" style="display: none; cursor: pointer; position: fixed; left: 170px; bottom: 5px; z-index: 12; margin: 0;">
+            <h1 class="menu-text" style="margin: 0; pointer-events: none;">Start Game</h1>
+        </div>
+
+        <div id="ready-btn" style="cursor: pointer; position: fixed; left: 5px; bottom: 5px; z-index: 12; margin: 0;">
+            <h1 class="menu-text" style="margin: 0; pointer-events: none;">Ready</h1>
+        </div>
+
+        <div id="hero-selector">
+            <div id="hero-grid-lobby"></div>
         </div>
 
         <br><br><br><br><br><br>
 
-        <div style="margin-top: 10px; width: 100%; display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <div id="privacy-readout" style="font-size: 32px; font-family: 'Racing Sans One', sans-serif; color: #fff; text-shadow: 0 0 6px #000; padding-left: 10px;"></div>
-            </div>
-        </div>
-
-        <div id="player-list-box" style="margin-top: 20px; width: 320px; background: #ededed; border: 6px solid #000; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); padding: 10px; color: #111; font-family: 'Racing Sans One', sans-serif;">
-            <div style="font-size: 22px; font-weight: bold; margin-bottom: 8px; text-shadow: 1px 1px 0 #fff;">Players in Lobby</div>
-            <div id="player-list-count" style="font-size: 16px; margin-bottom: 6px;"></div>
-            <ul id="player-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px;"></ul>
+        <div id="player-list-box" style="position: fixed; right: 105px; top: 10px; margin: 0; width: 220px; max-height: 160px; background: #ededed; border: 6px solid #000; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); padding: 6px; color: #111; font-family: 'Racing Sans One', sans-serif; display: flex; flex-direction: column; overflow: hidden;">
+            <div style="font-size: 14px; font-weight: bold; margin-bottom: 2px; text-shadow: 1px 1px 0 #fff;">Players in Lobby: <span id="player-list-count" style="font-size: 14px;"></span></div>
+            <ul id="player-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 3px; max-height: 130px; overflow-y: auto; padding-right: 4px;"></ul>
         </div>
 
         <div id="lobby-rotator" style="position: fixed; right: 15px; top: 88%; transform: translateY(-50%); width: 320px; height: 60px; background: #ededed; border: 6px solid #000; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.25); padding: 4px 8px; color: #222; font-family: 'Racing Sans One', sans-serif; pointer-events: none; z-index: 9;">
@@ -109,6 +236,7 @@
         import { scenarios } from './data/scenarios.js';
         import { henchmen } from './data/henchmen.js';
         import { villains } from './data/villains.js';
+        import { heroes } from './data/faceCards.js';
 
         window.GAME_MODE = "multi";
 
@@ -192,6 +320,14 @@
             const existingHost = existingLobby?.host;
             const lobbyHost = existingHost || data.username || data.host || sessionUsername;
             const playerList = Array.isArray(data.players) && data.players.length ? data.players : [lobbyHost];
+            let currentPlayers = [...playerList];
+            const readyBtn = document.getElementById("ready-btn");
+            const launchBtn = document.getElementById("launch-btn");
+            const heroGridEl = document.getElementById("hero-grid-lobby");
+            const isHost = !!(sessionUsername && lobbyHost && sessionUsername === lobbyHost);
+            const selectedHeroes = [];
+            const playerSelections = new Map();
+            const readyPlayers = new Set();
 
             let serverHost = lobbyHost;
             const renderPlayers = (list) => {
@@ -206,8 +342,9 @@
                 if (sessionUsername && !safeList.includes(sessionUsername)) {
                     safeList.push(sessionUsername);
                 }
-                playerCountEl.textContent = `${safeList.length} player${safeList.length === 1 ? "" : "s"}`;
+                playerCountEl.textContent = String(safeList.length);
                 playerListEl.innerHTML = "";
+                currentPlayers = safeList;
                 if (!safeList.length) {
                     const li = document.createElement("li");
                     li.textContent = "No players yet";
@@ -215,15 +352,119 @@
                     return;
                 }
                 safeList.forEach(name => {
+                    const isReadyPlayer = readyPlayers.has(name);
+                    const picked = playerSelections.get(name) || [];
+                    const heroNames = picked.map(id => heroMap.get(String(id))?.name || id).join(", ");
+                    const label = isReadyPlayer && heroNames ? `${name}: ${heroNames}` : name;
                     const li = document.createElement("li");
-                    li.textContent = name;
-                    li.style.fontSize = "16px";
-                    li.style.padding = "2px 6px";
+                    li.textContent = label;
+                    li.style.fontSize = "14px";
+                    li.style.padding = "2px 4px";
                     li.style.border = "1px solid #ccc";
                     li.style.borderRadius = "6px";
-                    li.style.background = "#fff";
+                    li.style.background = isReadyPlayer ? "#c8f7c5" : "#fff";
                     playerListEl.appendChild(li);
                 });
+                if (readyBtn && readyBtn.dataset.ready === "true") {
+                    readyPlayers.add(sessionUsername);
+                }
+                updateStartButtonState();
+            };
+
+            const updateHeroBadges = () => {
+                if (!heroGridEl) return;
+                heroGridEl.querySelectorAll(".hero-card-small").forEach(card => {
+                    const id = card.dataset.id;
+                    const badge = card.querySelector(".hero-badge");
+                    const pos = selectedHeroes.indexOf(id);
+                    card.classList.toggle("selected", pos >= 0);
+                    if (badge) {
+                        badge.textContent = pos >= 0 ? String(pos + 1) : "";
+                        badge.style.display = pos >= 0 ? "flex" : "none";
+                    }
+                });
+            };
+
+            const updateReadyButtonState = () => {
+                if (!readyBtn) return;
+                const hasThree = selectedHeroes.length === 3;
+                const isReady = readyBtn.dataset.ready === "true";
+                const label = readyBtn.querySelector(".menu-text");
+                if (label) label.textContent = isReady ? "Readied" : "Ready";
+                if (hasThree || isReady) {
+                    readyBtn.classList.add("clickable");
+                } else {
+                    readyBtn.classList.remove("clickable");
+                }
+            };
+
+            const updateStartButtonState = () => {
+                if (!launchBtn) return;
+                const allReady = currentPlayers.every(p => readyPlayers.has(p));
+                if (isHost && allReady) {
+                    launchBtn.classList.add("clickable");
+                } else {
+                    launchBtn.classList.remove("clickable");
+                }
+            };
+
+            const toggleHeroSelection = (id) => {
+                const idx = selectedHeroes.indexOf(id);
+                if (idx >= 0) {
+                    selectedHeroes.splice(idx, 1);
+                } else {
+                    if (selectedHeroes.length >= 3) return;
+                    selectedHeroes.push(id);
+                }
+                if (readyBtn && readyBtn.dataset.ready === "true") {
+                    readyBtn.dataset.ready = "false";
+                    readyPlayers.delete(sessionUsername);
+                }
+                updateHeroBadges();
+                updateReadyButtonState();
+                updateStartButtonState();
+            };
+
+            const renderHeroSelector = () => {
+                if (!heroGridEl) return;
+                heroGridEl.innerHTML = "";
+                const categories = ["Guardian", "Striker", "Tactician"];
+                const labels = { Guardian: "Guardian", Striker: "Striker", Tactician: "Tactician" };
+                categories.forEach(cat => {
+                    const group = heroes.filter(h => h.type === "Hero" && h.category === cat && String(h.doNotShow).toLowerCase() !== "true");
+                    if (!group.length) return;
+                    const block = document.createElement("div");
+                    block.className = "hero-category-block";
+                    const title = document.createElement("div");
+                    title.className = "hero-category-title";
+                    title.textContent = labels[cat] || cat;
+                    block.appendChild(title);
+                    group.forEach(h => {
+                        const card = document.createElement("div");
+                        card.className = "hero-card-small";
+                        card.dataset.id = String(h.id);
+
+                        const img = document.createElement("img");
+                        img.src = h.image;
+                        img.alt = h.name;
+
+                        const name = document.createElement("div");
+                        name.className = "hero-name";
+                        name.textContent = h.name;
+
+                        const badge = document.createElement("div");
+                        badge.className = "hero-badge";
+
+                        card.appendChild(img);
+                        card.appendChild(name);
+                        card.appendChild(badge);
+                        card.addEventListener("click", () => toggleHeroSelection(String(h.id)));
+                        block.appendChild(card);
+                    });
+                    heroGridEl.appendChild(block);
+                });
+                updateHeroBadges();
+                updateReadyButtonState();
             };
 
             const mergePlayers = (existing, local, extras = []) => {
@@ -278,6 +519,29 @@
                 pollPlayers();
                 pollInterval = setInterval(pollPlayers, 1000);
             }
+
+            if (readyBtn) {
+                readyBtn.dataset.ready = "false";
+                readyBtn.classList.remove("clickable");
+                readyBtn.addEventListener("click", () => {
+                    const canToggle = readyBtn.classList.contains("clickable") && selectedHeroes.length === 3;
+                    if (!canToggle) return;
+                    const isReadyNow = readyBtn.dataset.ready === "true";
+                    const nextState = !isReadyNow;
+                    readyBtn.dataset.ready = nextState ? "true" : "false";
+                    if (nextState) {
+                        readyPlayers.add(sessionUsername);
+                        playerSelections.set(sessionUsername, [...selectedHeroes]);
+                    } else {
+                        readyPlayers.delete(sessionUsername);
+                    }
+                    updateReadyButtonState();
+                    updateStartButtonState();
+                });
+            }
+
+            renderHeroSelector();
+            renderPlayers(playerList);
 
             if (joinKeyVal && apiAvailable) {
                 console.log("[lobby] Registering lobby with server", { joinKeyVal, lobbyHost, playerList, difficulty: data.difficulty, isPrivate: data.privacy === true || String(data.privacy).toLowerCase() === "private" });
@@ -366,6 +630,7 @@
             const scenarioMap = new Map(scenarios.map(s => [String(s.id), s]));
             const henchMap    = new Map(henchmen.map(h => [String(h.id), h]));
             const villainMap  = new Map(villains.map(v => [String(v.id), v]));
+            const heroMap     = new Map(heroes.map(h => [String(h.id), h]));
 
             // Update privacy readout banner
             const privacyReadoutEl = document.getElementById("privacy-readout");
@@ -673,17 +938,22 @@
                 return btoa(String.fromCharCode(...combined));
             }
 
-            const launchBtn = document.getElementById("launch-btn");
-            if (!launchBtn) {
-                console.warn("[lobby] launch button not found; skipping start binding");
-                return;
+            if (launchBtn) {
+                launchBtn.style.display = isHost ? "block" : "none";
+                launchBtn.classList.remove("clickable");
             }
 
-            launchBtn.addEventListener("click", async () => {
+            if (launchBtn && isHost) launchBtn.addEventListener("click", async () => {
+                if (!launchBtn.classList.contains("clickable")) return;
                 const SECRET = "GeimonHeroKey42";
 
                 data.playerUsernames = data.playerUsernames || [];
                 data.heroesByPlayer = data.heroesByPlayer || [];
+                data.players = currentPlayers;
+                const heroesByPlayer = Array.from(playerSelections.entries()).map(([player, heroes]) => ({ player, heroes }));
+                if (heroesByPlayer.length) {
+                    data.heroesByPlayer = heroesByPlayer;
+                }
 
                 const encrypted = await encryptData(data, SECRET);
 
