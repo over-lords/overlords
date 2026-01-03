@@ -1112,9 +1112,8 @@
                 if (!launchBtn.classList.contains("clickable")) return;
                 const SECRET = "GeimonHeroKey42";
 
-                data.playerUsernames = data.playerUsernames || [];
-                data.heroesByPlayer = data.heroesByPlayer || [];
-                data.players = currentPlayers;
+                data.playerUsernames = [...currentPlayers];
+                data.players = [...currentPlayers];
                 const heroesByPlayer = currentPlayers.map(p => playerSelections.get(p) || []);
 
                 // Construct hero turn order by player count rules
@@ -1158,7 +1157,7 @@
                     heroesByPlayer.forEach(list => list.forEach(h => { if (h != null) orderedHeroes.push(h); }));
                 }
 
-                data.heroesByPlayer = heroesByPlayer.map((heroes, idx) => ({ player: currentPlayers[idx], heroes }));
+                data.heroesByPlayer = heroesByPlayer;
                 data.heroes = orderedHeroes;
                 data.heroTurnOrder = orderedHeroes;
                 data.selectedHeroes = orderedHeroes;
