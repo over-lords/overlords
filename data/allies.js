@@ -693,4 +693,70 @@ export const allies = [
             }
         ]
     },
+    {
+        id: "4581",
+        name: "Katana",
+        image: `${cardArtFolder}/barda.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `KO a card from your discard pile, then CHOOSE: KO a Henchman or Villain. <span class="line-gap"></span> OR <span class="line-gap"></span> Deal 7 Damage to the Overlord.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Soultaker`
+            },
+            {
+                text: `Choose`
+            },
+            {
+                text: `KO a Henchman or Villain`
+            },
+            {
+                text: `Deal 7 Damage to the Overlord`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `koTopHeroDiscard(current)`
+            },
+            {
+                type: `chooseOption`,
+                effect: `chooseYourEffect`,
+            },
+            {
+                type: `chooseOption(1)`,
+                effect: `damageFoe(999,any)`
+            },
+            {
+                type: `chooseOption(2)`,
+                effect: `damageOverlord(7)`
+            }
+        ]
+    },
 ]
+
+// A: amethyst, animal man, apollo, aquagirl
+// B: bat cow, batwing, black condor, black lightning, bluebird, bumblebee, bwana beast
+// C: rick flag, connor hawke, creeper, crimson fox
+// D: detective chimp, dr light
+// E: elongated man
+// F: jay garrick, flashpoint batman
+// G: geoforce, gods and monsters, alan scott, grifter
+// H: hawk and dove, highfather, hour man, huntress
+// I: icon, indigo1
+// J: jade, jesse quick, jessica cruz, johnny quick
+// K: kilowog, kingdom come
+// L: lagoon boy, legion of superheroes, lightray, longshadow
+// M: max mercury, metal men, metron
+// N: nubia
+// O: obsidian, omac, orion, osiris
+// P: phantom stranger, plastic man, power girl
+// Q: question
+// R: ragman, red devil, rocket
+// S: shado, simon baz, solovar, speedy, spoiler, starman, stripe
+// T: the atom, the ray, thunderbolt
+// V: vibe
+// W: wildcat, wild dog, wolf

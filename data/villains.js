@@ -1678,7 +1678,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `onEntry`,
-        effect: `charge(1)`
+        effect: `charge(2)`
       },
       {
         condition: `uponDefeat`,
@@ -1687,3 +1687,40 @@ export const villains = [
     ]
   },
 ]
+
+// A: appelaxian golem, arkillo, atomica, atrocitus, azrael
+// B: bizarro, black adam, black beetle, blackfire, black flash, bleez, bonk, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// C: captain boomerang, captain cold, cheshire, chucko, cinderblock, clock king, copperhead, count vertigo, curare, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
+// D: dawnbreaker, deathstorm, dee dee, desaad, devastation, devastator, dr light, drowned, dr sivana
+// E: envy, everyman
+// F: felix faust, floronic man, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
+// G: gcpd batman, general eiling, general zod, gentleman ghost, ghoul, gilotina, girder, gizmo, gluttony, golden glider, grail, greed, grid
+// H: harley quinn, harm, heatwave, hush, hyperclan
+// I: icicle junior, imperiex prime, inertia, inque
+// J: jericho, jinx, johnny quick
+// K: kgbeast, killer croc, killer frost, king kobra, king shark, klarion, krona
+// L: lashina, lust, lyssa drak
+// M: maAlefaAk, mad harriet, mad hatter, mammoth, match, merciless, mister twister, mongul, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine, mutant leader
+// O: oblivion, owlman
+// P: penguin, phantasm, pied piper, poison ivy, power ring, prometheus, psycho pirate
+// Q: queen bee
+// R: rainbow raider, ravager (rose), red death, reign, reverse flash, riddler
+// S: scar, scarecrow, shade, shimmer, shriek, siren, sloth, solomon grundy, soranik sinestro, spellbinder, sportsmaster, star sapphire, steppenwolf, stompa, superwoman
+// T: talia al ghul, talon, tar pit, terror twins, the brain, the elite, the key, the top, the trickster, the turtle, two face
+// U: upside down man
+// V: victor zsasz, vigilante
+// W: woof, wrath, white lanterns: anti-monitor, deadman, swamp thing
+// Z: zilius zox, zoom
+
+
+//HEROES AS VILLAINS DO NOT SHOW LIST
+// A: amethyst, aquaman
+// C: constantine
+// D: detective chimp, dr fate, deadman
+// E: etrigan
+// F: frankenstein, firestorm
+// H: hawkwoman
+// M: martian manhunter
+// O: orchid
+// S: shazam, swamp thing
+// Z: zatanna

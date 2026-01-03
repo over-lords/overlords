@@ -304,6 +304,12 @@
             }
 
             let readyState = {};
+            // Predeclare player collections so async fetch below can write safely
+            let currentPlayers = Array.isArray(data.players) && data.players.length ? [...data.players] : [];
+            const readyPlayers = new Set();
+            const playerSelections = new Map();
+            let lobbyHost = data.username || data.host || sessionUsername;
+            let serverHost = lobbyHost;
             const getReadyStorageKey = () => joinKeyVal ? `lobbyReady-${joinKeyVal}-${sessionUsername || "anon"}` : null;
             const loadLocalReadyState = () => {
                 try {
@@ -384,6 +390,10 @@
                         if (existingLobby?.readyState) {
                             readyState = existingLobby.readyState;
                         }
+                        if (existingLobby?.host) {
+                            lobbyHost = existingLobby.host;
+                            serverHost = existingLobby.host;
+                        }
                         if (Array.isArray(existingLobby?.players)) {
                             currentPlayers = decodeAndMergePlayers(existingLobby.players);
                         }
@@ -398,16 +408,19 @@
             }
 
             const existingHost = existingLobby?.host;
-            const lobbyHost = existingHost || data.username || data.host || sessionUsername;
+            if (existingHost) {
+                lobbyHost = existingHost;
+                serverHost = existingHost;
+            }
             const playerList = Array.isArray(data.players) && data.players.length ? data.players : [lobbyHost];
-            let currentPlayers = [...playerList];
+            if (!currentPlayers.length) {
+                currentPlayers = [...playerList];
+            }
             const readyBtn = document.getElementById("ready-btn");
             const launchBtn = document.getElementById("launch-btn");
             const heroGridEl = document.getElementById("hero-grid-lobby");
             const isHost = !!(sessionUsername && lobbyHost && sessionUsername === lobbyHost);
             const selectedHeroes = [];
-            const playerSelections = new Map();
-            const readyPlayers = new Set();
             const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
             const tacticMap   = new Map(tactics.map(t => [String(t.id), t]));
             const enemyMap    = new Map(enemies.map(e => [String(e.id), e]));
@@ -417,7 +430,6 @@
             const henchMap    = new Map(henchmen.map(h => [String(h.id), h]));
             const villainMap  = new Map(villains.map(v => [String(v.id), v]));
             const heroMap     = new Map(heroes.map(h => [String(h.id), h]));
-            let serverHost = lobbyHost;
             const applyReadyState = (stateObj = {}) => {
                 readyPlayers.clear();
                 playerSelections.clear();

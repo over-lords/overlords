@@ -443,4 +443,74 @@ export const enemies = [
             }
         ]
     },
+    {
+        id: "4271",
+        name: "Bizarro League",
+        image: `${cardArtFolder}/bizarroLeague.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `All Henchmen are KO'd and all unengaged Villains advance up to 5 spaces.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Me am great hero!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `damageFoe(999,allHenchmen)`
+            },
+            {
+                effect: `shoveVillain(allUnengaged,-10)`
+            }
+        ]
+    },
+    {
+        id: "4272",
+        name: "Savitar",
+        image: `${cardArtFolder}/savitar.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `All [ICON:Flash] Heroes have their Damage Thresholds reduced by 1 until the end of this Hero's next turn.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Siphon your Speed!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `decreaseHeroDT(Flash,1,next)`
+            },
+        ]
+    },
 ]
+
+// A: ambush bug, anarky, angle man, anton arcane, arkham knight, artemiz
+// B: black racer, blacksmith, blood league, brimstone, brother blood, brother grimm
+// C: calendar man, chemo, chronos, cluemaster, cobalt blue, condiment king, court of owls, cupid
+// D: deacon blackfire, despero, dex starr, dr phosphorus, dr poison
+// E: eclipso, eradicator
+// F: fatal five, flamingo, flashpoint wonder woman, flashpoint aquaman
+// G: godspeed
+// H: hades
+// I: icicle
+// J: joker's daughter, justice lords
+// K: kilg%re
+// L: larfleeze
+// M: magenta, magog, major disaster, maxie zeus, monocle, murmur
+// N: neutron, new reichsmen, nightshade, non
+// O: orca, overcorps
+// P: parallax, peekaboo, penny plunderer, plastique, plunder, polka dot man, professor ivo, professor pyg
+// Q: qwardian weaponers
+// R: ratcatcher, red son, red X, relic, richard dragon, royal flush gang, rupture
+// S: slipknot, superboy prime
+// T: to morrow, tattooed man, telos, terra, the mist, the rot, the ventriloquist, tweedle dee and dum
+// W: white canary
+// Z: zebra man
