@@ -33,9 +33,9 @@
 
             <div style="display: flex; gap: 12px; flex-wrap: nowrap; width: 100%; padding-left: 10px; padding-right: 30px; overflow-x: hidden; box-sizing: border-box;">
                 <div id="level-list" style="flex: 1 1 60%; min-width: 0; max-height: 65vh; overflow-y: auto; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 10px;"></div>
-                <div style="flex: 1 1 30%; min-width: 0; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; align-items: stretch; gap: 12px; justify-content: center; margin-right: 20px; height: 140px; box-sizing: border-box;">
+                <div id="play-outer-box" style="flex: 1 1 30%; min-width: 0; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; align-items: stretch; gap: 12px; justify-content: center; margin-right: 20px; min-height: 140px; box-sizing: border-box; align-self: flex-start;">
+                <button id="play-btn" disabled style="width: 100%; padding: 12px 14px; font-size: 18px; font-weight: 800; border: 3px solid #000; border-radius: 12px; background: #444; color: #bbb; cursor: not-allowed;">Play</button>
                     <div id="selected-label" style="color:#fff; font-size:16px; width: 100%; text-align: left;">Select a level to play.</div>
-                    <button id="play-btn" disabled style="width: 100%; padding: 12px 14px; font-size: 18px; font-weight: 800; border: 3px solid #000; border-radius: 12px; background: #444; color: #bbb; cursor: not-allowed;">Play</button>
                 </div>
             </div>
         </div>
@@ -87,10 +87,24 @@
         const selectedLabel = document.getElementById("selected-label");
         const worldInput = document.getElementById("world-input");
 
+        const escapeHtml = (str) => String(str || "").replace(/[&<>"']/g, (ch) => {
+            switch (ch) {
+                case "&": return "&amp;";
+                case "<": return "&lt;";
+                case ">": return "&gt;";
+                case '"': return "&quot;";
+                case "'": return "&#39;";
+                default: return ch;
+            }
+        });
+
         let currentWorld = 1;
         let selectedLevel = null;
         let selectedFlag = null;
         let currentLevelList = [];
+        const levelDataCache = new Map();
+        let heroNameMap = null;
+        let overlordNameMap = null;
 
         async function fetchWorlds() {
             // Prefer GitHub directory listing
@@ -154,6 +168,48 @@
             return [];
         }
 
+        async function ensureCardLookups() {
+            if (heroNameMap && overlordNameMap) return;
+            try {
+                const [heroMod, overlordMod] = await Promise.all([
+                    import("./data/faceCards.js"),
+                    import("./data/overlords.js")
+                ]);
+                heroNameMap = new Map((heroMod?.heroes || []).map(h => [String(h.id), h.name]));
+                overlordNameMap = new Map((overlordMod?.overlords || []).map(o => [String(o.id), o.name]));
+            } catch (err) {
+                console.warn("[Campaign] Failed to load card lookups", err);
+                heroNameMap = new Map();
+                overlordNameMap = new Map();
+            }
+        }
+
+        async function fetchLevelData(levelName, world = currentWorld) {
+            const cacheKey = `world${world}:${levelName}`;
+            if (levelDataCache.has(cacheKey)) return levelDataCache.get(cacheKey);
+
+            const relPath = `data/campaignLevels/world${world}/${levelName}.json`;
+            const rawUrl = `https://raw.githubusercontent.com/over-lords/overlords/main/${relPath}`;
+            const fetchPromise = (async () => {
+                let res = await fetch(relPath);
+                if (!res.ok) {
+                    res = await fetch(rawUrl);
+                }
+                if (!res.ok) throw new Error(`Failed to fetch ${levelName}: ${res.status}`);
+                return res.json();
+            })();
+
+            levelDataCache.set(cacheKey, fetchPromise);
+
+            try {
+                return await fetchPromise;
+            } catch (err) {
+                console.warn("[Campaign] Failed to load level data", err);
+                levelDataCache.delete(cacheKey);
+                throw err;
+            }
+        }
+
         function renderLevels(levels) {
             listEl.innerHTML = "";
             currentLevelList = levels || [];
@@ -208,12 +264,12 @@
 
         function updatePlay() {
             if (selectedLevel) {
-                selectedLabel.textContent = ``;
                 playBtn.disabled = false;
                 playBtn.style.background = "#ffd800";
                 playBtn.style.color = "#000";
                 playBtn.style.cursor = "pointer";
                 playBtn.textContent = `Play`;
+                void updateSelectionLabel();
             } else {
                 selectedLabel.textContent = "Select a level to play.";
                 playBtn.disabled = true;
@@ -221,6 +277,32 @@
                 playBtn.style.color = "#bbb";
                 playBtn.style.cursor = "not-allowed";
                 playBtn.textContent = "Play";
+            }
+        }
+
+        async function updateSelectionLabel() {
+            if (!selectedLevel) {
+                selectedLabel.textContent = "Select a level to play.";
+                return;
+            }
+            selectedLabel.textContent = "Loading level info...";
+            try {
+                await ensureCardLookups();
+                const levelData = await fetchLevelData(selectedLevel, currentWorld);
+                if (!levelData) {
+                    selectedLabel.textContent = "Select a level to play.";
+                    return;
+                }
+                const overlordNames = (levelData.overlords || [])
+                    .map(id => overlordNameMap.get(String(id)) || `#${id}`)
+                    .join(", ") || "None";
+                const heroNames = (levelData.heroes || [])
+                    .map(id => heroNameMap.get(String(id)) || `#${id}`)
+                    .join(", ") || "None";
+                selectedLabel.innerHTML = `<strong>Overlord(s):</strong> ${escapeHtml(overlordNames)}<br><br><strong>Heroes:</strong> ${escapeHtml(heroNames)}`;
+            } catch (err) {
+                console.warn("[Campaign] Failed to render selection info", err);
+                selectedLabel.textContent = "Select a level to play.";
             }
         }
 
@@ -261,16 +343,9 @@
             if (selectedFlag) {
                 try { localStorage.setItem("campaignCurrentFlag", selectedFlag); } catch (_) {}
             }
-            const relPath = `data/campaignLevels/world${currentWorld}/${selectedLevel}.json`;
-            const rawUrl = `https://raw.githubusercontent.com/over-lords/overlords/main/${relPath}`;
             let json = null;
             try {
-                let res = await fetch(relPath);
-                if (!res.ok) {
-                    res = await fetch(rawUrl);
-                }
-                if (!res.ok) throw new Error(`Failed to fetch ${selectedLevel}: ${res.status}`);
-                json = await res.json();
+                json = await fetchLevelData(selectedLevel, currentWorld);
             } catch (err) {
                 alert(`Failed to load campaign level:\n${err}`);
                 return;
