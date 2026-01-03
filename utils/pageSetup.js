@@ -12,9 +12,9 @@ import { renderCard, renderAbilityText, findCardInAllSources } from './cardRende
 import { keywords } from '../data/keywords.js';
 import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe, 
          freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, 
-         renderScannedPreview, processQueuedHeroDamage, getCurrentHeroDT } from './abilityExecutor.js';
+         renderScannedPreview, processQueuedHeroDamage, getCurrentHeroDT, refreshGameModeFlags as refreshAbilityGameModeFlags } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, 
-         showRetreatButtonForCurrentHero } from "./turnOrder.js";
+         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
@@ -756,6 +756,8 @@ async function restoreUIFromState(state) {
         const selectedOverlords = selectedData.overlords || [];
         const selectedTactics = selectedData.tactics || [];
         window.GAME_MODE = selectedData.gameMode || window.GAME_MODE || "single";
+        refreshAbilityGameModeFlags(window.GAME_MODE);
+        refreshTurnGameModeFlags(window.GAME_MODE);
         console.log(`[game] Running in ${window.GAME_MODE === "single" ? "Singleplayer" : "Multiplayer"} mode`);
 
         heroMap = new Map(heroes.map(h => [String(h.id), h]));

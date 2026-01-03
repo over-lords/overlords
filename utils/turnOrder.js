@@ -145,8 +145,13 @@ END HERO TURN
 
 */
 
-const isSinglePlayer = (window.GAME_MODE === "single");
-const isMultiplayer = (window.GAME_MODE === "multi");
+let isSinglePlayer = (window.GAME_MODE === "single");
+let isMultiplayer = (window.GAME_MODE === "multi");
+export function refreshGameModeFlags(mode = window.GAME_MODE) {
+    window.GAME_MODE = mode || window.GAME_MODE || "single";
+    isSinglePlayer = (window.GAME_MODE === "single");
+    isMultiplayer = (window.GAME_MODE === "multi");
+}
 
 import { heroes } from '../data/faceCards.js';
 import { heroCards } from '../data/heroCards.js';
