@@ -23,7 +23,7 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Block the Damage`
+        text: `Superman: Block the Damage`
       }
     ],
     abilitiesEffects: [
@@ -1000,7 +1000,7 @@ export const heroes = [
         text: `Freeze a Henchman or Villain`
       },
       {
-        text: `Ignore the Text, Double the Damage`
+        text: `Wonder Woman: Ignore the Text, Double the Damage`
       }
     ],
     abilitiesEffects: [
@@ -1041,7 +1041,7 @@ export const heroes = [
         text: `Damaging cards gain +1 per Travel`
       },
       {
-        text: `Skip Selection, Draw 2`
+        text: `Flash: Skip Selection, Draw 2`
       },
     ],
     abilitiesEffects: [
@@ -1972,7 +1972,7 @@ export const heroes = [
         text: `Double Damage In Gotham`
       },
       {
-        text: `Add another card to your draw pool`
+        text: `Batman: Add another card to your draw pool`
       },
       {
         text: `Withdraw from your City`
@@ -2019,7 +2019,7 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Prevent Villain Deck Draw`
+        text: `Cyborg: Prevent Villain Deck Draw`
       },
       {
         text: `Withdraw from your City`
