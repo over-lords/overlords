@@ -1806,17 +1806,18 @@ export const heroCards = [
     damage: "5",
     abilitiesText: [
       {
-        text: `After dealing Damage with this card, KO all Henchmen and Villains at 2 or less HP.`
+        text: `After dealing Damage with this card, deal 2 more Damage to all remaining Henchmen and Villains.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Suck It, Bitches`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `afterDamage`,
+        effect: `damageFoe(2,all)`
       }
     ]
   },
@@ -1830,18 +1831,18 @@ export const heroCards = [
     damage: "4",
     abilitiesText: [
       {
-        text: `Henchmen and Villains in adjacent Cities take 1 Damage.`
+        text: `Henchmen and Villains in adjacent Cities take 2 Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Venting Excess Power`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        effect: `damageFoe(2,allAdjacentFoes)`
+      },
     ]
   },
   {
@@ -1854,18 +1855,19 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Scan 1 from Cyborg's deck. If it deals Damage, draw it.`
+        text: `Scan 1 from Cyborg's deck. CHOOSE : Draw. <span class="line-gap"></span> OR <span class="line-gap"></span> Discard it.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Scan 1, Draw or Discard`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: [`scanDeck(self,1)`,`applyScanEffects(draw,discard)`]
+      },
     ]
   },
   {
@@ -1878,18 +1880,19 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Got You!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      },
     ]
   },
   {
@@ -1902,17 +1905,17 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Scan 3 from Cyborg's deck. <span class="line-gap"></span> OPTIONAL : Draw 2 and KO the third.`
+        text: `Add 1 card from Cyborg's deck to your hand.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `I've Got a Plan`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `add(1,current)`
       }
     ]
   },
@@ -1931,13 +1934,15 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Booyah.`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        condition: `damagedAtTurnEnd`,
+        effect: [`damageFoe(2,lastDamageCauser)`]
+      },
     ]
   },
   {
@@ -1950,17 +1955,18 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Play the next Ally from the E&A.`
+        text: `OPTIONAL : Play the next Ally from the E&A.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Play the next Ally from the E&A`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `optional`,
+        effect: `enemyDraw(1,nextAlly)`
       }
     ]
   },
@@ -1974,17 +1980,18 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Scan 5 from Cyborg's deck. <span class="line-gap"></span> Draw 1 and return the rest in an order of your choice.`
+        text: `Scan 4 from Cyborg's deck. <span class="line-gap"></span> Draw 1 revealed card.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `You Work For Me`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        effect: [`scanDeck(self,4)`,`applyScanEffects(draw,closeAfter(1))`]
       }
     ]
   },
@@ -1998,17 +2005,19 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `CHOOSE: If Cyborg takes Damage this turn, he regains 3 HP afterwards. <span class="line-gap"></span> OR <span class="line-gap"></span> If Cyborg takes Damage this turn, draw 3 random cards at the start of Cyborg's next turn.`
+        text: `If Cyborg takes Damage this turn, CHOOSE : He regains 3 HP afterwards. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 3 random cards at the start of Cyborg's next turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
-      }
+        text: `Choose`
+      },
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `damagedAtTurnEnd`,
+        type: `quick`,
+        effect: `selfRepairChoice()`
       }
     ]
   },
@@ -2022,17 +2031,17 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 1 and increase Cyborg's Damage Threshold by 1 until the start of his next turn.`
+        text: `Draw 1 and increase Cyborg's Damage Threshold by 1 until the end of his next turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Leave it to Me`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: [`draw(1)`,`increaseHeroDT(currentHero,1,endNextTurn)`]
       }
     ]
   },
@@ -2046,17 +2055,17 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Retrieve up to 2 cards from Cyborg's discard pile. For every card not retrieved, draw 1.`
+        text: `Retrieve up to 2 random cards from Cyborg's discard pile. For every card not retrieved, draw 1.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Rebuilt Better`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: [`heroRetrieveFromDiscard(2,current)`,`draw(cardsNotRetrieved)`]
       }
     ]
   },
@@ -2075,12 +2084,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Human Where It Counts`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: [`draw(2)`,`increaseCardDamage(rescuedBystandersCount)`]
       }
     ]
   },

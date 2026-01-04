@@ -158,6 +158,7 @@ import { heroCards } from '../data/heroCards.js';
 
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
+import { getEntryKey } from './abilityExecutor.js';
 import { recordCampaignWin } from './campaignProgress.js';
 import { playSoundEffect } from './soundHandler.js';
 import { overlords } from '../data/overlords.js';
@@ -1585,6 +1586,26 @@ export async function villainDraw(count = 1) {
     }
 
     for (let i = 0; i < draws; i++) {
+        const skipCount = Number(gameState.villainDrawSkipCount) || 0;
+        if (skipCount > 0) {
+            gameState.villainDrawSkipCount = Math.max(0, skipCount - 1);
+            appendGameLogEntry(`Villain draw skipped. Remaining skips: ${gameState.villainDrawSkipCount}.`, gameState);
+            continue;
+        }
+
+        try {
+            await triggerRuleEffects("villainDeckWouldDraw", { state: gameState });
+        } catch (err) {
+            console.warn("[VILLAIN DRAW] villainDeckWouldDraw trigger failed", err);
+        }
+
+        const postTriggerSkip = Number(gameState.villainDrawSkipCount) || 0;
+        if (postTriggerSkip > 0) {
+            gameState.villainDrawSkipCount = Math.max(0, postTriggerSkip - 1);
+            appendGameLogEntry(`Villain draw skipped. Remaining skips: ${gameState.villainDrawSkipCount}.`, gameState);
+            continue;
+        }
+
         const villainId = drawNextVillainId(gameState);
         if (!villainId) {
             console.log("[VILLAIN DRAW] Deck exhausted; stopping draws.");
@@ -2845,6 +2866,7 @@ export async function endCurrentHeroTurn(gameState) {
                         console.log("[END TURN DAMAGE] Firing pending damagedAtTurnEnd effects", heroState.pendingEndTurnDamageEffects);
                         const effectsToRun = [...heroState.pendingEndTurnDamageEffects];
                         heroState.pendingEndTurnDamageEffects = [];
+                        const entryKey = getEntryKey(slotEntry);
                         effectsToRun.forEach(eff => {
                             try {
                                 executeEffectSafely(eff.effect, heroes.find(h => String(h.id) === String(heroId)), {
@@ -5177,6 +5199,32 @@ async function maybeShowHeroTopPreviewWithBeforeDraw(state, heroId, previewCount
     }
     const heroState = state.heroData?.[heroId];
     const skipCount = heroState ? Number(heroState.skipSelectionDraw || 0) : 0;
+    const pendingStartDraw = heroState ? Number(heroState.pendingStartTurnDraw || 0) : 0;
+
+    if (pendingStartDraw > 0 && heroState) {
+        const deck = Array.isArray(heroState.deck) ? heroState.deck : [];
+        if (!Array.isArray(heroState.hand)) heroState.hand = [];
+        let drew = 0;
+        for (let i = 0; i < pendingStartDraw; i++) {
+            if (!deck.length) break;
+            const idx = Math.floor(Math.random() * deck.length);
+            const cardId = deck.splice(idx, 1)[0];
+            heroState.hand.push(cardId);
+            drew++;
+        }
+        heroState.pendingStartTurnDraw = 0;
+        heroState.skipTopPreviewNextTurn = false;
+        heroState.hasDrawnThisTurn = true;
+        if (drew > 0) {
+            const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
+            appendGameLogEntry(`${heroName} drew ${drew} card${drew === 1 ? "" : "s"} from Self-Repair.`, state);
+        }
+        renderHeroHandBar(state);
+        saveGameState(state);
+        state._pendingBeforeDrawHero = null;
+        return;
+    }
+
     if (skipCount > 0) {
         heroState.skipSelectionDraw = 0;
         try {

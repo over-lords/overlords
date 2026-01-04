@@ -1143,7 +1143,7 @@ export async function runTurnEndNotEngagedTriggers(state = gameState) {
 }
 
 // Shared helper to get per-instance key
-function getEntryKey(obj) {
+export function getEntryKey(obj) {
     const k = obj?.instanceId ?? obj?.uniqueId ?? null;
     return (k == null) ? null : String(k);
 }
@@ -1787,6 +1787,27 @@ function getAbilityKey(ability) {
     return `${type}::${eff}`;
 }
 
+function damageHeroAtCity(cityLowerIndex, amount, state = gameState) {
+    const s = state || gameState;
+    const lowerIdx = Number(cityLowerIndex);
+    const dmg = Number(amount) || 0;
+    if (!Number.isInteger(lowerIdx)) {
+        console.warn("[damageHeroAtCity] Invalid city index:", cityLowerIndex);
+        return;
+    }
+    const targetLower = lowerIdx + 1; // heroData.cityIndex uses lower slot (1-based)
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    for (const hid of heroIds) {
+        const hState = s.heroData?.[hid];
+        if (!hState) continue;
+        if (Number(hState.cityIndex) === targetLower) {
+            damageHero(dmg, hid, s);
+            return;
+        }
+    }
+    console.log("[damageHeroAtCity] No hero found at lower index", lowerIdx);
+}
+
 function addTempHeroAbility(heroId, abilityEntry, meta = {}, state = gameState) {
     const s = state || gameState;
     if (!heroId || !abilityEntry) return null;
@@ -1910,9 +1931,23 @@ EFFECT_HANDLERS.charge = function (args, card, selectedData) {
 
 EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     const heroId = selectedData?.currentHeroId ?? null;
-    const rawCount = resolveNumericValue(args?.[0] ?? 1, heroId, gameState);
-    const count = Math.max(0, Number(rawCount) || 0);
-    const flag = (args?.[1] ?? '').toString().toLowerCase();
+
+    let count = 0;
+    let rawFlag = args?.[1] ?? "";
+
+    // Special placeholder: draw(cardsNotRetrieved) uses counts from previous retrieve call
+    if (typeof args?.[0] === "string" && args[0].toLowerCase() === "cardsnotretrieved") {
+        const retrieved = Number(selectedData?._retrievedCount);
+        const target = Number(selectedData?._requestedRetrieve);
+        const targetSafe = Number.isFinite(target) ? target : 0;
+        const retrievedSafe = Number.isFinite(retrieved) ? retrieved : 0;
+        count = Math.max(0, targetSafe - retrievedSafe);
+    } else {
+        const rawCount = resolveNumericValue(args?.[0] ?? 1, heroId, gameState);
+        count = Math.max(0, Number(rawCount) || 0);
+    }
+
+    const flag = rawFlag.toString().toLowerCase();
 
     const clampDrawForHero = (hid, desired) => {
         const damp = gameState.extraDrawDampener;
@@ -1948,6 +1983,14 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
 
     if (count <= 0) {
         console.log('[draw] Count resolved to 0; no cards drawn.');
+        return;
+    }
+
+    if (flag === 'startnextturn') {
+        heroState.pendingStartTurnDraw = Math.max(0, Number(heroState.pendingStartTurnDraw) || 0) + count;
+        heroState.skipTopPreviewNextTurn = true;
+        console.log(`[draw] Scheduled ${count} card(s) to draw at start of next turn for hero ${heroId}.`);
+        saveGameState(gameState);
         return;
     }
 
@@ -2153,6 +2196,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "all";
         } else if (typeof raw === "string" && raw.toLowerCase() === "allhenchmen") {
             flag = "allHenchmen";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "allvillains") {
+            flag = "allVillains";
         } else if (typeof raw === "string" && raw.toLowerCase() === "allothers") {
             flag = "allothers";
         } else if (typeof raw === "string" && raw.toLowerCase() === "any") {
@@ -2165,6 +2210,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "anyWithBystander";
         } else if (typeof raw === "string" && raw.toLowerCase() === "adjacentfoes") {
             flag = "adjacentFoes";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "alladjacentfoes") {
+            flag = "allAdjacentFoes";
         } else if (typeof raw === "string" && raw.toLowerCase() === "lastdamagecauser") {
             flag = "lastDamageCauser";
         } else if (!Number.isNaN(Number(raw))) {
@@ -2591,68 +2638,108 @@ EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData
 
 function foeCaptureBystander(cityIndex, count = 1, state = gameState) {
     const s = state || gameState;
-    const idx = Number(cityIndex);
+    if (!Array.isArray(s.cities)) {
+        console.warn("[foeCaptureBystander] No cities array.");
+        return;
+    }
+
     const amt = Math.max(0, Number(count) || 0);
-    if (!Number.isInteger(idx) || amt <= 0) {
+    if (amt <= 0) {
+        console.warn("[foeCaptureBystander] Invalid count", count);
+        return;
+    }
+
+    const applyToEntry = (entry, idx) => {
+        if (!entry || entry.id == null) return;
+        if (!Array.isArray(entry.capturedBystanders)) {
+            const prevCount = Math.max(0, Number(entry.capturedBystanders) || 0);
+            entry.capturedBystanders = [];
+            for (let i = 0; i < prevCount; i++) {
+                entry.capturedBystanders.push({
+                    id: `bystander_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                    name: "Bystander",
+                    type: "Bystander"
+                });
+            }
+        }
+
+        const foeCard = findCardInAllSources(entry.id);
+        if (foeCard && !Array.isArray(foeCard.capturedBystanders)) {
+            foeCard.capturedBystanders = [];
+        }
+
+        const addedNames = [];
+
+        for (let i = 0; i < amt; i++) {
+            const pick = bystanders[Math.floor(Math.random() * bystanders.length)] || {};
+            const payload = {
+                id: pick.id ?? `bystander_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                name: pick.name || "Bystander",
+                type: pick.type || "Bystander"
+            };
+            entry.capturedBystanders.push(payload);
+            if (foeCard && Array.isArray(foeCard.capturedBystanders)) {
+                foeCard.capturedBystanders.push({ ...payload });
+            }
+            addedNames.push(payload.name || "Bystander");
+        }
+
+        const cityName = getCityNameFromIndex(idx + 1) || `city ${idx}`;
+        const foeName = foeCard?.name || `Foe ${entry.id}`;
+        const nameList = addedNames.join(", ");
+        appendGameLogEntry(
+            addedNames.length === 1
+                ? `${foeName} captured ${nameList} in ${cityName}.`
+                : `${foeName} captured bystanders (${nameList}) in ${cityName}.`,
+            s
+        );
+    };
+
+    const norm = String(cityIndex).toLowerCase();
+
+    if (norm === "all" || norm === "allhenchmen" || norm === "allvillains") {
+        const targetVillains = norm === "allvillains";
+        const targetHench = norm === "allhenchmen";
+
+        s.cities.forEach((entry, idx) => {
+            if (!entry || entry.id == null) return;
+            const card =
+                villains.find(v => String(v.id) === String(entry.id)) ||
+                henchmen.find(h => String(h.id) === String(entry.id));
+            if (!card) return;
+            const typeLower = String(card.type || "").toLowerCase();
+            if (targetVillains && typeLower !== "villain") return;
+            if (targetHench && typeLower !== "henchman") return;
+            applyToEntry(entry, idx);
+        });
+        saveGameState(s);
+        return;
+    }
+
+    const idx = Number(cityIndex);
+    if (!Number.isInteger(idx)) {
         console.warn("[foeCaptureBystander] Invalid arguments", { cityIndex, count });
         return;
     }
 
-    if (!Array.isArray(s.cities) || !s.cities[idx] || s.cities[idx].id == null) {
+    if (!s.cities[idx] || s.cities[idx].id == null) {
         console.log("[foeCaptureBystander] No foe present at city slot", idx);
         return;
     }
 
-    const entry = s.cities[idx];
-    if (!Array.isArray(entry.capturedBystanders)) {
-        const prevCount = Math.max(0, Number(entry.capturedBystanders) || 0);
-        entry.capturedBystanders = [];
-        for (let i = 0; i < prevCount; i++) {
-            entry.capturedBystanders.push({
-                id: `bystander_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-                name: "Bystander",
-                type: "Bystander"
-            });
-        }
-    }
-
-    const foeCard = findCardInAllSources(entry.id);
-    if (foeCard && !Array.isArray(foeCard.capturedBystanders)) {
-        foeCard.capturedBystanders = [];
-    }
-
-    const addedNames = [];
-
-    for (let i = 0; i < amt; i++) {
-        const pick = bystanders[Math.floor(Math.random() * bystanders.length)] || {};
-        const payload = {
-            id: pick.id ?? `bystander_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-            name: pick.name || "Bystander",
-            type: pick.type || "Bystander"
-        };
-        entry.capturedBystanders.push(payload);
-        if (foeCard && Array.isArray(foeCard.capturedBystanders)) {
-            foeCard.capturedBystanders.push({ ...payload });
-        }
-        addedNames.push(payload.name || "Bystander");
-    }
-
-    const cityName = getCityNameFromIndex(idx + 1) || `city ${idx}`;
-    const foeName = foeCard?.name || `Foe ${entry.id}`;
-    const nameList = addedNames.join(", ");
-    appendGameLogEntry(
-        addedNames.length === 1
-            ? `${foeName} captured ${nameList} in ${cityName}.`
-            : `${foeName} captured bystanders (${nameList}) in ${cityName}.`,
-        s
-    );
-
+    applyToEntry(s.cities[idx], idx);
     saveGameState(s);
 }
 
 EFFECT_HANDLERS.foeCaptureBystander = function(args = [], card, selectedData = {}) {
     const [cityIdx, count] = args;
     foeCaptureBystander(cityIdx, count ?? 1, selectedData?.state || gameState);
+};
+
+EFFECT_HANDLERS.damageHeroAtCity = function(args = [], card, selectedData = {}) {
+    const cityIdx = args?.[0] ?? null;
+    const amount = args?.[1] ?? 0;
+    damageHeroAtCity(cityIdx, amount, selectedData?.state || gameState);
 };
 
 EFFECT_HANDLERS.disableScan = function(args = [], card, selectedData = {}) {
@@ -3367,6 +3454,14 @@ EFFECT_HANDLERS.increaseHeroDT = function(args = [], card, selectedData = {}) {
     saveGameState(s);
 };
 
+EFFECT_HANDLERS.skipVillainDeckDraw = function(args = [], card, selectedData = {}) {
+    const count = Math.max(1, Number(args?.[0] ?? 1) || 1);
+    const state = selectedData?.state || gameState;
+    if (!state) return;
+    const prior = Number(state.villainDrawSkipCount) || 0;
+    state.villainDrawSkipCount = prior + count;
+};
+
 function loseIconUseForHero(heroId, count = 1, mode = "random", state = gameState) {
     const s = state || gameState;
     if (!heroId) return;
@@ -3845,15 +3940,20 @@ function restoreKOdCardsForHero(heroId, state = gameState) {
 }
 
 
-function heroRetrieveFromDiscard(count = 1, who = "current", state = gameState) {
+function heroRetrieveFromDiscard(count = 1, who = "current", state = gameState, excludeCardId = null) {
     const s = state || gameState;
     if (!s || !Array.isArray(s.heroes)) return;
+    let totalRetrieved = 0;
 
     const getEligible = (hid) => {
         const hState = s.heroData?.[hid];
         if (!hState || !Array.isArray(hState.discard)) return [];
         const perma = Array.isArray(hState.permanentKO) ? hState.permanentKO.map(String) : [];
-        return hState.discard.filter(id => !perma.includes(String(id)));
+        return hState.discard.filter(id => {
+            const idStr = String(id);
+            if (excludeCardId != null && idStr === String(excludeCardId)) return false;
+            return !perma.includes(idStr);
+        });
     };
 
     const takeFrom = (hid) => {
@@ -3873,6 +3973,7 @@ function heroRetrieveFromDiscard(count = 1, who = "current", state = gameState) 
             const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
             const cardName = findCardInAllSources(cardId)?.name || `Card ${cardId}`;
             appendGameLogEntry(`${heroName} retrieved ${cardName} from discard.`, s);
+            totalRetrieved++;
         }
     };
 
@@ -3895,12 +3996,56 @@ function heroRetrieveFromDiscard(count = 1, who = "current", state = gameState) 
     }
 
     saveGameState(s);
+    return totalRetrieved;
 }
 
 EFFECT_HANDLERS.heroRetrieveFromDiscard = function(args = [], card, selectedData = {}) {
     const count = args?.[0] ?? 1;
     const who = args?.[1] ?? "current";
-    heroRetrieveFromDiscard(count, who, selectedData?.state || gameState);
+    const retrieved = heroRetrieveFromDiscard(
+        count,
+        who,
+        selectedData?.state || gameState,
+        card?.id
+    );
+    try {
+        console.log(`[heroRetrieveFromDiscard] Retrieved ${retrieved} of requested ${count} for hero=${who}`);
+    } catch (_) {}
+    if (selectedData) {
+        selectedData._retrievedCount = retrieved;
+        selectedData._requestedRetrieve = count;
+    }
+    return retrieved;
+};
+
+EFFECT_HANDLERS.selfRepairChoice = async function(_args = [], card, selectedData = {}) {
+    const heroId = selectedData.currentHeroId ?? null;
+    const state = selectedData.state || gameState;
+    const options = ["Regain 3 HP Now", "Draw 3 Next Turn"];
+
+    let choice = 0;
+    try {
+        if (typeof window !== "undefined" && typeof window.showChooseAbilityPrompt === "function") {
+            const idx = await window.showChooseAbilityPrompt({
+                header: "Self-Repair",
+                options: options.map(label => ({ label }))
+            });
+            if (typeof idx === "number" && idx >= 0 && idx < options.length) {
+                choice = idx;
+            }
+        } else if (typeof window !== "undefined" && typeof window.confirm === "function") {
+            // confirm -> true means first option, false means second
+            choice = window.confirm("Regain 3 HP now? Cancel = Draw 3 next turn") ? 0 : 1;
+        }
+    } catch (err) {
+        console.warn("[selfRepairChoice] Prompt failed", err);
+    }
+
+    if (choice === 0) {
+        EFFECT_HANDLERS.regainLife?.([3], card, selectedData);
+    } else {
+        EFFECT_HANDLERS.draw?.([3, "startNextTurn"], card, selectedData);
+    }
 };
 
 function openDeckSelectUI(heroId, count = 1, state = gameState) {
@@ -5535,22 +5680,26 @@ EFFECT_HANDLERS.scanBuffer = function(args = [], card, selectedData = {}) {
 };
 
 // Template stub for future scan effect application.
-// Accepts an options object (e.g., { activate: true, ko: false }) and returns
+// Accepts an options object (e.g., { activate: true, ko: false, draw: false, discard: false, closeAfter: null }) and returns
 // the cards currently in scannedBuffer in the order found.
 function applyScanEffects(opts = {}) {
     const activate = !!opts.activate;
     const ko = !!opts.ko;
+    const draw = !!opts.draw;
+    const discard = !!opts.discard;
+    const closeAfter = Number.isFinite(Number(opts.closeAfter)) ? Number(opts.closeAfter) : null;
     const buf = Array.isArray(gameState.scannedBuffer) ? [...gameState.scannedBuffer] : [];
 
-    console.log("[applyScanEffects] Called with options", { activate, ko, raw: opts });
+    console.log("[applyScanEffects] Called with options", { activate, ko, draw, discard, closeAfter, raw: opts });
     console.log("[applyScanEffects] scannedBuffer contents before clearing:", buf);
 
     // Render the scanned cards using hero preview styling (no buttons)
-    renderScannedPreview(buf, { activate, ko });
+    renderScannedPreview(buf, { activate, ko, draw, discard });
 
     // Persist the displayed set so it survives refresh
     gameState.scannedDisplay = buf;
-    gameState.scannedDisplayOpts = { activate, ko };
+    gameState.scannedDisplayOpts = { activate, ko, draw, discard };
+    gameState.scannedCloseAfterRemaining = closeAfter;
     saveGameState(gameState);
 
     // Clear the buffer after reporting
@@ -5564,16 +5713,24 @@ EFFECT_HANDLERS.applyScanEffects = function(args = [], card, selectedData = {}) 
     //   applyScanEffects(ko)
     //   applyScanEffects(activate,ko)
     //   applyScanEffects(true,false)
-    const opts = { activate: false, ko: false };
+    //   applyScanEffects(draw,discard)
+    //   applyScanEffects(draw,closeAfter(1))
+    const opts = { activate: false, ko: false, draw: false, discard: false, closeAfter: null };
 
     args.forEach((arg, idx) => {
         if (typeof arg === "string") {
             const lower = arg.toLowerCase();
             if (lower === "activate") opts.activate = true;
             if (lower === "ko") opts.ko = true;
+            if (lower === "draw") opts.draw = true;
+            if (lower === "discard") opts.discard = true;
+            const m = lower.match(/^closeafter\((\d+)\)$/);
+            if (m) opts.closeAfter = Number(m[1]);
         } else if (typeof arg === "boolean") {
             if (idx === 0) opts.activate = arg;
             if (idx === 1) opts.ko = arg;
+            if (idx === 0) opts.draw = arg;
+            if (idx === 1) opts.discard = arg;
         }
     });
 
@@ -5664,6 +5821,7 @@ function handleScanKo(cardInfo) {
     renderScannedPreview(filteredDisplay, opts);
 
     saveGameState(gameState);
+    decrementScanCloseAfter();
 }
 
 function closeScanPreview() {
@@ -5679,7 +5837,21 @@ function closeScanPreview() {
     gameState.scannedDisplay = [];
     gameState.scannedDisplayOpts = {};
     gameState.scannedBuffer = [];
+    gameState.scannedCloseAfterRemaining = null;
     saveGameState(gameState);
+}
+
+function decrementScanCloseAfter() {
+    const remainingRaw = gameState.scannedCloseAfterRemaining;
+    const remaining = Number(remainingRaw);
+    if (!Number.isFinite(remaining)) return;
+    const next = remaining - 1;
+    gameState.scannedCloseAfterRemaining = next;
+    if (next <= 0) {
+        closeScanPreview();
+    } else {
+        saveGameState(gameState);
+    }
 }
 
 async function handleScanActivate(cardInfo = {}) {
@@ -5751,6 +5923,88 @@ async function handleScanActivate(cardInfo = {}) {
     if (!removedFromPreview) {
         console.log("[handleScanActivate] Card not found in preview; state left unchanged.");
     }
+    decrementScanCloseAfter();
+}
+
+function removeScannedCardFromPreview(cardId) {
+    const currentDisplay = Array.isArray(gameState.scannedDisplay) ? gameState.scannedDisplay : [];
+    const filtered = [];
+    let removed = false;
+    for (const entry of currentDisplay) {
+        if (!removed && entry && String(entry.id) === String(cardId)) {
+            removed = true;
+            continue;
+        }
+        filtered.push(entry);
+    }
+    gameState.scannedDisplay = filtered;
+    const opts = gameState.scannedDisplayOpts || {};
+    renderScannedPreview(filtered, opts);
+    saveGameState(gameState);
+    return removed;
+}
+
+function removeCardFromHeroDeck(cardId, heroState) {
+    if (!heroState) return false;
+    if (!Array.isArray(heroState.deck)) heroState.deck = [];
+    let idx = heroState.deck.indexOf(cardId);
+    if (idx === -1 && heroState.deck.length > 0 && typeof heroState.deck[0] !== "string") {
+        idx = heroState.deck.findIndex(c => String(c) === cardId);
+    }
+    if (idx >= 0) {
+        heroState.deck.splice(idx, 1);
+        return true;
+    }
+    return false;
+}
+
+function handleScanDraw(cardInfo = {}) {
+    const cardId = cardInfo?.id ? String(cardInfo.id) : null;
+    if (!cardId) {
+        console.warn("[handleScanDraw] No card id provided.", cardInfo);
+        return;
+    }
+    const heroId = cardInfo.heroId ?? (gameState.heroes?.[gameState.heroTurnIndex ?? 0]);
+    const heroState = heroId ? gameState.heroData?.[heroId] : null;
+    if (!heroState) {
+        console.warn("[handleScanDraw] No heroState for hero", heroId);
+        return;
+    }
+    if (!Array.isArray(heroState.hand)) heroState.hand = [];
+
+    const removedDeck = removeCardFromHeroDeck(cardId, heroState);
+    heroState.hand.push(cardId);
+    renderHeroHandBar(gameState);
+    saveGameState(gameState);
+    const removedPreview = removeScannedCardFromPreview(cardId);
+    if (!removedDeck && !removedPreview) {
+        console.log("[handleScanDraw] Card not found in deck/preview; state left unchanged.");
+    }
+    decrementScanCloseAfter();
+}
+
+function handleScanDiscard(cardInfo = {}) {
+    const cardId = cardInfo?.id ? String(cardInfo.id) : null;
+    if (!cardId) {
+        console.warn("[handleScanDiscard] No card id provided.", cardInfo);
+        return;
+    }
+    const heroId = cardInfo.heroId ?? (gameState.heroes?.[gameState.heroTurnIndex ?? 0]);
+    const heroState = heroId ? gameState.heroData?.[heroId] : null;
+    if (!heroState) {
+        console.warn("[handleScanDiscard] No heroState for hero", heroId);
+        return;
+    }
+    if (!Array.isArray(heroState.discard)) heroState.discard = [];
+
+    const removedDeck = removeCardFromHeroDeck(cardId, heroState);
+    heroState.discard.push(cardId);
+    saveGameState(gameState);
+    const removedPreview = removeScannedCardFromPreview(cardId);
+    if (!removedDeck && !removedPreview) {
+        console.log("[handleScanDiscard] Card not found in deck/preview; state left unchanged.");
+    }
+    decrementScanCloseAfter();
 }
 
 export function renderScannedPreview(cards = [], opts = {}) {
@@ -5758,6 +6012,8 @@ export function renderScannedPreview(cards = [], opts = {}) {
 
     const activateFlag = !!opts.activate;
     const koFlag = !!opts.ko;
+    const drawFlag = !!opts.draw;
+    const discardFlag = !!opts.discard;
 
     // Ensure container elements exist (similar styling to hero top preview)
     let bar = document.getElementById("scan-preview-bar");
@@ -5842,6 +6098,31 @@ export function renderScannedPreview(cards = [], opts = {}) {
                 await handleScanActivate(info);
                 return;
             }
+            const discardEl = e.target.closest("[data-scan-discard]");
+            if (discardEl) {
+                e.stopPropagation();
+                const info = {
+                    id: discardEl.dataset.cardId,
+                    source: discardEl.dataset.cardSource,
+                    heroId: discardEl.dataset.cardHeroId || null,
+                    name: discardEl.dataset.cardName || discardEl.dataset.cardId
+                };
+                console.log(`[scan preview] discard clicked (delegate): ${info.name}`);
+                handleScanDiscard(info);
+                return;
+            }
+            const drawEl = e.target.closest("[data-scan-draw]");
+            if (drawEl) {
+                e.stopPropagation();
+                const info = {
+                    id: drawEl.dataset.cardId,
+                    source: drawEl.dataset.cardSource,
+                    heroId: drawEl.dataset.cardHeroId || null,
+                    name: drawEl.dataset.cardName || drawEl.dataset.cardId
+                };
+                console.log(`[scan preview] draw clicked (delegate): ${info.name}`);
+                handleScanDraw(info);
+            }
         };
         inner.addEventListener("click", inner._scanDelegatedHandler, true);
     }
@@ -5916,7 +6197,7 @@ export function renderScannedPreview(cards = [], opts = {}) {
             const actBtn = document.createElement("img");
             const sourceLower = (cardInfo?.source || "").toLowerCase();
             if (sourceLower === "self") {
-                actBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/929e24644681d3c05e38bfc769b04b0e22e072c6/Public/Images/Site%20Assets/drawCard.png";
+                actBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/9f43e31dbcb6c27a33f79e1ddf8c60f1044fe2b6/Public/Images/Site%20Assets/drawCard.png";
                 actBtn.alt = "Draw to hand";
             } else {
                 actBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/activate.png";
@@ -5952,6 +6233,54 @@ export function renderScannedPreview(cards = [], opts = {}) {
 
         // Insert card in the middle
         outer.appendChild(cardWrap);
+
+        if (discardFlag) {
+            const discardBtn = document.createElement("img");
+            discardBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/discardPivotRight.png";
+            discardBtn.alt = "Discard";
+            discardBtn.style.width = "70px";
+            discardBtn.style.height = "70px";
+            discardBtn.style.cursor = "pointer";
+            discardBtn.style.display = "block";
+            discardBtn.style.position = "absolute";
+            discardBtn.style.top = "20px";
+            discardBtn.style.left = "50%";
+            discardBtn.style.transform = "translateX(-50%)";
+            discardBtn.style.zIndex = "2";
+            discardBtn.style.pointerEvents = "auto";
+            discardBtn.dataset.scanDiscard = "1";
+            discardBtn.dataset.cardId = cardId;
+            discardBtn.dataset.cardSource = cardInfo?.source || "";
+            discardBtn.dataset.cardHeroId = cardInfo?.heroId ?? "";
+            discardBtn.dataset.cardName = cardData?.name || cardId;
+            discardBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                handleScanDiscard(cardInfo);
+            }, true);
+
+            const badge = document.createElement("div");
+            badge.style.width = "84px";
+            badge.style.height = "84px";
+            badge.style.borderRadius = "50%";
+            badge.style.background = "tranparent";
+            badge.style.display = "flex";
+            badge.style.alignItems = "center";
+            badge.style.justifyContent = "center";
+            badge.style.position = "absolute";
+            badge.style.top = "12px";
+            badge.style.left = "50%";
+            badge.style.transform = "translateX(-50%)";
+            badge.style.zIndex = "2";
+            badge.style.boxSizing = "border-box";
+            badge.style.cursor = "pointer";
+            badge.style.pointerEvents = "auto";
+            badge.addEventListener("click", (e) => {
+                e.stopPropagation();
+                discardBtn.click();
+            }, true);
+            badge.appendChild(discardBtn);
+            outer.appendChild(badge);
+        }
 
         if (koFlag) {
             const koBtn = document.createElement("img");
@@ -5997,6 +6326,54 @@ export function renderScannedPreview(cards = [], opts = {}) {
                 koBtn.click();
             }, true);
             badge.appendChild(koBtn);
+            outer.appendChild(badge);
+        }
+
+        if (drawFlag) {
+            const drawBtn = document.createElement("img");
+            drawBtn.src = "https://raw.githubusercontent.com/over-lords/overlords/9f43e31dbcb6c27a33f79e1ddf8c60f1044fe2b6/Public/Images/Site%20Assets/drawCard.png";
+            drawBtn.alt = "Draw";
+            drawBtn.style.width = "70px";
+            drawBtn.style.height = "70px";
+            drawBtn.style.cursor = "pointer";
+            drawBtn.style.display = "block";
+            drawBtn.style.position = "absolute";
+            drawBtn.style.bottom = "10px";
+            drawBtn.style.left = "50%";
+            drawBtn.style.transform = "translateX(-50%)";
+            drawBtn.style.zIndex = "2";
+            drawBtn.style.pointerEvents = "auto";
+            drawBtn.dataset.scanDraw = "1";
+            drawBtn.dataset.cardId = cardId;
+            drawBtn.dataset.cardSource = cardInfo?.source || "";
+            drawBtn.dataset.cardHeroId = cardInfo?.heroId ?? "";
+            drawBtn.dataset.cardName = cardData?.name || cardId;
+            drawBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                handleScanDraw(cardInfo);
+            }, true);
+
+            const badge = document.createElement("div");
+            badge.style.width = "84px";
+            badge.style.height = "84px";
+            badge.style.borderRadius = "50%";
+            badge.style.background = "transparent";
+            badge.style.display = "flex";
+            badge.style.alignItems = "center";
+            badge.style.justifyContent = "center";
+            badge.style.position = "absolute";
+            badge.style.bottom = "0";
+            badge.style.left = "50%";
+            badge.style.transform = "translateX(-50%)";
+            badge.style.zIndex = "2";
+            badge.style.boxSizing = "border-box";
+            badge.style.cursor = "pointer";
+            badge.style.pointerEvents = "auto";
+            badge.addEventListener("click", (e) => {
+                e.stopPropagation();
+                drawBtn.click();
+            }, true);
+            badge.appendChild(drawBtn);
             outer.appendChild(badge);
         }
 
@@ -6783,6 +7160,7 @@ export function triggerKOHeroEffects(foeCard, state = gameState, heroId = null, 
 }
 
 export function executeEffectSafely(effectString, card, selectedData) {
+    const sharedData = selectedData || {};
     if (Array.isArray(effectString)) {
         effectString.forEach(eff => executeEffectSafely(eff, card, selectedData));
         return;
@@ -6819,19 +7197,19 @@ export function executeEffectSafely(effectString, card, selectedData) {
         // Match "functionName(arg1,arg2,...)"
         const match = call.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
 
-        if (!match) {
-            const bareHandler = EFFECT_HANDLERS[call];
-            if (bareHandler) {
-                try {
-                    bareHandler([], card, { ...selectedData });
-                } catch (err) {
-                    console.warn(`[executeEffectSafely] Handler '${call}' failed: ${err.message}`);
+            if (!match) {
+                const bareHandler = EFFECT_HANDLERS[call];
+                if (bareHandler) {
+                    try {
+                        bareHandler([], card, sharedData);
+                    } catch (err) {
+                        console.warn(`[executeEffectSafely] Handler '${call}' failed: ${err.message}`);
+                    }
+                } else {
+                    console.warn(`[executeEffectSafely] Could not parse effect '${call}' on ${card?.name}.`);
                 }
-            } else {
-                console.warn(`[executeEffectSafely] Could not parse effect '${call}' on ${card?.name}.`);
+                continue;
             }
-            continue;
-        }
 
         const fnName = match[1];
         const rawArgs = match[2]
@@ -6856,14 +7234,14 @@ export function executeEffectSafely(effectString, card, selectedData) {
         }
 
         try {
-            handler(parsedArgs, card, { ...selectedData });
+            handler(parsedArgs, card, sharedData);
         } catch (err) {
             console.warn(`[executeEffectSafely] Handler '${fnName}' failed: ${err.message}`);
         }
     }
 }
 
-export function triggerRuleEffects(condition, payload = {}, state = gameState) {
+export async function triggerRuleEffects(condition, payload = {}, state = gameState) {
     const s = state || gameState;
     const condNorm = normalizeConditionString(condition);
     if (!condNorm) return;
@@ -6899,6 +7277,13 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
         .filter(Boolean);
     cardsToCheck.push(...activeTactics);
 
+    // Active heroes (face cards)
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    heroIds.forEach(hid => {
+        const heroCard = heroes.find(h => String(h.id) === String(hid));
+        if (heroCard) cardsToCheck.push(heroCard);
+    });
+
     // Active scenario (top of stack)
     if (Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {
         const scenarioId = String(s.scenarioStack[s.scenarioStack.length - 1]);
@@ -6910,7 +7295,7 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
     const currentOv = getCurrentOverlordInfo(s);
     if (currentOv?.card) cardsToCheck.push(currentOv.card);
 
-    cardsToCheck.forEach(card => {
+    for (const card of cardsToCheck) {
         const effects = [
             ...(Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : []),
             ...(Array.isArray(card.mightEffects) ? card.mightEffects : []),
@@ -6918,8 +7303,9 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
             ...(Array.isArray(card.evilWinsEffects) ? card.evilWinsEffects : [])
         ];
 
-        effects.forEach((eff, idx) => {
-            if (!eff || !eff.effect) return;
+        for (let idx = 0; idx < effects.length; idx++) {
+            const eff = effects[idx];
+            if (!eff || !eff.effect) continue;
 
             const rawCond = eff.condition;
             let matchesEvent = false;
@@ -6948,58 +7334,89 @@ export function triggerRuleEffects(condition, payload = {}, state = gameState) {
                 }
             }
 
-            if (!matchesEvent) return;
+            if (!matchesEvent) continue;
 
             // All other conditions must pass
             const heroIdForCond = payload?.currentHeroId ?? null;
+            let extraPass = true;
             for (const c of extraConds) {
                 if (!evaluateCondition(c, heroIdForCond, s)) {
-                    return;
+                    extraPass = false;
+                    break;
                 }
             }
+            if (!extraPass) continue;
 
             const typeNorm = String(eff.type || "").toLowerCase();
             console.log(`[triggerRuleEffects] Matched condition '${condNorm}' on ${card.name} (type=${typeNorm})`);
-            const runEffect = () => {
+            const runEffect = async () => {
                 try {
-                    executeEffectSafely(eff.effect, card, { ...payload, state: s, tacticId: card.id });
+                    await executeEffectSafely(eff.effect, card, { ...payload, state: s, tacticId: card.id });
                 } catch (err) {
                     console.warn(`[triggerRuleEffects] Failed to run effect ${idx} on ${card.name}:`, err);
                 }
             };
 
             if (typeNorm === "optional") {
+                // Uses gating: align with existing hero optional handling
+                const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+                const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+                let remaining = usesMax;
+
+                // If this is a hero face card, track uses on heroState.currentUses like other hero optionals
+                const heroIdx = Array.isArray(s.heroes)
+                    ? s.heroes.findIndex(hid => String(hid) === String(card.id))
+                    : -1;
+                let heroState = null;
+                if (heroIdx >= 0 && s.heroData && s.heroData[s.heroes[heroIdx]]) {
+                    heroState = s.heroData[s.heroes[heroIdx]];
+                }
+                if (heroState && hasFiniteUses) {
+                    const cur = heroState.currentUses?.[idx];
+                    remaining = cur == null ? usesMax : Number(cur);
+                }
+
+                if (hasFiniteUses && remaining <= 0) {
+                    console.log(`[triggerRuleEffects] No uses left for optional ability on ${card.name} (idx=${idx}). Skipping prompt.`);
+                    continue;
+                }
+
                 if (payload?.allowOptional === false) {
                     console.log("[triggerRuleEffects] Skipping optional effect because allowOptional=false.");
-                    return;
+                    continue;
                 }
                 const label = card.abilitiesNamePrint?.[idx]?.text || "Use optional ability?";
                 if (payload?.rewardDeferred) payload.rewardDeferred.used = true;
-                const promptPromise =
-                    (typeof window !== "undefined" && typeof window.showOptionalAbilityPrompt === "function")
-                        ? window.showOptionalAbilityPrompt(label)
-                        : (typeof window !== "undefined" && typeof window.confirm === "function")
-                            ? Promise.resolve(window.confirm(label))
-                        : Promise.resolve(false);
-                promptPromise
-                    .then(allow => {
-                        if (allow) runEffect();
-                        if (payload?.rewardDeferred && typeof payload.rewardDeferred.resolve === "function") {
-                            payload.rewardDeferred.resolve(allow);
+                try {
+                    const allow =
+                        (typeof window !== "undefined" && typeof window.showOptionalAbilityPrompt === "function")
+                            ? await window.showOptionalAbilityPrompt(label)
+                            : (typeof window !== "undefined" && typeof window.confirm === "function")
+                                ? window.confirm(label)
+                                : false;
+                    if (allow) {
+                        if (heroState && hasFiniteUses) {
+                            if (!heroState.currentUses) heroState.currentUses = {};
+                            heroState.currentUses[idx] = Math.max(0, remaining - 1);
+                            try { saveGameState(s); } catch (_) {}
                         }
-                    })
-                    .catch(err => {
-                        console.warn("[triggerRuleEffects] Optional prompt failed", err);
-                        if (payload?.rewardDeferred && typeof payload.rewardDeferred.resolve === "function") {
-                            payload.rewardDeferred.resolve(false);
-                        }
-                    });
-                return;
+                        await runEffect();
+                    }
+                    if (payload?.rewardDeferred && typeof payload.rewardDeferred.resolve === "function") {
+                        payload.rewardDeferred.resolve(allow);
+                    }
+                } catch (err) {
+                    console.warn("[triggerRuleEffects] Optional prompt failed", err);
+                    if (payload?.rewardDeferred && typeof payload.rewardDeferred.resolve === "function") {
+                        payload.rewardDeferred.resolve(false);
+                    }
+                }
+                continue;
             }
 
-            runEffect();
-        });
-    });
+            await runEffect();
+        }
+    }
 }
 
 export function runGameStartAbilities(selectedData) {
@@ -8515,9 +8932,10 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             const effectsArray = Array.isArray(chosenEffectBlock.effect)
                 ? chosenEffectBlock.effect
                 : [chosenEffectBlock.effect];
+            const sharedData = { currentHeroId: heroId, state: gameState };
 
             for (const effectString of effectsArray) {
-                await executeParsedEffect(effectString, cardData, heroId, gameState);
+                await executeParsedEffect(effectString, cardData, heroId, gameState, sharedData);
             }
 
             // Skip past all chooseOption(n) entries
@@ -8528,6 +8946,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
         const effectsArray = Array.isArray(eff.effect)
             ? eff.effect
             : [eff.effect];
+        const sharedData = { currentHeroId: heroId, state: gameState };
 
         for (const effectString of effectsArray) {
 
@@ -8565,7 +8984,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             console.log(`[AbilityExecutor] Executing '${fnName}'`, parsedArgs);
 
             try {
-                handler(parsedArgs, cardData, { currentHeroId: heroId, state: gameState });
+                handler(parsedArgs, cardData, sharedData);
             } catch (err) {
                 console.warn(`[AbilityExecutor] Effect '${fnName}' failed:`, err);
             }
@@ -8762,7 +9181,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     console.log(`[AbilityExecutor] Completed effect execution for ${cardName}.`);
 }
 
-async function executeParsedEffect(effectString, cardData, heroId, gameState) {
+async function executeParsedEffect(effectString, cardData, heroId, gameState, sharedData = null) {
     const match = effectString.match(/^([A-Za-z0-9_]+)\((.*)\)$/);
     if (!match) return;
 
@@ -8779,7 +9198,8 @@ async function executeParsedEffect(effectString, cardData, heroId, gameState) {
         return a;
     });
 
-    executeEffectSafely(effectString, cardData, { currentHeroId: heroId, state: gameState });
+    const data = sharedData || { currentHeroId: heroId, state: gameState };
+    executeEffectSafely(effectString, cardData, data);
 }
 
 // =======================================================================
@@ -9324,6 +9744,75 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     }
 
     // ============================================================
+    // FLAG: "allAdjacentFoes" — auto-hit adjacent (left/right/center) foes, skipping engaged foe
+    // ============================================================
+    if (flag === "allAdjacentFoes") {
+        const hState = heroId ? s.heroData?.[heroId] : null;
+        if (!hState) {
+            console.warn("[damageFoe] 'allAdjacentFoes' needs a valid heroId.");
+            return;
+        }
+        if (hState.isFacingOverlord) {
+            console.log("[damageFoe] Hero is facing overlord; no adjacent city targets.");
+            return;
+        }
+        const lowerIdx = hState.cityIndex;
+        if (typeof lowerIdx !== "number") {
+            console.warn("[damageFoe] Hero is not in a city; cannot target adjacent foes.");
+            return;
+        }
+        const upperCenter = lowerIdx - 1;
+        const upperLeft   = upperCenter - 2;
+        const upperRight  = upperCenter + 2;
+        let allowedSlots = [upperCenter, upperLeft, upperRight]
+            .filter(idx => Number.isInteger(idx) && idx >= 0 && idx <= 10);
+
+        // Skip the engaged foe (center) if present
+        if (Array.isArray(s.cities)) {
+            const engagedEntry = s.cities[upperCenter];
+            if (engagedEntry && engagedEntry.id != null) {
+                allowedSlots = allowedSlots.filter(idx => idx !== upperCenter);
+            }
+        }
+
+        if (!allowedSlots.length || !Array.isArray(s.cities)) {
+            console.log("[damageFoe] No adjacent slots available for selection.");
+            return;
+        }
+
+        const targets = allowedSlots
+            .map(idx => ({ idx, entry: s.cities[idx] }))
+            .filter(({ entry }) => entry && entry.id != null);
+
+        if (!targets.length) {
+            console.log("[damageFoe] No foes in adjacent slots; skipping.");
+            return;
+        }
+
+        targets.forEach(({ idx, entry }) => {
+            const foeIdStr = String(entry.id);
+            const foeCard =
+                villains.find(v => String(v.id) === foeIdStr) ||
+                henchmen.find(h => String(h.id) === foeIdStr);
+            if (!foeCard) return;
+
+            const summary = {
+                foeType: foeCard.type || "Enemy",
+                foeId: foeIdStr,
+                foeName: foeCard.name || `Enemy ${foeIdStr}`,
+                currentHP: entry.currentHP ?? foeCard.hp,
+                slotIndex: idx,
+                source: "city-upper",
+                instanceId: entry.instanceId ?? entry.uniqueId ?? null
+            };
+
+            damageFoe(amount, summary, heroId, s, { flag: "single", fromAll: true });
+        });
+
+        return;
+    }
+
+    // ============================================================
     // FLAG: "anyHenchman" — enable UI selection limited to Henchmen
     // ============================================================
     if (flag === "anyHenchman") {
@@ -9546,6 +10035,53 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         }
 
         for (const foe of allH) {
+            damageFoe(amount, foe, heroId, s, { flag: "single", fromAll: true });
+        }
+
+        return;
+    }
+
+    // ============================================================
+    // FLAG: "allVillains" — damage ALL Villains in cities
+    // ============================================================
+    if (flag === "allVillains") {
+        if (!Array.isArray(s.cities)) {
+            console.warn("[damageFoe] No cities array; cannot apply 'allVillains' damage.");
+            return;
+        }
+
+        console.log(`[damageFoe] Applying ${amount} damage to ALL Villains in cities.`);
+
+        const allV = [];
+
+        for (let slotIndex = 0; slotIndex < s.cities.length; slotIndex++) {
+            const entry = s.cities[slotIndex];
+            if (!entry || entry.id == null) continue;
+
+            const foeIdStr = String(entry.id);
+            const foeCard =
+                villains.find(v => String(v.id) === foeIdStr) ||
+                null;
+
+            if (!foeCard || (foeCard.type && foeCard.type !== "Villain")) continue;
+
+            allV.push({
+                foeType: foeCard.type || "Enemy",
+                foeId: foeIdStr,
+                instanceId: getEntryKey(entry),
+                foeName: foeCard.name,
+                currentHP: entry.currentHP ?? foeCard.hp,
+                slotIndex,
+                source: "city-upper"
+            });
+        }
+
+        if (!allV.length) {
+            console.log("[damageFoe] No Villains in cities to damage.");
+            return;
+        }
+
+        for (const foe of allV) {
             damageFoe(amount, foe, heroId, s, { flag: "single", fromAll: true });
         }
 

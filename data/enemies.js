@@ -490,15 +490,190 @@ export const enemies = [
             },
         ]
     },
+    {
+        id: "4273",
+        name: "Parallax",
+        image: `${cardArtFolder}/parallax.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `All [ICON:Lantern] Heroes deal half Damage until the end of this Hero's next turn.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `I Am Fear!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `halfDamage(Lantern,next)`
+            }
+        ]
+    },
+    {
+        id: "4274",
+        name: "Artemiz",
+        image: `${cardArtFolder}/artemiz.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `All Heroes take 3 Damage.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `As You Command!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `damageHero(3,all)`
+            }
+        ]
+    },
+    {
+        id: "4275",
+        name: "The Rot",
+        image: `${cardArtFolder}/theRot.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Destroy the Rightmost City.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `I Consume All!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `destroyCity(1)`
+            }
+        ]
+    },
+    {
+        id: "4276",
+        name: "Court of Owls",
+        image: `${cardArtFolder}/courtOfOwls.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `All Villains are restored to full HP.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Cheers!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `damageFoe(-999,allVillains)`
+            }
+        ]
+    },
+    {
+        id: "4277",
+        name: "Professor Pyg",
+        image: `${cardArtFolder}/professorPyg.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `All Villains capture 2 Bystanders.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `From Me to You!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `foeCaptureBystander(allVillains,2)`
+            }
+        ]
+    },
+    {
+        id: "4278",
+        name: "Godspeed",
+        image: `${cardArtFolder}/godspeed.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Draw 1 from the Villain Deck for each active [ICON:Flash] Hero.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Glad You Could Make It`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `villainDraw(getActiveTeamCount(Flash))`
+            }
+        ]
+    },
+    {
+        id: "4279",
+        name: "Overcorps",
+        image: `${cardArtFolder}/overcorps.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `All Henchmen and Villains regain up to 2 HP, and if there is a Hero in Metropolis they take 3 Damage.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Submit!`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`damageFoe(-2,all)`,`damageHeroAtCity(9,3)`]
+            }
+        ]
+    },
+    {
+        id: "4280",
+        name: "Justice Lords",
+        image: `${cardArtFolder}/justiceLords.jpg`,
+        type: "Enemy",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Your Hero takes 3 Damage, but if they were engaged with a foe in a City, that foe is KO'd.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `You're Welcome.`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`damageHero(3,current)`,`damageFoe(999,current)`]
+            }
+        ]
+    },
 ]
 
-// A: ambush bug, anarky, angle man, anton arcane, arkham knight, artemiz
+// A: ambush bug, anarky, angle man, anton arcane, arkham knight
 // B: black racer, blacksmith, blood league, brimstone, brother blood, brother grimm
-// C: calendar man, chemo, chronos, cluemaster, cobalt blue, condiment king, court of owls, cupid
+// C: calendar man, chemo, chronos, cluemaster, cobalt blue, condiment king, cupid
 // D: deacon blackfire, despero, dex starr, dr phosphorus, dr poison
 // E: eclipso, eradicator
 // F: fatal five, flamingo, flashpoint wonder woman, flashpoint aquaman
-// G: godspeed
 // H: hades
 // I: icicle
 // J: joker's daughter, justice lords
@@ -506,11 +681,11 @@ export const enemies = [
 // L: larfleeze
 // M: magenta, magog, major disaster, maxie zeus, monocle, murmur
 // N: neutron, new reichsmen, nightshade, non
-// O: orca, overcorps
-// P: parallax, peekaboo, penny plunderer, plastique, plunder, polka dot man, professor ivo, professor pyg
+// O: overcorps
+// P: peekaboo, penny plunderer, plastique, plunder, polka dot man, professor ivo
 // Q: qwardian weaponers
 // R: ratcatcher, red son, red X, relic, richard dragon, royal flush gang, rupture
 // S: slipknot, superboy prime
-// T: to morrow, tattooed man, telos, terra, the mist, the rot, the ventriloquist, tweedle dee and dum
+// T: to morrow, tattooed man, telos, terra, the mist, the ventriloquist, tweedle dee and dum
 // W: white canary
 // Z: zebra man

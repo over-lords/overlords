@@ -131,7 +131,7 @@ export const scenarios = [
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
         doNotShow: "false",
-        hp: "20",
+        hp: "10",
         abilitiesText: [
             {
                 text: `At the end of every turn, KO a Bystander.`

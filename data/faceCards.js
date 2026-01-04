@@ -2005,7 +2005,7 @@ export const heroes = [
     image: `${cardArtFolder}/Cyborg.jpg`,
     type: "Hero",
     category: "Tactician",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "red",
     teams: ["Titans","Justice"],
     hp: "13",
@@ -2014,12 +2014,12 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `2/Game: At the start of a turn, prevent the Villain Deck draw. <span class="line-gap"></span> 1/Game: Cyborg can Withdraw.`
+        text: `2/Game: Any time the Villain Deck would be drawn from, stop the draw(s). <span class="line-gap"></span> 1/Game: Cyborg can Withdraw.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Prevent Villain Deck draw`
+        text: `Prevent Villain Deck Draw`
       },
       {
         text: `Withdraw from your City`
@@ -2027,18 +2027,15 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
+        type: `optional`,
         condition: `villainDeckWouldDraw`,
         uses: `2`,
-        shared: `no`,
-        effect: `skipVillainDeckDraw`
+        effect: `skipVillainDeckDraw()`
       },
       {
         type: `standard`,
-        condition: `none`,
         uses: `1`,
-        shared: `no`,
-        effect: `retreatHeroToHQ`
+        effect: `retreatHeroToHQ()`
       },
     ]
   },

@@ -736,6 +736,28 @@ export const allies = [
             }
         ]
     },
+    {
+        id: "4582",
+        name: "Ragman",
+        image: `${cardArtFolder}/ragman.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Freeze a Henchman or Villain.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `All Wrapped Up`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: `freezeVillain(any)`
+            }
+        ]
+    },
 ]
 
 // A: amethyst, animal man, apollo, aquagirl
@@ -755,7 +777,7 @@ export const allies = [
 // O: obsidian, omac, orion, osiris
 // P: phantom stranger, plastic man, power girl
 // Q: question
-// R: ragman, red devil, rocket
+// R: red devil, rocket
 // S: shado, simon baz, solovar, speedy, spoiler, starman, stripe
 // T: the atom, the ray, thunderbolt
 // V: vibe
