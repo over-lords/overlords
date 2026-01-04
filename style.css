@@ -1728,8 +1728,8 @@ html, body {
 
 #hero-hand-bar {
   position: fixed;
-  bottom: -280px;
-  right: -150px;
+  bottom: -270px;
+  right: -130px;
 
   display: flex;
   flex-direction: row-reverse;
@@ -1745,7 +1745,7 @@ html, body {
   cursor: pointer;
 
   /* Smaller tabletop style */
-  transform: scale(0.28);
+  transform: scale(0.32);
   transform-origin: top left;
 
   pointer-events: auto;
