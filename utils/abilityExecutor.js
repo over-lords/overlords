@@ -2219,10 +2219,6 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
         }
     }
 
-    if (typeof flag === "string") {
-        flag = flag.toLowerCase();
-    }
-
     // Selected foe (only required for true single-target damage)
     let foeSummary = selectedData?.selectedFoeSummary ?? null;
 
