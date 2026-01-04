@@ -80,7 +80,9 @@
         });
     </script>
 
-    <script>
+    <script type="module">
+        import { clearGameState } from "./utils/stateManager.js";
+
         // Elements
         const listEl = document.getElementById("level-list");
         const playBtn = document.getElementById("play-btn");
@@ -347,6 +349,11 @@
 
         playBtn.onclick = async () => {
             if (!selectedLevel) return;
+            try {
+                clearGameState();
+            } catch (err) {
+                console.warn("[Campaign] Failed to clear game state before launch", err);
+            }
             if (selectedFlag) {
                 try { localStorage.setItem("campaignCurrentFlag", selectedFlag); } catch (_) {}
             }
