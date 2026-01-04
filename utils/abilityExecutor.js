@@ -5699,7 +5699,9 @@ function applyScanEffects(opts = {}) {
     // Persist the displayed set so it survives refresh
     gameState.scannedDisplay = buf;
     gameState.scannedDisplayOpts = { activate, ko, draw, discard };
-    gameState.scannedCloseAfterRemaining = closeAfter;
+
+    // Only track closeAfter when explicitly provided; otherwise clear it
+    gameState.scannedCloseAfterRemaining = Number.isFinite(closeAfter) ? closeAfter : null;
     saveGameState(gameState);
 
     // Clear the buffer after reporting
@@ -5821,6 +5823,7 @@ function handleScanKo(cardInfo) {
     renderScannedPreview(filteredDisplay, opts);
 
     saveGameState(gameState);
+    maybeCloseScanPreview();
     decrementScanCloseAfter();
 }
 
@@ -5841,8 +5844,18 @@ function closeScanPreview() {
     saveGameState(gameState);
 }
 
+function maybeCloseScanPreview() {
+    // If no explicit closeAfter was set and nothing remains to show, close the preview
+    const hasExplicitCloseAfter = Number.isFinite(Number(gameState.scannedCloseAfterRemaining));
+    const display = Array.isArray(gameState.scannedDisplay) ? gameState.scannedDisplay : [];
+    if (!hasExplicitCloseAfter && display.length === 0) {
+        closeScanPreview();
+    }
+}
+
 function decrementScanCloseAfter() {
     const remainingRaw = gameState.scannedCloseAfterRemaining;
+    if (remainingRaw === null || remainingRaw === undefined) return;
     const remaining = Number(remainingRaw);
     if (!Number.isFinite(remaining)) return;
     const next = remaining - 1;
@@ -5923,6 +5936,7 @@ async function handleScanActivate(cardInfo = {}) {
     if (!removedFromPreview) {
         console.log("[handleScanActivate] Card not found in preview; state left unchanged.");
     }
+    maybeCloseScanPreview();
     decrementScanCloseAfter();
 }
 
@@ -5980,6 +5994,7 @@ function handleScanDraw(cardInfo = {}) {
     if (!removedDeck && !removedPreview) {
         console.log("[handleScanDraw] Card not found in deck/preview; state left unchanged.");
     }
+    maybeCloseScanPreview();
     decrementScanCloseAfter();
 }
 
@@ -6004,6 +6019,7 @@ function handleScanDiscard(cardInfo = {}) {
     if (!removedDeck && !removedPreview) {
         console.log("[handleScanDiscard] Card not found in deck/preview; state left unchanged.");
     }
+    maybeCloseScanPreview();
     decrementScanCloseAfter();
 }
 
