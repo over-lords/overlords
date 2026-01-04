@@ -1728,8 +1728,8 @@ html, body {
 
 #hero-hand-bar {
   position: fixed;
-  bottom: -260px;
-  right: -80px;
+  bottom: -280px;
+  right: -150px;
 
   display: flex;
   flex-direction: row-reverse;
@@ -1739,22 +1739,27 @@ html, body {
   z-index: 990;
 }
 
-#hero-hand-bar .card-wrapper {
+#hero-hand-bar > .card-wrapper {
   position: relative;
-  margin-left: -90px;
+  margin-left: -180px;
   cursor: pointer;
 
   /* Smaller tabletop style */
-  transform: scale(0.55);
+  transform: scale(0.28);
   transform-origin: top left;
 
   pointer-events: auto;
 }
 
+#hero-hand-bar .card-wrapper .card-wrapper {
+  margin-left: 0;
+  transform: none;
+}
+
 .hero-hand-activate-btn {
     position: absolute;            /* float above */
-    top: -95px;                    /* adjust height above the card */
-    left: -25px;
+    top: -195px;                   /* adjust height above the card */
+    left: 115px;
     transform: translateX(-50%);   /* perfect centering */
     padding: 0;
     margin: 0;
@@ -1765,7 +1770,7 @@ html, body {
 }
 
 .hero-hand-activate-btn img {
-    width: 100px;                  /* or any size you want */
+    width: 200px;                  /* doubled size */
     height: auto;
     display: block;
 }

@@ -3479,8 +3479,8 @@ export function renderHeroHandBar(state) {
                 name: cardData?.name
             });
 
-            const wrap = document.createElement("div");
-            wrap.className = "card-wrapper";
+            const wrap = renderCard(cardId);
+            if (!wrap) return;
 
             const activateBtn = document.createElement("button");
 
@@ -3503,47 +3503,94 @@ export function renderHeroHandBar(state) {
                     icon.alt = "Activate";
                 }
                 activateBtn.appendChild(icon);
-            }
 
-            activateBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
+                activateBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
 
-                const cardName = cardData?.name || `Card ${cardId}`;
+                    const cardName = cardData?.name || `Card ${cardId}`;
 
-                // Resolve the active hero correctly
-                const heroIds       = state.heroes || [];
-                const activeIndex   = state.heroTurnIndex ?? 0;
-                const activeHeroId  = heroIds[activeIndex];
+                    // Resolve the active hero correctly
+                    const heroIds       = state.heroes || [];
+                    const activeIndex   = state.heroTurnIndex ?? 0;
+                    const activeHeroId  = heroIds[activeIndex];
 
-                if (!activeHeroId) {
-                    console.error("No activeHeroId found in state.heroes/heroTurnIndex", {
-                        heroIds,
-                        activeIndex,
-                        state
-                    });
-                    return;
-                }
+                    if (!activeHeroId) {
+                        console.error("No activeHeroId found in state.heroes/heroTurnIndex", {
+                            heroIds,
+                            activeIndex,
+                            state
+                        });
+                        return;
+                    }
 
-                const heroState = state.heroData?.[activeHeroId];
+                    const heroState = state.heroData?.[activeHeroId];
 
-                // SAFETY CHECK: must be an object
-                if (!heroState || typeof heroState !== "object") {
-                    console.error("No heroState found for activeHeroId", {
-                        activeHeroId,
-                        heroState,
-                        state
-                    });
-                    return;
-                }
+                    // SAFETY CHECK: must be an object
+                    if (!heroState || typeof heroState !== "object") {
+                        console.error("No heroState found for activeHeroId", {
+                            activeHeroId,
+                            heroState,
+                            state
+                        });
+                        return;
+                    }
 
-                const discardMode = state.discardMode;
-                const discardActive =
-                    discardMode &&
-                    String(discardMode.heroId) === String(activeHeroId) &&
-                    discardMode.remaining > 0;
+                    const discardMode = state.discardMode;
+                    const discardActive =
+                        discardMode &&
+                        String(discardMode.heroId) === String(activeHeroId) &&
+                        discardMode.remaining > 0;
 
-                if (discardActive) {
-                    if (!Array.isArray(heroState.hand)) heroState.hand = [];
+                    if (discardActive) {
+                        if (!Array.isArray(heroState.hand)) heroState.hand = [];
+                        if (!Array.isArray(heroState.discard)) heroState.discard = [];
+
+                        // Remove this card from hand
+                        const handIndex = heroState.hand.indexOf(cardId);
+                        if (handIndex !== -1) {
+                            heroState.hand.splice(handIndex, 1);
+                        }
+
+                        // Always discard (do not remove from game for bystanders here)
+                        heroState.discard.push(cardId);
+
+                        // Trigger any ifDiscarded effects on this card
+                        if (cardData) {
+                            try {
+                                if (typeof runIfDiscardedEffects === "function") {
+                                    runIfDiscardedEffects(cardData, activeHeroId, state);
+                                }
+                            } catch (err) {
+                                console.warn("[discard] Failed to run ifDiscarded effects.", err);
+                            }
+                        }
+
+                        // Count toward "discarded this turn"
+                        heroState.discardedThisTurn = (heroState.discardedThisTurn || 0) + 1;
+
+                        // Decrement remaining discards
+                        discardMode.remaining = Math.max(0, (discardMode.remaining || 0) - 1);
+                        if (discardMode.remaining <= 0) {
+                            state.discardMode = null;
+                        }
+
+                        saveGameState(state || gameState);
+                        renderHeroHandBar(state);
+                        return;
+                    }
+
+                    // SEND TO abilityExecutor.js
+                    try {
+                        onHeroCardActivated(cardId, {
+                            action: "activated",
+                            heroId: activeHeroId
+                        });
+                    } catch (err) {
+                        console.warn("[HeroActivate] onHeroCardActivated failed:", err);
+                    }
+
+                    // Ensure arrays exist
+                    if (!Array.isArray(heroState.hand))    heroState.hand    = [];
                     if (!Array.isArray(heroState.discard)) heroState.discard = [];
 
                     // Remove this card from hand
@@ -3552,89 +3599,39 @@ export function renderHeroHandBar(state) {
                         heroState.hand.splice(handIndex, 1);
                     }
 
-                    // Always discard (do not remove from game for bystanders here)
-                    heroState.discard.push(cardId);
+                    // Add it to discard (unless it should be removed from the game)
+                    const shouldRemoveFromGame =
+                        (String(cardId) === "0") ||
+                        (cardData && String(cardData.type || "").toLowerCase() === "bystander");
 
-                    // Trigger any ifDiscarded effects on this card
-                    if (cardData) {
-                        try {
-                            if (typeof runIfDiscardedEffects === "function") {
-                                runIfDiscardedEffects(cardData, activeHeroId, state);
-                            }
-                        } catch (err) {
-                            console.warn("[discard] Failed to run ifDiscarded effects.", err);
+                    if (!shouldRemoveFromGame) {
+                        heroState.discard.push(cardId);
+                    } else {
+                        if (cardData && String(cardData.type || "").toLowerCase() === "bystander") {
+                            if (!gameState.heroBystandersRescued) gameState.heroBystandersRescued = {};
+                            const rescues = gameState.heroBystandersRescued;
+                            const key = String(activeHeroId);
+                            const current = rescues[key] || { count: 0, slotIndex: activeIndex };
+                            rescues[key] = {
+                                count: (current.count || 0) + 1,
+                                slotIndex: activeIndex
+                            };
                         }
-                    }
-
-                    // Count toward "discarded this turn"
-                    heroState.discardedThisTurn = (heroState.discardedThisTurn || 0) + 1;
-
-                    // Decrement remaining discards
-                    discardMode.remaining = Math.max(0, (discardMode.remaining || 0) - 1);
-                    if (discardMode.remaining <= 0) {
-                        state.discardMode = null;
+                        console.log(`[HeroActivate] Removed ${cardName} (ID ${cardId}) from the game instead of discarding.`);
+                        try { wrap.remove(); } catch (err) {}
                     }
 
                     saveGameState(state || gameState);
+
+                    //console.log(`[pageSetup.js] Discarded ${cardName}`);
+                    console.log("Current discard pile:", heroState.discard);
+
                     renderHeroHandBar(state);
-                    return;
-                }
+                });
 
-                // SEND TO abilityExecutor.js
-                try {
-                    onHeroCardActivated(cardId, {
-                        action: "activated",
-                        heroId: activeHeroId
-                    });
-                } catch (err) {
-                    console.warn("[HeroActivate] onHeroCardActivated failed:", err);
-                }
-
-                // Ensure arrays exist
-                if (!Array.isArray(heroState.hand))    heroState.hand    = [];
-                if (!Array.isArray(heroState.discard)) heroState.discard = [];
-
-                // Remove this card from hand
-                const handIndex = heroState.hand.indexOf(cardId);
-                if (handIndex !== -1) {
-                    heroState.hand.splice(handIndex, 1);
-                }
-
-                // Add it to discard (unless it should be removed from the game)
-                const shouldRemoveFromGame =
-                    (String(cardId) === "0") ||
-                    (cardData && String(cardData.type || "").toLowerCase() === "bystander");
-
-                if (!shouldRemoveFromGame) {
-                    heroState.discard.push(cardId);
-                } else {
-                    if (cardData && String(cardData.type || "").toLowerCase() === "bystander") {
-                        if (!gameState.heroBystandersRescued) gameState.heroBystandersRescued = {};
-                        const rescues = gameState.heroBystandersRescued;
-                        const key = String(activeHeroId);
-                        const current = rescues[key] || { count: 0, slotIndex: activeIndex };
-                        rescues[key] = {
-                            count: (current.count || 0) + 1,
-                            slotIndex: activeIndex
-                        };
-                    }
-                    console.log(`[HeroActivate] Removed ${cardName} (ID ${cardId}) from the game instead of discarding.`);
-                    try { wrap.remove(); } catch (err) {}
-                }
-
-                saveGameState(state || gameState);
-
-                //console.log(`[pageSetup.js] Discarded ${cardName}`);
-                console.log("Current discard pile:", heroState.discard);
-
-                renderHeroHandBar(state);
-            });
-
-            // Put button first so it appears above the card
-            wrap.appendChild(activateBtn);
-
-            const cardNode = renderCard(cardId, wrap);
-            wrap.appendChild(cardNode);
+                // Put button first so it appears above the card
+                wrap.insertBefore(activateBtn, wrap.firstChild);
+            }
 
             // click opens the full panel
             wrap.addEventListener("click", (e)=>{
