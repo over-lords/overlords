@@ -3188,6 +3188,10 @@ async function performHeroStartingTravel(gameState, heroId, cityIndex) {
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
+    // Traveling to a city means no longer facing the Overlord
+    heroState.isFacingOverlord = false;
+    refreshOverlordFacingGlow(gameState);
+
     // Clear only this hero's pending travel decision log if present
     if (gameState.pendingTravelLog && String(gameState.pendingTravelLog.heroId) === String(heroId)) {
         removeGameLogEntryById(gameState.pendingTravelLog.id, gameState);
@@ -4871,6 +4875,7 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
   // Active hero enters the city
   activeState.cityIndex = dest;
   activeState.isFacingOverlord = false;
+  refreshOverlordFacingGlow(state);
 
   // DOM updates
   const citySlots = document.querySelectorAll(".city-slot");
