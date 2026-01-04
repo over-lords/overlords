@@ -2305,7 +2305,7 @@ export const heroes = [
     category: "Tactician",
     doNotShow: "false",
     color: "red",
-    teams: ["Flash","Titans"],
+    teams: ["Flash","Titans","Justice"],
     hp: "10",
     damageThreshold: "3",
     retreat: "2",

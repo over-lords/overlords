@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Card%20Assets";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/ec26d7ef702521621fb227a1942585921ce6961f/Public/Images/Card%20Assets";
 
 // ids 0 + 201-4200
 // Starting ID for a deck: startID=(deckNumber−1)×cardsPerDeck+201
@@ -2170,6 +2170,30 @@ export const heroCards = [
   {
     id: "1224",
     type: "Main",
+    name: "Life Well Lived",
+    hero: "Flash (Wally West)",
+    image: `${cardArtFolder}/Wally West/lifeWellLived.png`,
+    perDeck: "1",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every active [ICON:Flash], [ICON:Titans], and [ICON:Justice] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Increase this card's Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`increaseCardDamage(getActiveTeamCount(Flash))`,`increaseCardDamage(getActiveTeamCount(Titans))`,`increaseCardDamage(getActiveTeamCount(Justice))`]
+      }
+    ]
+  },
+  {
+    id: "1225",
+    type: "Main",
     name: "Reunited",
     hero: "Flash (Wally West)",
     image: `${cardArtFolder}/Wally West/Wally e.jpg`,
@@ -2202,7 +2226,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1225",
+    id: "1226",
     type: "Main",
     name: "Eternity of Waiting",
     hero: "Flash (Wally West)",
@@ -2226,7 +2250,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1226",
+    id: "1227",
     type: "Main",
     name: "Next Generation",
     hero: "Flash (Wally West)",
@@ -2250,7 +2274,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1227",
+    id: "1228",
     type: "Main",
     name: "Faster Than a Locomotive",
     hero: "Flash (Wally West)",
@@ -2282,7 +2306,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1228",
+    id: "1229",
     type: "Main",
     name: "Good 'ol Days",
     hero: "Flash (Wally West)",
@@ -2313,7 +2337,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1229",
+    id: "1230",
     type: "Main",
     name: "Lost in the Speed Force",
     hero: "Flash (Wally West)",
@@ -2344,12 +2368,12 @@ export const heroCards = [
     ]
   },
   {
-    id: "1230",
+    id: "1231",
     type: "Main",
     name: "Love that Transcends Death",
     hero: "Flash (Wally West)",
     image: `${cardArtFolder}/Wally West/Wally Linda Park.jpg`,
-    perDeck: "2",
+    perDeck: "1",
     damage: "0",
     abilitiesText: [
       {
@@ -2383,7 +2407,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1231",
+    id: "1232",
     type: "Main",
     name: "Vibrational Frequency",
     hero: "Flash (Wally West)",
@@ -2407,7 +2431,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1232",
+    id: "1233",
     type: "Main",
     name: "Out of Place",
     hero: "Flash (Wally West)",
@@ -2440,7 +2464,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1233",
+    id: "1234",
     type: "Main",
     name: "Rewrite Creation",
     hero: "Flash (Wally West)",
@@ -2465,7 +2489,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1234",
+    id: "1235",
     type: "Main",
     name: "Flash Time",
     hero: "Flash (Wally West)",
@@ -2490,7 +2514,7 @@ export const heroCards = [
     ]
   },
   {
-    id: "1235",
+    id: "1236",
     type: "Main",
     name: "Escape the Speed Force",
     hero: "Flash (Wally West)",
