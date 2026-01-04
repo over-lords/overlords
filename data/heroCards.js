@@ -1655,7 +1655,7 @@ export const heroCards = [
       {
         type: `quick`,
         condition: `ifDiscarded`,
-        effect: [`scanDeck(enemy,3)`,`applyScanEffects(activate,ko)`]
+        effect: [`scanDeck(enemy,3)`,`applyScanEffects(activate,ko,closeAfter(3))`]
       },
     ]
   },
