@@ -766,6 +766,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "getlastdamageamount") {
         return getLastDamageAmount(heroId, state);
     }
+    if (lower === "getdamagelost") {
+        return getDamageLost(heroId, state);
+    }
     if (lower === "getherodamage") {
         return getHeroDamage(heroId, state);
     }
@@ -2032,8 +2035,12 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     }
 
     // Special flag: allOtherHeroes -> every other active hero draws `count`
-    if (flag === 'allotherheroes') {
+    // Optional team filter: allOtherHeroes(teamName)
+    if (flag === 'allotherheroes' || /^allotherheroes\([^)]*\)$/.test(flag)) {
         const heroIds = gameState.heroes || [];
+        const teamMatch = flag.match(/^allotherheroes\(([^)]*)\)$/);
+        const teamFilterRaw = teamMatch ? teamMatch[1] : null;
+        const teamFilter = teamFilterRaw ? teamFilterRaw.trim().toLowerCase() : null;
         heroIds.forEach(hid => {
             if (String(hid) === String(heroId)) return;
 
@@ -2041,6 +2048,11 @@ EFFECT_HANDLERS.draw = function(args, card, selectedData) {
             if (!hState) return;
             const hp = typeof hState.hp === 'number' ? hState.hp : 1;
             if (hp <= 0) return; // only active (non-KO) heroes
+
+            if (teamFilter) {
+                const hCard = heroes.find(h => String(h.id) === String(hid));
+                if (!heroMatchesTeam(hCard, teamFilter)) return;
+            }
 
             if (!Array.isArray(hState.deck)) hState.deck = [];
             if (!Array.isArray(hState.hand)) hState.hand = [];
@@ -2214,6 +2226,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "allAdjacentFoes";
         } else if (typeof raw === "string" && raw.toLowerCase() === "lastdamagecauser") {
             flag = "lastDamageCauser";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "lastrescuedfrom") {
+            flag = "lastRescuedFrom";
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
@@ -2552,8 +2566,9 @@ EFFECT_HANDLERS.koRescuedBystander = function(args = [], cardData, selectedData 
     saveGameState(state);
 };
 
-function rescueCapturedBystander(flag = "all", heroId = null, state = gameState) {
+function rescueCapturedBystander(flag = "all", heroId = null, state = gameState, selectedData = {}) {
     const s = state || gameState;
+    s.lastRescuedFrom = null;
     const hid = heroId ?? s.heroes?.[s.heroTurnIndex ?? 0];
     if (!hid) {
         console.warn("[rescueCapturedBystander] No heroId available.");
@@ -2561,8 +2576,8 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
     }
 
     const normFlag = String(flag || "").toLowerCase();
-    if (normFlag !== "all") {
-        console.warn("[rescueCapturedBystander] Unknown flag; only 'all' is supported. Received:", flag);
+    if (normFlag !== "all" && normFlag !== "any") {
+        console.warn("[rescueCapturedBystander] Unknown flag; only 'all' or 'any' are supported. Received:", flag);
         return;
     }
 
@@ -2580,11 +2595,51 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
 
     let rescuedCount = 0;
     const rescuedNames = [];
+    let lastRescuedFrom = null;
 
-    s.cities.forEach((entry, idx) => {
+    const finalizeRescue = () => {
+        if (lastRescuedFrom) {
+            s.lastRescuedFrom = lastRescuedFrom;
+        }
+
+        if (rescuedCount > 0) {
+            const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
+            console.log(`[rescueCapturedBystander] Hero ${hid} rescued ${rescuedCount} captured bystander(s).`);
+            const nameList = rescuedNames.length ? rescuedNames.join(", ") : `${rescuedCount} bystander(s)`;
+            const msg = rescuedNames.length === 1
+                ? `${nameList} was rescued by ${heroName}.`
+                : `Bystanders: ${nameList} were rescued by ${heroName}.`;
+            appendGameLogEntry(msg, s);
+            incrementRescuedBystanders(hid, rescuedCount, s);
+            s._pendingRescueBystanderHero = hid;
+            try {
+                triggerRuleEffects("rescueBystander", { currentHeroId: hid, state: s });
+            } catch (err) {
+                console.warn("[rescueCapturedBystander] Failed to trigger rescueBystander effects", err);
+            }
+            s._pendingRescueBystanderHero = null;
+            saveGameState(s);
+            renderHeroHandBar(s);
+        } else {
+            console.log("[rescueCapturedBystander] No captured bystanders found to rescue.");
+        }
+    };
+
+    const recordSource = (entry, slotIndex) => {
+        if (!entry || entry.id == null) return;
+        lastRescuedFrom = {
+            foeId: String(entry.id),
+            instanceId: getEntryKey(entry),
+            slotIndex
+        };
+    };
+
+    const rescueFromEntry = (entry, idx) => {
         if (!entry) return;
 
         const captured = entry.capturedBystanders;
+        const slotIndex = typeof entry.slotIndex === "number" ? entry.slotIndex : idx;
+        let rescuedHere = 0;
 
         if (Array.isArray(captured) && captured.length > 0) {
             captured.forEach(b => {
@@ -2592,6 +2647,7 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
                 if (idStr) {
                     heroState.hand.push(idStr);
                     rescuedCount += 1;
+                    rescuedHere += 1;
                     if (b?.name) rescuedNames.push(String(b.name));
                 }
             });
@@ -2600,36 +2656,105 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState)
             // If stored as a number with no detail, log and clear
             console.warn(`[rescueCapturedBystander] Captured bystanders stored as count (${captured}) in city ${idx}; clearing without card ids.`);
             entry.capturedBystanders = [];
+            rescuedCount += Number(captured);
+            rescuedHere += Number(captured);
         }
-    });
 
-    if (rescuedCount > 0) {
-        const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
-        console.log(`[rescueCapturedBystander] Hero ${hid} rescued ${rescuedCount} captured bystander(s).`);
-        const nameList = rescuedNames.length ? rescuedNames.join(", ") : `${rescuedCount} bystander(s)`;
-        const msg = rescuedNames.length === 1
-            ? `${nameList} was rescued by ${heroName}.`
-            : `Bystanders: ${nameList} were rescued by ${heroName}.`;
-        appendGameLogEntry(msg, s);
-        incrementRescuedBystanders(hid, rescuedCount, s);
-        s._pendingRescueBystanderHero = hid;
-        try {
-            triggerRuleEffects("rescueBystander", { currentHeroId: hid, state: s });
-        } catch (err) {
-            console.warn("[rescueCapturedBystander] Failed to trigger rescueBystander effects", err);
+        if (rescuedHere > 0) {
+            recordSource(entry, slotIndex);
         }
-        s._pendingRescueBystanderHero = null;
-        saveGameState(s);
-        renderHeroHandBar(s);
-    } else {
-        console.log("[rescueCapturedBystander] No captured bystanders found to rescue.");
+    };
+
+    const findEntryForSummary = (summary) => {
+        if (!summary || !Array.isArray(s.cities)) return null;
+        const slot = typeof summary.slotIndex === "number" ? summary.slotIndex : null;
+        if (slot != null) {
+            const entry = s.cities[slot];
+            if (entry && entry.id != null && String(entry.id) === String(summary.foeId || summary.id)) {
+                return { entry, slotIndex: slot };
+            }
+        }
+        const key = summary.instanceId != null ? String(summary.instanceId) : null;
+        const entry = s.cities.find(e => e && ((key && getEntryKey(e) === key) || String(e.id) === String(summary.foeId || summary.id)));
+        return entry ? { entry, slotIndex: entry.slotIndex ?? s.cities.indexOf(entry) } : null;
+    };
+
+    if (normFlag === "any") {
+        const targetSummary =
+            selectedData?.selectedFoeSummary ||
+            (selectedData?.foeEntry ? { foeId: selectedData.foeEntry.id, slotIndex: selectedData.slotIndex, instanceId: getEntryKey(selectedData.foeEntry) } : null);
+
+        const candidates = Array.isArray(s.cities)
+            ? s.cities
+                .map((e, idx) => ({ entry: e, slotIndex: typeof e?.slotIndex === "number" ? e.slotIndex : idx }))
+                .filter(({ entry }) =>
+                    entry &&
+                    (
+                        (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) ||
+                        (Number(entry.capturedBystanders) > 0)
+                    )
+                )
+            : [];
+
+        let target = findEntryForSummary(targetSummary);
+
+        if (!target && candidates.length) {
+            target = candidates[0];
+        }
+
+        if (!candidates.length) {
+            console.log("[rescueCapturedBystander] No foes with captured bystanders found for 'any' selection.");
+            return;
+        }
+
+        if (typeof window !== "undefined") {
+            window.__rescueCapturedSelectMode = {
+                customHandler: ({ entry, slotIndex, state }) => {
+                    const pending = (typeof window !== "undefined") ? window.__rescueCapturedSelectMode : null;
+                    rescueFromEntry(entry, slotIndex);
+                    finalizeRescue();
+                    try { if (typeof window.__clearDamageFoeHighlights === "function") window.__clearDamageFoeHighlights(); } catch (e) {}
+                    try { window.__rescueCapturedSelectMode = null; } catch (e) {}
+                    saveGameState(state || s);
+
+                    const callbacks = Array.isArray(pending?.afterResolve)
+                        ? [...pending.afterResolve]
+                        : [];
+                    callbacks.forEach(cb => {
+                        try { cb?.(); } catch (err) { console.warn("[rescueCapturedBystander] afterResolve callback failed", err); }
+                    });
+                },
+                state: s,
+                heroId: hid,
+                requireBystanders: true,
+                requireConfirm: true,
+                confirmTitle: "Rescue Captured Bystanders",
+                confirmMessage: "Rescue this foe's captured bystanders?",
+                allowedSlots: candidates.map(c => c.slotIndex),
+                afterResolve: []
+            };
+            highlightBystanderTargetSlots(s);
+            try { showMightBanner("Choose a foe with captured bystanders to rescue them", 1800); } catch (e) {}
+            return;
+        }
+
+        if (target) {
+            rescueFromEntry(target.entry, target.slotIndex);
+        } else {
+            console.log("[rescueCapturedBystander] No foes with captured bystanders found for 'any' selection.");
+        }
+        finalizeRescue();
+        return;
     }
+
+    s.cities.forEach((entry, idx) => rescueFromEntry(entry, idx));
+    finalizeRescue();
 }
 
 EFFECT_HANDLERS.rescueCapturedBystander = function(args = [], card, selectedData = {}) {
     const flag = args?.[0] ?? "all";
     const heroId = selectedData?.currentHeroId ?? null;
-    rescueCapturedBystander(flag, heroId, gameState);
+    rescueCapturedBystander(flag, heroId, gameState, selectedData);
 };
 
 function foeCaptureBystander(cityIndex, count = 1, state = gameState) {
@@ -9166,19 +9291,28 @@ export async function onHeroCardActivated(cardId, meta = {}) {
 
         if (foeSummary.source === "overlord") {
             damageOverlord(damageAmount, gameState, heroId);
+            const baseCtx = gameState._lastDamageContext || {};
             gameState._lastDamageContext = {
+                ...baseCtx,
                 target: "overlord",
                 heroId,
                 heroName,
                 cardId: idStr,
                 cardName,
                 foeId: foeSummary.foeId,
-                foeName: foeSummary.foeName
+                foeName: foeSummary.foeName,
+                damageLost: 0,
+                appliedDamage: damageAmount,
+                intendedDamage: damageAmount
             };
         } else if (foeSummary.source === "city-upper") {
             damageAmount = applyHalfDamageModifier(damageAmount, heroId, gameState);
             damageFoe(damageAmount, foeSummary, heroId, gameState);
+            const baseCtx = (gameState._lastDamageContext && gameState._lastDamageContext.cardId === idStr)
+                ? gameState._lastDamageContext
+                : {};
             gameState._lastDamageContext = {
+                ...baseCtx,
                 target: "city-foe",
                 heroId,
                 heroName,
@@ -9752,6 +9886,89 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
         if (!foeCard) {
             console.warn("[damageFoe] No card data for lastDamageCauser id:", foeIdStr);
+            return;
+        }
+
+        const summary = {
+            foeType: foeCard.type || "Enemy",
+            foeId: foeIdStr,
+            instanceId: getEntryKey(entry),
+            foeName: foeCard.name || `Enemy ${foeIdStr}`,
+            currentHP: entry.currentHP ?? foeCard.hp,
+            slotIndex,
+            source: "city-upper"
+        };
+
+        damageFoe(amount, summary, heroId, s, { flag: "single" });
+        return;
+    }
+
+    if (flag === "lastRescuedFrom") {
+        const info = s?.lastRescuedFrom;
+        if (!info || !info.foeId) {
+            // If a rescue selection is pending, queue this damage until rescue finishes.
+            if (typeof window !== "undefined" && window.__rescueCapturedSelectMode) {
+                if (!Array.isArray(window.__rescueCapturedSelectMode.afterResolve)) {
+                    window.__rescueCapturedSelectMode.afterResolve = [];
+                }
+                const amountCopy = amount;
+                const heroCopy = heroId;
+                const foeCopy = foeSummary;
+                const stateCopy = s;
+                window.__rescueCapturedSelectMode.afterResolve.push(() => {
+                    if (!stateCopy.lastRescuedFrom) {
+                        console.log("[damageFoe] lastRescuedFrom still missing after rescue; skipping.");
+                        return;
+                    }
+                    damageFoe(amountCopy, foeCopy, heroCopy, stateCopy, { flag: "lastRescuedFrom" });
+                });
+                console.log("[damageFoe] Queued lastRescuedFrom damage until rescue completes.");
+            } else {
+                console.log("[damageFoe] No lastRescuedFrom recorded.");
+            }
+            return;
+        }
+
+        const wantedKey = info.instanceId != null ? String(info.instanceId) : null;
+        let entry = null;
+        let slotIndex = null;
+
+        if (Array.isArray(s.cities)) {
+            if (Number.isInteger(info.slotIndex)) {
+                const cand = s.cities[info.slotIndex];
+                if (cand && cand.id != null) {
+                    const candKey = getEntryKey(cand);
+                    const matchesKey = wantedKey && candKey === wantedKey;
+                    const matchesId = String(cand.id) === String(info.foeId);
+                    if (matchesKey || matchesId) {
+                        entry = cand;
+                        slotIndex = info.slotIndex;
+                    }
+                }
+            }
+
+            if (!entry) {
+                entry = s.cities.find(e => {
+                    if (!e || e.id == null) return false;
+                    if (wantedKey && getEntryKey(e) === wantedKey) return true;
+                    return String(e.id) === String(info.foeId);
+                }) || null;
+                slotIndex = entry ? (entry.slotIndex ?? s.cities.indexOf(entry)) : null;
+            }
+        }
+
+        if (!entry || slotIndex == null) {
+            console.log("[damageFoe] lastRescuedFrom target not found; skipping damage.");
+            return;
+        }
+
+        const foeIdStr = String(entry.id);
+        const foeCard =
+            villains.find(v => String(v.id) === foeIdStr) ||
+            henchmen.find(h => String(h.id) === foeIdStr);
+
+        if (!foeCard) {
+            console.warn("[damageFoe] No card data for lastRescuedFrom id:", foeIdStr);
             return;
         }
 
@@ -10492,9 +10709,28 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         console.log(`[damageFoe] ${foeCard.name} took ${effWithFoeMods} damage (${currentHP} -> ${newHP}).`);
         appendGameLogEntry(`${heroName} dealt ${appliedDamage} damage to ${foeCard.name}.`, s);
 
+        // Record detailed damage context for afterDamage effects
+        const baseCtx = s._lastDamageContext || {};
+        const cardIdCtx = baseCtx.cardId ?? incomingCardId ?? null;
+        const damageLost = Math.max(0, effWithFoeMods - appliedDamage);
+        s._lastDamageContext = {
+            ...baseCtx,
+            target: "city-foe",
+            heroId: heroId ?? baseCtx.heroId ?? null,
+            heroName: heroName ?? baseCtx.heroName,
+            cardId: cardIdCtx,
+            cardName: baseCtx.cardName,
+            foeId: foeIdStr,
+            foeName: foeCard.name || `Enemy ${foeIdStr}`,
+            slotIndex,
+            intendedDamage: effWithFoeMods,
+            appliedDamage,
+            damageLost
+        };
+
         // Track last damage dealt by the acting hero (post-modifier amount)
         if (heroId && s.heroData?.[heroId]) {
-            s.heroData[heroId].lastDamageAmount = Number(effectiveAmount) || 0;
+            s.heroData[heroId].lastDamageAmount = Number(appliedDamage) || 0;
         }
 
         // Trigger damaged condition effects on this foe
@@ -10870,6 +11106,15 @@ export function getLastDamageAmount(heroId, state = gameState) {
     const hState = s.heroData?.[heroId];
     if (!hState) return 0;
     return Number(hState.lastDamageAmount || 0);
+}
+
+export function getDamageLost(heroId, state = gameState) {
+    const s = state || gameState;
+    const ctx = s?._lastDamageContext;
+    if (!ctx) return 0;
+    if (heroId != null && ctx.heroId != null && String(ctx.heroId) !== String(heroId)) return 0;
+    const lost = Number(ctx.damageLost);
+    return Number.isFinite(lost) ? Math.max(0, lost) : 0;
 }
 
 export function getHeroDamage(heroId, state = gameState) {

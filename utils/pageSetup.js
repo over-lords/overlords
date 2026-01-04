@@ -1994,6 +1994,93 @@ function showDamageSelectConfirm({ amount, foeName }) {
     });
 }
 
+function showRescueSelectConfirm({ foeName }) {
+    return new Promise(resolve => {
+        try {
+            const existing = document.querySelectorAll('[data-rescue-confirm-overlay="1"]');
+            existing.forEach(el => { try { el.remove(); } catch (e) {} });
+        } catch (e) {
+            console.warn("[rescueConfirm] Failed to clear existing overlays", e);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.dataset.rescueConfirmOverlay = "1";
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 16px;
+        `;
+
+        const box = document.createElement("div");
+        box.style.cssText = `
+            background: #fff;
+            color: #111;
+            border-radius: 14px;
+            border: 4px solid #000;
+            width: min(420px, 100%);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+            padding: 18px;
+            text-align: center;
+            font-family: 'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif;
+        `;
+
+        const title = document.createElement("div");
+        title.style.cssText = "font-size: 28px; font-weight: 800; margin-bottom: 10px;";
+        title.textContent = "Rescue Bystanders";
+
+        const msg = document.createElement("div");
+        msg.style.cssText = "font-size: 22px; line-height: 1.35; margin-bottom: 16px;";
+        msg.textContent = `Rescue captured bystanders from ${foeName}?`;
+
+        const btnRow = document.createElement("div");
+        btnRow.style.cssText = "display:flex; gap:10px; justify-content:center; flex-wrap:wrap;";
+
+        const makeBtn = (label, bg, fg) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.style.cssText = `
+                flex: 1 1 120px;
+                padding: 12px 14px;
+                font-size: 16px;
+                font-weight: 800;
+                border: 3px solid #000;
+                border-radius: 12px;
+                background: ${bg};
+                color: ${fg};
+                cursor: pointer;
+            `;
+            return b;
+        };
+
+        const yesBtn = makeBtn("Yes", "#ffd800", "#000");
+        const noBtn  = makeBtn("No", "#e3e3e3", "#000");
+
+        const cleanup = (result) => {
+            try { overlay.remove(); } catch (e) {}
+            resolve(result);
+        };
+
+        yesBtn.onclick = () => cleanup(true);
+        noBtn.onclick  = () => cleanup(false);
+
+        btnRow.appendChild(yesBtn);
+        btnRow.appendChild(noBtn);
+
+        box.appendChild(title);
+        box.appendChild(msg);
+        box.appendChild(btnRow);
+
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+    });
+}
+
 function showFreezeSelectConfirm({ foeName }) {
     return new Promise(resolve => {
         // If a freeze confirm overlay is already open, remove it before creating a new one
@@ -2470,6 +2557,48 @@ export function buildVillainPanel(villainCard, opts = {}) {
             });
             return;
         }
+    }
+
+    // If a rescueCapturedBystander(any) is pending, hijack click to rescue instead of opening panel.
+    const pendingRescue = (typeof window !== "undefined") ? window.__rescueCapturedSelectMode : null;
+    if (pendingRescue) {
+        const stateForRescue = pendingRescue.state || gameState;
+        const { entry, slotIndex } = findCityEntryForVillainCard(villainCard, stateForRescue);
+
+        if (!entry) {
+            console.warn("[buildVillainPanel] No matching city entry found for rescue target.");
+            return;
+        }
+
+        if (Array.isArray(pendingRescue.allowedSlots) && pendingRescue.allowedSlots.length && !pendingRescue.allowedSlots.includes(slotIndex)) {
+            console.log("[buildVillainPanel] Rescue selection active but this foe is not in an allowed slot; ignoring.");
+            return;
+        }
+
+        const hasCaptured =
+            (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) ||
+            (Number(entry.capturedBystanders) > 0);
+        if (pendingRescue.requireBystanders && !hasCaptured) {
+            console.log("[buildVillainPanel] Rescue selection requires a foe with captured bystander(s); ignoring.");
+            return;
+        }
+
+        const proceed = () => {
+            const foeName = villainCard.name || "Enemy";
+            if (pendingRescue.requireConfirm) {
+                showRescueSelectConfirm({ foeName }).then(allow => {
+                    if (!allow) return;
+                    pendingRescue.customHandler({ entry, slotIndex, state: stateForRescue });
+                    try { window.__rescueCapturedSelectMode = null; } catch (e) {}
+                });
+            } else {
+                pendingRescue.customHandler({ entry, slotIndex, state: stateForRescue });
+                try { window.__rescueCapturedSelectMode = null; } catch (e) {}
+            }
+        };
+
+        proceed();
+        return;
     }
 
     // If a damageFoe(any/anyCoastal) is pending, hijack the click to a confirm modal instead of opening the panel UI.

@@ -2303,25 +2303,25 @@ export const heroes = [
     image: `${cardArtFolder}/Wally West.jpg`,
     type: "Hero",
     category: "Tactician",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "red",
     teams: ["Flash","Titans"],
-    hp: "11",
+    hp: "10",
     damageThreshold: "3",
     retreat: "2",
     travel: "3",
     abilitiesText: [
       {
-        text: `2/Game: Rescue all of the Captured Bystanders from a Henchman or Villain and deal 1 Damage to them. <span class="line-gap"></span> 2/Game: Reduce any one Henchman or Villain's Damage by 1.`
+        text: `2/Game: Rescue all Captured Bystanders from a Henchman or Villain and deal 2 Damage to them. <span class="line-gap"></span> 2/Game: Give Curse 1 to any Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Reduce Henchman or Villain's Damage`
+        text: `Rescue a foe's Captured Bystanders`
       },
       {
-        text: `Rescue Bystander`
-      }
+        text: `Give Curse 1`
+      },
     ],
     abilitiesEffects: [
       {
@@ -2329,15 +2329,15 @@ export const heroes = [
         condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `reduceVillainDamage(Choice(Any),1)`
+        effect: [`rescueCapturedBystander(any)`,`damageFoe(2,lastRescuedFrom)`]
       },
       {
         type: `standard`,
-        condition: `villainHasBystander`,
+        condition: `none`,
         uses: `2`,
         shared: `no`,
-        effect: `rescueBystanderDamageCapturer(1)`
-      }
+        effect: `giveVillainPassive(curse(1),any)`
+      },
     ]
   },
   {

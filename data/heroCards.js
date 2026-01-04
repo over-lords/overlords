@@ -1291,12 +1291,12 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Once, before the start of Flash's next turn, he can prevent himself or another Hero from taking Damage.`
+        text: `Once, before the start of Flash's next turn, he can Block himself or another Hero.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Stop Motion`
+        text: `Flash Time`
       }
     ],
     abilitiesEffects: [
@@ -2108,12 +2108,13 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Haven't Forgotten about You`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `afterDamage`,
+        effect: `damageOverlord(getDamageLost)`
       }
     ]
   },
@@ -2127,17 +2128,18 @@ export const heroCards = [
     damage: "4",
     abilitiesText: [
       {
-        text: `All other Henchmen and Villains take 1 Damage.`
+        text: `All other Henchmen and Villains take 2 Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Around the World!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `afterDamage`,
+        effect: `damageFoe(2,allOthers)`
       }
     ]
   },
@@ -2151,17 +2153,17 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Increase this card's Damage by 1 for every time Flash has traveled this turn.`
+        text: `Increase this card's Damage by 1 for every time Flash has Traveled this turn.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Increase this card's Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `increaseCardDamage(getTravelUsed)`
       }
     ]
   },
@@ -2180,13 +2182,23 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Give another Hero an extra turn`
+      },
+      {
+        text: `No Teammates? Draw 2`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        condition: [`confirmActiveTeammates`],
+        effect: `giveTeammateExtraTurn()`
+      },
+      {
+        type: `quick`,
+        condition: [`confirmNoActiveTeammates`],
+        effect: `draw(2)`
+      },
     ]
   },
   {
@@ -2199,17 +2211,17 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Increase this card's Damage equal to the HP Flash has lost.`
+        text: `Increase this card's Damage by 1 for every 1 HP Flash has lost.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Increase this card's Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `increaseCardDamage(getHeroDamage)`
       }
     ]
   },
@@ -2228,12 +2240,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Everyone Else Draws`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `draw(2,allOtherHeroes(Titans))`
       }
     ]
   },
@@ -2247,18 +2259,26 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
+        text: `Draw 1. <span class="line-gap"></span><span class="line-gap"></span> Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1`
+      },
+      {
+        text: `Scan 1 from the Villain Deck`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
-      }
+        type: `quick`,
+        effect: `draw(1)`
+      },
+      {
+        type: `quick`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      },
     ]
   },
   {
@@ -2276,12 +2296,19 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Gain a Sidekick`
+      },
+      {
+        text: `Increase Damage by 1 Per-Titan`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `gainSidekick(1)`
+      },
+      {
+        type: `quick`,
+        effect: [`increaseCardDamage(getActiveTeamCount(Titans))`]
       }
     ]
   },
@@ -2300,12 +2327,19 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw 1`
+      },
+      {
+        text: `Increase Card Damage`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `draw(1)`
+      },
+      {
+        type: `quick`,
+        effect: `increaseCardDamage(findKOdHeroes)`
       }
     ]
   },
@@ -2324,12 +2358,27 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Choose`
+      },
+      {
+        text: `Draw 1 and Rescue a Bystander`
+      },
+      {
+        text: `KO a foe with a Bystander`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`draw(1)`,`rescueBystander(1)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`damageFoe(999,anyWithBystander)`]
       }
     ]
   },
@@ -2343,17 +2392,17 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Once, before the start of Flash's next turn, he can prevent himself or another Hero from taking Damage.`
+        text: `Once, before the start of Flash's next turn, he can Block himself or another Hero.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Stop Motion`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: `giveHeroPassive(blockDamage(1),next)`
       }
     ]
   },
@@ -2372,12 +2421,21 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Draw from the E&A`
+      },
+      {
+        text: `Discard 1 and Increase this card's Damage by 2`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `optional`,
+        effect: `enemyDraw(1)`
+      },
+      {
+        condition: `activeHero(Flash)`,
+        type: `optional`,
+        effect: [`discard(1)`,`increaseCardDamage(2)`]
       }
     ]
   },
@@ -2391,17 +2449,18 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Every Hero can Scan 3 from their decks and draw 1 of them.`
+        text: `Scan 3 from Flash's deck. <span class="line-gap"></span> Draw 1 revealed card.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `My Turn Now`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        type: `quick`,
+        effect: [`scanDeck(self,3)`,`applyScanEffects(draw,closeAfter(1))`]
       }
     ]
   },
@@ -2415,17 +2474,18 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `The next damaging card played has its Damage doubled.`
+        text: `Flash's next damaging card played has its Damage doubled.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `Let's Go!`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        condition: `afterDamage`,
+        effect: `doubleDamage(current,nextCardOnly)`
       }
     ]
   },
@@ -2444,12 +2504,12 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `B`
+        text: `No More Holding Back`
       }
     ],
     abilitiesEffects: [
       {
-        effect: `b`
+        effect: [`draw(2)`,`travelPlus(999)`]
       }
     ]
   },

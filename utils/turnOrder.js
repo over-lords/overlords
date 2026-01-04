@@ -2777,6 +2777,8 @@ export async function endCurrentHeroTurn(gameState) {
 
     // Clear any pending damageFoe selection at end of turn
     try { if (typeof window !== "undefined") window.__damageFoeSelectMode = null; } catch (e) {}
+    // Clear any pending rescueCapturedBystander(any) selection at end of turn
+    try { if (typeof window !== "undefined") window.__rescueCapturedSelectMode = null; } catch (e) {}
     // Clear any pending freezeVillain(any) selection at end of turn
     try { if (typeof window !== "undefined") window.__freezeSelectMode = null; } catch (e) {}
     // Clear any pending knockback selection at end of turn
@@ -2789,6 +2791,7 @@ export async function endCurrentHeroTurn(gameState) {
 
     // Reset last damage causer at start of end-turn damage check
     gameState.lastDamageCauser = null;
+    gameState.lastRescuedFrom = null;
 
     // Run team-specific end-turn triggers (e.g., teamHeroEndTurn(Bat))
     try {
