@@ -696,7 +696,7 @@ export const allies = [
     {
         id: "4581",
         name: "Katana",
-        image: `${cardArtFolder}/barda.jpg`,
+        image: `${cardArtFolder}/katana.jpg`,
         type: "Ally",
         doNotShow: "false",
         abilitiesText: [
@@ -706,10 +706,10 @@ export const allies = [
         ],
         abilitiesNamePrint: [
             {
-                text: `Soultaker`
+                text: `Soultaker!`
             },
             {
-                text: `Choose`
+                text: `The top card of your discard pile was just KO'd. Now, CHOOSE :`
             },
             {
                 text: `KO a Henchman or Villain`

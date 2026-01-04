@@ -1186,7 +1186,7 @@ export const heroCards = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Retrieve up to 2 from Flash's discard pile.`
+        text: `Retrieve up to 2 random cards from Flash's discard pile.`
       }
     ],
     abilitiesNamePrint: [

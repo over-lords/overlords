@@ -11787,14 +11787,15 @@ function ensureExtraTurnModal() {
         flex-direction:column;
         gap:10px;
         width:100%;
-        max-height:60vh;
+        max-height:120px;
         overflow-y:auto;
+        overflow-x:hidden;
     `;
 
     const confirmRow = document.createElement("div");
     confirmRow.style.cssText = `
         display:flex;
-        margin-top:8px;
+        margin-top:4px;
     `;
 
     const confirmBtn = document.createElement("button");
@@ -11847,7 +11848,13 @@ function showTeammateExtraTurnModal({ header, options, selectedId: selectedIdIni
             btn.textContent = opt.name || opt.label || `Option ${idx + 1}`;
             btn.style.cssText = `
                 width:100%;
-                padding:12px 14px;
+                min-height:40px;
+                padding:10px 14px;
+                box-sizing:border-box;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                line-height:1.2;
                 font-size:20px;
                 font-weight:bold;
                 border:none;
@@ -11857,9 +11864,8 @@ function showTeammateExtraTurnModal({ header, options, selectedId: selectedIdIni
                 color:black;
                 cursor:pointer;
                 text-align:center;
-                white-space:nowrap;
-                overflow:hidden;
-                text-overflow:ellipsis;
+                white-space:normal;
+                word-break:break-word;
             `;
 
             btn.onclick = () => {
