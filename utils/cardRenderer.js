@@ -821,12 +821,18 @@ export function renderCard(cardId, container, opts = {}) {
 
     if (isBoardRender) {
       const idStr = String(cardData.id);
+      let entryKey = null;
+      let hadEntry = false;
 
-      // Prefer the authoritative city entry if present
+      // Prefer the authoritative city entry if present (per-instance currentHP)
       if (Array.isArray(gameState.cities)) {
         const entry = gameState.cities.find(e => e && String(e.id) === idStr);
-        if (entry && typeof entry.currentHP === "number") {
-          displayHP = entry.currentHP;
+        if (entry) {
+          hadEntry = true;
+          entryKey = entry.instanceId ?? entry.uniqueId ?? null;
+          if (typeof entry.currentHP === "number") {
+            displayHP = entry.currentHP;
+          }
         }
       }
 
@@ -835,9 +841,20 @@ export function renderCard(cardId, container, opts = {}) {
         displayHP = cardData.currentHP;
       }
 
-      // Fallback to villainHP map if present
+      // Fallback to per-instance stored HP, only if we didn't get a live entry value
       if (
         displayHP === baseHP &&
+        entryKey &&
+        gameState.villainHP &&
+        typeof gameState.villainHP[entryKey] === "number"
+      ) {
+        displayHP = gameState.villainHP[entryKey];
+      }
+
+      // Final fallback: legacy id-based storage (only when no entry exists)
+      if (
+        displayHP === baseHP &&
+        !hadEntry &&
         gameState.villainHP &&
         typeof gameState.villainHP[idStr] === "number"
       ) {
