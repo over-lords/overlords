@@ -1291,10 +1291,10 @@ html, body {
 #face-overlord-button {
     position: fixed;
     left: 3.5px;
-    top: 30%;
+    top: 33.5%;
     transform: translateY(-50%);
-    padding: 5px 5px;
-    font-size: 8px;
+    padding: 16px 5px;
+    font-size: 9px;
     font-weight: bold;
     border-radius: 10px;
     border: none;

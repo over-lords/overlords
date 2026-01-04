@@ -1593,10 +1593,18 @@ export async function villainDraw(count = 1) {
             continue;
         }
 
-        try {
-            await triggerRuleEffects("villainDeckWouldDraw", { state: gameState });
-        } catch (err) {
-            console.warn("[VILLAIN DRAW] villainDeckWouldDraw trigger failed", err);
+        let suppressedOptional = false;
+        if (gameState._suppressVillainDrawOptionalOnce) {
+            suppressedOptional = true;
+            gameState._suppressVillainDrawOptionalOnce = false;
+        }
+
+        if (!suppressedOptional) {
+            try {
+                await triggerRuleEffects("villainDeckWouldDraw", { state: gameState });
+            } catch (err) {
+                console.warn("[VILLAIN DRAW] villainDeckWouldDraw trigger failed", err);
+            }
         }
 
         const postTriggerSkip = Number(gameState.villainDrawSkipCount) || 0;
@@ -2083,6 +2091,10 @@ export async function startHeroTurn(state, opts = {}) {
         console.warn("[startHeroTurn] updateStandardSpeedUI failed", err);
     }
 
+    // Mark that we are mid hero-turn setup so we can resume after a persisted optional prompt
+    state._pendingHeroTurnResume = { heroId: activeHeroId, heroTurnIndex, resumeFrom: "villainDraw" };
+    saveGameState(state);
+
     // VILLAIN DRAW for this "turn slot" (after logging turn start for ordering)
     if (!skipVillainDraw) {
         const skipCount = Number(state.villainDrawSkipCount) || 0;
@@ -2093,6 +2105,15 @@ export async function startHeroTurn(state, opts = {}) {
             await villainDraw(1);
         }
     }
+
+    // Continue hero turn setup now that villain draw step is resolved
+    state._pendingHeroTurnResume = null;
+    await resumeHeroTurnAfterVillainDraw(state, activeHeroId, heroTurnIndex);
+}
+
+export async function resumeHeroTurnAfterVillainDraw(state, activeHeroId, heroTurnIndex) {
+    if (!state || activeHeroId == null) return;
+    const heroIds = Array.isArray(state.heroes) ? state.heroes : [];
 
     // 3) Normal hero turn setup for the chosen hero
     if (typeof state.turnCounter !== "number") state.turnCounter = 0;
@@ -2106,7 +2127,13 @@ export async function startHeroTurn(state, opts = {}) {
         });
     }
 
-    currentTurn(heroTurnIndex, heroIds);
+    // Clamp index defensively in case roster changed during a refresh
+    let idx = heroTurnIndex;
+    if (!Number.isInteger(idx) || idx < 0 || idx >= heroIds.length) {
+        idx = 0;
+    }
+    state.heroTurnIndex = idx;
+    currentTurn(idx, heroIds);
 
     resetHeroCurrentTravelAtTurnStart(state);
     showRetreatButtonForCurrentHero(state);

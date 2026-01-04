@@ -18,7 +18,7 @@ import { bystanders } from "../data/bystanders.js";
 import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
-         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout, destroyCitiesByCount, restoreCitiesByCount } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout, destroyCitiesByCount, restoreCitiesByCount, resumeHeroTurnAfterVillainDraw } from "./turnOrder.js";
 
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { playSoundEffect } from './soundHandler.js';
@@ -7402,6 +7402,21 @@ export async function triggerRuleEffects(condition, payload = {}, state = gameSt
                     continue;
                 }
                 const label = card.abilitiesNamePrint?.[idx]?.text || "Use optional ability?";
+                // Persist this prompt so a refresh can resume and resolve it
+                if (condNorm === "villaindeckwoulddraw" && s) {
+                    try {
+                        s.pendingOptionalPrompt = {
+                            text: label,
+                            source: "triggerRule",
+                            cond: condNorm,
+                            cardId: card?.id ?? null,
+                            effectIndex: idx
+                        };
+                        saveGameState(s);
+                    } catch (err) {
+                        console.warn("[triggerRuleEffects] Failed to persist optional prompt.", err);
+                    }
+                }
                 if (payload?.rewardDeferred) payload.rewardDeferred.used = true;
                 try {
                     const allow =
@@ -7413,10 +7428,19 @@ export async function triggerRuleEffects(condition, payload = {}, state = gameSt
                     if (allow) {
                         if (heroState && hasFiniteUses) {
                             if (!heroState.currentUses) heroState.currentUses = {};
-                            heroState.currentUses[idx] = Math.max(0, remaining - 1);
+                            const nextUses = Math.max(0, remaining - 1);
+                            heroState.currentUses[idx] = nextUses;
+
+                            // Keep hero face-card object in sync so UI updates without refresh
+                            if (!card.currentUses) card.currentUses = {};
+                            card.currentUses[idx] = nextUses;
                             try { saveGameState(s); } catch (_) {}
                         }
                         await runEffect();
+                    }
+                    if (s?.pendingOptionalPrompt) {
+                        s.pendingOptionalPrompt = null;
+                        try { saveGameState(s); } catch (_) {}
                     }
                     if (payload?.rewardDeferred && typeof payload.rewardDeferred.resolve === "function") {
                         payload.rewardDeferred.resolve(allow);
@@ -11659,6 +11683,100 @@ window.showOptionalAbilityPrompt = function (questionText) {
         yesBtn.onclick = () => cleanup(true);
         noBtn.onclick  = () => cleanup(false);
     });
+};
+
+// When resolving a previously-persisted optional prompt (e.g., after refresh),
+// re-run the associated effect and then resume flow as needed.
+window.handlePendingOptionalPromptChoice = async function (result, state = gameState) {
+    const pending = state?.pendingOptionalPrompt;
+    if (!pending) return;
+
+    // Currently only villain deck draw optionals are persisted
+    const { source, cond, cardId, effectIndex } = pending;
+    const isVillainDrawOptional = source === "triggerRule" && cond === "villaindeckwoulddraw";
+
+    if (isVillainDrawOptional) {
+        const card = findCardInAllSources(cardId);
+        const effects = card ? [
+            ...(Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : []),
+            ...(Array.isArray(card.mightEffects) ? card.mightEffects : []),
+            ...(Array.isArray(card.bonusEffects) ? card.bonusEffects : []),
+            ...(Array.isArray(card.evilWinsEffects) ? card.evilWinsEffects : [])
+        ] : [];
+        const eff = effects[effectIndex] || null;
+
+        if (result && eff) {
+            const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+            const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+            let remaining = usesMax;
+
+            // Hero face-card usage tracking
+            const heroState = state.heroData?.[cardId];
+            if (heroState && hasFiniteUses) {
+                const cur = heroState.currentUses?.[effectIndex];
+                remaining = cur == null ? usesMax : Number(cur);
+            }
+
+            if (hasFiniteUses && heroState) {
+                if (!heroState.currentUses) heroState.currentUses = {};
+                const nextUses = Math.max(0, remaining - 1);
+                heroState.currentUses[effectIndex] = nextUses;
+                const cardObj = heroes.find(h => String(h.id) === String(cardId));
+                if (cardObj) {
+                    if (!cardObj.currentUses) cardObj.currentUses = {};
+                    cardObj.currentUses[effectIndex] = nextUses;
+                }
+            }
+
+            try {
+                await executeEffectSafely(eff.effect, card, { state });
+            } catch (err) {
+                console.warn("[OptionalAbility] Failed to resume effect after refresh.", err);
+            }
+        }
+    }
+
+    // Clear pending prompt and persist
+    state.pendingOptionalPrompt = null;
+    try { saveGameState(state); } catch (_) {}
+
+    // Resume villain draw flow if this was from that trigger
+    if (isVillainDrawOptional) {
+        if (!result) {
+            state._suppressVillainDrawOptionalOnce = true;
+        }
+        try {
+            await villainDraw(1);
+        } catch (err) {
+            console.warn("[OptionalAbility] Failed to resume villain draw after prompt.", err);
+        }
+
+        // If this villain draw was part of a hero turn start, continue the turn setup
+        const resumeInfo = state._pendingHeroTurnResume;
+        if (resumeInfo?.resumeFrom === "villainDraw") {
+            state._pendingHeroTurnResume = null;
+            try { saveGameState(state); } catch (_) {}
+            try {
+                await resumeHeroTurnAfterVillainDraw(state, resumeInfo.heroId, resumeInfo.heroTurnIndex);
+            } catch (err) {
+                console.warn("[OptionalAbility] Failed to resume hero turn after villain draw prompt.", err);
+            }
+        }
+    }
+};
+
+// Re-show any pending optional prompt saved in gameState (e.g., after refresh)
+window.restoreOptionalAbilityPromptFromState = function (state = gameState) {
+    const pending = state?.pendingOptionalPrompt;
+    if (pending?.text) {
+        window.showOptionalAbilityPrompt(pending.text).then(result => {
+            try {
+                window.handlePendingOptionalPromptChoice(result, state);
+            } catch (err) {
+                console.warn("[OptionalAbility] Failed to resolve pending prompt after refresh.", err);
+            }
+        });
+    }
 };
 
 window.showChooseAbilityPrompt = function ({ header, options }) {

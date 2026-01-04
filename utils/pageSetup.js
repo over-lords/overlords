@@ -707,6 +707,13 @@ async function restoreUIFromState(state) {
 
         restoreUIFromState(gameState);
         restoreCapturedBystandersIntoCardData(saved);
+        try {
+            if (typeof window.restoreOptionalAbilityPromptFromState === "function") {
+                window.restoreOptionalAbilityPromptFromState(gameState);
+            }
+        } catch (e) {
+            console.warn("[RESTORE] Failed to restore optional ability prompt.", e);
+        }
 
         // IMPORTANT: Do NOT auto-start when resuming a game
         window.VILLAIN_DRAW_ENABLED = true;
