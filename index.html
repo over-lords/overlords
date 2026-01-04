@@ -407,6 +407,7 @@
 
     <script>
         let deferredPrompt = null;
+        let sawBeforeInstallPrompt = false;
         const installBox = document.getElementById("install-box");
 
         function isRunningStandalone() {
@@ -414,21 +415,48 @@
                 window.navigator.standalone === true;
         }
 
+        function showInstallBox() {
+            if (isRunningStandalone()) {
+                installBox.style.display = "none";
+                return;
+            }
+            installBox.style.display = "block";
+        }
+
         window.addEventListener("beforeinstallprompt", (e) => {
             e.preventDefault();
+            sawBeforeInstallPrompt = true;
             deferredPrompt = e;
+            showInstallBox();
+        });
 
-            if (!isRunningStandalone()) {
-                installBox.style.display = "block";
-            }
+        // Fallback for browsers that don't fire beforeinstallprompt (Safari, Firefox)
+        window.addEventListener("load", () => {
+            setTimeout(() => {
+                if (!sawBeforeInstallPrompt && !isRunningStandalone()) {
+                    showInstallBox();
+                }
+            }, 500);
         });
 
         installBox.addEventListener("click", async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            await deferredPrompt.userChoice;
-            installBox.style.display = "none";
-            deferredPrompt = null;
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                await deferredPrompt.userChoice;
+                installBox.style.display = "none";
+                deferredPrompt = null;
+                return;
+            }
+
+            // Manual instructions for browsers without the event
+            const ua = (navigator.userAgent || "").toLowerCase();
+            if (ua.includes("safari") && !ua.includes("chrome")) {
+                alert("To install on Safari: tap Share, then 'Add to Home Screen'.");
+            } else if (ua.includes("firefox")) {
+                alert("To install on Firefox: open the menu and choose 'Add to Home Screen'.");
+            } else {
+                alert("To install, use your browser's 'Add to Home Screen' option.");
+            }
         });
 
         if (isRunningStandalone()) {
