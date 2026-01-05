@@ -465,6 +465,83 @@ function heroMatchesTeam(heroObj, teamNameRaw) {
     return all.some(t => t === teamName);
 }
 
+function isHeroInCoastalCity(heroId, state = gameState) {
+    const s = state || gameState;
+    if (heroId == null) return false;
+    const heroState = s.heroData?.[heroId];
+    if (!heroState) return false;
+    const lowerIdx = Number(heroState.cityIndex);
+    if (!Number.isInteger(lowerIdx)) return false;
+    const { left, right } = checkCoastalCities(s);
+    const upperIdx = lowerIdx - 1;
+    return (upperIdx === left) || (upperIdx === right);
+}
+
+function isCoastalBonusSuppressed(heroId, state = gameState) {
+    const s = state || gameState;
+    if (heroId == null) return false;
+    const list = Array.isArray(s.coastalBonusSuppression) ? s.coastalBonusSuppression : [];
+    if (!list.length) return false;
+
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroObj) return false;
+    const teams = getHeroTeamsForCard(heroObj);
+
+    return list.some(entry => {
+        if (!entry || !entry.team) return false;
+        const key = String(entry.team).toLowerCase();
+        if (key === "all") return true;
+        return teams.includes(key);
+    });
+}
+
+function isTeamBonusSuppressed(teamName, state = gameState) {
+    if (!teamName) return false;
+    const s = state || gameState;
+    const key = String(teamName).toLowerCase().trim();
+    const list = Array.isArray(s.teamBonusSuppression) ? s.teamBonusSuppression : [];
+    if (!list.length) return false;
+
+    return list.some(entry => {
+        if (!entry || !entry.team) return false;
+        const target = String(entry.team).toLowerCase().trim();
+        if (target === "all") return true;
+        return target === key;
+    });
+}
+
+function clearCoastalBonusSuppressionForSource(sourceType, sourceId, state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(s.coastalBonusSuppression)) return;
+    const before = s.coastalBonusSuppression.length;
+    s.coastalBonusSuppression = s.coastalBonusSuppression.filter(entry => {
+        if (!entry) return false;
+        const typeMatch = !sourceType || entry.sourceType === sourceType;
+        const idMatch = sourceId == null || String(entry.sourceId) === String(sourceId);
+        return !(typeMatch && idMatch);
+    });
+    const removed = before - s.coastalBonusSuppression.length;
+    if (removed > 0) {
+        console.log(`[coastalBonus] Cleared ${removed} suppression entries for ${sourceType || "any-source"} ${sourceId != null ? sourceId : ""}.`);
+    }
+}
+
+function clearTeamBonusSuppressionForSource(sourceType, sourceId, state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(s.teamBonusSuppression)) return;
+    const before = s.teamBonusSuppression.length;
+    s.teamBonusSuppression = s.teamBonusSuppression.filter(entry => {
+        if (!entry) return false;
+        const typeMatch = !sourceType || entry.sourceType === sourceType;
+        const idMatch = sourceId == null || String(entry.sourceId) === String(sourceId);
+        return !(typeMatch && idMatch);
+    });
+    const removed = before - s.teamBonusSuppression.length;
+    if (removed > 0) {
+        console.log(`[teamBonus] Cleared ${removed} suppression entries for ${sourceType || "any-source"} ${sourceId != null ? sourceId : ""}.`);
+    }
+}
+
 function applyHalfDamageModifier(amount, heroId, state = gameState) {
     if (!amount || amount <= 0) return amount;
     if (!heroId) return amount;
@@ -535,6 +612,10 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     if (!teamName) return 0;
     const teamKey = String(teamName).toLowerCase().trim();
     const s = state || gameState;
+    if (isTeamBonusSuppressed(teamKey, s)) {
+        console.log(`[getActiveTeamCount] Team bonuses suppressed for ${teamKey}; returning 0.`);
+        return 0;
+    }
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     let count = 0;
     const excludeSelf = teamKey !== "all";
@@ -802,6 +883,13 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     const getActiveTeammatesForCond = (hid) => getActiveTeammates(hid, s);
 
+    if (condStr.includes(",")) {
+        const parts = condStr.split(",").map(p => p.trim()).filter(Boolean);
+        if (parts.length > 1) {
+            return parts.every(part => evaluateCondition(part, heroId, s));
+        }
+    }
+
     // atXorLessHP(n) / atXorGreaterHP(n) - apply to current hero
     const hpMatch = condStr.match(/^atxor(less|greater)hp\((\d+)\)$/i);
     if (hpMatch) {
@@ -835,6 +923,10 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
     const activeHeroMatch = condStr.match(/^activehero\(([^)]+)\)$/i);
     if (activeHeroMatch) {
         const teamName = activeHeroMatch[1];
+        if (isTeamBonusSuppressed(teamName, s)) {
+            console.log(`[activeHero(${teamName})] Team bonuses suppressed; returning false.`);
+            return false;
+        }
         let activeTeams = new Set();
 
         heroIds.forEach(id => {
@@ -867,6 +959,18 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         const none = count === 0;
         console.log(`[noActive(${teamName})] active count=${count} -> ${none}`);
         return none;
+    }
+
+    const inMatch = condStr.match(/^in\(([^)]+)\)$/i);
+    if (inMatch) {
+        if (heroId == null) return false;
+        const place = inMatch[1].trim().toLowerCase();
+        if (place === "coastal" || place === "coast") {
+            const atCoastal = isHeroInCoastalCity(heroId, s);
+            if (!atCoastal) return false;
+            return !isCoastalBonusSuppressed(heroId, s);
+        }
+        return false;
     }
 
     const lowerCond = condStr.toLowerCase();
@@ -5181,6 +5285,65 @@ EFFECT_HANDLERS.ignoreShoveDamage = function(args = [], card, selectedData = {})
     const heroName = heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`;
     appendGameLogEntry(`${heroName} will ignore shove damage until end of this turn.`, state);
     saveGameState(state);
+};
+
+EFFECT_HANDLERS.disableCoastalBonus = function(args = [], card, selectedData = {}) {
+    const teamRaw = args?.[0] ?? "all";
+    const teamKey = String(teamRaw || "all").toLowerCase().trim() || "all";
+    const s = selectedData?.state || gameState;
+    if (!s) return;
+
+    if (!Array.isArray(s.coastalBonusSuppression)) s.coastalBonusSuppression = [];
+
+    const sourceType = selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect");
+    const sourceId = selectedData?.scenarioId || card?.id || null;
+
+    s.coastalBonusSuppression = s.coastalBonusSuppression.filter(entry => {
+        if (!entry) return false;
+        const sameTeam = String(entry.team || "").toLowerCase().trim() === teamKey;
+        const sameSourceType = entry.sourceType === sourceType;
+        const sameSourceId = sourceId != null ? String(entry.sourceId) === String(sourceId) : false;
+        return !(sameTeam && sameSourceType && sameSourceId);
+    });
+
+    s.coastalBonusSuppression.push({
+        team: teamKey || "all",
+        sourceType,
+        sourceId
+    });
+
+    const whoText = teamKey === "all" ? "All heroes" : `${teamKey} heroes`;
+    appendGameLogEntry(`${whoText} lose coastal city bonuses while this effect is active.`, s);
+    saveGameState(s);
+};
+
+EFFECT_HANDLERS.disableTeamBonus = function(args = [], card, selectedData = {}) {
+    const teamRaw = args?.[0] ?? "all";
+    const teamKey = String(teamRaw || "all").toLowerCase().trim() || "all";
+    const s = selectedData?.state || gameState;
+    if (!s) return;
+    if (!Array.isArray(s.teamBonusSuppression)) s.teamBonusSuppression = [];
+
+    const sourceType = selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect");
+    const sourceId = selectedData?.scenarioId || card?.id || null;
+
+    s.teamBonusSuppression = s.teamBonusSuppression.filter(entry => {
+        if (!entry) return false;
+        const sameTeam = String(entry.team || "").toLowerCase().trim() === teamKey;
+        const sameSourceType = entry.sourceType === sourceType;
+        const sameSourceId = sourceId != null ? String(entry.sourceId) === String(sourceId) : false;
+        return !(sameTeam && sameSourceType && sameSourceId);
+    });
+
+    s.teamBonusSuppression.push({
+        team: teamKey || "all",
+        sourceType,
+        sourceId
+    });
+
+    const whoText = teamKey === "all" ? "All heroes" : `${teamKey} heroes`;
+    appendGameLogEntry(`${whoText} lose team-based bonuses while this effect is active.`, s);
+    saveGameState(s);
 };
 
 EFFECT_HANDLERS.disableProtectOn = function(args = [], card, selectedData = {}) {
@@ -9751,6 +9914,8 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         if (Array.isArray(s.halfDamageModifiers)) {
             s.halfDamageModifiers = s.halfDamageModifiers.filter(mod => !(mod && mod.sourceType === "scenario" && String(mod.sourceId) === String(ovId)));
         }
+        clearCoastalBonusSuppressionForSource("scenario", ovId, s);
+        clearTeamBonusSuppressionForSource("scenario", ovId, s);
 
         // Determine what sits on top now: another Scenario or the real Overlord
         if (Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {

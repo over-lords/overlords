@@ -179,7 +179,7 @@ export const scenarios = [
         name: "Boiling Oceans",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
@@ -227,11 +227,11 @@ export const scenarios = [
         name: "Judas Contract",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
-                text: `[ICON:Titans] Heroes gain no benefits from teammates.`
+                text: `[ICON:Titans] Heroes gain no benefits from Teammates.`
             }
         ],
         abilitiesNamePrint: [
