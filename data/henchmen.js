@@ -566,4 +566,62 @@ export const henchmen = [
       }
     ]
   },
+  {
+    id: "4871",
+    name: "Bystander Zombie",
+    image: `${cardArtFolder}/bystanderZombie.png`,
+    type: "Henchman",
+    doNotShow: "true",
+    hp: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span>
+               Reward: Restore 1 of your Hero's KO'd cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Grandma?!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `restoreKOdHeroCards(current,1)`
+      }
+    ]
+  },
+  {
+    id: "4872",
+    name: "Possessed Bystander",
+    image: `${cardArtFolder}/possessedBystander.jpg`,
+    type: "Henchman",
+    doNotShow: "true",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Rescue a Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: `rescueBystander(1)`
+      }
+    ]
+  },
 ]

@@ -446,6 +446,48 @@ function getActiveUpperOrder(state = gameState) {
     return UPPER_ORDER.filter(idx => !destroyed[idx]);
 }
 
+function getHeroTeamsSimple(heroObj) {
+    if (!heroObj) return [];
+    const base = [
+        heroObj.team,
+        heroObj.heroTeam,
+        heroObj.faction
+    ].filter(Boolean).map(v => String(v).toLowerCase());
+    const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
+    return Array.from(new Set([...base, ...list]));
+}
+
+function heroMatchesTeamSimple(heroObj, teamNameRaw) {
+    if (!heroObj || !teamNameRaw) return false;
+    const key = String(teamNameRaw).toLowerCase().trim();
+    return getHeroTeamsSimple(heroObj).some(t => t === key);
+}
+
+function getHeroRetreatBonus(heroId, state = gameState, heroObj) {
+    const s = state || gameState;
+    const entries = Array.isArray(s.retreatBonusEntries) ? s.retreatBonusEntries : [];
+    if (!entries.length || heroId == null) return 0;
+    const hero = heroObj || heroes.find(h => String(h.id) === String(heroId));
+    const teams = getHeroTeamsSimple(hero);
+    return entries.reduce((acc, entry) => {
+        if (!entry) return acc;
+        const target = String(entry.target || "").toLowerCase().trim();
+        const applies =
+            target === "all" ||
+            target === "current" ||
+            target === String(heroId).toLowerCase() ||
+            teams.includes(target);
+        return applies ? acc + (Number(entry.amount) || 0) : acc;
+    }, 0);
+}
+
+function getHeroRetreatTarget(heroId, state = gameState, heroObj = null) {
+    const hero = heroObj || heroes.find(h => String(h.id) === String(heroId));
+    const base = Number(hero?.retreat || 0);
+    const bonus = getHeroRetreatBonus(heroId, state, hero);
+    return Math.max(0, base + bonus);
+}
+
 function isScenarioActive(state) {
     const stack = state.scenarioStack;
     if (!Array.isArray(stack)) return false;
@@ -562,8 +604,22 @@ function markCityDestroyed(upperIdx, gameState, opts = {}) {
     }
     try {
         triggerRuleEffects("cityDestroyed", { state: gameState, cityIndex: upperIdx, reason: opts.by || null });
+        triggerRuleEffects(`isCityDestroyed(${upperIdx})`, { state: gameState, cityIndex: upperIdx, reason: opts.by || null });
     } catch (err) {
         console.warn("[markCityDestroyed] cityDestroyed trigger failed", err);
+    }
+
+    if (!Array.isArray(gameState.retreatBonusEntries)) gameState.retreatBonusEntries = [];
+    if (upperIdx === CITY_ENTRY_UPPER) {
+        gameState.retreatBonusEntries = gameState.retreatBonusEntries.filter(entry => !(entry && entry.sourceType === "city" && Number(entry.cityIndex) === Number(upperIdx)));
+        gameState.retreatBonusEntries.push({
+            target: "all",
+            amount: 1,
+            sourceType: "city",
+            sourceId: upperIdx,
+            cityIndex: upperIdx
+        });
+        appendGameLogEntry("Retreat requirement increased by 1 while Gotham is destroyed.", gameState);
     }
 
     const citySlots = document.querySelectorAll(".city-slot");
@@ -635,6 +691,15 @@ function markCityDestroyed(upperIdx, gameState, opts = {}) {
 function unmarkCityDestroyed(upperIdx, gameState) {
     if (!gameState?.destroyedCities) return;
     delete gameState.destroyedCities[upperIdx];
+
+    gameState.retreatBonusEntries = Array.isArray(gameState.retreatBonusEntries)
+        ? gameState.retreatBonusEntries.filter(entry => !(entry && entry.sourceType === "city" && Number(entry.cityIndex) === Number(upperIdx)))
+        : [];
+    try {
+        triggerRuleEffects(`cityRestored(${upperIdx})`, { state: gameState, cityIndex: upperIdx });
+    } catch (err) {
+        console.warn("[unmarkCityDestroyed] cityRestored trigger failed", err);
+    }
 
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
@@ -812,6 +877,10 @@ export function destroyCitiesByCount(count = 1, state = gameState) {
 export function restoreCitiesByCount(count = 1, state = gameState) {
     const s = state || gameState;
     const num = Math.max(0, Number(count) || 0);
+    if (s.cityRestorationDisabled) {
+        console.log("[restoreCitiesByCount] City restoration is disabled; skipping.");
+        return;
+    }
     for (let i = 0; i < num; i++) {
         const destroyedMap = s.destroyedCities || {};
         const destroyedList = Object.keys(destroyedMap)
@@ -4074,6 +4143,10 @@ async function retreatHeroToHQ(gameState, heroId) {
     const heroName = heroObj?.name || `Hero ${heroId}`;
 
     const currentIdx = heroState.cityIndex;
+    const foeIdxAtStart = typeof currentIdx === "number" ? currentIdx - 1 : null;
+    const foeEntryAtStart = (foeIdxAtStart != null && Array.isArray(gameState.cities))
+        ? gameState.cities[foeIdxAtStart]
+        : null;
 
     // ------------------------------------------------------
     // RETREAT ROLL — ONLY when:
@@ -4096,7 +4169,7 @@ async function retreatHeroToHQ(gameState, heroId) {
                 villains.find(v => String(v.id) === foeId);
 
             if (foe) {
-                const retreatTarget = Number(heroObj?.retreat || 0);
+                const retreatTarget = getHeroRetreatTarget(heroId, gameState, heroObj);
                 const roll = Math.floor(Math.random() * 6) + 1; // 1-6
 
                 console.log(
@@ -4207,6 +4280,35 @@ async function retreatHeroToHQ(gameState, heroId) {
     }
 
     try { refreshFrozenOverlays(gameState); } catch (e) {}
+
+    // Heal abandoned foe if applicable
+    if (foeEntryAtStart && gameState.healAbandonedFoeAmount > 0) {
+        try {
+            const foeCard = findCardInAllSources(foeEntryAtStart.id);
+            const baseHP = Number(foeEntryAtStart.maxHP ?? foeCard?.hp ?? foeCard?.baseHP ?? 0);
+            const key = getEntryKey(foeEntryAtStart) || String(foeEntryAtStart.id || "");
+            if (!gameState.villainHP) gameState.villainHP = {};
+            let current = typeof foeEntryAtStart.currentHP === "number"
+                ? foeEntryAtStart.currentHP
+                : (key && typeof gameState.villainHP[key] === "number" ? gameState.villainHP[key] : baseHP);
+            const maxHP = Math.max(Number(foeEntryAtStart.maxHP || 0), baseHP);
+            const healAmt = Math.max(0, Math.min(gameState.healAbandonedFoeAmount, maxHP - current));
+            const newHP = current + healAmt;
+            foeEntryAtStart.currentHP = newHP;
+            foeEntryAtStart.maxHP = maxHP;
+            if (key) gameState.villainHP[key] = newHP;
+            if (foeCard) foeCard.currentHP = newHP;
+            if (healAmt > 0) {
+                const name = foeCard?.name || `Enemy ${foeEntryAtStart.id}`;
+                appendGameLogEntry(`${name} regained ${healAmt} HP after being abandoned.`, gameState);
+                if (typeof foeEntryAtStart.slotIndex === "number") {
+                    try { refreshFoeCardUI(foeEntryAtStart.slotIndex, foeEntryAtStart); } catch (_) {}
+                }
+            }
+        } catch (err) {
+            console.warn("[retreatHeroToHQ] Failed to heal abandoned foe.", err);
+        }
+    }
 }
 
 function openRetreatConfirm(gameState, heroId) {
@@ -5454,7 +5556,7 @@ async function attemptLeaveCityAsRetreat(gameState, heroId, fromCityIndex, conte
         return true;
     }
 
-    const retreatTarget = Number(heroObj?.retreat || 0);
+    const retreatTarget = getHeroRetreatTarget(heroId, gameState, heroObj);
     const roll = Math.floor(Math.random() * 6) + 1; // 1–6
 
     console.log(
