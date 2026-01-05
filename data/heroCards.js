@@ -176,7 +176,7 @@ export const heroCards = [
         text: `Increase Card Damage by 3`
       },
       {
-        text: `Draw from the Enemies and Allies Deck`
+        text: `Draw from the E&A`
       },
     ],
     abilitiesEffects: [
@@ -1786,6 +1786,369 @@ export const heroCards = [
     ]
   },
   {
+    id: "681",
+    type: "Main",
+    name: "\"He Talks to Fish\"",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Talks to Fish.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `Deal 5 Damage to a Henchman or Villain in a Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Damage a Foe`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: `damageFoe(5,anyCoastal)`
+      }
+    ]
+  },
+  {
+    id: "682",
+    type: "Main",
+    name: "Sworn Defender",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Sworn Defender.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `Draw 2, then Discard 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 2, Discard 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`draw(2)`,`discard(1)`]
+      }
+    ]
+  },
+  {
+    id: "683",
+    type: "Main",
+    name: "Of The Seven Seas",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Comfortable at Sea.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `CHOOSE : Damage your current foe. <span class="line-gap"></span> OR <span class="line-gap"></span> Damage a Henchman or Villain in a Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `Damage current foe`
+      },
+      {
+        text: `Damage a different foe in a Coastal City`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`draw(0)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`setCardDamageTo(0)`,`damageFoe(3,anyCoastal)`]
+      }
+    ]
+  },
+  {
+    id: "684",
+    type: "Main",
+    name: "Master of the Deep",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Master of the Deep.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `This card deals an additional 2 Damage when used against a foe in a Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `My Kingdom!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `checkDamageTargetCity(coastal)`,
+        effect: `increaseCardDamage(2)`
+      }
+    ]
+  },
+  {
+    id: "685",
+    type: "Main",
+    name: "Command the Waves",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Command the Waves.jpg`,
+    perDeck: "1",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Shove all unengaged foes as far right as possible.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Get Out of My Ocean!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `shoveVillain(allUnengaged,10)`
+      }
+    ]
+  },
+  {
+    id: "686",
+    type: "Main",
+    name: "Duty over Justice",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Duty over Justice.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `After taking this card's Damage, shove Aquaman's engaged foe up to 2 spaces right, stopping if they contact another Henchman or Villain. <span class="line-gap"></span> CHOOSE: Aquaman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Shove Foe Back`
+      },
+      {
+        text: `Choose`
+      },
+      {
+        text: `Followed Shoved Foe`
+      },
+      {
+        text: `Retreat to Headquarters`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: `shoveVillain(lastDamagedFoe,4)`
+      },
+      {
+        condition: [`afterDamage`,`onlyOnShove`],
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(1)`,
+        effect: [`travelTo(lastShovedVillainDestination)`]
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(2)`,
+        effect: [`retreatHeroToHQ()`]
+      }
+    ]
+  },
+  {
+    id: "687",
+    type: "Main",
+    name: "At Balance",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/At Balance.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Deal 2 Damage to a Henchman or Villain in a Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Damage a Foe`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: `damageFoe(2,anyCoastal)`
+      }
+    ]
+  },
+  {
+    id: "688",
+    type: "Main",
+    name: "Loyal Soldiers",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Loyal Soldiers.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Gain 2 Sidekicks.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Gain 2 Sidekicks`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `gainSidekick(2)`
+      }
+    ]
+  },
+  {
+    id: "689",
+    type: "Main",
+    name: "Solemn King",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Solemn King.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `[ICON:Aqua] : Increase this card's Damage by 4. <span class="line-gap"></span> If there are no active [ICON:Aqua] Heroes: Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Increase Card Damage`
+      },
+      {
+        text: `Draw 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `activeHero(Aqua)`,
+        effect: [`increaseCardDamage(4)`]
+      },
+      {
+        type: `quick`,
+        condition: `noActive(Aqua)`,
+        effect: [`draw(2)`]
+      },
+    ]
+  },
+  {
+    id: "690",
+    type: "Main",
+    name: "Sibling Rivalry",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Sibling Rivalry.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Damage Overlord`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "691",
+    type: "Main",
+    name: "King and Queen",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/King and Queen.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE: Draw 3. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 1, and Aquaman's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `Draw 3`
+      },
+      {
+        text: `Draw 1, and increase Travel by 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`draw(3)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: ["draw(1)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "692",
+    type: "Main",
+    name: "Bridge to the Surface",
+    hero: "Aquaman",
+    image: `${cardArtFolder}/Aquaman/Bridge to the Surface.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `OPTIONAL : Draw from the E&A. <span class="line-gap"></span> Deal 3 Damage to the Overlord for every KO'd Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      },
+      {
+        text: `Damage Overlord`
+      },
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        effect: [`enemyDraw(1)`]
+      },
+      {
+        effect: `damageOverlord(3*findKOdHeroes)`
+      }
+    ]
+  },
+  {
     id: "1061",
     type: "Main",
     name: "I Am Batman",
@@ -2067,7 +2430,7 @@ export const heroCards = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Draw from the Enemies and Allies Deck`
+        text: `Draw from the E&A`
       },
       {
         text: `If Discarded`

@@ -2198,6 +2198,41 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5657",
+    name: "Aquaman",
+    image: `${cardArtFolder}/aquaman.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "20",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Aquaman's Damage increases to 3 whilst he is in a Coastal City. <span class="line-gap"></span> 
+                 Reward: Deal 10 Damage to a Henchman or Villain in a Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Man, I Love Fish! - Aquaman, probably`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `checkVillainCity(coastal)`,
+        effect: `increaseVillainDamage(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageFoe(10,anyCoastal)`
+      }
+    ],
+  },
 ]
 
 // A: appelaxian golem, arkillo, atomica, atrocitus, azrael
@@ -2226,7 +2261,7 @@ export const villains = [
 
 
 //HEROES AS VILLAINS DO NOT SHOW LIST
-// A: amethyst, aquaman
+// A: amethyst
 // C: constantine
 // D: detective chimp, dr fate, deadman
 // E: etrigan

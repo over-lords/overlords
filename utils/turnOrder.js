@@ -175,7 +175,7 @@ import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVi
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, 
          runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
-         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, evaluateCondition, 
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, evaluateCondition, recomputeLocationBasedVillainDamage, 
          retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny, buildPermanentKOCountMap, pruneFoeDoubleDamage, 
          pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero, applyNextTurnDoubleDamageIfAny } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
@@ -2016,6 +2016,7 @@ export async function startHeroTurn(state, opts = {}) {
 
     // Update coastal city tracking at the start of each hero turn
     checkCoastalCities(state);
+    try { recomputeLocationBasedVillainDamage(state); } catch (e) { console.warn("[startHeroTurn] Failed to recompute villain location passives", e); }
 
     // Ensure we have a valid index (store ONLY on state)
     const heroCount = heroIds.length;

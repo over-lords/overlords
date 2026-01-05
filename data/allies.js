@@ -481,7 +481,7 @@ export const allies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Push all unengaged Henchmen and Villains as far right as possible.`
+                text: `Shove all unengaged Henchmen and Villains as far right as possible.`
             }
         ],
         abilitiesNamePrint: [

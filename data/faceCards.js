@@ -1065,7 +1065,7 @@ export const heroes = [
     image: `${cardArtFolder}/Aquaman.jpg`,
     type: "Hero",
     category: "Striker",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "orange",
     teams: ["Aqua","Justice"],
     hp: "14",
@@ -1074,31 +1074,28 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Aquaman's damaging cards gain +1 whilst he is in a Coastal City. <span class="line-gap"></span> 3/Game: Once per turn, deal 2 Damage to a Henchman or Villain in a Coastal City.`
+        text: `Aquaman's damaging cards gain an additional +1 against foes in Coastal Cities. <span class="line-gap"></span> 3/Game: Once per turn, deal 3 Damage to a Henchman or Villain in a Coastal City.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Increase 1+ Damage Cards while on Coast`
+        text: `Increase Card Damage while on Coast`
       },
       {
-        text: `Damage Coastal Villain by 2`
+        text: `Damage Coastal Villain for 3`
       }
     ],
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `in(Coastal)`,
-        uses: `0`,
-        shared: `no`,
-        effect: `increaseDamage(1)`
+        condition: `checkDamageTargetCity(coastal)`,
+        effect: `increaseAllCardDamage(1)`
       },
       {
         type: `standard`,
-        condition: `none`,
+        howOften: `OPT`,
         uses: `3`,
-        shared: `no`,
-        effect: `damageFoe(2,anyCoastal)`
+        effect: `damageFoe(3,anyCoastal)`
       }
     ]
   },

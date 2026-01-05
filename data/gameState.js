@@ -19,8 +19,9 @@ export const gameState = {
     turnTimerRemaining: null,
 };
 
-export const CITY_EXIT_UPPER = 0; // Star
-export const CITY_EXIT_LOWER = 1;
+export const CITY_EXIT_UPPER = 0; // Star - Default coastal city left for villains
+export const CITY_EXIT_LOWER = 1; // Default coastal city left for heroes
+
 export const CITY_5_UPPER = 2; // Coast
 export const CITY_5_LOWER = 3;
 
@@ -33,6 +34,6 @@ export const CITY_3_LOWER = 7;
 export const CITY_2_UPPER = 8; // Metropolis
 export const CITY_2_LOWER = 9;
 
-export const CITY_ENTRY_UPPER = 10; // Gotham
-export const CITY_ENTRY_LOWER = 11;
+export const CITY_ENTRY_UPPER = 10; // Gotham - Default coastal city right for villains
+export const CITY_ENTRY_LOWER = 11; // Default coastal city right for heroes
 

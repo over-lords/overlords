@@ -860,6 +860,15 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         return activeTeams.has(String(teamName).toLowerCase());
     }
 
+    const noActiveMatch = condStr.match(/^noactive\(([^)]+)\)$/i);
+    if (noActiveMatch) {
+        const teamName = noActiveMatch[1];
+        const count = getActiveTeamCount(teamName, heroId, s);
+        const none = count === 0;
+        console.log(`[noActive(${teamName})] active count=${count} -> ${none}`);
+        return none;
+    }
+
     const lowerCond = condStr.toLowerCase();
 
     if (lowerCond === "confirmactiveteammates") {
@@ -979,24 +988,86 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         return result;
     }
 
-    const targetCityMatch = condStr.match(/^checkDamageTargetCity\((\d+)\)$/i);
+    const targetCityMatch = condStr.match(/^checkDamageTargetCity\(([^)]+)\)$/i);
     if (targetCityMatch) {
-        const targetIdx = Number(targetCityMatch[1]);
+        const targetRaw = targetCityMatch[1].trim();
+        let slotIndex = null;
+        let source = "";
         const pending = s._pendingDamageTarget;
-        let pass = false;
-        let details = "";
 
-        if (!pending || typeof pending.slotIndex !== "number") {
-            details = "no pending damage target";
-        } else if (pending.source !== "city-foe") {
-            details = `pending target type ${pending.source || "unknown"} not city foe`;
-        } else {
-            pass = (pending.slotIndex === targetIdx);
-            details = `pending slot=${pending.slotIndex}, targetIdx=${targetIdx}`;
+        // Prefer a live pending damage target from the current context
+        if (
+            pending &&
+            typeof pending.slotIndex === "number" &&
+            pending.contextId != null &&
+            pending.contextId === s._activeDamageContextId &&
+            pending.source === "city-foe"
+        ) {
+            slotIndex = pending.slotIndex;
+            source = "pending";
         }
 
-        console.log(`[checkDamageTargetCity(${targetIdx})] ${pass ? "true" : "false"} — ${details}`);
+        // Fallback: if evaluating for a hero, use their engaged foe (upper slot)
+        if (slotIndex == null && heroId != null) {
+            const hState = s.heroData?.[heroId];
+            const lowerIdx = hState?.cityIndex;
+            const upperIdx = Number.isInteger(lowerIdx) ? lowerIdx - 1 : null;
+            if (Number.isInteger(upperIdx) && upperIdx >= 0) {
+                const entry = Array.isArray(s.cities) ? s.cities[upperIdx] : null;
+                if (entry && entry.id != null) {
+                    slotIndex = upperIdx;
+                    source = "hero-engaged";
+                }
+            }
+        }
+
+        let pass = false;
+        let details = "";
+        const lower = targetRaw.toLowerCase();
+
+        if (!Number.isInteger(slotIndex)) {
+            details = "no pending damage target";
+        } else if (/^\d+$/.test(targetRaw)) {
+            const targetIdx = Number(targetRaw);
+            pass = (slotIndex === targetIdx);
+            details = `slot=${slotIndex}, targetIdx=${targetIdx}, source=${source}`;
+        } else if (lower === "coastal") {
+            const { left, right } = checkCoastalCities(s);
+            pass = (slotIndex === left) || (slotIndex === right);
+            details = `slot=${slotIndex}, coastal slots=${[left, right].filter(v => v != null).join(",") || "none"}, source=${source}`;
+        } else {
+            details = `unsupported target '${targetRaw}'`;
+        }
+
+        console.log(`[checkDamageTargetCity(${targetRaw})] ${pass ? "true" : "false"} - ${details}`);
         return pass;
+    }
+
+    const villCityMatch = condStr.match(/^checkVillainCity\(([^)]+)\)$/i);
+    if (villCityMatch) {
+        const targetRaw = villCityMatch[1].trim();
+        const { left, right } = checkCoastalCities(s);
+        const pending = s._pendingDamageTarget;
+        let slotIndex = null;
+
+        if (pending && pending.source === "city-foe" && typeof pending.slotIndex === "number") {
+            slotIndex = pending.slotIndex;
+        } else if (typeof s._evaluatingFoeSlot === "number") {
+            slotIndex = s._evaluatingFoeSlot;
+        }
+
+        if (slotIndex == null) {
+            console.log(`[checkVillainCity(${targetRaw})] false - no slot context available`);
+            return false;
+        }
+
+        const lower = targetRaw.toLowerCase();
+        const matches = /^\d+$/.test(targetRaw)
+            ? slotIndex === Number(targetRaw)
+            : (lower === "coastal" && ((slotIndex === left) || (slotIndex === right)));
+
+        console.log(`[checkVillainCity(${targetRaw})] ${matches ? "true" : "false"} - slot=${slotIndex}, coastal=${[left, right].filter(v => v != null).join(",") || "none"}`);
+        return matches;
     }
 
     if (lowerCond === "wouldusedamagecard") {
@@ -1409,6 +1480,50 @@ export function getEffectiveFoeDamage(entry) {
     entry.currentDamage = current;
     console.log("[getEffectiveFoeDamage]", { base, bonus, penalty, current, entryKey: getEntryKey(entry), slotIndex: entry.slotIndex });
     return current;
+}
+
+export function recomputeLocationBasedVillainDamage(state = gameState) {
+    const s = state || gameState;
+    const cities = Array.isArray(s.cities) ? s.cities : [];
+
+    cities.forEach((entry, idx) => {
+        if (!entry) return;
+
+        const cardData = findCardInAllSources(entry.id);
+        const effects = Array.isArray(cardData?.abilitiesEffects) ? cardData.abilitiesEffects : [];
+
+        let locBonus = 0;
+        effects.forEach(eff => {
+            if (!eff || (eff.type || "").toLowerCase() !== "passive") return;
+            const condRaw = eff.condition || "none";
+            const condNorm = String(condRaw).toLowerCase();
+            if (condNorm === "none" || !condRaw) return;
+
+            // Temporarily expose slot for condition evaluation
+            s._evaluatingFoeSlot = idx;
+            const matches = evaluateCondition(String(condRaw), null, s);
+            s._evaluatingFoeSlot = undefined;
+            if (!matches) return;
+
+            const effList = Array.isArray(eff.effect) ? eff.effect : [eff.effect];
+            effList.forEach(val => {
+                if (typeof val !== "string") return;
+                const m = val.match(/^increaseVillainDamage\(([-+]?\d+)\)$/i);
+                if (m) locBonus += Number(m[1]) || 0;
+            });
+        });
+
+        const prevLoc = Number(entry._locationDamageBonus || 0);
+        if (locBonus !== prevLoc) {
+            const otherBonus = Number(entry.currentDamageBonus || 0) - prevLoc;
+            entry._locationDamageBonus = locBonus;
+            entry.currentDamageBonus = otherBonus + locBonus;
+            entry.currentDamage = getEffectiveFoeDamage(entry);
+            try { refreshFoeCardUI(idx, entry); } catch (err) { console.warn("[recomputeLocationBasedVillainDamage] refresh failed", err); }
+        }
+    });
+
+    try { saveGameState(s); } catch (_) {}
 }
 
 function runFoeDamagedTriggers(entry, slotIndex, state = gameState) {
@@ -3853,6 +3968,11 @@ function getHeroGlobalDamageBonus(heroId, baseDamage, state = gameState) {
 
     effects.forEach(eff => {
         if (!eff || (String(eff.type || "").toLowerCase() !== "passive")) return;
+        const condRaw = eff.condition;
+        if (condRaw && String(condRaw).toLowerCase() !== "none") {
+            const ok = evaluateCondition(String(condRaw), heroId, s);
+            if (!ok) return;
+        }
         const effList = Array.isArray(eff.effect) ? eff.effect : [eff.effect];
         effList.forEach(spec => {
             if (typeof spec !== "string") return;
@@ -9821,6 +9941,11 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     const s = state;
 
     const { flag = "single", fromAny = false, fromAll = false } = options;
+
+    // New damage context to prevent stale pending targets from leaking between effects
+    const ctxId = s._damageContextId = (Number(s._damageContextId) || 0) + 1;
+    s._activeDamageContextId = ctxId;
+    s._pendingDamageTarget = null;
     let effectiveAmount = amount;
     const lastCtx = s?._lastDamageContext;
     const incomingCardId = lastCtx?.cardId || null;
@@ -10577,7 +10702,8 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         s._pendingDamageTarget = {
             slotIndex,
             foeId: foeIdStr,
-            source: "city-foe"
+            source: "city-foe",
+            contextId: ctxId
         };
     } else {
         s._pendingDamageTarget = null;
@@ -10852,7 +10978,8 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
 
     // If not KO'd, persist and exit
     if (newHP > 0) {
-        s._pendingDamageTarget = null;
+        if (s._pendingDamageTarget?.contextId === ctxId) s._pendingDamageTarget = null;
+        if (s._activeDamageContextId === ctxId) s._activeDamageContextId = null;
         saveGameState(s);
         return;
     }
@@ -11107,6 +11234,9 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     } else if (heroId != null) {
         maybeSendHeroHomeAfterLaneClears(heroId, slotIndex, s);
     }
+
+    if (s._pendingDamageTarget?.contextId === ctxId) s._pendingDamageTarget = null;
+    if (s._activeDamageContextId === ctxId) s._activeDamageContextId = null;
 
     renderHeroHandBar(s);
     saveGameState(s);
@@ -11549,6 +11679,7 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
         console.log("[shoveVillain] No foes could be moved; effect skipped.");
         s.lastShovedVillainDestination = null;
     } else {
+        try { recomputeLocationBasedVillainDamage(s); } catch (err) { console.warn("[shoveVillain] Failed to recompute villain location passives.", err); }
         try {
             if (typeof window !== "undefined" && typeof window.recomputeCurrentHeroTravelDestinations === "function") {
                 window.recomputeCurrentHeroTravelDestinations(s);
