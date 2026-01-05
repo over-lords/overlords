@@ -1276,21 +1276,19 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `1/Game: Return a KO'd Hero to full HP.`
+        text: `1/Game: Resurrect a KO'd Hero to full HP.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Restore a KO'd Hero`
+        text: `Resurrect a KO'd Hero to full HP`
       }
     ],
     abilitiesEffects: [
       {
         type: `standard`,
-        condition: `none`,
         uses: `1`,
-        shared: `no`,
-        effect: `resurrectHero`
+        effect: `resurrectHero(choice,999)`
       }
     ]
   },

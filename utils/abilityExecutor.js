@@ -15,7 +15,7 @@ import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 import { bystanders } from "../data/bystanders.js";
 
-import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById } from "./pageSetup.js";
+import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById, clearHeroKOMarkers } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
          enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout, destroyCitiesByCount, restoreCitiesByCount, resumeHeroTurnAfterVillainDraw } from "./turnOrder.js";
@@ -975,6 +975,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "getherodamage") {
         return getHeroDamage(heroId, state);
     }
+    if (lower === "getsumvillaindamage") {
+        return getSumVillainDamage(state);
+    }
     if (lower === "getoverlordlevel") {
         return getOverlordLevel(state);
     }
@@ -997,6 +1000,19 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
 
     const num = Number(raw);
     return Number.isFinite(num) ? num : 0;
+}
+
+function getSumVillainDamage(state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(s?.cities)) return 0;
+    return s.cities.reduce((total, entry) => {
+        if (!entry || entry.id == null) return total;
+        const card = findCardInAllSources(entry.id);
+        const t = String(card?.type || "").toLowerCase();
+        if (t !== "henchman" && t !== "villain") return total;
+        const dmg = getEffectiveFoeDamage(entry) || 0;
+        return total + dmg;
+    }, 0);
 }
 
 export function evaluateCondition(condStr, heroId, state = gameState) {
@@ -2664,6 +2680,8 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "anyCoastal";
         } else if (typeof raw === "string" && raw.toLowerCase() === "anywithbystander") {
             flag = "anyWithBystander";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "allwithbystander") {
+            flag = "allWithBystander";
         } else if (typeof raw === "string" && raw.toLowerCase() === "adjacentfoes") {
             flag = "adjacentFoes";
         } else if (typeof raw === "string" && raw.toLowerCase() === "alladjacentfoes") {
@@ -2796,6 +2814,102 @@ EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
     damageOverlord(amount, state, heroId);
 };
 
+function resurrectHeroById(heroId, amount, state = gameState) {
+    const s = state || gameState;
+    if (!heroId || !s || !s.heroData) return;
+    const heroState = s.heroData[heroId];
+    const heroCard = heroes.find(h => String(h.id) === String(heroId));
+    if (!heroState || !heroCard) return;
+
+    const baseHP = Number(heroCard.hp || heroCard.baseHP || 0) || 0;
+    let target = Number(amount) || 0;
+    if (target >= 999 || target >= baseHP) target = baseHP;
+    if (target <= 0) target = Math.max(1, baseHP);
+
+    heroState.hp = Math.min(baseHP, target);
+    heroState.isKO = false;
+    heroCard.currentHP = heroState.hp;
+
+    try { clearHeroKOMarkers(heroId); } catch (_) {}
+    try { updateHeroHPDisplays(heroId); updateBoardHeroHP(heroId); } catch (err) {
+        console.warn("[resurrectHero] Failed to update hero HP UI.", err);
+    }
+
+    try {
+        const heroName = heroCard.name || `Hero ${heroId}`;
+        appendGameLogEntry(`${heroName} was resurrected to ${heroState.hp} HP.`, s);
+    } catch (err) {
+        console.warn("[resurrectHero] Failed to log resurrection.", err);
+    }
+}
+
+EFFECT_HANDLERS.resurrectHero = function(args = [], card, selectedData = {}) {
+    const whoRaw = args?.[0] ?? "current";
+    const amountRaw = args?.[1] ?? 1;
+    const s = selectedData?.state || gameState;
+    if (!s || !Array.isArray(s.heroes)) return;
+
+    const koHeroes = s.heroes.filter(hid => {
+        const hs = s.heroData?.[hid];
+        return hs && (hs.hp == null || hs.hp <= 0 || hs.isKO);
+    });
+
+    if (!koHeroes.length) return;
+
+    const amount = Number(amountRaw) || 0;
+    const normWho = String(whoRaw || "current").toLowerCase();
+
+    const reviveList = [];
+
+    if (normWho === "choice" || normWho === "choose") {
+        if (typeof window === "undefined") {
+            console.warn("[resurrectHero] 'choice' selection requires browser UI.");
+            return;
+        }
+
+        const options = koHeroes.map(hid => {
+            const hCard = heroes.find(h => String(h.id) === String(hid));
+            return { id: hid, name: hCard?.name || `Hero ${hid}` };
+        });
+
+        if (!options.length) return;
+
+        showResurrectHeroModal({
+            header: "Choose a hero to resurrect",
+            options,
+            selectedId: options[0]?.id ?? null
+        }).then(chosen => {
+            if (!chosen || chosen.id == null) return;
+            resurrectHeroById(chosen.id, amount, s);
+            saveGameState(s);
+        }).catch(err => console.warn("[resurrectHero] Failed to show resurrection modal.", err));
+        return;
+    }
+
+    if (normWho === "all") {
+        reviveList.push(...koHeroes);
+    } else if (!Number.isNaN(Number(whoRaw))) {
+        const count = Math.max(1, Number(whoRaw));
+        const shuffled = [...koHeroes].sort(() => Math.random() - 0.5);
+        reviveList.push(...shuffled.slice(0, count));
+    } else if (normWho === "random") {
+        const pick = koHeroes[Math.floor(Math.random() * koHeroes.length)];
+        reviveList.push(pick);
+    } else {
+        let target = selectedData?.currentHeroId;
+        if (target == null) {
+            const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
+            target = s.heroes[idx];
+        }
+        if (target != null && koHeroes.includes(target)) reviveList.push(target);
+    }
+
+    if (!reviveList.length) return;
+
+    reviveList.forEach(hid => resurrectHeroById(hid, amount, s));
+    saveGameState(s);
+};
+
 EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
     const count = Number(args?.[0]) || 1;
 
@@ -2824,11 +2938,58 @@ EFFECT_HANDLERS.gainSidekick = function(args, card, selectedData) {
 };
 
 EFFECT_HANDLERS.travelPlus = function(args = [], card, selectedData = {}) {
-    const delta = Number(args?.[0]) || 0;
-    const flag = args?.[1] ?? "";
+    let who = "current";
+    let deltaRaw = args?.[0];
+    let flag = args?.[1] ?? "";
 
-    const heroId = selectedData?.currentHeroId ?? null;
-    adjustHeroTravelDelta(delta, { flag }, heroId, gameState);
+    // Allow signature travelPlus(who, delta, flag)
+    const firstIsNumber = Number.isFinite(Number(deltaRaw));
+    if (!firstIsNumber && typeof deltaRaw === "string") {
+        who = String(deltaRaw).toLowerCase();
+        deltaRaw = args?.[1];
+        flag = args?.[2] ?? "";
+    }
+
+    const delta = Number(deltaRaw) || 0;
+    const state = selectedData?.state || gameState;
+    const heroIds = Array.isArray(state?.heroes) ? state.heroes : [];
+
+    const applyToHero = (hid) => {
+        if (hid == null) return;
+        adjustHeroTravelDelta(delta, { flag }, hid, state);
+    };
+
+    if (who === "all") {
+        heroIds.forEach(hid => {
+            if (state?.heroData?.[hid]) applyToHero(hid);
+        });
+        return;
+    }
+
+    if (who === "random") {
+        const alive = heroIds.filter(hid => state?.heroData?.[hid]);
+        if (alive.length) {
+            const pick = alive[Math.floor(Math.random() * alive.length)];
+            applyToHero(pick);
+        }
+        return;
+    }
+
+    // Team match
+    const teamKey = String(who || "").toLowerCase();
+    if (who !== "current" && who !== "currenthero") {
+        const matched = heroIds.filter(hid => {
+            const hObj = heroes.find(h => String(h.id) === String(hid));
+            return hObj && heroMatchesTeam(hObj, teamKey);
+        });
+        if (matched.length) {
+            matched.forEach(hid => applyToHero(hid));
+            return;
+        }
+    }
+
+    const heroId = selectedData?.currentHeroId ?? (heroIds[state?.heroTurnIndex ?? 0]);
+    applyToHero(heroId);
 };
 
 EFFECT_HANDLERS.rescueBystander = function(args, cardData, selectedData) {
@@ -4019,12 +4180,91 @@ EFFECT_HANDLERS.increaseHeroDT = function(args = [], card, selectedData = {}) {
     saveGameState(s);
 };
 
+EFFECT_HANDLERS.koMightFromVD = function(args = [], card, selectedData = {}) {
+    const count = Math.max(1, Number(args?.[0] ?? 1) || 1);
+    const state = selectedData?.state || gameState;
+    if (!state || !Array.isArray(state.villainDeck)) return;
+
+    let ptr = Number.isInteger(state.villainDeckPointer) ? state.villainDeckPointer : 0;
+    let removed = 0;
+    let idx = Math.max(0, ptr);
+
+    while (idx < state.villainDeck.length && removed < count) {
+        const id = state.villainDeck[idx];
+        const data = findCardInAllSources(id);
+        const isMight = (String(id) === "7001") || (String(data?.type || "").toLowerCase() === "might");
+        if (isMight) {
+            const name = data?.name || "Might of the Overlord";
+            state.villainDeck.splice(idx, 1);
+            if (!Array.isArray(state.koCards)) state.koCards = [];
+            state.koCards.push({
+                id: String(id),
+                name,
+                type: "Might",
+                source: "koMightFromVD",
+                permanentKO: true
+            });
+            removed++;
+            try { appendGameLogEntry(`KO'd ${name} from the Villain Deck.`, state); } catch (_) {}
+            continue;
+        }
+        idx++;
+    }
+
+    if (!Number.isInteger(state.villainDeckPointer)) {
+        state.villainDeckPointer = ptr;
+    } else {
+        state.villainDeckPointer = Math.min(state.villainDeckPointer, state.villainDeck.length);
+    }
+
+    if (removed === 0) {
+        try { appendGameLogEntry("No Might of the Overlord card found to KO in the Villain Deck.", state); } catch (_) {}
+    }
+
+    saveGameState(state);
+};
+
 EFFECT_HANDLERS.skipVillainDeckDraw = function(args = [], card, selectedData = {}) {
     const count = Math.max(1, Number(args?.[0] ?? 1) || 1);
     const state = selectedData?.state || gameState;
     if (!state) return;
     const prior = Number(state.villainDrawSkipCount) || 0;
     state.villainDrawSkipCount = prior + count;
+};
+
+EFFECT_HANDLERS.koTopVillainDeck = function(args = [], card, selectedData = {}) {
+    const count = Math.max(1, Number(args?.[0] ?? 1) || 1);
+    const state = selectedData?.state || gameState;
+    if (!state || !Array.isArray(state.villainDeck)) return;
+
+    if (!Array.isArray(state.koCards)) state.koCards = [];
+    const ptr = Number.isInteger(state.villainDeckPointer) ? state.villainDeckPointer : 0;
+
+    const removed = state.villainDeck.splice(ptr, count);
+    removed.forEach(id => {
+        const data = findCardInAllSources(id);
+        state.koCards.push({
+            id: String(id),
+            name: data?.name || `Card ${id}`,
+            type: data?.type || "Villain",
+            source: "koTopVillainDeck"
+        });
+    });
+
+    state.villainDeckPointer = Math.min(ptr, state.villainDeck.length);
+
+    try {
+        if (removed.length) {
+            const names = removed
+                .map(id => findCardInAllSources(id)?.name || `Card ${id}`)
+                .join(", ");
+            appendGameLogEntry(`KO'd from top of Villain Deck: ${names}.`, state);
+        } else {
+            appendGameLogEntry("No cards to KO from the Villain Deck.", state);
+        }
+    } catch (_) {}
+
+    saveGameState(state);
 };
 
 function loseIconUseForHero(heroId, count = 1, mode = "random", state = gameState) {
@@ -4395,9 +4635,55 @@ function applyDoubleDamageAgainstFoe(amount, opts = {}, state = gameState) {
 }
 
 EFFECT_HANDLERS.doubleDamageAgainstVillain = function(args = [], card, selectedData = {}) {
-    const target = args?.[0] ?? "all";
+    const targetRaw = args?.[0] ?? "all";
     const duration = args?.[1] ?? "next";
-    addDoubleDamageAgainstFoe(target, duration, selectedData?.state || gameState);
+    const state = selectedData?.state || gameState;
+    if (!state) return;
+
+    const norm = String(targetRaw || "all").toLowerCase();
+
+    if (norm === "lastfrozen") {
+        const info = state.lastFrozenFoe;
+        if (!info && typeof window !== "undefined" && window.__freezeSelectMode && !selectedData?._afterFreeze) {
+            if (!Array.isArray(window.__afterFreezeCallbacks)) window.__afterFreezeCallbacks = [];
+            window.__afterFreezeCallbacks.push(() => {
+                try {
+                    EFFECT_HANDLERS.doubleDamageAgainstVillain(args, card, { ...selectedData, _afterFreeze: true });
+                } catch (err) {
+                    console.warn("[doubleDamageAgainstVillain] Deferred lastFrozen handling failed", err);
+                }
+            });
+            console.log("[doubleDamageAgainstVillain] Deferring lastFrozen until freeze selection resolves.");
+            return;
+        }
+
+        if (!info) {
+            console.warn("[doubleDamageAgainstVillain] No lastFrozenFoe recorded.");
+            return;
+        }
+
+        const cities = Array.isArray(state.cities) ? state.cities : [];
+        let slotIdx = Number.isInteger(info.slotIndex) ? info.slotIndex : null;
+
+        if (slotIdx == null && info.instanceId) {
+            const found = cities.findIndex(e => e && getEntryKey(e) === info.instanceId);
+            if (found !== -1) slotIdx = found;
+        }
+
+        if (slotIdx == null && info.foeId) {
+            const found = cities.findIndex(e => e && String(e.id) === String(info.foeId));
+            if (found !== -1) slotIdx = found;
+        }
+
+        if (slotIdx != null) {
+            addDoubleDamageAgainstFoe([slotIdx], duration, state);
+        } else {
+            console.warn("[doubleDamageAgainstVillain] lastFrozenFoe not found on board.");
+        }
+        return;
+    }
+
+    addDoubleDamageAgainstFoe(targetRaw, duration, state);
 };
 
 function reduceFoeTo(entry, slotIndex, targetHP, state = gameState) {
@@ -6329,6 +6615,46 @@ EFFECT_HANDLERS.enaDrawsExtra = function(args = [], card, selectedData = {}) {
     s.enemyDrawExtra = Math.max(1, Number(s.enemyDrawExtra) || 0);
 };
 
+EFFECT_HANDLERS.endAllTemporaryDampeners = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    if (!s) return;
+
+    const logs = [];
+
+    if (s.extraTravelDampener) {
+        s.extraTravelDampener = null;
+        logs.push("Travel dampener ended.");
+    }
+    if (s.extraDrawDampener) {
+        s.extraDrawDampener = null;
+        logs.push("Draw dampener ended.");
+    }
+    if (s.iconAbilityDampener) {
+        s.iconAbilityDampener = null;
+        logs.push("Icon ability dampener ended.");
+    }
+    if (s.retreatDampener) {
+        s.retreatDampener = null;
+        logs.push("Retreat dampener ended.");
+    }
+
+    if (Array.isArray(s.halfDamageModifiers)) {
+        const before = s.halfDamageModifiers.length;
+        s.halfDamageModifiers = s.halfDamageModifiers.filter(mod => {
+            if (!mod) return false;
+            return mod.expiresAtTurnCounter == null; // keep only permanent entries
+        });
+        if (before !== s.halfDamageModifiers.length) {
+            logs.push("Half-damage effects ended.");
+        }
+    }
+
+    pruneFoeDoubleDamage(s);
+
+    logs.forEach(msg => appendGameLogEntry(msg, s));
+    saveGameState(s);
+};
+
 EFFECT_HANDLERS.disableCityRestoration = function(args = [], card, selectedData = {}) {
     const s = selectedData?.state || gameState;
     if (!s) return;
@@ -6508,6 +6834,98 @@ EFFECT_HANDLERS.halveVillainHPDoubleDamage = function(args = [], card, selectedD
     });
 
     saveGameState(s);
+};
+
+function halveFoeHP(entry, slotIndex, state = gameState) {
+    const s = state || gameState;
+    if (!entry || !s) return;
+
+    const key = getEntryKey(entry) || String(entry.id || "");
+    const foeCard = findCardInAllSources(entry.id);
+    const baseHP = Number(entry.maxHP ?? foeCard?.hp ?? foeCard?.baseHP ?? 0) || 0;
+    if (!s.villainHP) s.villainHP = {};
+    let currentHP = typeof entry.currentHP === "number"
+        ? entry.currentHP
+        : (key && typeof s.villainHP[key] === "number" ? s.villainHP[key] : baseHP);
+    if (!Number.isFinite(currentHP)) currentHP = baseHP;
+
+    const halvedHP = Math.max(1, Math.ceil(currentHP / 2));
+    entry.currentHP = halvedHP;
+    entry.maxHP = Math.max(entry.maxHP || baseHP, baseHP);
+    if (key) s.villainHP[key] = halvedHP;
+    if (foeCard) foeCard.currentHP = halvedHP;
+
+    if (typeof slotIndex === "number") {
+        try { refreshFoeCardUI(slotIndex, entry); } catch (_) {}
+    }
+
+    try {
+        const name = foeCard?.name || `Enemy ${entry.id ?? ""}`.trim();
+        appendGameLogEntry(`${name}'s HP was reduced to ${halvedHP}.`, s);
+    } catch (err) {
+        console.warn("[halveFoeHP] Failed to log change.", err);
+    }
+}
+
+EFFECT_HANDLERS.halveVillainHP = function(args = [], card, selectedData = {}) {
+    const targetRaw = args?.[0] ?? "any";
+    const s = selectedData?.state || gameState;
+    if (!s || !Array.isArray(s.cities)) return;
+
+    const norm = String(targetRaw || "any").toLowerCase();
+
+    // UI selection (click-to-confirm)
+    if (norm === "any") {
+        if (typeof window === "undefined") {
+            console.warn("[halveVillainHP] 'any' selection requires browser UI.");
+            return;
+        }
+
+        const heroId = selectedData?.currentHeroId ?? null;
+        window.__damageFoeSelectMode = {
+            heroId,
+            state: s,
+            allowedTypes: ["Henchman", "Villain"],
+            requireConfirm: true,
+            confirmMessage: "Halve this foe's HP?",
+            customHandler: ({ entry, slotIndex, state: st }) => {
+                halveFoeHP(entry, slotIndex, st);
+                processQueuedHeroDamage(st);
+            }
+        };
+
+        try { showMightBanner("Choose a foe to halve their HP", 1800); } catch (err) {
+            console.warn("[halveVillainHP] Could not show selection banner.", err);
+        }
+        return;
+    }
+
+    // Direct targeting by slot index
+    const idx = Number(norm);
+    if (Number.isInteger(idx) && idx >= 0 && idx < s.cities.length) {
+        const entry = s.cities[idx];
+        if (entry && entry.id != null) {
+            halveFoeHP(entry, idx, s);
+            saveGameState(s);
+        }
+        return;
+    }
+
+    // All foes
+    if (norm === "all") {
+        s.cities.forEach((entry, idx) => {
+            if (!entry || entry.id == null) return;
+            const cardData = findCardInAllSources(entry.id);
+            const t = String(cardData?.type || "").toLowerCase();
+            if (t === "henchman" || t === "villain") {
+                halveFoeHP(entry, idx, s);
+            }
+        });
+        saveGameState(s);
+        return;
+    }
+
+    console.warn("[halveVillainHP] Unsupported target:", targetRaw);
 };
 
 EFFECT_HANDLERS.overlordRegainLife = function(args = [], card, selectedData = {}) {
@@ -7868,8 +8286,45 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
         return;
     }
 
+    const normWho = String(who).toLowerCase();
+
+    if (normWho === "leftmost" || normWho === "rightmost") {
+        const cities = Array.isArray(state.cities) ? state.cities : [];
+        const entries = cities
+            .map((entry, idx) => ({ entry, idx }))
+            .filter(({ entry }) => entry && entry.id != null);
+
+        if (!entries.length) {
+            console.warn("[freezeVillain] No foes found for leftmost/rightmost.");
+            return;
+        }
+
+        const target = normWho === "leftmost"
+            ? entries.reduce((best, cur) => (best == null || cur.idx < best.idx ? cur : best), null)
+            : entries.reduce((best, cur) => (best == null || cur.idx > best.idx ? cur : best), null);
+
+        if (target && target.entry) {
+            applyFreezeToEntry(target.entry, target.idx, state, { howLong, heroId });
+        }
+        return;
+    }
+
+    if (normWho === "allhenchmen") {
+        const cities = Array.isArray(state.cities) ? state.cities : [];
+        let applied = false;
+        cities.forEach((entry, idx) => {
+            if (!entry || entry.id == null) return;
+            const card = findCardInAllSources(entry.id);
+            if (String(card?.type || "").toLowerCase() !== "henchman") return;
+            applyFreezeToEntry(entry, idx, state, { howLong, heroId });
+            applied = true;
+        });
+        if (!applied) console.log("[freezeVillain] No henchmen found for allHenchmen.");
+        return;
+    }
+
     // default: any (selection)
-    if (String(who).toLowerCase() === "any") {
+    if (normWho === "any") {
         if (typeof window === "undefined") {
             console.warn("[freezeVillain] 'any' selection requires browser UI.");
             return;
@@ -7964,6 +8419,62 @@ function applyPassiveToTarget(targetMode, passive, howLong, state = gameState, h
             return;
         }
         console.log("[giveVillainPassive] Found entry for lastDamagedFoe", { entryKey: getEntryKey(entry), slotIndex: entry.slotIndex, id: entry.id });
+        applyPassiveToEntry(entry, passive, howLong, s, heroId);
+        saveGameState(s);
+        return;
+    }
+
+    if (mode === "lastfrozen") {
+        const info = s.lastFrozenFoe;
+        if (!info && typeof window !== "undefined" && window.__freezeSelectMode && !selectedData?._afterFreeze) {
+            if (!Array.isArray(window.__afterFreezeCallbacks)) window.__afterFreezeCallbacks = [];
+            window.__afterFreezeCallbacks.push(() => {
+                try {
+                    applyPassiveToTarget(targetMode, passive, howLong, s, heroId, { _afterFreeze: true });
+                } catch (err) {
+                    console.warn("[giveVillainPassive] Deferred lastFrozen handling failed", err);
+                }
+            });
+            console.log("[giveVillainPassive] Deferring lastFrozen until freeze selection resolves.");
+            return;
+        }
+
+        if (!info || !Array.isArray(s.cities)) {
+            console.warn("[giveVillainPassive] No lastFrozenFoe available.");
+            return;
+        }
+
+        let entry = null;
+        let slotIndex = Number.isInteger(info.slotIndex) ? info.slotIndex : null;
+
+        if (info.instanceId) {
+            const foundIdx = s.cities.findIndex(e => e && getEntryKey(e) === info.instanceId);
+            if (foundIdx !== -1) {
+                entry = s.cities[foundIdx];
+                slotIndex = foundIdx;
+            }
+        }
+
+        if (!entry && info.foeId) {
+            for (let i = 0; i < s.cities.length; i++) {
+                const e = s.cities[i];
+                if (e && String(e.id) === String(info.foeId)) {
+                    entry = e;
+                    slotIndex = i;
+                    break;
+                }
+            }
+        }
+
+        if (!entry && slotIndex != null) {
+            entry = s.cities[slotIndex] || null;
+        }
+
+        if (!entry) {
+            console.warn("[giveVillainPassive] lastFrozen not found on board.");
+            return;
+        }
+
         applyPassiveToEntry(entry, passive, howLong, s, heroId);
         saveGameState(s);
         return;
@@ -8234,14 +8745,29 @@ export function knockbackFoe(entry, slotIndex, state = gameState, heroId = null)
 function queueKnockbackSelection(flag = "any", heroId = null, state = gameState) {
     const s = state || gameState;
     const normalized = String(flag || "any").toLowerCase();
-    if (normalized !== "any") {
-        console.warn("[knockback] Unsupported flag; only 'any' is implemented.", flag);
-        return;
-    }
 
     const hasTargets = Array.isArray(s.cities) && s.cities.some(entry => entry && isHenchmanOrVillainId(entry.id));
     if (!hasTargets) {
         console.log("[knockback] No valid henchmen or villains to target.");
+        return;
+    }
+
+    if (normalized === "allhenchmen") {
+        const toKnock = s.cities
+            .map((entry, idx) => ({ entry, idx }))
+            .filter(({ entry }) => entry && henchmen.some(h => String(h.id) === String(entry.id)));
+
+        if (!toKnock.length) {
+            console.log("[knockback] No henchmen to target for allHenchmen.");
+            return;
+        }
+
+        toKnock.forEach(({ entry, idx }) => knockbackFoe(entry, idx, s, heroId));
+        return;
+    }
+
+    if (normalized !== "any") {
+        console.warn("[knockback] Unsupported flag; only 'any' or 'allHenchmen' are implemented.", flag);
         return;
     }
 
@@ -11296,6 +11822,51 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         return;
     }
 
+    if (flag === "allWithBystander") {
+        if (!Array.isArray(s.cities)) {
+            console.warn("[damageFoe] No cities array; cannot apply 'allWithBystander' damage.");
+            return;
+        }
+
+        const targets = [];
+
+        for (let slotIndex = 0; slotIndex < s.cities.length; slotIndex++) {
+            const entry = s.cities[slotIndex];
+            if (!entry || entry.id == null) continue;
+            const hasCaptured =
+                (Array.isArray(entry.capturedBystanders) && entry.capturedBystanders.length > 0) ||
+                (Number(entry.capturedBystanders) > 0);
+            if (!hasCaptured) continue;
+
+            const foeIdStr = String(entry.id);
+            const foeCard =
+                villains.find(v => String(v.id) === foeIdStr) ||
+                henchmen.find(h => String(h.id) === foeIdStr);
+            if (!foeCard) continue;
+
+            targets.push({
+                foeType: foeCard.type || "Enemy",
+                foeId: foeIdStr,
+                instanceId: getInstanceKey(entry),
+                foeName: foeCard.name,
+                currentHP: entry.currentHP ?? foeCard.hp,
+                slotIndex,
+                source: "city-upper"
+            });
+        }
+
+        if (!targets.length) {
+            console.log("[damageFoe] No foes with captured bystanders to damage.");
+            return;
+        }
+
+        for (const foe of targets) {
+            damageFoe(amount, foe, heroId, s, { flag: "single", fromAll: true });
+        }
+
+        return;
+    }
+
     // ============================================================
     // FLAG: "allHenchmen" — damage ALL Henchmen in cities
     // ============================================================
@@ -13346,6 +13917,157 @@ function showTeammateExtraTurnModal({ header, options, selectedId: selectedIdIni
             } else {
                 console.log("[ExtraTurnModal] No teammate selected.");
             }
+            resolve(chosen);
+        };
+    });
+}
+
+let resurrectModalRefs = null;
+
+function ensureResurrectHeroModal() {
+    if (resurrectModalRefs) return resurrectModalRefs;
+    if (typeof document === "undefined") return null;
+
+    const overlay = document.createElement("div");
+    overlay.id = "resurrect-hero-overlay";
+    overlay.style.cssText = `
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100vw; height:100vh;
+        background:rgba(0,0,0,0.6);
+        z-index:999999;
+        justify-content:center;
+        align-items:center;
+        padding:16px;
+        box-sizing:border-box;
+    `;
+
+    const box = document.createElement("div");
+    box.id = "resurrect-hero-box";
+    box.style.cssText = `
+        width:100%;
+        max-width:380px;
+        background:white;
+        border-radius:12px;
+        padding:20px;
+        font-family:'Racing Sans One', sans-serif;
+        text-align:center;
+        box-shadow:0 4px 12px rgba(0,0,0,0.4);
+        display:flex;
+        flex-direction:column;
+        gap:16px;
+    `;
+
+    const headerEl = document.createElement("div");
+    headerEl.id = "resurrect-hero-header";
+    headerEl.style.cssText = `
+        font-size:26px;
+        line-height:1.2;
+    `;
+    headerEl.textContent = "Choose a hero to resurrect.";
+
+    const list = document.createElement("div");
+    list.id = "resurrect-hero-list";
+    list.style.cssText = `
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        width:100%;
+        max-height:140px;
+        overflow-y:auto;
+        overflow-x:hidden;
+    `;
+
+    const confirmRow = document.createElement("div");
+    confirmRow.style.cssText = `
+        display:flex;
+        margin-top:4px;
+    `;
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.id = "resurrect-hero-confirm";
+    confirmBtn.textContent = "Confirm";
+    confirmBtn.style.cssText = `
+        flex:1;
+        padding:14px 18px;
+        font-size:20px;
+        font-weight:bold;
+        border:none;
+        border-radius:10px;
+        background:#26a626;
+        border:4px solid black;
+        color:black;
+        cursor:pointer;
+    `;
+
+    confirmRow.appendChild(confirmBtn);
+    box.appendChild(headerEl);
+    box.appendChild(list);
+    box.appendChild(confirmRow);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    resurrectModalRefs = { overlay, headerEl, list, confirmBtn };
+    return resurrectModalRefs;
+}
+
+function showResurrectHeroModal({ header, options, selectedId: selectedIdInit = null }) {
+    return new Promise(resolve => {
+        const refs = ensureResurrectHeroModal();
+        if (!refs) {
+            console.warn("[ResurrectHeroModal] Unable to render modal.");
+            resolve(null);
+            return;
+        }
+
+        const { overlay, headerEl, list, confirmBtn } = refs;
+        let selectedId = selectedIdInit ?? (options?.[0]?.id ?? null);
+
+        headerEl.textContent = header || "Choose a hero to resurrect.";
+        list.innerHTML = "";
+
+        options.forEach((opt, idx) => {
+            const isSelected = selectedId != null
+                ? String(opt.id) === String(selectedId)
+                : idx === 0;
+            const btn = document.createElement("button");
+            btn.textContent = opt.name || opt.label || `Option ${idx + 1}`;
+            btn.style.cssText = `
+                width:100%;
+                min-height:40px;
+                padding:10px 14px;
+                box-sizing:border-box;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                line-height:1.2;
+                font-size:20px;
+                font-weight:bold;
+                border:none;
+                border-radius:10px;
+                border:4px solid black;
+                background:${isSelected ? "#ffd800" : "#ddd"};
+                color:black;
+                cursor:pointer;
+                text-align:center;
+                white-space:normal;
+                word-break:break-word;
+            `;
+            btn.onclick = () => {
+                selectedId = opt.id;
+                [...list.children].forEach(child => child.style.background = "#ddd");
+                btn.style.background = "#ffd800";
+            };
+            list.appendChild(btn);
+        });
+
+        overlay.style.display = "flex";
+
+        confirmBtn.onclick = () => {
+            overlay.style.display = "none";
+            confirmBtn.onclick = null;
+            const chosen = options.find(o => String(o.id) === String(selectedId)) || null;
             resolve(chosen);
         };
     });
