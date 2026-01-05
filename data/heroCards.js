@@ -666,6 +666,432 @@ export const heroCards = [
     ]
   },
   {
+    id: "301",
+    type: "Main",
+    name: "Canary Cry",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/canaryCry.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `All other Henchmen and Villains take 3 Damage.`
+      }
+    ],
+        abilitiesNamePrint: [
+      {
+        text: `No More Holding Back!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: [`damageFoe(3,allOthers)`]
+      }
+    ]
+  },
+  {
+    id: "302",
+    type: "Main",
+    name: "Sonic Barrage",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/sonicBarrage.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `Henchmen and Villains in adjacent Cities take 1 Damage. <span class="line-gap"></span> If Discarded: Deal 3 Damage to all Henchmen, Villains, and the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Deafening`
+      },
+      {
+        text: `If Discarded`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageFoe(1,allAdjacentFoes)`
+      },
+      {
+        type: `quick`,
+        condition: `ifDiscarded`,
+        effect: [`damageFoe(3,all)`,`damageOverlord(3)`]
+      }
+    ]
+  },
+  {
+    id: "303",
+    type: "Main",
+    name: "Fighting Dirty",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/fightingDirty.jpg`,
+    perDeck: "1",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `All other Henchmen and Villains take 1 Damage. <span class="line-gap"></span> Black Canary can Withdraw once this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `All Others take 1 Damage`
+      },
+      {
+        text: `Gain Withdraw`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: `damageFoe(1,allOthers)`
+      },
+      {
+        type: `quick`,
+        condition: `afterDamage`,
+        effect: `giveHeroPassive(retreatHeroToHQ(1))`
+      },
+    ]
+  },
+  {
+    id: "305",
+    type: "Main",
+    name: "Something About Green",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/somethingAboutGreen.jpg`,
+    perDeck: "1",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Deal 3 Damage to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Deal 3 Damage to a Foe`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: `damageFoe(3,any)`
+      },
+    ]
+  },
+  {
+    id: "306",
+    type: "Main",
+    name: "Birds of Prey",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/birdsOfPrey.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `OPTIONAL : You may draw from the E&A. <span class="line-gap"></span> Draw 1 for every active [ICON:Bat] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      },
+      {
+        text: `Draw 1 for each active Bat`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        effect: [`enemyDraw(1)`]
+      },
+      {
+        type: `quick`,
+        effect: `draw(getActiveTeamCount(Bat))`
+      }
+    ]
+  },
+  {
+    id: "307",
+    type: "Main",
+    name: "Battle Instincts",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/battleInstincts.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `After taking this card's Damage, shove Black Canary's engaged foe up to 2 spaces right, stopping if they contact another Henchman or Villain. <span class="line-gap"></span> CHOOSE: Black Canary can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Shove Foe Back`
+      },
+      {
+        text: `Choose`
+      },
+      {
+        text: `Followed Shoved Foe`
+      },
+      {
+        text: `Retreat to Headquarters`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: `shoveVillain(lastDamagedFoe,4)`
+      },
+      {
+        condition: [`afterDamage`,`onlyOnShove`],
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(1)`,
+        effect: [`travelTo(lastShovedVillainDestination)`]
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(2)`,
+        effect: [`retreatHeroToHQ()`]
+      }
+    ]
+  },
+  {
+    id: "308",
+    type: "Main",
+    name: "We're a Family",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/wereAFamily.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card. <span class="line-gap"></span><span class="line-gap"></span> [ICON:Arrow] : Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Scan 1 from the Villain Deck`
+      },
+      {
+        text: `Draw 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      },
+      {
+        condition: `activeHero(Arrow)`,
+        effect: `draw(2)`
+      },
+    ]
+  },
+  {
+    id: "309",
+    type: "Main",
+    name: "Beat 'em Up",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/beatEmUp.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `draw(2)`
+      },
+    ]
+  },
+  {
+    id: "310",
+    type: "Main",
+    name: "Can't Back Down",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/cantBackDown.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the end of Black Canary's turn, if she takes Damage from a Henchman or Villain, they take 5 Damage in return.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Damage Attacker and Draw`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `damagedAtTurnEnd`,
+        effect: [`damageFoe(5,lastDamageCauser)`]
+      },
+    ]
+  },
+  {
+    id: "311",
+    type: "Main",
+    name: "Who's Next?",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/whosNext.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE : KO a Henchman or Villain. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `KO a Foe`
+      },
+      {
+        text: `Draw 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`damageFoe(999,any)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(2)`]
+      }
+    ]
+  },
+  {
+    id: "312",
+    type: "Main",
+    name: "You Should've Brought More Guys",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/7vs1ShouldveBroughtMore.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE : KO all Henchmen. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 3.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `KO all Henchmen`
+      },
+      {
+        text: `Draw 3`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`damageFoe(999,allHenchmen)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(3)`]
+      }
+    ]
+  },
+  {
+    id: "313",
+    type: "Main",
+    name: "Flight of the Canary",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/flightOfTheCanary.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 1. <span class="line-gap"></span> Increase Black Canary's Travel Budget by 1 for this turn. <span class="line-gap"></span><span class="line-gap"></span> This card deals 1 additional Damage for each time Black Canary has Traveled this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 1`
+      },
+      {
+        text: `Increase Travel Budget`
+      },
+      {
+        text: `Increase Card Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: [`draw(1)`,`travelPlus(1)`,`increaseCardDamage(getTravelUsed)`]
+      },
+    ]
+  },
+  {
+    id: "314",
+    type: "Main",
+    name: "Encore!",
+    hero: "Black Canary",
+    image: `${cardArtFolder}/Black Canary/encore.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE : Take 3 Damage, then take another turn after this one where the Villain Deck is not drawn from. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `Take 3 Damage, Take Another Turn`
+      },
+      {
+        text: `Draw 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`damageHero(3,current)`,`giveCurrentHeroExtraTurn()`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(1)`]
+      }
+    ]
+  },
+  {
     id: "641",
     type: "Main",
     name: "Goddess of War",
@@ -714,7 +1140,7 @@ export const heroCards = [
     damage: "4",
     abilitiesText: [
       {
-        text: `After taking this card's Damage, push Wonder Woman's engaged foe up to 5 spaces right, stopping if they contact another Henchman or Villain. <span class="line-gap"></span> CHOOSE: Wonder Woman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+        text: `After taking this card's Damage, shove Wonder Woman's engaged foe up to 5 spaces right, stopping if they contact another Henchman or Villain. <span class="line-gap"></span> CHOOSE: Wonder Woman can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
       }
     ],
     abilitiesNamePrint: [

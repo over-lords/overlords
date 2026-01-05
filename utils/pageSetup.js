@@ -14,7 +14,7 @@ import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe,
          freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, 
          renderScannedPreview, processQueuedHeroDamage, getCurrentHeroDT, refreshGameModeFlags as refreshAbilityGameModeFlags } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, 
-         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags, resetTurnTimerForHero } from "./turnOrder.js";
+         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags, resetTurnTimerForHero, updateStandardSpeedUI } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
@@ -3771,6 +3771,12 @@ export function renderHeroHandBar(state) {
 
             handBar.appendChild(wrap);
         });
+
+        try {
+            updateStandardSpeedUI(state, heroId);
+        } catch (err) {
+            console.warn("[renderHeroHandBar] updateStandardSpeedUI failed", err);
+        }
 }
 
 // === HERO KO OVERLAY HELPERS =====================================

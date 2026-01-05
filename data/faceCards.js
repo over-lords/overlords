@@ -51,12 +51,12 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Once per turn, Deal 3 Damage to all Henchmen and Villains.`
+        text: `3/Game: Once per turn, Deal 2 Damage to all Henchmen and Villains.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Deal 3 Damage to all Henchmen and Villains`
+        text: `Deal 2 Damage to all Henchmen and Villains`
       }
     ],
     abilitiesEffects: [
@@ -66,7 +66,7 @@ export const heroes = [
         howOften: `OPT`,
         uses: `3`,
         shared: `no`,
-        effect: `damageFoe(3,all)`
+        effect: `damageFoe(2,all)`
       }
     ]
   },
@@ -195,7 +195,7 @@ export const heroes = [
     image: `${cardArtFolder}/Black Canary.png`,
     type: "Hero",
     category: "Guardian",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "green",
     teams: ["Arrow","Justice"],
     hp: "11",
@@ -204,21 +204,22 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: At the start of her turn, Black Canary can deal 10 Damage to her engaged Henchman or Villain. Then, she cannot deal Damage until the start of her next turn.`
+        text: `3/Game: Once per turn, Discard 2 to deal 10 Damage to a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Damage Opposing Henchman or Villain`
+        text: `Discard 2, Deal 10 Damage`
       }
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: `startAfterTravel`,
+        type: `standard`,
+        condition: `hasXPlusCardsInHand(2)`,
+        howOften: `OPT`,
         uses: `3`,
         shared: `no`,
-        effect: `damageOppSleepHero(10,1)`
+        effect: [`discard(2)`,`damageFoe(10,any)`]
       }
     ]
   },

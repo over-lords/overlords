@@ -796,7 +796,7 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     return Number.isFinite(num) ? num : 0;
 }
 
-function evaluateCondition(condStr, heroId, state = gameState) {
+export function evaluateCondition(condStr, heroId, state = gameState) {
     if (!condStr || condStr.toLowerCase() === "none") return true;
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
@@ -811,6 +811,15 @@ function evaluateCondition(condStr, heroId, state = gameState) {
         const hState = s.heroData?.[heroId];
         if (!hState || typeof hState.hp !== "number") return false;
         return dir === "less" ? hState.hp <= threshold : hState.hp >= threshold;
+    }
+
+    const handCountMatch = condStr.match(/^hasxpluscardsinhand\((\d+)\)$/i);
+    if (handCountMatch) {
+        const min = Number(handCountMatch[1]) || 0;
+        if (heroId == null) return false;
+        const hand = s.heroData?.[heroId]?.hand;
+        const count = Array.isArray(hand) ? hand.length : Number(hand) || 0;
+        return count >= min;
     }
 
     const greaterThanMatch = condStr.match(/^isgreaterthanx\(\s*([+-]?\d+)\s*,\s*([^)]+)\)$/i);
@@ -2183,6 +2192,25 @@ EFFECT_HANDLERS.shoveVillain = function(args = [], card, selectedData = {}) {
 EFFECT_HANDLERS.retreatHeroToHQ = function(args = [], card, selectedData = {}) {
     const heroId = selectedData?.currentHeroId ?? null;
     retreatHeroToHQSafe(heroId, gameState);
+};
+
+EFFECT_HANDLERS.clickEndTurn = function(args = [], card, selectedData = {}) {
+    if (typeof document === "undefined") {
+        console.warn("[clickEndTurn] No document available.");
+        return;
+    }
+
+    const btn = document.getElementById("end-turn-button");
+    if (!btn) {
+        console.warn("[clickEndTurn] End-turn button not found.");
+        return;
+    }
+
+    try {
+        btn.click();
+    } catch (err) {
+        console.warn("[clickEndTurn] Failed to click end turn:", err);
+    }
 };
 
 EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
@@ -4944,6 +4972,41 @@ function giveTeammateExtraTurn(heroId = null, state = gameState) {
 EFFECT_HANDLERS.giveTeammateExtraTurn = function(args = [], card, selectedData = {}) {
     const heroId = selectedData?.currentHeroId ?? null;
     return giveTeammateExtraTurn(heroId, gameState);
+};
+
+function giveCurrentHeroExtraTurn(heroId = null, state = gameState) {
+    const s = state || gameState;
+    const hid = heroId ?? s.heroes?.[s.heroTurnIndex ?? 0];
+    if (!hid) {
+        console.warn("[giveCurrentHeroExtraTurn] No heroId available.");
+        return null;
+    }
+
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    const sourceIdx = heroIds.findIndex(id => String(id) === String(hid));
+    const fallbackIdx = Number.isInteger(s.heroTurnIndex) ? s.heroTurnIndex : 0;
+    const resumeIndex = heroIds.length
+        ? ((sourceIdx >= 0 ? sourceIdx : fallbackIdx) + 1) % heroIds.length
+        : 0;
+
+    s.pendingExtraTurn = {
+        sourceHeroId: hid,
+        targetHeroId: hid,
+        resumeIndex,
+        consumed: false
+    };
+
+    try { saveGameState(s); } catch (err) {
+        console.warn("[giveCurrentHeroExtraTurn] Failed to save state after queueing extra turn.", err);
+    }
+
+    console.log(`[giveCurrentHeroExtraTurn] Pending extra turn queued for ${hid}.`);
+    return hid;
+}
+
+EFFECT_HANDLERS.giveCurrentHeroExtraTurn = function(args = [], card, selectedData = {}) {
+    const heroId = selectedData?.currentHeroId ?? null;
+    return giveCurrentHeroExtraTurn(heroId, gameState);
 };
 
 function blockDamage(state = gameState) {

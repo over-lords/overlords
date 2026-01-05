@@ -175,7 +175,7 @@ import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVi
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, 
          runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
-         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, 
+         getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, evaluateCondition, 
          retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny, buildPermanentKOCountMap, pruneFoeDoubleDamage, 
          pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero, applyNextTurnDoubleDamageIfAny } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
@@ -266,6 +266,13 @@ function getHeroStandardEffects(heroId, state = gameState) {
         const normHowOften = String(eff.howOften || "").toLowerCase();
         if (normHowOften === "opt" && hasUsedStandardThisTurn(hState, i, turnCounter)) {
             return; // once per turn enforcement
+        }
+
+        const condRaw = eff.condition;
+        const condNorm = String(condRaw || "none").toLowerCase();
+        if (condNorm !== "none") {
+            const condOk = evaluateCondition(String(condRaw), heroId, state);
+            if (!condOk) return;
         }
 
         const live = isStandardEffectLive(eff.effect, heroId, state);
@@ -384,7 +391,7 @@ function openStandardAbilityMenu(heroId, state = gameState) {
     overlay.style.display = "flex";
 }
 
-function updateStandardSpeedUI(state = gameState, heroId = null) {
+export function updateStandardSpeedUI(state = gameState, heroId = null) {
     const btn = document.getElementById("standard-activate-btn");
     if (!btn) return;
 
@@ -406,6 +413,11 @@ function updateStandardSpeedUI(state = gameState, heroId = null) {
 
     btn.style.display = "block";
     btn.onclick = () => openStandardAbilityMenu(activeHeroId, state);
+}
+
+// Expose for other modules (e.g., giveHeroPassive) to trigger UI refresh without reload
+if (typeof window !== "undefined") {
+    window.updateStandardSpeedUI = updateStandardSpeedUI;
 }
 
 const standardAbilityClose = document.getElementById("standard-ability-close");

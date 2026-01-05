@@ -218,11 +218,14 @@ html, body {
   height: 100%;
 }
 
+/* main-content is used as a custom element in deckList.html */
+main-content,
 .main-content {
-  height: 100vh;   /* fallback */
+  height: 100vh;    /* fallback */
   height: 100svh;   /* fits exactly inside safe viewport */
   display: flex;
   flex-direction: column;
+  padding-bottom: 2rem; /* keeps content off the bottom edge */
 }
 
 .profilePicBox {
