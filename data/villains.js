@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/9f43e31dbcb6c27a33f79e1ddf8c60f1044fe2b6/Public/Images/Card%20Assets/Villains";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/9a6e1ba6c55ad5644f341aa18efb5f5c17d05690/Public/Images/Card%20Assets/Villains";
 
 // ids 5601-7000
 
@@ -224,7 +224,7 @@ export const villains = [
       },
       {
         type: `uponDefeat`,
-        effect: [`scanDeck(villain,1)`,`applyKoCancel(scanned(villain))`]
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
       }
     ],
     mightNamePrint: [
@@ -2092,6 +2092,109 @@ export const villains = [
         type: `quick`,
         condition: `uponDefeat`,
         effect: `shoveVillain(any,10)`
+      }
+    ]
+  },
+  {
+    id: "5654",
+    name: "Flash (Wally West)",
+    image: `${cardArtFolder}/flashWallyWest.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Draw 1, and your Hero's Travel Budget increases by 1 permanently.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Wait for It...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(1)","travelPlus(1,permanent)"]
+      }
+    ]
+  },
+  {
+    id: "5655",
+    name: "Black Canary",
+    image: `${cardArtFolder}/blackCanary.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "11",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Heroes cannot Retreat when engaging Black Canary. <span class="line-gap"></span> 
+                 Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We Weren't Done Dancing`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+  },
+  {
+    id: "5656",
+    name: "Cyborg",
+    image: `${cardArtFolder}/cyborg.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Fatherbox? Analyze.`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `uponDefeat`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
       }
     ]
   },
