@@ -758,6 +758,28 @@ export const allies = [
             }
         ]
     },
+    {
+        id: "4583",
+        name: "Gods and Monsters",
+        image: `${cardArtFolder}/godsAndMonsters.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Permanently KO a Henchman or Villain.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Justice Our Way`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`damageFoe(999,any)`,`koFromKO(1,latest)`]
+            }
+        ]
+    },
 ]
 
 // A: amethyst, animal man, apollo, aquagirl
@@ -766,7 +788,7 @@ export const allies = [
 // D: detective chimp, dr light
 // E: elongated man
 // F: jay garrick, flashpoint batman
-// G: geoforce, gods and monsters, alan scott, grifter
+// G: geoforce, alan scott, grifter
 // H: hawk and dove, highfather, hour man, huntress
 // I: icon, indigo1
 // J: jade, jesse quick, jessica cruz, johnny quick

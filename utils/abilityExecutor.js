@@ -6533,7 +6533,8 @@ EFFECT_HANDLERS.disableIconAbilitiesAgainst = function() {};
 EFFECT_HANDLERS.disableRetreatAgainst = function() {};
 EFFECT_HANDLERS.koFromKO = function(args = [], card, selectedData = {}) {
     const count = Number(args?.[0]) || 0;
-    koFromKO(count, selectedData?.state || gameState);
+    const mode = args?.[1] ?? "random";
+    koFromKO(count, selectedData?.state || gameState, mode);
 };
 
 EFFECT_HANDLERS.logDamageCheckDamage = function(args = [], card, selectedData = {}) {
@@ -9515,7 +9516,7 @@ async function reviveKodFoe(count = 1, state = gameState) {
     saveGameState(s);
 }
 
-function koFromKO(count = 1, state = gameState) {
+function koFromKO(count = 1, state = gameState, mode = "random") {
     const s = state || gameState;
     if (!s) return;
     const pool = Array.isArray(s.koCards) ? s.koCards : [];
@@ -9539,11 +9540,19 @@ function koFromKO(count = 1, state = gameState) {
 
     const picks = Math.min(Math.max(0, Number(count) || 0), total);
     const chosen = [];
-    const poolCopy = [...eligible];
+    const modeNorm = String(mode || "random").toLowerCase();
 
-    for (let i = 0; i < picks; i++) {
-        const idx = Math.floor(Math.random() * poolCopy.length);
-        chosen.push(poolCopy.splice(idx, 1)[0]);
+    if (modeNorm === "latest") {
+        const sorted = eligible.slice().sort((a, b) => b.idx - a.idx);
+        for (let i = 0; i < picks && i < sorted.length; i++) {
+            chosen.push(sorted[i]);
+        }
+    } else {
+        const poolCopy = [...eligible];
+        for (let i = 0; i < picks; i++) {
+            const idx = Math.floor(Math.random() * poolCopy.length);
+            chosen.push(poolCopy.splice(idx, 1)[0]);
+        }
     }
 
     chosen.forEach(({ card }) => {

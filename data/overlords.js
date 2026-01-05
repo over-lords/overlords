@@ -598,8 +598,8 @@ export const overlords = [
   },
   {
     id: "5011",
-    name: "Huge Strange",
-    image: `${cardArtFolder}/hugoStrangeNew.jpg`,
+    name: "Hugo Strange",
+    image: `${cardArtFolder}/hugeStrangeNew.jpg`,
     type: "Overlord",
     level: "1",
     hp: "35",

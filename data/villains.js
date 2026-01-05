@@ -223,7 +223,7 @@ export const villains = [
         effect: `takeover(1)`
       },
       {
-        type: `uponDefeat`,
+        condition: `uponDefeat`,
         effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
       }
     ],
@@ -2193,7 +2193,7 @@ export const villains = [
         effect: `teleport`
       },
       {
-        type: `uponDefeat`,
+        condition: `uponDefeat`,
         effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
       }
     ]
