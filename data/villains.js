@@ -4064,7 +4064,7 @@ export const villains = [
 // E: etrigan
 // F: firestorm
 // M: martian manhunter
-// S: shazam, swamp thing
+// S: swamp thing
 // Z: zatanna
 
 
