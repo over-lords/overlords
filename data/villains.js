@@ -3997,7 +3997,7 @@ export const villains = [
     ]
   },
   {
-    id: "5632",
+    id: "5702",
     name: "Shazam",
     image: `${cardArtFolder}/shazam.jpg`,
     type: "Villain",
@@ -4029,6 +4029,40 @@ export const villains = [
         type: `quick`,
         condition: `uponDefeat`,
         effect: [`damageFoeMulti(10,2,any)`]
+      }
+    ]
+  },
+  {
+    id: "5703",
+    name: "Firestorm",
+    image: `${cardArtFolder}/firestorm.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Add 1 card from your Hero's deck to your hand.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Power of the Matrix!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `add(1,current)`
       }
     ]
   },
