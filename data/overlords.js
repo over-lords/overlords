@@ -85,8 +85,7 @@ export const overlords = [
       {
         text: `At the start of the game, Joker's Hit Points are increased by 3 for every active [ICON:Bat] Hero. <span class="line-gap"></span>
                Might of the Overlord: Draw 1 card from the Villain Deck for every active Hero. <span class="line-gap"></span>
-               Bonus Feature: If there are 3 or more active [ICON:Bat] Heroes at the start of the game, Joker implements this feature. At the end of every 
-               Hero's turn, they must CHOOSE: KO the top card of their discard pile. OR Take 2 Damage.`
+               Bonus Feature: If there are 3 or more active [ICON:Bat] Heroes at the start of the game, Joker implements this feature. At the end of every Hero's turn, they must CHOOSE: KO the top card of their discard pile. OR Take 2 Damage.`
       }
     ],
     abilitiesNamePrint: [

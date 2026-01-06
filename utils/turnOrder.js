@@ -2937,11 +2937,15 @@ export async function endCurrentHeroTurn(gameState) {
     gameState.lastRescuedFrom = null;
 
     // Run team-specific end-turn triggers (e.g., teamHeroEndTurn(Bat))
-    try {
-        triggerRuleEffects(`teamHeroEndTurn(${heroObj.team || heroObj.heroTeam || heroObj.faction || ""})`, { currentHeroId: heroId, state: gameState });
-    } catch (err) {
-        console.warn("[endCurrentHeroTurn] teamHeroEndTurn triggers failed", err);
-    }
+    const heroTeams = getHeroTeamsSimple(heroObj);
+    heroTeams.forEach(teamName => {
+        if (!teamName) return;
+        try {
+            triggerRuleEffects(`teamHeroEndTurn(${teamName})`, { currentHeroId: heroId, state: gameState });
+        } catch (err) {
+            console.warn("[endCurrentHeroTurn] teamHeroEndTurn triggers failed", err);
+        }
+    });
 
     // Clear travel/draw dampeners if expiring after this turn
     clearDampenersIfExpired();
