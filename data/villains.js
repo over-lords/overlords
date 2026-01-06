@@ -2588,26 +2588,179 @@ export const villains = [
       }
     ],
   },
+  {
+    id: "5666",
+    name: "Gentleman Ghost",
+    image: `${cardArtFolder}/gentlemanGhost.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               The first time each turn a Hero uses a card to damage Gentleman Ghost, they take 1 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> 
+               Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Nearly Got Me!`
+      },
+      {
+        text: `Get Back!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `firstAttackPerTurn`,
+        effect: `damageHero(1,current,ignoreDT)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1)`]
+      }
+    ]
+  },
+  {
+    id: "5667",
+    name: "Mad Hatter",
+    image: `${cardArtFolder}/madHatter.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the start of each turn, Mad Hatter captures a Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `My Dear Alice...`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnStart`,
+        effect: `foeCaptureBystander(getCurrentCityIndex,1)`
+      }
+    ]
+  },
+  {
+    id: "5668",
+    name: "Riddler",
+    image: `${cardArtFolder}/riddler.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Draw 2 from the Villain Deck. <span class="line-gap"></span> 
+               Reward: Deal 1 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Think I'll Ask the Questions...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageOverlord(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Shouldn't Have Done That`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`rallyNextHenchVillains(2)`]
+      }
+    ],
+  },
+  {
+    id: "5669",
+    name: "Harley Quinn",
+    image: `${cardArtFolder}/harleyQuinn.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "3",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If Harley Quinn makes it out of Gotham, play a Might of the Overlord. <span class="line-gap"></span> Reward: KO a Might of the Overlord from the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Got The Thing, Mista J!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `leavesCity(10)`,
+        effect: `drawSpecificVillain(7001)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `koMightFromVD(1)`
+      }
+    ]
+  },
 ]
+
 
 // A: appelaxian golem, arkillo, atomica, atrocitus, azrael
 // B: bizarro, black adam, black beetle, blackfire, black flash, bleez, bonk, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
 // C: captain boomerang, captain cold, cheshire, chucko, cinderblock, clock king, copperhead, count vertigo, curare, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-// D: dawnbreaker, deathstorm, dee dee, desaad, devastation, devastator, dr light, drowned, dr sivana
+// D: dawnbreaker, deathstorm, dee dee, devastation, devastator, dr light, drowned, dr sivana
 // E: envy, everyman
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
-// G: gcpd batman, general eiling, general zod, gentleman ghost, ghoul, gilotina, girder, gizmo, gluttony, golden glider, grail, greed, grid
-// H: harley quinn, harm, heatwave, hush, hyperclan
-// I: icicle junior, imperiex prime, inertia, inque
+// G: gcpd batman, general eiling, general zod, ghoul, girder, gizmo, gluttony, golden glider, greed, grid
+// H: harm, heatwave, hush, hyperclan
+// I: imperiex prime, inertia, inque
 // J: jericho, jinx, johnny quick
 // K: kgbeast, killer croc, killer frost, king kobra, king shark, klarion, krona
-// L: lashina, lust, lyssa drak
-// M: mad harriet, mad hatter, mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine, mutant leader
+// L: lust, lyssa drak
+// M: mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine, mutant leader
 // O: oblivion, owlman
 // P: penguin, phantasm, pied piper, poison ivy, power ring, prometheus, psycho pirate
 // Q: queen bee
-// R: rainbow raider, ravager (rose), red death, reign, reverse flash, riddler
-// S: scar, scarecrow, shade, shimmer, shriek, siren, sloth, solomon grundy, soranik sinestro, spellbinder, sportsmaster, steppenwolf, stompa, superwoman
+// R: rainbow raider, ravager (rose), red death, reign, reverse flash
+// S: scar, scarecrow, shade, shimmer, shriek, siren, sloth, solomon grundy, soranik sinestro, spellbinder, sportsmaster, superwoman
 // T: talia al ghul, talon, tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle, two face
 // U: upside down man
 // V: victor zsasz, vigilante
@@ -2615,19 +2768,25 @@ export const villains = [
 // Z: zilius zox, zoom
 
 
-//HEROES AS VILLAINS DO NOT SHOW LIST - These have arts
+// HEROES AS VILLAIN - These guys do not have real hero counterparts, but they do have arts
 // A: amethyst
+// D: detective chimp
+// F: frankenstein
+// O: orchid
+
+
+// HEROES AS VILLAINS - These have arts
 // C: constantine
-// D: detective chimp, dr fate, deadman
+// D: dr fate, deadman
 // E: etrigan
-// F: frankenstein, firestorm
+// F: firestorm
 // H: hawkwoman
 // M: martian manhunter
-// O: orchid
 // S: shazam, swamp thing
 // Z: zatanna
 
-// HEROES AS VILLAINS DO NOT SHOW LIST - These do not have arts yet
+
+// HEROES AS VILLAINS - These do not have arts yet
 // A: Aqualad, arsenal, artemis
 // B: Batgirl, Batman Beyond, beast boy, blue beetle
 // D: Donna Troy

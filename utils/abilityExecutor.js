@@ -967,6 +967,19 @@ function getOverlordLevel(state = gameState) {
     return 0;
 }
 
+function getCurrentCityIndex(state = gameState) {
+    const s = state || gameState;
+    if (typeof s._activeEffectFoeSlot === "number") return s._activeEffectFoeSlot;
+    if (typeof s._evaluatingFoeSlot === "number") return s._evaluatingFoeSlot;
+    const last = s.lastDamagedFoe;
+    if (typeof last?.slotIndex === "number") return last.slotIndex;
+    if (last?.instanceId && Array.isArray(s.cities)) {
+        const foundIdx = s.cities.findIndex(e => e && getEntryKey(e) === String(last.instanceId));
+        if (foundIdx >= 0) return foundIdx;
+    }
+    return null;
+}
+
 function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (typeof raw === "number") return raw;
     if (typeof raw !== "string") return 0;
@@ -1012,6 +1025,10 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     }
     if (lower === "getoverlordlevel") {
         return getOverlordLevel(state);
+    }
+    if (lower === "getcurrentcityindex") {
+        const idx = getCurrentCityIndex(state);
+        return Number.isInteger(idx) ? idx : 0;
     }
     if (lower === "rescuedbystanderscount") {
         return getTotalRescuedBystanders(state);
@@ -1211,6 +1228,30 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         }
         console.log(`[cityEmptyOfHero] Unsupported target '${targetRaw}'.`);
         return false;
+    }
+
+    const leavesCityMatch = condStr.match(/^leavescity\(([^)]+)\)$/i);
+    if (leavesCityMatch) {
+        const targetRaw = leavesCityMatch[1].trim().toLowerCase();
+        const last = s._lastFoeLeftCity || {};
+        const slot = typeof last.slotIndex === "number" ? last.slotIndex : null;
+        let pass = false;
+        let details = "";
+        if (slot == null) {
+            details = "no recorded foe departure";
+        } else if (/^\d+$/.test(targetRaw)) {
+            const idx = Number(targetRaw);
+            pass = slot === idx;
+            details = `slot=${slot}, target=${idx}`;
+        } else if (targetRaw === "coastal" || targetRaw === "coast") {
+            const { left, right } = checkCoastalCities(s);
+            pass = slot === left || slot === right;
+            details = `slot=${slot}, coastal left=${left ?? "none"}, right=${right ?? "none"}`;
+        } else {
+            details = `unsupported target '${targetRaw}'`;
+        }
+        console.log(`[leavesCity(${targetRaw})] ${pass ? "true" : "false"} - ${details}`);
+        return pass;
     }
 
     const destroyedMatch = condStr.match(/^iscitydestroyed\(([^)]+)\)$/i);
@@ -3613,7 +3654,18 @@ function foeCaptureBystander(cityIndex, count = 1, state = gameState) {
         return;
     }
 
-    const idx = Number(cityIndex);
+    const resolveCityIdx = (val) => {
+        if (Number.isInteger(val)) return val;
+        const asNum = Number(val);
+        if (Number.isInteger(asNum)) return asNum;
+        if (typeof val === "string") {
+            const resolved = resolveNumericValue(val, null, s);
+            if (Number.isInteger(resolved)) return resolved;
+        }
+        return null;
+    };
+
+    const idx = resolveCityIdx(cityIndex);
     if (!Number.isInteger(idx)) {
         console.warn("[foeCaptureBystander] Invalid arguments", { cityIndex, count });
         return;
@@ -3630,7 +3682,31 @@ function foeCaptureBystander(cityIndex, count = 1, state = gameState) {
 
 EFFECT_HANDLERS.foeCaptureBystander = function(args = [], card, selectedData = {}) {
     const [cityIdx, count] = args;
-    foeCaptureBystander(cityIdx, count ?? 1, selectedData?.state || gameState);
+    const s = selectedData?.state || gameState;
+
+    // Expose current foe slot so numeric helper getCurrentCityIndex can resolve.
+    const prevSlot = s._activeEffectFoeSlot;
+    const hasPrev = Object.prototype.hasOwnProperty.call(s, "_activeEffectFoeSlot");
+    let derivedSlot = undefined;
+    if (typeof selectedData?.slotIndex === "number") {
+        derivedSlot = selectedData.slotIndex;
+    } else if (selectedData?.foeEntry && Array.isArray(s.cities)) {
+        const key = getEntryKey(selectedData.foeEntry);
+        const found = s.cities.findIndex(e => e && getEntryKey(e) === key);
+        if (found >= 0) derivedSlot = found;
+    }
+    if (typeof derivedSlot === "number") {
+        s._activeEffectFoeSlot = derivedSlot;
+    }
+
+    try {
+        foeCaptureBystander(cityIdx, count ?? 1, s);
+    } finally {
+        if (typeof derivedSlot === "number" || hasPrev) {
+            if (hasPrev) s._activeEffectFoeSlot = prevSlot;
+            else delete s._activeEffectFoeSlot;
+        }
+    }
 };
 
 EFFECT_HANDLERS.damageHeroAtCity = function(args = [], card, selectedData = {}) {
@@ -10255,6 +10331,12 @@ async function pushChain(targetIndex, activeUpperOrder = getActiveUpperOrderLoca
             return { blockedFrozen: true };
         }
 
+        gameState._lastFoeLeftCity = {
+            slotIndex: targetIndex,
+            instanceId: getEntryKey(exiting),
+            id: exiting.id
+        };
+
         await handleVillainEscape(exiting, gameState);
         resolveExitForVillain(exiting);
         return { blockedFrozen: false };
@@ -10285,6 +10367,8 @@ function moveCardModelAndDOM(fromIndex, toIndex) {
     const citySlots = document.querySelectorAll(".city-slot");
     if (!citySlots || !citySlots.length) return;
 
+    const movingEntry = Array.isArray(gameState.cities) ? gameState.cities[fromIndex] : null;
+
     // --- VILLAIN DOM ---
     const fromSlot = citySlots[fromIndex];
     const toSlot   = citySlots[toIndex];
@@ -10310,7 +10394,15 @@ function moveCardModelAndDOM(fromIndex, toIndex) {
         gameState.cities = new Array(12).fill(null);
     }
 
-    gameState.cities[toIndex] = gameState.cities[fromIndex];
+    if (movingEntry) {
+        gameState._lastFoeLeftCity = {
+            slotIndex: fromIndex,
+            instanceId: getEntryKey(movingEntry),
+            id: movingEntry.id
+        };
+    }
+
+    gameState.cities[toIndex] = movingEntry;
     if (gameState.cities[toIndex]) {
         gameState.cities[toIndex].slotIndex = toIndex;
         if (gameState.cities[toIndex].isFrozen) {
@@ -13550,6 +13642,11 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
         }
 
         if (toIdx != null && typeof toIdx === "number") {
+            s._lastFoeLeftCity = {
+                slotIndex: fromIdx,
+                instanceId: getEntryKey(entry),
+                id: entry?.id
+            };
             s.cities[fromIdx] = null;
             s.cities[toIdx] = entry;
             entry.slotIndex = toIdx;
@@ -13582,6 +13679,11 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
             const next = current + dir;
             if (next < 0) {
                 // Off the board to the left -> escape
+                s._lastFoeLeftCity = {
+                    slotIndex: current,
+                    instanceId: getEntryKey(entry),
+                    id: entry?.id
+                };
                 try { handleVillainEscape(entry, s); } catch (e) { console.warn("[shoveVillain] escape failed", e); }
                 moveEntry(entry, current, null);
                 s.lastShovedVillainDestination = null;
