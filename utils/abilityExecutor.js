@@ -7686,38 +7686,43 @@ function applyScanEffects(opts = {}) {
     try {
         if (typeof document !== "undefined" && document.body) {
             const existing = document.getElementById("scan-banner");
-            if (existing) existing.remove();
+            // If scanning is blocked, remove any existing banner and skip rendering a new one
+            if (isScanBlocked(gameState)) {
+                if (existing) existing.remove();
+            } else {
+                if (existing) existing.remove();
 
-            const flags = [
-                { key: "Activate", enabled: activate },
-                { key: "Discard",  enabled: discard },
-                { key: "Draw",     enabled: draw },
-                { key: "KO",       enabled: ko }
-            ]
-            .filter(f => f.enabled)
-            .map(f => f.key)
-            .sort((a, b) => a.localeCompare(b));
+                const flags = [
+                    { key: "Activate", enabled: activate },
+                    { key: "Discard",  enabled: discard },
+                    { key: "Draw",     enabled: draw },
+                    { key: "KO",       enabled: ko }
+                ]
+                .filter(f => f.enabled)
+                .map(f => f.key)
+                .sort((a, b) => a.localeCompare(b));
 
-            const label = flags.length ? flags.join(", ") : "None";
-            const banner = document.createElement("div");
-            banner.id = "scan-banner";
-            banner.textContent = `${label} shown cards Left to Right. ➡`;
-            banner.style.position = "fixed";
-            banner.style.top = "0";
-            banner.style.left = "0";
-            banner.style.width = "100%";
-            banner.style.padding = "10px 8px";
-            banner.style.textAlign = "center";
-            banner.style.fontFamily = "'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif";
-            banner.style.fontSize = "24px";
-            banner.style.fontWeight = "800";
-            banner.style.color = "#fff";
-            banner.style.textShadow = "1px 1px 4px rgba(0,0,0,0.7)";
-            banner.style.background = "linear-gradient(90deg, rgba(0,0,0,0.7), rgba(0,0,0,0.4), rgba(0,0,0,0.7))";
-            banner.style.zIndex = "12000";
-            banner.style.pointerEvents = "none";
+                const label = flags.length ? flags.join(", ") : "None";
+                const banner = document.createElement("div");
+                banner.id = "scan-banner";
+                banner.textContent = `${label} shown cards Left to Right. ➡`;
+                banner.style.position = "fixed";
+                banner.style.top = "0";
+                banner.style.left = "0";
+                banner.style.width = "100%";
+                banner.style.padding = "10px 8px";
+                banner.style.textAlign = "center";
+                banner.style.fontFamily = "'Racing Sans One', 'Montserrat', 'Helvetica', sans-serif";
+                banner.style.fontSize = "24px";
+                banner.style.fontWeight = "800";
+                banner.style.color = "#fff";
+                banner.style.textShadow = "1px 1px 4px rgba(0,0,0,0.7)";
+                banner.style.background = "linear-gradient(90deg, rgba(0,0,0,0.7), rgba(0,0,0,0.4), rgba(0,0,0,0.7))";
+                banner.style.zIndex = "12000";
+                banner.style.pointerEvents = "none";
 
-            document.body.appendChild(banner);
+                document.body.appendChild(banner);
+            }
         }
     } catch (err) {
         console.warn("[applyScanEffects] Failed to render scan banner", err);
@@ -8109,7 +8114,7 @@ export function renderScannedPreview(cards = [], opts = {}) {
         closeBtn.style.fontSize = "28px";
         closeBtn.style.fontWeight = "bold";
         closeBtn.style.cursor = "pointer";
-        closeBtn.style.zIndex = "3";
+        closeBtn.style.zIndex = "12050";
         closeBtn.style.pointerEvents = "auto";
         closeBtn.addEventListener("click", (e) => {
             e.stopPropagation();
