@@ -2233,6 +2233,361 @@ export const villains = [
       }
     ],
   },
+  {
+    id: "5658",
+    name: "Lashina",
+    image: `${cardArtFolder}/lashina.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Clash <span class="line-gap"></span> Reward: Freeze a Henchman or Villain until the end of your next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any,next)`
+      }
+    ]
+  },
+  {
+    id: "5659",
+    name: "Gilotina",
+    image: `${cardArtFolder}/gilotina.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "12",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: Double your Damage for the rest of this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `doubleDamage(current,current)`
+      }
+    ]
+  },
+  {
+    id: "5660",
+    name: "Mad Harriet",
+    image: `${cardArtFolder}/madHarriet.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5661",
+    name: "Stompa",
+    image: `${cardArtFolder}/stompa.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Clash <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: ["draw(1)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5662",
+    name: "Desaad",
+    image: `${cardArtFolder}/desaad.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "9",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the start of every turn, the Overlord gains 5 HP. <span class="line-gap"></span> Reward: Deal 5 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Here, my Master...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnStart`,
+        effect: `damageOverlord(-5)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(5)`
+      }
+    ]
+  },
+  {
+    id: "5663",
+    name: "Grail",
+    image: `${cardArtFolder}/grail.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "27",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+                Might of the Overlord: KO the top card of every Hero's deck. <span class="line-gap"></span> 
+                  Reward: Scan 3 from the Villain Deck. OPTIONAL : KO any of the revealed cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Like Father, Like Daughter!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,3)`,`applyScanEffects(ko,closeAfter(3))`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Cut Out Your Heart!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`koTopHeroCard(1,all)`]
+      }
+    ],
+  },
+  {
+    id: "5664",
+    name: "Steppenwolf",
+    image: `${cardArtFolder}/steppenwolf.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "20",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+                Reward: CHOOSE : Restore a Destroyed City. <span class="line-gap"></span> 
+                OR <span class="line-gap"></span> 
+                Regain up to 3 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Choose Reward!`
+      },
+      {
+          text: `Restore a City`
+      },
+      {
+          text: `Regain 3 HP`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`restoreCity(1)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`regainLife(3)`]
+      }
+    ]
+  },
+  {
+    id: "5665",
+    name: "Granny Goodness",
+    image: `${cardArtFolder}/grannyGoodness.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Apokalips",
+    hp: "15",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+                Might of the Overlord: Destroy the Rightmost City. <span class="line-gap"></span> 
+                  Reward: CHOOSE : Restore a Destroyed City. <span class="line-gap"></span> 
+                  OR <span class="line-gap"></span> 
+                  Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `My, My! You've Been Naughty!`
+      },
+      {
+        text: `Choose Reward!`
+      },
+      {
+          text: `Restore a City`
+      },
+      {
+          text: `Draw 1 and Gain Travel`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`restoreCity(1)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: ["draw(1)","travelPlus(1)"]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Let Granny Teach You`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`destroyCity(1)`]
+      }
+    ],
+  },
 ]
 
 // A: appelaxian golem, arkillo, atomica, atrocitus, azrael
