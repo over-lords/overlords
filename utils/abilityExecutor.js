@@ -8165,7 +8165,7 @@ function applyScanEffects(opts = {}) {
                 banner.style.color = "#fff";
                 banner.style.textShadow = "1px 1px 4px rgba(0,0,0,0.7)";
                 banner.style.background = "linear-gradient(90deg, rgba(0,0,0,0.7), rgba(0,0,0,0.4), rgba(0,0,0,0.7))";
-                banner.style.zIndex = "12000";
+                banner.style.zIndex = "9450";
                 banner.style.pointerEvents = "none";
 
                 document.body.appendChild(banner);
@@ -8545,9 +8545,9 @@ export function renderScannedPreview(cards = [], opts = {}) {
         closeBtn = document.createElement("div");
         closeBtn.id = "scan-preview-close";
         closeBtn.textContent = "X";
-        closeBtn.style.position = "absolute";
-        closeBtn.style.top = "16px";
-        closeBtn.style.right = "-160px";
+        closeBtn.style.position = "fixed";
+        closeBtn.style.top = "25px";
+        closeBtn.style.right = "-120px";
         closeBtn.style.width = "52px";
         closeBtn.style.height = "52px";
         closeBtn.style.borderRadius = "50%";
@@ -8561,7 +8561,7 @@ export function renderScannedPreview(cards = [], opts = {}) {
         closeBtn.style.fontSize = "28px";
         closeBtn.style.fontWeight = "bold";
         closeBtn.style.cursor = "pointer";
-        closeBtn.style.zIndex = "12050";
+        closeBtn.style.zIndex = "13000";
         closeBtn.style.pointerEvents = "auto";
         closeBtn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -8632,7 +8632,8 @@ export function renderScannedPreview(cards = [], opts = {}) {
     bar.style.left = "50%";
     bar.style.transform = "translate(-50%, 30px)";
     bar.style.bottom = "20px";
-    bar.style.zIndex = "9500"; // keep below panels (~10000) but above most UI
+    // Keep the close button above the scan banner by elevating the bar's stacking context
+    bar.style.zIndex = "9500";
     bar.style.display = "flex";
     bar.style.alignItems = "center";
     bar.style.justifyContent = "center";
@@ -8646,7 +8647,7 @@ export function renderScannedPreview(cards = [], opts = {}) {
     backdrop.style.inset = "0";
     backdrop.style.background = "rgba(0,0,0,0.55)";
     backdrop.style.backdropFilter = "blur(1px)";
-    backdrop.style.zIndex = "9490";
+    backdrop.style.zIndex = "9440";
     backdrop.style.pointerEvents = "none";
 
     inner.innerHTML = "";

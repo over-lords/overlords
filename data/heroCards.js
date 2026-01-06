@@ -790,7 +790,7 @@ export const heroCards = [
     damage: "3",
     abilitiesText: [
       {
-        text: `OPTIONAL : You may draw from the E&A. <span class="line-gap"></span> Draw 1 for every active [ICON:Bat] Hero.`
+        text: `OPTIONAL : Draw from the E&A. <span class="line-gap"></span> Draw 1 for every active [ICON:Bat] Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -2561,7 +2561,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Select 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Batman has no active Teammates: Draw 2 cards.`
+        text: `Select 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Batman has no active Teammates: Draw 2.`
       }
     ],
     abilitiesNamePrint: [
@@ -2868,7 +2868,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards. <span class="line-gap"></span> Increase this card's Damage by 1 for every rescued Bystander.`
+        text: `Draw 2. <span class="line-gap"></span> Increase this card's Damage by 1 for every rescued Bystander.`
       }
     ],
     abilitiesNamePrint: [
@@ -2879,6 +2879,386 @@ export const heroCards = [
     abilitiesEffects: [
       {
         effect: [`draw(2)`,`increaseCardDamage(rescuedBystandersCount)`]
+      }
+    ]
+  },
+  {
+    id: "1141",
+    type: "Main",
+    name: "More than a Title",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/moreThanATitle.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `Draw 2. <span class="line-gap"></span> Increase this card's Damage by 1 for every active [ICON:Bat] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Grandson of the Demon, Son of the Bat`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`draw(2)`,`increaseCardDamage(getActiveTeamCount(Bat))`]
+      }
+    ]
+  },
+  {
+    id: "1142",
+    type: "Main",
+    name: "Boy Wonder",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/boyWonder.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `Henchmen and Villains in adjacent Cities take 2 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Didn't Forget about You`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageFoe(2,allAdjacentFoes)`
+      },
+    ]
+  },
+  {
+    id: "1143",
+    type: "Main",
+    name: "Goliath",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/goliath.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Deal 1 Damage to all other Henchmen and Villains. <span class="line-gap"></span> Don't draw from the Villain Deck next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `After Him!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: [`damageFoe(2,allOthers)`,`disableVillainDraw(1)`]
+      }
+    ]
+  },
+  {
+    id: "1144",
+    type: "Main",
+    name: "Assassin's Training",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/assassinsTraining.jpg`,
+    perDeck: "1",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `This card instantly KO's a foe if used in Gotham.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Give In...`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `checkDamageTargetCity(10)`,
+        effect: [`damageFoe(999,10)`]
+      }
+    ]
+  },
+  {
+    id: "1145",
+    type: "Main",
+    name: "Super Sons",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/superSons.jpg`,
+    perDeck: "1",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Draw 2. <span class="line-gap"></span> [ICON:Super] : Deal 3 Damage to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We're a Package`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`draw(2)`]
+      },
+      {
+        condition: `activeHero(Super)`,
+        effect: `damageFoe(3,any)`
+      }
+    ]
+  },
+  {
+    id: "1146",
+    type: "Main",
+    name: "My Titans",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/myTitans.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Draw 1. <span class="line-gap"></span> Draw another for every active [ICON:Titans] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Belong to Me`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`draw(1)`]
+      },
+      {
+        effect: `draw(getActiveTeamCount(Titans))`
+      }
+    ]
+  },
+  {
+    id: "1147",
+    type: "Main",
+    name: "Heir to the Cowl",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/heirToTheCowl.jpg`,
+    perDeck: "1",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      },
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        effect: [`enemyDraw(1)`]
+      },
+    ]
+  },
+  {
+    id: "1148",
+    type: "Main",
+    name: "Father-Son Time",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/fatherSonTime.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `All other active [ICON:Bat] Heroes draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Let's Go!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `draw(1,allOtherHeroes(Bat))`
+      }
+    ]
+  },
+  {
+    id: "1149",
+    type: "Main",
+    name: "On the Prowl",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/onTheProwl.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Draw 1. <span class="line-gap"></span><span class="line-gap"></span> Scan 3 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO up to 2 revealed cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 1`
+      },
+      {
+        text: `Scan 3 from the Villain Deck`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: `draw(1)`
+      },
+      {
+        type: `quick`,
+        effect: [`scanDeck(villain,3)`,`applyScanEffects(ko,closeAfter(2))`]
+      },
+    ]
+  },
+  {
+    id: "1150",
+    type: "Main",
+    name: "Watch, Study, Strike",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/watchStudyStrike.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Draw 2, then Discard 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 2, Discard 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: [`draw(2)`,`discard(1)`]
+      }
+    ]
+  },
+  {
+    id: "1151",
+    type: "Main",
+    name: "Silence and Shadow",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/silenceAndShadow.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 1, and don't draw from the Villain Deck next turn. <span class="line-gap"></span> Robin can Withdraw once this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 1 and Stop Villain Draw`
+      },
+      {
+        text: `Gain Withdraw`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: [`draw(1)`,`disableVillainDraw(1)`]
+      },
+      {
+        type: `quick`,
+        condition: `afterDamage`,
+        effect: `giveHeroPassive(retreatHeroToHQ(1))`
+      },
+    ]
+  },
+  {
+    id: "1152",
+    type: "Main",
+    name: "Son of Batman",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/sonOfBatman.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE : KO up to 2 Henchmen. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `KO 2 Henchmen`
+      },
+      {
+        text: `Draw 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`damageFoe(999,anyHenchman)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(2)`]
+      }
+    ]
+  },
+  {
+    id: "1153",
+    type: "Main",
+    name: "Family Ties",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/familyTies.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2, and regain 1 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 1 and Regain 1 HP`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: [`draw(2)`,`regainLife(1)`]
+      },
+    ]
+  },
+  {
+    id: "1154",
+    type: "Main",
+    name: "Unbearable Overconfidence",
+    hero: "Robin",
+    image: `${cardArtFolder}/Robin/unbearableOverconfidence.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Once, before the start of Robin's next turn, he can Block himself or another Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Watch Out!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `giveHeroPassive(blockDamage(1),next)`
       }
     ]
   },
@@ -2990,7 +3370,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Select 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Flash has no active Teammates: Draw 2 cards.`
+        text: `Select 1 other active Teammate; they take an additional turn after yours. The Villain Deck is not drawn from on this turn. <span class="line-gap"></span> If Flash has no active Teammates: Draw 2.`
       }
     ],
     abilitiesNamePrint: [
@@ -3048,7 +3428,7 @@ export const heroCards = [
     damage: "2",
     abilitiesText: [
       {
-        text: `All other active [ICON:Titans] Heroes draw 2 cards.`
+        text: `All other active [ICON:Titans] Heroes draw 2.`
       }
     ],
     abilitiesNamePrint: [
@@ -3312,7 +3692,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Draw 2 cards. <span class="line-gap"></span> Flash can Travel an unlimited number of times this turn.`
+        text: `Draw 2. <span class="line-gap"></span> Flash can Travel an unlimited number of times this turn.`
       }
     ],
     abilitiesNamePrint: [

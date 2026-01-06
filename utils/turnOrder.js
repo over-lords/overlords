@@ -1107,30 +1107,36 @@ export async function tryBlockPendingHeroDamage(state = gameState) {
         const effects = Array.isArray(heroObj.abilitiesEffects) ? heroObj.abilitiesEffects : [];
         const names = Array.isArray(heroObj.abilitiesNamePrint) ? heroObj.abilitiesNamePrint : [];
         const hState = s.heroData?.[hid] || {};
+        const tempList = Array.isArray(hState.tempAbilities) ? hState.tempAbilities : [];
+        const baseLen = effects.length;
 
         const turnUsed = hState.damageHeroBlockTurnUsed;
         if (typeof s.turnCounter === "number" && turnUsed === s.turnCounter) {
             continue; // already used this turn
         }
 
-        for (let i = 0; i < effects.length; i++) {
-            const eff = effects[i];
-            if (!eff) continue;
+        const maybeHandleBlock = async (eff, idx, labelFallback = "Use optional ability?") => {
+            if (!eff) return false;
             const type = (eff.type || "").toLowerCase();
             const cond = (eff.condition || "").toLowerCase();
             const effectStr = Array.isArray(eff.effect) ? eff.effect.join(",") : (eff.effect || "");
             const usesMax = Number(eff.uses || 0);
+            const usesLeft = hState.currentUses?.[idx];
 
-            const usesLeft = hState.currentUses?.[i];
+            const condMatches =
+                cond === "damagehero" ||
+                cond === "" ||
+                cond === "none" ||
+                cond === "any";
 
             const matches =
                 type === "optional" &&
-                cond === "damagehero" &&
+                condMatches &&
                 effectStr.toLowerCase().includes("blockdamage") &&
                 (eff.howOften || "").toLowerCase() === "opt" &&
                 (usesLeft == null ? usesMax : usesLeft) > 0;
 
-            if (!matches) continue;
+            if (!matches) return false;
 
             const targetName = heroes.find(h => String(h.id) === String(pending.heroId))?.name || `Hero ${pending.heroId}`;
             const promptText = `${heroObj.name}: Block incoming Damage to ${targetName}?`;
@@ -1144,23 +1150,34 @@ export async function tryBlockPendingHeroDamage(state = gameState) {
                 }
             }
 
-            if (!allow) {
-                continue;
-            }
+            if (!allow) return false;
 
             // Consume use
             if (!hState.currentUses) hState.currentUses = {};
-            const current = hState.currentUses[i];
+            const current = hState.currentUses[idx];
             const max = usesMax;
             const nextUses = (current == null ? max : current) - 1;
-            hState.currentUses[i] = Math.max(0, nextUses);
+            hState.currentUses[idx] = Math.max(0, nextUses);
             if (!heroObj.currentUses) heroObj.currentUses = {};
-            heroObj.currentUses[i] = hState.currentUses[i];
+            heroObj.currentUses[idx] = hState.currentUses[idx];
 
             hState.damageHeroBlockTurnUsed = s.turnCounter;
             s.pendingDamageHero = null;
-            console.log(`[damageHero] ${heroObj.name} blocked all incoming damage to ${targetName}. Uses left: ${hState.currentUses[i]} / ${max}`);
+            console.log(`[damageHero] ${heroObj.name} blocked all incoming damage to ${targetName}. Uses left: ${hState.currentUses[idx]} / ${max}`);
             return true;
+        };
+
+        for (let i = 0; i < effects.length; i++) {
+            const label = names[i]?.text || "Use optional ability?";
+            if (await maybeHandleBlock(effects[i], i, label)) return true;
+        }
+
+        for (let t = 0; t < tempList.length; t++) {
+            const entry = tempList[t];
+            if (!entry || !entry.ability) continue;
+            const idx = baseLen + t;
+            const label = entry.label || "Use optional ability?";
+            if (await maybeHandleBlock(entry.ability, idx, label)) return true;
         }
     }
 

@@ -3543,7 +3543,7 @@ export const villains = [
   {
     id: "5691",
     name: "Blackfire",
-    image: `${cardArtFolder}/blackfire.jpg`,
+    image: `${cardArtFolder}/Blackfire.jpg`,
     type: "Villain",
     doNotShow: "false",
     hero: "Teen Titan",
@@ -3720,7 +3720,7 @@ export const villains = [
   {
     id: "5695",
     name: "Hyperclan",
-    image: `${cardArtFolder}/hyperclan.jpg`,
+    image: `${cardArtFolder}/Hyperclan.jpg`,
     type: "Villain",
     doNotShow: "false",
     hero: "Justice League",
@@ -4290,6 +4290,40 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5710",
+    name: "Robin",
+    image: `${cardArtFolder}/robin.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "11",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I've Been Spotted!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1)`]
+      }
+    ]
+  },
 ]
 
 
@@ -4328,7 +4362,7 @@ export const villains = [
 // M: Mera, miss martian
 // N: Nightwing
 // O: omen
-// R: Robin, Red Hood, Red Robin, red lantern (guy), raven
+// R: Red Hood, Red Robin, red lantern (guy), raven
 // S: Supergirl, Superboy, starfire, sinestro
 // T: Tempest
 // V: Vixen

@@ -1960,7 +1960,9 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 2/Game: At the start of his turn, increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 1/Game: Batman can Withdraw.`
+        text: `Batman deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 
+               2/Game: At the start of his turn, increase Batman's draw selection to 4 cards. <span class="line-gap"></span> 
+               1/Game: Batman can Withdraw.`
       }
     ],
     abilitiesNamePrint: [
@@ -2127,7 +2129,7 @@ export const heroes = [
     image: `${cardArtFolder}/Robin.jpg`,
     type: "Hero",
     category: "Tactician",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "yellow",
     teams: ["Bat","Titans"],
     hp: "10",
@@ -2136,7 +2138,8 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Robin deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 3/Game: Once per turn, deal 2 Damage to a Henchman or Villain.`
+        text: `Robin deals double Damage against Henchmen and Villains in Gotham. <span class="line-gap"></span> 
+               3/Game: Once per turn, Robin can deal 5 Damage to a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -2144,24 +2147,21 @@ export const heroes = [
         text: `Double Damage In Gotham`
       },
       {
-        text: `Deal 2 Damage to one Henchmen or Villain`
+        text: `Deal 5 Damage to a Henchman or Villain`
       }
     ],
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `in(Gotham)`,
-        uses: `0`,
-        shared: `no`,
-        effect: `doubleDamage`
+        condition: `checkDamageTargetCity(10)`,
+        effect: `doubleDamage()`
       },
       {
         type: `standard`,
-        condition: `none`,
         uses: `3`,
-        shared: `no`,
-        effect: `damageFoe(2,any)`
-      }
+        howOften: `OPT`,
+        effect: `damageFoe(5,any)`
+      },
     ]
   },
   {
