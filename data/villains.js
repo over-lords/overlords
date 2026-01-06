@@ -2740,6 +2740,262 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5670",
+    name: "Victor Zsasz",
+    image: `${cardArtFolder}/victorZsasz.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "3",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the start of each turn, Victor Zsasz captures a Bystander. At the end of each turn, Victor Zsasz KO's all Bystanders he has. <span class="line-gap"></span> Reward: Rescue all captured Bystanders.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `The Zombie is Mine to Liberate!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnStart`,
+        effect: [`koCapturedBystander(getCurrentCityIndex)`,`foeCaptureBystander(getCurrentCityIndex,1)`]
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `rescueCapturedBystander(all)`
+      }
+    ]
+  },
+  {
+    id: "5671",
+    name: "Vigilante",
+    image: `${cardArtFolder}/vigilante.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "3",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5672",
+    name: "Mutant Leader",
+    image: `${cardArtFolder}/mutantLeader.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "5",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Resurrect the first 2 KO'd Henchmen. <span class="line-gap"></span> 
+               Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `My Town Now, Old Man!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1)`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Gotham is Mine!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`reviveKodFoe(2,henchmenOnly)`]
+      }
+    ],
+  },
+  {
+    id: "5673",
+    name: "Phantasm",
+    image: `${cardArtFolder}/phantasm.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "8",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+                 Heroes cannot Retreat when engaging Phantasm. <span class="line-gap"></span> 
+                   Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Your Time Has Come`
+      },
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+  },
+  {
+    id: "5674",
+    name: "The Penguin",
+    image: `${cardArtFolder}/penguin.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Play the next Enemy from the E&A. <span class="line-gap"></span> 
+               Reward: Play the next Ally from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Birds of a Feather`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`enemyDraw(1,nextAlly)`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Let's See How They Like That!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`enemyDraw(1,nextEnemy)`]
+      }
+    ],
+  },
+  {
+    id: "5675",
+    name: "Two-Face",
+    image: `${cardArtFolder}/twoFace.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               If your Hero ends their turn engaged with Two-Face, there is a 50% chance they take 2 Damage. <span class="line-gap"></span> 
+               Might of the Overlord: Resurrect the first 2 KO'd Henchmen. <span class="line-gap"></span> 
+               Reward: KO all Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We Never Liked You`
+      },
+      {
+        text: `We Play Fair`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        chance: 0.5,
+        effect: `damageHero(2,current)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageFoe(999,allHenchmen)`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Trouble Comes in Twos`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`reviveKodFoe(2,henchmenOnly)`]
+      }
+    ],
+  },
 ]
 
 
@@ -2755,20 +3011,19 @@ export const villains = [
 // J: jericho, jinx, johnny quick
 // K: kgbeast, killer croc, killer frost, king kobra, king shark, klarion, krona
 // L: lust, lyssa drak
-// M: mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine, mutant leader
+// M: mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine
 // O: oblivion, owlman
-// P: penguin, phantasm, pied piper, poison ivy, power ring, prometheus, psycho pirate
+// P: pied piper, poison ivy, power ring, prometheus, psycho pirate
 // Q: queen bee
 // R: rainbow raider, ravager (rose), red death, reign, reverse flash
 // S: scar, scarecrow, shade, shimmer, shriek, siren, sloth, solomon grundy, soranik sinestro, spellbinder, sportsmaster, superwoman
-// T: talia al ghul, talon, tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle, two face
+// T: talia al ghul, talon, tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle
 // U: upside down man
-// V: victor zsasz, vigilante
 // W: woof, wrath, white lanterns: anti-monitor, deadman, swamp thing
 // Z: zilius zox, zoom
 
 
-// HEROES AS VILLAIN - These guys do not have real hero counterparts, but they do have arts
+// HEROES AS VILLAINS - These guys do not have real hero counterparts, but they do have arts
 // A: amethyst
 // D: detective chimp
 // F: frankenstein

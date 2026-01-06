@@ -1230,6 +1230,33 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         return false;
     }
 
+    const foeCapturesMatch = condStr.match(/^foecapturesbystander\(([^)]*)\)$/i);
+    if (foeCapturesMatch) {
+        const targetRaw = foeCapturesMatch[1].trim().toLowerCase();
+        const last = s._lastFoeCapturedBystander || {};
+        const slot = typeof last.slotIndex === "number" ? last.slotIndex : null;
+        let pass = false;
+        let details = "";
+        if (slot == null) {
+            details = "no recorded foe capture";
+        } else if (targetRaw === "" || targetRaw === "any") {
+            pass = true;
+            details = `slot=${slot}`;
+        } else if (/^\d+$/.test(targetRaw)) {
+            const idx = Number(targetRaw);
+            pass = slot === idx;
+            details = `slot=${slot}, target=${idx}`;
+        } else if (targetRaw === "coastal" || targetRaw === "coast") {
+            const { left, right } = checkCoastalCities(s);
+            pass = slot === left || slot === right;
+            details = `slot=${slot}, coastal left=${left ?? "none"}, right=${right ?? "none"}`;
+        } else {
+            details = `unsupported target '${targetRaw}'`;
+        }
+        console.log(`[foeCapturesBystander(${targetRaw || "any"})] ${pass ? "true" : "false"} - ${details}`);
+        return pass;
+    }
+
     const leavesCityMatch = condStr.match(/^leavescity\(([^)]+)\)$/i);
     if (leavesCityMatch) {
         const targetRaw = leavesCityMatch[1].trim().toLowerCase();
@@ -1554,6 +1581,46 @@ export async function runTurnEndDamageTriggers(state = gameState) {
     }
 
     s.foeDamagedThisTurn = {};
+}
+
+export async function runTurnEndEngagedTriggers(heroId, state = gameState) {
+    const s = state || gameState;
+    if (heroId == null) return;
+
+    const hState = s.heroData?.[heroId];
+    const lowerIdx = typeof hState?.cityIndex === "number" ? hState.cityIndex : null;
+    const foeIdx = (lowerIdx != null) ? lowerIdx - 1 : null;
+    if (!Number.isInteger(foeIdx) || foeIdx < 0) return;
+
+    const entry = Array.isArray(s.cities) ? s.cities[foeIdx] : null;
+    if (!entry || entry.id == null) return;
+    if (foeAbilitiesDisabled(entry)) return;
+
+    const cardData = findCardInAllSources(entry.id);
+    if (!cardData || !Array.isArray(cardData.abilitiesEffects)) return;
+
+    for (let i = 0; i < cardData.abilitiesEffects.length; i++) {
+        const eff = cardData.abilitiesEffects[i];
+        if (!eff || !eff.effect) continue;
+        const condNorm = normalizeConditionString(eff.condition || "none");
+        if (condNorm !== "turnendengaged") continue;
+
+        const chanceRaw = eff.chance;
+        if (chanceRaw != null) {
+            let prob = Number(chanceRaw);
+            if (Number.isFinite(prob)) {
+                if (prob > 1) prob = prob / 100;
+                prob = Math.max(0, Math.min(1, prob));
+                if (Math.random() >= prob) continue;
+            }
+        }
+
+        try {
+            await executeEffectSafely(eff.effect, cardData, { state: s, slotIndex: foeIdx, foeEntry: entry, currentHeroId: heroId });
+        } catch (err) {
+            console.warn("[runTurnEndEngagedTriggers] Failed to run turnEndEngaged effect", err);
+        }
+    }
 }
 
 export async function runOverlordTurnEndAttackedTriggers(heroId, state = gameState) {
@@ -2744,7 +2811,7 @@ EFFECT_HANDLERS.teleportFoeElsewhere = function(args = [], card, selectedData = 
     const normTarget = String(targetRaw || "rightmost").toLowerCase();
     const foes = s.cities
         .map((entry, idx) => ({ entry, idx }))
-        .filter(({ entry, idx }) => entry && !s.destroyedCities?.[idx]);
+        .filter(({ entry, idx }) => entry && !s.destroyedCities?.[idx] && idx % 2 === 0); // upper rows only
     if (!foes.length) {
         console.log("[teleportFoeElsewhere] No foes to teleport.");
         return;
@@ -2773,7 +2840,7 @@ EFFECT_HANDLERS.teleportFoeElsewhere = function(args = [], card, selectedData = 
     // pick destination (empty upper slot, not destroyed)
     let openSlots = s.cities
         .map((entry, idx) => ({ entry, idx }))
-        .filter(({ entry, idx }) => !entry && !s.destroyedCities?.[idx]);
+        .filter(({ entry, idx }) => !entry && !s.destroyedCities?.[idx] && idx % 2 === 0); // upper rows only
     if (!openSlots.length) {
         console.log("[teleportFoeElsewhere] No open city slots to teleport into.");
         return;
@@ -2781,7 +2848,7 @@ EFFECT_HANDLERS.teleportFoeElsewhere = function(args = [], card, selectedData = 
     let destIdx = null;
     if (destRaw != null && !Number.isNaN(Number(destRaw))) {
         const num = Number(destRaw);
-        if (Number.isInteger(num) && num >= 0 && num < s.cities.length && !s.cities[num] && !s.destroyedCities?.[num]) {
+        if (Number.isInteger(num) && num >= 0 && num < s.cities.length && !s.cities[num] && !s.destroyedCities?.[num] && num % 2 === 0) {
             destIdx = num;
         }
     }
@@ -3811,7 +3878,7 @@ EFFECT_HANDLERS.gainMaxHPonFoeEscape = function(args = [], card, selectedData = 
 
 function koCapturedBystander(flag = "all", state = gameState) {
     const s = state || gameState;
-    const norm = String(flag || "all").toLowerCase();
+    const norm = String(flag ?? "all").toLowerCase();
     const koList = [];
 
     const addKo = (b, source) => {
@@ -3833,6 +3900,14 @@ function koCapturedBystander(flag = "all", state = gameState) {
         }
     };
 
+    const markLastCapture = (entry, idx) => {
+        s._lastFoeCapturedBystander = {
+            slotIndex: idx,
+            instanceId: getEntryKey(entry),
+            id: entry?.id
+        };
+    };
+
     const entries = Array.isArray(s.cities) ? s.cities : [];
 
     if (norm === "all") {
@@ -3843,10 +3918,12 @@ function koCapturedBystander(flag = "all", state = gameState) {
                 captured.forEach(b => addKo(b, `city-${idx}`));
                 entry.capturedBystanders = [];
                 clearCapturedOnCard(entry);
+                markLastCapture(entry, idx);
             } else if (Number(captured) > 0) {
                 for (let i = 0; i < Number(captured); i++) addKo({ name: "Bystander" }, `city-${idx}`);
                 entry.capturedBystanders = [];
                 clearCapturedOnCard(entry);
+                markLastCapture(entry, idx);
             }
         });
     } else if (norm === "random") {
@@ -3869,10 +3946,47 @@ function koCapturedBystander(flag = "all", state = gameState) {
                 pick.entry.capturedBystanders = Math.max(0, Number(pick.entry.capturedBystanders || 1) - 1);
             }
             clearCapturedOnCard(pick.entry);
+            markLastCapture(pick.entry, pick.idx);
         }
     } else {
-        console.warn("[koCapturedBystander] Unknown flag:", flag);
-        return;
+        const resolveCityIdx = (val) => {
+            if (Number.isInteger(val)) return val;
+            const asNum = Number(val);
+            if (Number.isInteger(asNum)) return asNum;
+            if (typeof val === "string") {
+                const resolved = resolveNumericValue(val, null, s);
+                if (Number.isInteger(resolved)) return resolved;
+            }
+            return null;
+        };
+
+        const idx = resolveCityIdx(flag);
+        if (!Number.isInteger(idx)) {
+            console.warn("[koCapturedBystander] Unknown flag or invalid city index:", flag);
+            return;
+        }
+
+        const entry = entries[idx];
+        if (entry) {
+            const captured = entry.capturedBystanders;
+            if (Array.isArray(captured) && captured.length > 0) {
+                captured.forEach(b => addKo(b, `city-${idx}`));
+                entry.capturedBystanders = [];
+                clearCapturedOnCard(entry);
+                markLastCapture(entry, idx);
+            } else if (Number(captured) > 0) {
+                for (let i = 0; i < Number(captured); i++) addKo({ name: "Bystander" }, `city-${idx}`);
+                entry.capturedBystanders = [];
+                clearCapturedOnCard(entry);
+                markLastCapture(entry, idx);
+            } else {
+                console.log("[koCapturedBystander] No captured bystanders at city slot", idx);
+                return;
+            }
+        } else {
+            console.log("[koCapturedBystander] No foe present at city slot", idx);
+            return;
+        }
     }
 
     if (!koList.length) {

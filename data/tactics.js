@@ -509,7 +509,7 @@ export const tactics = [
     abilitiesText: [
       {
         text: `KO'd Heroes enter the board as Villains. <span class="line-gap"></span>
-                Might of the Overlord: Revive the first KO'd Henchman or Villain.`
+                Might of the Overlord: Resurrect the first KO'd Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [

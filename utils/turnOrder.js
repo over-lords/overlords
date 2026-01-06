@@ -174,7 +174,7 @@ import { placeCardIntoCitySlot, buildOverlordPanel, buildVillainPanel, buildHero
 import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVillain, 
          processTempFreezesForHero, processTempPassivesForHero, getEffectiveFoeDamage, refreshFrozenOverlays, 
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, 
-         runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
+         runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, runTurnEndEngagedTriggers, maybeTriggerEvilWinsConditions, 
          getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, evaluateCondition, recomputeLocationBasedVillainDamage, 
          retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny, buildPermanentKOCountMap, pruneFoeDoubleDamage, pruneTeamBonusSuppressionOnHeroStart, 
          pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero, applyNextTurnDoubleDamageIfAny } from './abilityExecutor.js';
@@ -2930,6 +2930,7 @@ export async function endCurrentHeroTurn(gameState) {
     clearDampenersIfExpired();
     try { await runTurnEndDamageTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndWasDamaged triggers failed", e); }
     try { await runOverlordTurnEndAttackedTriggers(heroId, gameState); } catch (e) { console.warn("[endCurrentHeroTurn] overlord turnEndWasAttacked triggers failed", e); }
+    try { await runTurnEndEngagedTriggers(heroId, gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndEngaged triggers failed", e); }
     try { await runTurnEndNotEngagedTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndNotEngaged triggers failed", e); }
     try { triggerRuleEffects("turnEnd", { state: gameState }); } catch (e) { console.warn("[endCurrentHeroTurn] turnEnd triggers failed", e); }
 
