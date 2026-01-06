@@ -4,7 +4,7 @@
   left: 0;
   width: 100vw;           /* Full width */
   height: 100vh;          /* Full height */
-  background-image: url("https://raw.githubusercontent.com/over-lords/overlords/7b5611516e753e3f930de2339cde4d503f50c228/Public/Images/Site%20Assets/BoardReduced.jpg");
+  background-image: url("https://raw.githubusercontent.com/over-lords/overlords/7b34f9115d2bdbd07fbf20cbfe47f4c98475c2c5/Public/Images/Site%20Assets/BoardReduced.jpg"); /*newBoardCropped.png*/
   background-size: cover; /* Scale and crop to fill */
   background-position: center;
   background-repeat: no-repeat;
