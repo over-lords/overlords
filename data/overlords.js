@@ -156,7 +156,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `If a Hero is KO'd: Next turn do not draw from the Villain Deck, that Hero enters as a Villain. <span class="line-gap"></span>
-               Might of the Overlord: Draw 3 Henchmen or Villains from the Villain Deck. <span class="line-gap"></span>
+               Might of the Overlord: Draw 3 Henchmen from the Villain Deck. <span class="line-gap"></span>
                Bonus Feature: After the first Hero is KO'd, Psimon implements this feature. Heroes cannot Scan.`
       }
     ],
@@ -185,7 +185,7 @@ export const overlords = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: `rallyNextHenchVillains(5)`
+        effect: `rallyNextHenchVillains(3,henchmenOnly)`
       }
     ],
     bonusNamePrint: [
@@ -402,7 +402,7 @@ export const overlords = [
         condition: `turnStart`,
         uses: `1`,
         shared: `no`,
-        effect: `damageHero(1,Aqua)`
+        effect: `damageHero(1,Aqua,ignoreDT)`
       },
       {
         type: `passive`,
@@ -1023,7 +1023,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `The first time each turn after Amazo takes Damage, he then regains 5 HP. <span class="line-gap"></span>
-               Might of the Overlord: Increase all Villains' Damages by 1 and deal 1 Damage to all Heroes. <span class="line-gap"></span>
+               Might of the Overlord: Increase all Villains' Damages by 1 and deal 1 Damage to all Heroes (ignoring their Damage Thresholds). <span class="line-gap"></span>
                Bonus Feature: When a Hero is KO'd, Amazo regains 20 HP.`
       }
     ],
@@ -1334,7 +1334,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `KO'd Heroes are brought back as Villains. <span class="line-gap"></span>
-               Might of the Overlord: Play KO'd Henchmen and Villains equal to the number of active Heroes. <span class="line-gap"></span>
+               Might of the Overlord: Resurrect KO'd Henchmen and Villains equal to the number of active Heroes. <span class="line-gap"></span>
                Bonus Feature: KO'd Bystanders enter the board as 1 HP, 1 Damage Henchmen.`
       }
     ],

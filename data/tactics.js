@@ -161,7 +161,7 @@ export const tactics = [
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `The first time each turn the Overlord is Damaged, the Hero that dealt the Damage takes 1 in return. <span class="line-gap"></span>
+        text: `The first time each turn the Overlord is Damaged, the Hero that dealt the Damage takes 1 in return (ignoring their Damage Threshold). <span class="line-gap"></span>
                Might of the Overlord: The Overlord gains 10 HP.`
       }
     ],
@@ -610,7 +610,7 @@ export const tactics = [
     abilitiesText: [
       {
         text: `When you KO a Henchman: OPTIONAL : Ignore their Reward and deal their Damage to another Henchman, Villain, or the Overlord. <span class="line-gap"></span>
-              Might of the Overlord: All Heroes take Damage equal to the number of rescued Bystanders. <span class="line-gap"></span>
+              Might of the Overlord: All Heroes take Damage equal to the number of rescued Bystanders (ignoring their Damage Thresholds). <span class="line-gap"></span>
               You must run a second Tactic alongside this one.`
       }
     ],
@@ -639,7 +639,7 @@ export const tactics = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`damageHero(rescuedBystandersCount,all)`]
+        effect: [`damageHero(rescuedBystandersCount,all,ignoreDT)`]
       }
     ]
   },
@@ -654,7 +654,7 @@ export const tactics = [
     multiOverlordReq: "no",
     abilitiesText: [
       {
-        text: `When you Rescue a Bystander, deal 1 Damage to a Henchman or Villain. When a Bystander is KO'd, all Heroes take 1 Damage. <span class="line-gap"></span>
+        text: `When you Rescue a Bystander, deal 1 Damage to a Henchman or Villain. When a Bystander is KO'd, all Heroes take 1 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span>
               Might of the Overlord: Draw 3 from the E&A.`
       }
     ],

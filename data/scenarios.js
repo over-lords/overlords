@@ -60,7 +60,7 @@ export const scenarios = [
         hp: "10",
         abilitiesText: [
             {
-                text: `All [ICON:Bat] Heroes take 1 Damage at the end of their turns.`
+                text: `All [ICON:Bat] Heroes take 1 Damage at the end of their turns (ignoring their Damage Thresholds).`
             }
         ],
         abilitiesNamePrint: [

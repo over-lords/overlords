@@ -1266,7 +1266,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Teleport <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage. <span class="line-gap"></span> Reward: OPTIONAL : Draw 3, and Travel to engage the Overlord.`
+        text: `Teleport <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> Reward: OPTIONAL : Draw 3, and Travel to engage the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1436,7 +1436,7 @@ export const villains = [
       {
         text: `Charge 1 <span class="line-gap"></span> 
                Reward: Deal 20 Damage to the Overlord. <span class="line-gap"></span> 
-               If Ultraman Escapes: Deal 3 Damage to all Heroes.`
+               If Ultraman Escapes: Deal 3 Damage to all Heroes (ignoring their Damage Thresholds).`
       }
     ],
     abilitiesNamePrint: [
@@ -1464,7 +1464,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `onEscape`,
-        effect: `damageHero(3,all)`
+        effect: `damageHero(3,all,ignoreDT)`
       }
     ]
   },
@@ -1895,7 +1895,7 @@ export const villains = [
     abilitiesText: [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
-                Might of the Overlord: All Heroes take 2 Damage. <span class="line-gap"></span><span class="line-gap"></span> 
+                Might of the Overlord: All Heroes take 2 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span><span class="line-gap"></span> 
                   Charge 1 <span class="line-gap"></span> 
                     Reward: OPTIONAL : Draw from the E&A.`
       }
@@ -1939,7 +1939,7 @@ export const villains = [
         condition: `might`,
         uses: `999`,
         shared: `no`,
-        effect: [`damageHero(2,all)`]
+        effect: [`damageHero(2,all,ignoreDT)`]
       }
     ],
   },

@@ -176,7 +176,7 @@ import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVi
          maybeRunHeroIconBeforeDrawOptionals, triggerKOHeroEffects, triggerRuleEffects, runTurnEndDamageTriggers, 
          runOverlordTurnEndAttackedTriggers, runTurnEndNotEngagedTriggers, maybeTriggerEvilWinsConditions, 
          getHeroAbilitiesWithTemp, cleanupExpiredHeroPassives, ejectHeroIfCauserHasEject, iconAbilitiesDisabledForHero, evaluateCondition, recomputeLocationBasedVillainDamage, 
-         retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny, buildPermanentKOCountMap, pruneFoeDoubleDamage, 
+         retreatDisabledForHero, getCurrentHeroDT, consumeHeroProtectionIfAny, buildPermanentKOCountMap, pruneFoeDoubleDamage, pruneTeamBonusSuppressionOnHeroStart, 
          pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero, applyNextTurnDoubleDamageIfAny } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
@@ -1746,6 +1746,14 @@ export async function villainDraw(count = 1) {
                     Array.isArray(gameState.tactics) &&
                     gameState.tactics.some(id => String(id) === "5409");
                 const isVillainCard = String(data?.type || "").toLowerCase() === "villain";
+                const persistentTeleportActive =
+                    gameState._forceTeleportPersistent === true;
+
+                if (persistentTeleportActive) {
+                    gameState._forceTeleportNextVillain = true;
+                    gameState._forceTeleportVillainId = null;
+                }
+
                 const forcedTeleport =
                     isVillainCard &&
                     gameState._forceTeleportNextVillain === true &&
@@ -1796,40 +1804,51 @@ export async function villainDraw(count = 1) {
 }
 
 /**
- * PUBLIC: Scan forward in the villain deck and return the next `count`
- * henchman/villain ids, advancing the pointer past everything scanned.
- * Used by rally effects.
+ * PUBLIC: Scan within the next `depth` cards from the current pointer and
+ * pull any henchman/villain ids (optionally henchmen-only). Non-matching cards
+ * are left in place; matching cards are removed. Pointer stays at the current
+ * top. Collected foes are immediately played via enterVillainFromEffect.
  */
-export function takeNextHenchVillainsFromDeck(count, opts = {}) {
-    const { henchmenOnly = false } = opts;
+export async function takeNextHenchVillainsFromDeck(depth, opts = {}) {
+    const { henchmenOnly = false, villainsOnly = false } = opts;
     const deck = gameState.villainDeck;
     if (!Array.isArray(deck) || deck.length === 0) return [];
 
-    let ptr = gameState.villainDeckPointer ?? 0;
+    const scanDepth = Math.max(0, Number(depth) || 0);
+    if (scanDepth <= 0) return [];
+
+    const ptr = gameState.villainDeckPointer ?? 0;
+    const end = Math.min(deck.length, ptr + scanDepth);
     const collected = [];
-    const target = Number(count) || 0;
-    if (target <= 0) return [];
+    const removeIdx = [];
 
-    while (ptr < deck.length && collected.length < target) {
-        const id = deck[ptr];
-
-        // Never skip over countdown cards; stop scanning so villainDraw can pick them up
-        if (isCountdownId(id)) {
-            break;
-        }
-
+    for (let i = ptr; i < end; i++) {
+        const id = deck[i];
         const idStr = String(id);
         const isHench = henchmen.some(h => String(h.id) === idStr);
-        const isVill  = villains.some(v => String(v.id) === idStr);
+        const isVill = villains.some(v => String(v.id) === idStr);
 
-        if (isHench || (!henchmenOnly && isVill)) {
+        if (
+            (henchmenOnly && isHench) ||
+            (villainsOnly && isVill) ||
+            (!henchmenOnly && !villainsOnly && (isHench || isVill))
+        ) {
             collected.push(id);
+            removeIdx.push(i);
         }
-
-        ptr++;
     }
 
-    gameState.villainDeckPointer = ptr;
+    removeIdx.sort((a, b) => b - a).forEach(idx => deck.splice(idx, 1));
+    gameState.villainDeckPointer = Math.min(ptr, deck.length);
+
+    for (const id of collected) {
+        try {
+            await enterVillainFromEffect(id);
+        } catch (err) {
+            console.warn("[takeNextHenchVillainsFromDeck] Failed to enter foe from effect", err);
+        }
+    }
+
     return collected;
 }
 
@@ -2152,10 +2171,33 @@ export async function startHeroTurn(state, opts = {}) {
     activeHeroId = heroIds[heroTurnIndex]; // ensure active hero reflects any index skips
     const activeHeroName = heroes.find(h => String(h.id) === String(activeHeroId))?.name || `Hero ${activeHeroId}`;
 
+    try { pruneTeamBonusSuppressionOnHeroStart(activeHeroId, state); } catch (err) {
+        console.warn("[startHeroTurn] Failed to prune team bonus suppression.", err);
+    }
+
     if (typeof state.roundNumber !== "number") state.roundNumber = 1;
     if (startedAtIndexZero && !suppressRoundAdvance) {
         appendGameLogEntry(`Start of Round ${state.roundNumber}`, state);
         state.roundNumber += 1;
+    }
+
+    // Clear any "teleport all villains drawn" effect that lasts until this hero's turn starts
+    if (state._forceTeleportPersistent === true) {
+        const storedHeroId = state._forceTeleportPersistentHeroId != null ? String(state._forceTeleportPersistentHeroId) : null;
+        if (storedHeroId && String(activeHeroId) === storedHeroId) {
+            state._forceTeleportPersistent = false;
+            state._forceTeleportPersistentHeroId = null;
+        }
+    }
+
+    // Clear temporary scan disable when this hero's "next turn" begins
+    if (state.scanDisabledTemp) {
+        const expiresId = state.scanDisabledTemp.expiresHeroId != null ? String(state.scanDisabledTemp.expiresHeroId) : null;
+        if (!expiresId || String(activeHeroId) === expiresId) {
+            state.scanDisabledTemp = null;
+            const sources = Array.isArray(state.scanDisabledSources) ? state.scanDisabledSources : [];
+            state.scanDisabled = !!(state.scanDisabledPermanent || sources.length > 0);
+        }
     }
 
     appendGameLogEntry(`${activeHeroName} started their turn.`, state);

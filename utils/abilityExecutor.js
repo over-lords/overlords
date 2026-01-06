@@ -542,6 +542,23 @@ function clearTeamBonusSuppressionForSource(sourceType, sourceId, state = gameSt
     }
 }
 
+export function pruneTeamBonusSuppressionOnHeroStart(activeHeroId, state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(s.teamBonusSuppression) || activeHeroId == null) return;
+    const before = s.teamBonusSuppression.length;
+    s.teamBonusSuppression = s.teamBonusSuppression.filter(entry => {
+        if (!entry) return false;
+        if (entry.expireOnHeroId != null && String(entry.expireOnHeroId) === String(activeHeroId)) {
+            return false;
+        }
+        return true;
+    });
+    const removed = before - s.teamBonusSuppression.length;
+    if (removed > 0) {
+        console.log(`[teamBonus] Cleared ${removed} suppression entries at start of hero ${activeHeroId}'s turn.`);
+    }
+}
+
 function heroOccupiesLowerIndex(lowerIdx, state = gameState) {
     const s = state || gameState;
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
@@ -975,6 +992,12 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "getherodamage") {
         return getHeroDamage(heroId, state);
     }
+    if (lower === "gethandcount") {
+        return getHandCount(heroId, state);
+    }
+    if (lower === "getdividedmonth") {
+        return getDividedMonth(heroId, state);
+    }
     if (lower === "getsumvillaindamage") {
         return getSumVillainDamage(state);
     }
@@ -1000,6 +1023,30 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
 
     const num = Number(raw);
     return Number.isFinite(num) ? num : 0;
+}
+
+function getHandCount(heroId = null, state = gameState) {
+    const s = state || gameState;
+    let hid = heroId;
+    if (hid == null && Array.isArray(s.heroes)) {
+        const idx = Number.isInteger(s.heroTurnIndex) ? s.heroTurnIndex : 0;
+        hid = s.heroes[idx];
+    }
+    if (hid == null) return 0;
+    const hand = s.heroData?.[hid]?.hand;
+    return Array.isArray(hand) ? hand.length : 0;
+}
+
+function getDividedMonth(heroId = null, state = gameState) {
+    const s = state || gameState;
+    const month = new Date().getMonth() + 1; // 1-12
+    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
+    const activeCount = heroIds.filter(hid => {
+        const hp = s.heroData?.[hid]?.hp;
+        return hp == null ? true : hp > 0;
+    }).length;
+    const divisor = Math.max(1, activeCount);
+    return Math.max(1, Math.floor(month / divisor));
 }
 
 function getSumVillainDamage(state = gameState) {
@@ -2626,6 +2673,97 @@ EFFECT_HANDLERS.retreatHeroToHQ = function(args = [], card, selectedData = {}) {
     retreatHeroToHQSafe(heroId, gameState);
 };
 
+EFFECT_HANDLERS.teleportFoeElsewhere = function(args = [], card, selectedData = {}) {
+    const targetRaw = args?.[0] ?? "rightmost";
+    const destRaw = args?.[1] ?? null;
+    const s = selectedData?.state || gameState;
+    if (!s || !Array.isArray(s.cities)) return;
+
+    // pick foe
+    const normTarget = String(targetRaw || "rightmost").toLowerCase();
+    const foes = s.cities
+        .map((entry, idx) => ({ entry, idx }))
+        .filter(({ entry, idx }) => entry && !s.destroyedCities?.[idx]);
+    if (!foes.length) {
+        console.log("[teleportFoeElsewhere] No foes to teleport.");
+        return;
+    }
+    let picked = null;
+    if (normTarget === "leftmost") {
+        picked = foes.reduce((best, cur) => (best == null || cur.idx < best.idx ? cur : best), null);
+    } else if (normTarget === "rightmost") {
+        picked = foes.reduce((best, cur) => (best == null || cur.idx > best.idx ? cur : best), null);
+    } else if (normTarget === "random") {
+        picked = foes[Math.floor(Math.random() * foes.length)];
+    } else {
+        const asNum = Number(normTarget);
+        if (Number.isInteger(asNum) && asNum >= 0 && asNum < s.cities.length && s.cities[asNum]) {
+            picked = { entry: s.cities[asNum], idx: asNum };
+        } else {
+            // default rightmost
+            picked = foes.reduce((best, cur) => (best == null || cur.idx > best.idx ? cur : best), null);
+        }
+    }
+    if (!picked || !picked.entry) {
+        console.log("[teleportFoeElsewhere] No matching foe found.");
+        return;
+    }
+
+    // pick destination (empty upper slot, not destroyed)
+    let openSlots = s.cities
+        .map((entry, idx) => ({ entry, idx }))
+        .filter(({ entry, idx }) => !entry && !s.destroyedCities?.[idx]);
+    if (!openSlots.length) {
+        console.log("[teleportFoeElsewhere] No open city slots to teleport into.");
+        return;
+    }
+    let destIdx = null;
+    if (destRaw != null && !Number.isNaN(Number(destRaw))) {
+        const num = Number(destRaw);
+        if (Number.isInteger(num) && num >= 0 && num < s.cities.length && !s.cities[num] && !s.destroyedCities?.[num]) {
+            destIdx = num;
+        }
+    }
+    if (destIdx == null) {
+        const choice = openSlots[Math.floor(Math.random() * openSlots.length)];
+        destIdx = choice?.idx;
+    }
+    if (destIdx == null) {
+        console.log("[teleportFoeElsewhere] Could not resolve destination slot.");
+        return;
+    }
+
+    const { entry, idx: fromIdx } = picked;
+
+    // send engaged hero back to HQ (lower slot is +1)
+    const lowerIdx = fromIdx + 1;
+    if (Array.isArray(s.heroes)) {
+        s.heroes.forEach(hid => {
+            const hState = s.heroData?.[hid];
+            if (hState && Number(hState.cityIndex) === lowerIdx) {
+                retreatHeroToHQSafe(hid, s);
+            }
+        });
+    }
+
+    // clear UI for old slot
+    try {
+        const citySlots = document.querySelectorAll(".city-slot");
+        const slot = citySlots?.[fromIdx];
+        const area = slot?.querySelector(".city-card-area");
+        if (area) area.innerHTML = "";
+    } catch (_) {}
+
+    s.cities[fromIdx] = null;
+
+    // place into new slot
+    entry.slotIndex = destIdx;
+    s.cities[destIdx] = entry;
+
+    try { refreshFoeCardUI(destIdx, entry); } catch (_) {}
+    saveGameState(s);
+};
+
 EFFECT_HANDLERS.clickEndTurn = function(args = [], card, selectedData = {}) {
     if (typeof document === "undefined") {
         console.warn("[clickEndTurn] No document available.");
@@ -2650,7 +2788,18 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
         selectedData?.currentHeroId
         ?? gameState.heroes?.[gameState.heroTurnIndex ?? 0]
         ?? null;
-    let amount = Number(args?.[0]) || 0;
+    let amount = Number(args?.[0]);
+    let flag = "single";
+
+    // Support (flag, amount) ordering as well as (amount, flag)
+    if (!Number.isFinite(amount) || amount === 0) {
+        if (args?.length > 1 && Number.isFinite(Number(args[1]))) {
+            flag = args[0];
+            amount = Number(args[1]);
+        } else {
+            amount = Number(args?.[0]) || 0;
+        }
+    }
     if (amount > 0) {
         amount = applyHalfDamageModifier(amount, heroId, gameState);
     }
@@ -2659,9 +2808,7 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
     //  - "all"
     //  - numeric city index (0,2,4,6,8,10)
     //  - omitted → normal single-target (selected foe)
-    let flag = "single";
-
-    if (args?.length > 1) {
+    if (flag === "single" && args?.length > 1) {
         const raw = args[1];
 
         if (raw === "all") {
@@ -2690,6 +2837,10 @@ EFFECT_HANDLERS.damageFoe = function (args, card, selectedData) {
             flag = "lastDamageCauser";
         } else if (typeof raw === "string" && raw.toLowerCase() === "lastrescuedfrom") {
             flag = "lastRescuedFrom";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "leftcoastal") {
+            flag = "leftCoastal";
+        } else if (typeof raw === "string" && raw.toLowerCase() === "rightcoastal") {
+            flag = "rightCoastal";
         } else if (!Number.isNaN(Number(raw))) {
             flag = Number(raw);
         }
@@ -3463,16 +3614,96 @@ EFFECT_HANDLERS.foeCaptureBystander = function(args = [], card, selectedData = {
 };
 
 EFFECT_HANDLERS.damageHeroAtCity = function(args = [], card, selectedData = {}) {
-    const cityIdx = args?.[0] ?? null;
+    let cityIdx = args?.[0] ?? null;
     const amount = args?.[1] ?? 0;
-    damageHeroAtCity(cityIdx, amount, selectedData?.state || gameState);
+    const s = selectedData?.state || gameState;
+
+    if (typeof cityIdx === "string") {
+        const lower = cityIdx.toLowerCase();
+        const { left, right } = checkCoastalCities(s);
+        if (lower === "leftcoastal") cityIdx = left;
+        if (lower === "rightcoastal") cityIdx = right;
+    }
+
+    damageHeroAtCity(cityIdx, amount, s);
 };
+
+EFFECT_HANDLERS.setRevealedTopCardTrue = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    s.revealedTopVillain = true;
+    try { saveGameState(s); } catch (_) {}
+    try { showMightBanner("Top Card Revealed", 2000); } catch (err) { console.warn("[setRevealedTopCardTrue] Failed to show banner", err); }
+};
+
+function removeScanDisableSource(state, sourceKey) {
+    if (!sourceKey) return;
+    if (!Array.isArray(state.scanDisabledSources)) return;
+    state.scanDisabledSources = state.scanDisabledSources.filter(k => k !== sourceKey);
+    recomputeScanDisabled(state);
+}
+
+function ensureScanSourceSet(state) {
+    if (!state.scanDisabledSources) state.scanDisabledSources = [];
+    if (!Array.isArray(state.scanDisabledSources)) {
+        state.scanDisabledSources = Array.from(new Set([String(state.scanDisabledSources)]));
+    }
+    return state.scanDisabledSources;
+}
+
+function recomputeScanDisabled(state) {
+    const sources = Array.isArray(state.scanDisabledSources) ? state.scanDisabledSources : [];
+    state.scanDisabled = !!(state.scanDisabledPermanent || sources.length > 0 || state.scanDisabledTemp);
+}
 
 EFFECT_HANDLERS.disableScan = function(args = [], card, selectedData = {}) {
     const s = selectedData?.state || gameState;
-    s.scanDisabled = true;
+    const heroId = selectedData?.currentHeroId ?? (Array.isArray(s.heroes) ? s.heroes[s.heroTurnIndex ?? 0] : null);
+    const modeRaw = args?.[0];
+    const mode = typeof modeRaw === "string" ? modeRaw.toLowerCase() : modeRaw;
+    const cardType = String(card?.type || "").toLowerCase();
+    const sourceKey = card && card.id != null ? 'card-' + card.id : null;
+
+    // Temporary: until end of this hero's next turn
+    if (mode === "next" || mode === "nextround" || mode === "nextturn") {
+        s.scanDisabledTemp = {
+            expiresHeroId: heroId != null ? String(heroId) : null,
+            armed: false
+        };
+        recomputeScanDisabled(s);
+        appendGameLogEntry("Scanning is disabled until the end of this hero's next turn.", s);
+        console.log("[disableScan] Scanning disabled temporarily (next turn).");
+        saveGameState(s);
+        return;
+    }
+
+    // Default path:
+    // - Overlords stay permanent (matching existing behavior)
+    // - Other sources track by id so they can be cleared when that source leaves play
+    if (!mode || mode === "true" || mode === true) {
+        if (cardType === "overlord") {
+            s.scanDisabledPermanent = true;
+            s.scanDisabled = true;
+            appendGameLogEntry("Scanning is disabled.", s);
+            console.log("[disableScan] Scanning disabled via effect (permanent overlord).");
+            saveGameState(s);
+            return;
+        }
+
+        const sources = ensureScanSourceSet(s);
+        if (sourceKey && !sources.includes(sourceKey)) sources.push(sourceKey);
+        recomputeScanDisabled(s);
+        appendGameLogEntry("Scanning is disabled.", s);
+        console.log("[disableScan] Scanning disabled via effect (tracked source).");
+        saveGameState(s);
+        return;
+    }
+
+    // Fallback: treat unknown args as tracked (non-permanent) to avoid locking forever
+    const sources = ensureScanSourceSet(s);
+    if (sourceKey && !sources.includes(sourceKey)) sources.push(sourceKey);
+    recomputeScanDisabled(s);
     appendGameLogEntry("Scanning is disabled.", s);
-    console.log("[disableScan] Scanning disabled via effect.");
+    console.log("[disableScan] Scanning disabled via effect (fallback tracked).");
     saveGameState(s);
 };
 
@@ -4104,27 +4335,63 @@ EFFECT_HANDLERS.setHeroDTtoX = function(args = [], card, selectedData = {}) {
 };
 
 EFFECT_HANDLERS.decreaseHeroDT = function(args = [], card, selectedData = {}) {
-    const teamRaw = args?.[0] ?? "current";
+    const targetRaw = args?.[0] ?? "current";
     const amount = Math.max(0, Number(args?.[1] ?? 0) || 0);
-    const duration = args?.[2] ?? "permanent";
+    let duration = args?.[2] ?? "permanent";
     const sourceIdArg = args?.[3] ?? null;
     const s = selectedData?.state || gameState;
     if (!s || !Array.isArray(s.heroes)) return;
+
+    // Normalize duration aliases
+    const durLower = String(duration || "").toLowerCase();
+    if (durLower === "currentturn") duration = "current";
 
     const meta = {
         sourceType: selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect"),
         sourceId: selectedData?.scenarioId || card?.id || sourceIdArg || null
     };
 
-    const teamKey = String(teamRaw || "").toLowerCase();
-    s.heroes.forEach(hid => {
+    const heroIds = s.heroes;
+    const norm = String(targetRaw || "").toLowerCase();
+
+    const applyToHero = (hid) => {
         const hObj = heroes.find(h => String(h.id) === String(hid));
         if (!hObj) return;
-        if (teamKey !== "all" && !heroMatchesTeam(hObj, teamKey)) return;
         const baseDT = Number(hObj.damageThreshold || 1) || 1;
         const newVal = Math.max(1, baseDT - amount);
         setHeroDTforHero(hid, newVal, duration || "permanent", s, meta);
-    });
+    };
+
+    if (norm === "all") {
+        heroIds.forEach(applyToHero);
+    } else if (norm === "random") {
+        const alive = heroIds.filter(hid => s.heroData?.[hid]);
+        if (!alive.length) return;
+        const pick = alive[Math.floor(Math.random() * alive.length)];
+        applyToHero(pick);
+    } else if (norm === "current" || norm === "currenthero") {
+        let target = selectedData?.currentHeroId;
+        if (target == null) {
+            const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
+            target = heroIds[idx];
+        }
+        if (target != null) applyToHero(target);
+    } else {
+        // Treat as explicit hero id or team key
+        const asHero = heroIds.find(hid => String(hid) === String(targetRaw));
+        if (asHero != null) {
+            applyToHero(asHero);
+        } else {
+            heroIds.forEach(hid => {
+                const hObj = heroes.find(h => String(h.id) === String(hid));
+                if (!hObj) return;
+                if (heroMatchesTeam(hObj, norm)) {
+                    applyToHero(hid);
+                }
+            });
+        }
+    }
+
     saveGameState(s);
 };
 
@@ -4263,6 +4530,84 @@ EFFECT_HANDLERS.koTopVillainDeck = function(args = [], card, selectedData = {}) 
             appendGameLogEntry("No cards to KO from the Villain Deck.", state);
         }
     } catch (_) {}
+
+    saveGameState(state);
+};
+
+EFFECT_HANDLERS.mill = function(args = [], card, selectedData = {}) {
+    const count = Math.max(1, Number(args?.[0] ?? 1) || 1);
+    const whoRaw = args?.[1] ?? "current";
+    const state = selectedData?.state || gameState;
+    if (!state || !Array.isArray(state.heroes)) return;
+
+    const heroIds = state.heroes;
+    const normWho = String(whoRaw || "current").toLowerCase();
+
+    const applyToHero = (hid) => {
+        const hState = state.heroData?.[hid];
+        if (!hState) return;
+        if (!Array.isArray(hState.deck)) hState.deck = [];
+        if (!Array.isArray(hState.discard)) hState.discard = [];
+        for (let i = 0; i < count; i++) {
+            if (!hState.deck.length) break;
+            const cardId = hState.deck.shift();
+            hState.discard.push(cardId);
+        }
+    };
+
+    if (normWho === "all") {
+        heroIds.forEach(hid => applyToHero(hid));
+    } else {
+        let target = selectedData?.currentHeroId;
+        if (target == null) {
+            const idx = typeof state.heroTurnIndex === "number" ? state.heroTurnIndex : 0;
+            target = heroIds[idx];
+        }
+        if (target != null) applyToHero(target);
+    }
+
+    saveGameState(state);
+};
+
+EFFECT_HANDLERS.dismissTempPassives = function(args = [], card, selectedData = {}) {
+    const whoRaw = args?.[0] ?? "current";
+    const state = selectedData?.state || gameState;
+    if (!state || !Array.isArray(state.heroes)) return;
+
+    const heroIds = state.heroes;
+    const normWho = String(whoRaw || "current").toLowerCase();
+
+    const clearForHero = (hid) => {
+        const hState = state.heroData?.[hid];
+        if (!hState || !Array.isArray(hState.tempAbilities)) return;
+        const heroObj = heroes.find(h => String(h.id) === String(hid));
+        const baseLen = Array.isArray(heroObj?.abilitiesEffects) ? heroObj.abilitiesEffects.length : 0;
+
+        hState.tempAbilities = [];
+        if (hState.currentUses) {
+            Object.keys(hState.currentUses).forEach(key => {
+                const idxNum = Number(key);
+                if (idxNum >= baseLen) delete hState.currentUses[key];
+            });
+        }
+        if (heroObj?.currentUses) {
+            Object.keys(heroObj.currentUses).forEach(key => {
+                const idxNum = Number(key);
+                if (idxNum >= baseLen) delete heroObj.currentUses[key];
+            });
+        }
+    };
+
+    if (normWho === "all") {
+        heroIds.forEach(hid => clearForHero(hid));
+    } else {
+        let target = selectedData?.currentHeroId;
+        if (target == null) {
+            const idx = typeof state.heroTurnIndex === "number" ? state.heroTurnIndex : 0;
+            target = heroIds[idx];
+        }
+        if (target != null) clearForHero(target);
+    }
 
     saveGameState(state);
 };
@@ -5807,12 +6152,22 @@ EFFECT_HANDLERS.disableCoastalBonus = function(args = [], card, selectedData = {
 EFFECT_HANDLERS.disableTeamBonus = function(args = [], card, selectedData = {}) {
     const teamRaw = args?.[0] ?? "all";
     const teamKey = String(teamRaw || "all").toLowerCase().trim() || "all";
+    const durationRaw = args?.[1] ?? null;
     const s = selectedData?.state || gameState;
     if (!s) return;
     if (!Array.isArray(s.teamBonusSuppression)) s.teamBonusSuppression = [];
 
     const sourceType = selectedData?.source || (card?.type === "Scenario" ? "scenario" : "effect");
     const sourceId = selectedData?.scenarioId || card?.id || null;
+    const heroIdForExpiry =
+        selectedData?.currentHeroId ??
+        (Array.isArray(s.heroes) ? s.heroes[s.heroTurnIndex ?? 0] : null);
+    const duration =
+        typeof durationRaw === "string" ? durationRaw.toLowerCase() : null;
+    const expireOnHeroId =
+        duration && ["nextround", "nextturn", "next"].includes(duration)
+            ? heroIdForExpiry
+            : null;
 
     s.teamBonusSuppression = s.teamBonusSuppression.filter(entry => {
         if (!entry) return false;
@@ -5825,7 +6180,8 @@ EFFECT_HANDLERS.disableTeamBonus = function(args = [], card, selectedData = {}) 
     s.teamBonusSuppression.push({
         team: teamKey || "all",
         sourceType,
-        sourceId
+        sourceId,
+        expireOnHeroId: expireOnHeroId != null ? String(expireOnHeroId) : null
     });
 
     const whoText = teamKey === "all" ? "All heroes" : `${teamKey} heroes`;
@@ -6016,7 +6372,8 @@ EFFECT_HANDLERS.disableProtectOn = function(args = [], card, selectedData = {}) 
 
 EFFECT_HANDLERS.reviveKodFoe = function(args = [], card, selectedData = {}) {
     const count = args?.[0] ?? 1;
-    reviveKodFoe(count, selectedData?.state || gameState);
+    const flag = args?.[1] ?? null;
+    reviveKodFoe(count, selectedData?.state || gameState, flag);
 };
 
 function isHeroSelectorValue(val) {
@@ -6025,7 +6382,7 @@ function isHeroSelectorValue(val) {
         return heroes.some(h => String(h.id) === String(val));
     }
     const lower = String(val).toLowerCase();
-    if (["random", "all", "current", "coastal", "highesthp"].includes(lower)) return true;
+    if (["random", "all", "current", "notcurrent", "coastal", "highesthp", "allengaged"].includes(lower)) return true;
     return HERO_TEAM_SET.has(lower);
 }
 
@@ -6056,6 +6413,22 @@ function resolveHeroTargets(selectorRaw, state = gameState, defaultHeroId = null
         if (hid == null) return [];
         const hp = s.heroData?.[hid]?.hp;
         return hp == null || hp > 0 ? [hid] : [];
+    }
+
+    if (lower === "notcurrent") {
+        const idx = Number.isInteger(s.heroTurnIndex) ? s.heroTurnIndex : 0;
+        const currentId = heroIds[idx];
+        return activeHeroes.filter(hid => String(hid) !== String(currentId));
+    }
+
+    if (lower === "allengaged") {
+        const engaged = activeHeroes.filter(hid => {
+            const hState = s.heroData?.[hid];
+            if (!hState) return false;
+            if (hState.isFacingOverlord) return false;
+            return Number.isInteger(hState.cityIndex);
+        });
+        return engaged;
     }
 
     if (lower === "highesthp") {
@@ -6607,6 +6980,114 @@ EFFECT_HANDLERS.doubleVillainLife = function(args = [], card, selectedData = {})
 
 applyToEntry(entry, slotIndex);
     saveGameState(state);
+};
+
+EFFECT_HANDLERS.giveVillainHP = function(args = [], card, selectedData = {}) {
+    const state = selectedData?.state || gameState;
+    const heroId = selectedData?.currentHeroId ?? null;
+
+    let amt = resolveNumericValue(args?.[0], heroId, state);
+    if (!Number.isFinite(amt)) amt = Number(args?.[0]) || 0;
+    if (!amt) return;
+
+    const whoRaw = args?.[1] ?? "all";
+    const who = String(whoRaw || "").toLowerCase().trim();
+
+    const cities = Array.isArray(state?.cities) ? state.cities : [];
+    if (!cities.length) return;
+
+    const isVillainEntry = (entry) => {
+        if (!entry || entry.id == null) return false;
+        const cardData = findCardInAllSources(entry.id);
+        return String(cardData?.type || "").toLowerCase() === "villain";
+    };
+
+    const applyHP = (entry, idx) => {
+        if (!entry || entry.id == null) return;
+        const key = getEntryKey(entry) || String(entry.id || "");
+        const cardData = findCardInAllSources(entry.id);
+        const baseHP = Number(entry.maxHP ?? cardData?.hp ?? cardData?.baseHP ?? 0) || 0;
+        const current = Number(entry.currentHP ?? (key && state.villainHP?.[key]) ?? baseHP) || 0;
+        const next = current + amt;
+
+        entry.currentHP = next;
+        entry.maxHP = Math.max(entry.maxHP || baseHP, next); // allow overheal to extend max for future heals
+
+        if (!state.villainHP) state.villainHP = {};
+        if (key) state.villainHP[key] = next;
+        state.villainHP[String(entry.id)] = next;
+        if (cardData) cardData.currentHP = next;
+
+        if (typeof idx === "number") {
+            try { refreshFoeCardUI(idx, entry); } catch (err) { console.warn("[giveVillainHP] Failed to refresh UI", err); }
+        }
+
+        try {
+            const name = cardData?.name || `Enemy ${entry.id}`;
+            const verb = amt >= 0 ? "gained" : "lost";
+            appendGameLogEntry(`${name} ${verb} ${Math.abs(amt)} HP.`, state);
+        } catch (err) {
+            console.warn("[giveVillainHP] Failed to log HP change", err);
+        }
+    };
+
+    const pickEdge = (villainOnly, fromLeft) => {
+        let chosen = null;
+        cities.forEach((entry, idx) => {
+            if (!entry || entry.id == null) return;
+            if (villainOnly && !isVillainEntry(entry)) return;
+            if (!chosen || (fromLeft ? idx < chosen.idx : idx > chosen.idx)) {
+                chosen = { entry, idx };
+            }
+        });
+        return chosen;
+    };
+
+    if (who === "leftmostvillain" || who === "rightmostvillain") {
+        const target = pickEdge(true, who === "leftmostvillain");
+        if (!target) {
+            console.warn(`[giveVillainHP] No ${who} target found.`);
+            return;
+        }
+        applyHP(target.entry, target.idx);
+        saveGameState(state);
+        return;
+    }
+
+    if (who === "leftmost" || who === "rightmost") {
+        const target = pickEdge(false, who === "leftmost");
+        if (!target) {
+            console.warn(`[giveVillainHP] No ${who} target found.`);
+            return;
+        }
+        applyHP(target.entry, target.idx);
+        saveGameState(state);
+        return;
+    }
+
+    if (who === "all") {
+        cities.forEach((entry, idx) => {
+            if (!entry || entry.id == null) return;
+            applyHP(entry, idx);
+        });
+        saveGameState(state);
+        return;
+    }
+
+    // Fallback: try to treat unknown selectors as a direct slot index
+    const idx = Number(whoRaw);
+    if (Number.isInteger(idx) && idx >= 0 && idx < cities.length) {
+        const entry = cities[idx];
+        if (!entry || entry.id == null) {
+            console.warn(`[giveVillainHP] No foe at slot ${idx}.`);
+            return;
+        }
+        applyHP(entry, idx);
+        saveGameState(state);
+        return;
+    }
+
+    console.warn(`[giveVillainHP] Unknown target '${whoRaw}'.`);
 };
 
 EFFECT_HANDLERS.enaDrawsExtra = function(args = [], card, selectedData = {}) {
@@ -8051,11 +8532,24 @@ EFFECT_HANDLERS.villainDraw = function(args, card, selectedData) {
 
 EFFECT_HANDLERS.villainTeleports = function(args = [], card, selectedData = {}) {
     const state = selectedData?.state || gameState;
+    const mode = String(args?.[0] ?? "").toLowerCase();
+
+    // Default: apply to the current villain draw only
     const cardData = selectedData?.cardData || null;
     const cardId = selectedData?.cardId ?? selectedData?.villainId ?? cardData?.id ?? null;
     const typeStr = String(cardData?.type || "").toLowerCase();
 
     if (typeStr !== "villain") return;
+
+    if (mode === "turn") {
+        const heroId = selectedData?.currentHeroId ?? (Array.isArray(state.heroes) ? state.heroes[state.heroTurnIndex ?? 0] : null);
+        state._forceTeleportPersistent = true;
+        state._forceTeleportPersistentHeroId = heroId != null ? String(heroId) : null;
+        // Also apply to this immediate draw if any
+        state._forceTeleportNextVillain = true;
+        state._forceTeleportVillainId = cardId != null ? String(cardId) : null;
+        return;
+    }
 
     state._forceTeleportNextVillain = true;
     state._forceTeleportVillainId = cardId != null ? String(cardId) : null;
@@ -8155,9 +8649,12 @@ EFFECT_HANDLERS.increaseVillainDamage = function(args = [], card, selectedData =
 };
 
 EFFECT_HANDLERS.discard = function(args = [], card, selectedData = {}) {
-    const count = Math.max(1, Number(args?.[0]) || 1);
     const state = selectedData?.state || gameState;
     const heroId = selectedData?.currentHeroId ?? null;
+
+    const rawCount = args?.[0];
+    const resolvedCount = resolveNumericValue(rawCount, heroId, state);
+    const count = Math.max(1, Number.isFinite(resolvedCount) ? resolvedCount : (Number(rawCount) || 1));
 
     if (!heroId) {
         console.warn("[discard] No currentHeroId available.");
@@ -9996,7 +10493,7 @@ function isFoePermanentlyKO(entry, state = gameState) {
     });
 }
 
-async function reviveKodFoe(count = 1, state = gameState) {
+async function reviveKodFoe(count = 1, state = gameState, flag = null) {
     const s = state || gameState;
     if (!s) return;
     const pool = Array.isArray(s.koCards) ? s.koCards : [];
@@ -10008,7 +10505,9 @@ async function reviveKodFoe(count = 1, state = gameState) {
         .filter(({ card }) => {
             if (!card) return false;
             const type = String(card.type || "").toLowerCase();
-            if (type !== "henchman" && type !== "villain") return false;
+            const henchOnly = String(flag || "").toLowerCase() === "henchmenonly";
+            if (henchOnly && type !== "henchman") return false;
+            if (!henchOnly && type !== "henchman" && type !== "villain") return false;
             if (card.permanentKO === true) return false;
             const recKey = card.instanceId || card.uniqueId || card.id;
             return !permaList.some(k => String(k.instanceId || k.id) === String(recKey));
@@ -10290,10 +10789,34 @@ export function resolveExitForVillain(entry) {
 export async function rallyNextHenchVillains(count, opts = {}) {
     if (!count || count <= 0) return;
 
-    const collected = takeNextHenchVillainsFromDeck(count, {
-        henchmenOnly: String(opts?.flag || "").toLowerCase() === "henchmenonly"
-    });
-    if (!Array.isArray(collected) || collected.length === 0) return;
+    const flag = String(opts?.flag || "").toLowerCase();
+    const henchmenOnly = flag === "henchmenonly";
+    const villainsOnly = flag === "villainsonly";
+    const deck = gameState.villainDeck;
+    if (!Array.isArray(deck) || deck.length === 0) return;
+
+    const target = Number(count) || 0;
+    const ptr = gameState.villainDeckPointer ?? 0;
+    const collected = [];
+    const removeIdx = [];
+
+    for (let i = ptr; i < deck.length && collected.length < target; i++) {
+        const id = deck[i];
+        const idStr = String(id);
+        const isHench = henchmen.some(h => String(h.id) === idStr);
+        const isVill = villains.some(v => String(v.id) === idStr);
+
+        if ((henchmenOnly && isHench) || (villainsOnly && isVill) || (!henchmenOnly && !villainsOnly && (isHench || isVill))) {
+            collected.push(id);
+            removeIdx.push(i);
+        }
+    }
+
+    // Remove collected cards without advancing pointer
+    removeIdx.sort((a, b) => b - a).forEach(idx => deck.splice(idx, 1));
+    gameState.villainDeckPointer = Math.min(ptr, deck.length);
+
+    if (!collected.length) return;
 
     for (const id of collected) {
         await enterVillainFromEffect(id);
@@ -11095,6 +11618,7 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
         }
         clearCoastalBonusSuppressionForSource("scenario", ovId, s);
         clearTeamBonusSuppressionForSource("scenario", ovId, s);
+        removeScanDisableSource(s, `card-${ovId}`);
 
         // Determine what sits on top now: another Scenario or the real Overlord
         if (Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {
@@ -11282,6 +11806,12 @@ export function damageOverlord(amount, state = gameState, heroId = null) {
 // DAMAGE A HENCHMAN / VILLAIN IN THE CITY (PER-INSTANCE SAFE)
 // =======================================================================
 export function damageFoe(amount, foeSummary, heroId = null, state = gameState, options = {}) {
+    // Allow handlers that pass the flag as the second argument (string) without an options object
+    if (typeof foeSummary === "string" && (!options || Object.keys(options).length === 0)) {
+        options = { flag: foeSummary };
+        foeSummary = null;
+    }
+
     const s = state;
 
     const { flag = "single", fromAny = false, fromAll = false } = options;
@@ -11723,12 +12253,23 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
     // ============================================================
     // FLAG: 0/2/4/6/8/10 → damage the foe in that UPPER city index
     // ============================================================
+    // Support coastal aliases for numeric slot flags
+    let coastalFlag = null;
+    if (typeof flag === "string") {
+        const lowerFlag = flag.toLowerCase();
+        const { left, right } = checkCoastalCities(s);
+        if (lowerFlag === "leftcoastal") coastalFlag = left;
+        if (lowerFlag === "rightcoastal") coastalFlag = right;
+    }
+
     const flagNum =
-        (typeof flag === "number")
-            ? flag
-            : (typeof flag === "string" && flag.trim() !== "" && !Number.isNaN(Number(flag)))
-                ? Number(flag)
-                : null;
+        coastalFlag != null
+            ? coastalFlag
+            : (typeof flag === "number")
+                ? flag
+                : (typeof flag === "string" && flag.trim() !== "" && !Number.isNaN(Number(flag)))
+                    ? Number(flag)
+                    : null;
 
     const UPPER_CITY_TARGETS = new Set([0, 2, 4, 6, 8, 10]);
 
