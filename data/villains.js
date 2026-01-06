@@ -1908,7 +1908,7 @@ export const villains = [
         text: `Prepare for Slaughter!`
       },
       {
-        text: `Reward!`
+        text: `Draw from the E&A`
       }
     ],
     abilitiesEffects: [

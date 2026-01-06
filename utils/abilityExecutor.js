@@ -880,11 +880,17 @@ function isScanBlocked(state = gameState) {
 
 export function maybeTriggerEvilWinsConditions(state = gameState) {
     const s = state || gameState;
-    const totalKOd = getBystandersKOdCount(s);
+    if (s._evilWinsProcessing) {
+        console.warn("[maybeTriggerEvilWinsConditions] Re-entrant call detected; skipping to avoid recursion.");
+        return;
+    }
+    s._evilWinsProcessing = true;
+    try {
+        const totalKOd = getBystandersKOdCount(s);
 
-    if (totalKOd <= 0) return;
+        if (totalKOd <= 0) return;
 
-    const cardsToCheck = [];
+        const cardsToCheck = [];
 
     // Current Overlord (only the active one matters)
     const ovId = Array.isArray(s.overlords) ? s.overlords[0] : null;
@@ -932,6 +938,9 @@ export function maybeTriggerEvilWinsConditions(state = gameState) {
             });
         });
     });
+    } finally {
+        s._evilWinsProcessing = false;
+    }
 }
 
 function getOverlordLevel(state = gameState) {
@@ -2648,6 +2657,17 @@ EFFECT_HANDLERS.enemyDraw = function(args, card, selectedData) {
     return enemyDraw(count, limit, selectedData);
 };
 
+EFFECT_HANDLERS.takeNextHenchVillainsFromDeck = async function(args = [], card, selectedData = {}) {
+    const depth = Math.max(0, Number(args?.[0]) || 0);
+    const flagRaw = args?.[1];
+    const flag = typeof flagRaw === "string" ? flagRaw.toLowerCase() : "";
+    const opts = {
+        henchmenOnly: flag === "henchmenonly" || flag === "henchmen",
+        villainsOnly: flag === "villainsonly" || flag === "villains"
+    };
+    await takeNextHenchVillainsFromDeck(depth, opts);
+};
+
 EFFECT_HANDLERS.travelTo = function(args, card, selectedData) {
     const dest = args?.[0] ?? null;
     const heroId = selectedData?.currentHeroId ?? null;
@@ -3926,6 +3946,7 @@ function koTopHeroDiscard(countOrFlag = "all", who = "all", state = gameState) {
         const hState = s.heroData?.[hid];
         if (!hState || !Array.isArray(hState.discard) || !hState.discard.length) return;
         const heroName = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
+        const storedMainCards = [];
         for (let i = 0; i < count; i++) {
             if (!hState.discard.length) break;
             const cardId = hState.discard.pop();
@@ -3936,7 +3957,7 @@ function koTopHeroDiscard(countOrFlag = "all", who = "all", state = gameState) {
             if (String(cardType).toLowerCase() === "main") {
                 // Permanently KO main cards stay in discard and are never drawn again.
                 addPermanentKOTag(hState, cardId);
-                hState.discard.push(cardId);
+                storedMainCards.push(cardId);
                 try {
                     appendGameLogEntry(`${cardName} is permanently KO'd for ${heroName}.`, s);
                 } catch (err) {
@@ -3950,6 +3971,12 @@ function koTopHeroDiscard(countOrFlag = "all", who = "all", state = gameState) {
                     source: "koTopHeroDiscard",
                     heroId: hid
                 });
+            }
+        }
+        if (storedMainCards.length) {
+            for (let i = storedMainCards.length - 1; i >= 0; i--) {
+                // Place main cards at the bottom so multiple KO counts don't keep hitting the same top card.
+                hState.discard.unshift(storedMainCards[i]);
             }
         }
     });
@@ -9748,11 +9775,23 @@ export function currentTurn(turnIndex, selectedHeroIds) {
     }
 }
 
+function getActiveUpperOrderLocal(state = gameState) {
+    const s = state || gameState;
+    const destroyed = s?.destroyedCities || {};
+    return UPPER_ORDER.filter(idx => !destroyed[idx]);
+}
+
 async function runCharge(cardId, distance) {
 
-    const entryIndex = CITY_ENTRY_UPPER;
+    const activeUpper = getActiveUpperOrderLocal(gameState);
+    if (!activeUpper.length) {
+        console.warn("[runCharge] No active upper cities available for Charge entry.");
+        return;
+    }
 
-    const shoveResult = await pushChain(entryIndex);
+    const entryIndex = activeUpper[activeUpper.length - 1];
+
+    const shoveResult = await pushChain(entryIndex, activeUpper);
     if (shoveResult?.blockedFrozen) {
         console.log("[runCharge] Charge blocked by frozen foe in shove path; aborting placement.");
         return;
@@ -9775,11 +9814,16 @@ async function runCharge(cardId, distance) {
     setTimeout(async () => {
         addChargeRushLines(entryIndex);
 
-        let fromPos = UPPER_ORDER.indexOf(entryIndex);
+        let activeOrder = getActiveUpperOrderLocal(gameState);
+        let fromPos = activeOrder.indexOf(entryIndex);
+        if (fromPos < 0) {
+            // Fallback: assume rightmost active city.
+            fromPos = activeOrder.length - 1;
+        }
         let stepsMoved = 0;
 
         for (let step = 0; step < distance; step++) {
-            const moved = await attemptSingleLeftShift(fromPos);
+            const moved = await attemptSingleLeftShift(fromPos, activeOrder);
             if (!moved) break;
             fromPos -= 1;
             stepsMoved += 1;
@@ -9853,12 +9897,12 @@ function addChargeRushLines(slotIndex) {
     }, 250);
 }
 
-async function attemptSingleLeftShift(fromPos) {
+async function attemptSingleLeftShift(fromPos, activeUpperOrder = getActiveUpperOrderLocal(gameState)) {
 
-    if (fromPos <= 0) return false;
+    if (!activeUpperOrder || fromPos <= 0) return false;
 
-    const fromIndex = UPPER_ORDER[fromPos];
-    const toIndex   = UPPER_ORDER[fromPos - 1];
+    const fromIndex = activeUpperOrder[fromPos];
+    const toIndex   = activeUpperOrder[fromPos - 1];
 
     // frozen check (per-instance first, then template flag)
     const leftEntry = gameState.cities[toIndex];
@@ -9866,7 +9910,7 @@ async function attemptSingleLeftShift(fromPos) {
         return false;
     }
 
-    const result = await pushChain(toIndex);
+    const result = await pushChain(toIndex, activeUpperOrder);
     if (result?.blockedFrozen) return false;
     moveCardModelAndDOM(fromIndex, toIndex);
 
@@ -10192,9 +10236,16 @@ export async function handleVillainEscape(entry, state) {
     saveGameState(state);
 }
 
-async function pushChain(targetIndex) {
+async function pushChain(targetIndex, activeUpperOrder = getActiveUpperOrderLocal(gameState)) {
 
-    const pos = UPPER_ORDER.indexOf(targetIndex);
+    const activeOrder = (activeUpperOrder && activeUpperOrder.length)
+        ? activeUpperOrder
+        : getActiveUpperOrderLocal(gameState);
+    const pos = activeOrder.indexOf(targetIndex);
+    if (pos < 0) {
+        console.warn("[pushChain] Target index not in active upper order:", targetIndex);
+        return { blockedFrozen: false };
+    }
     if (pos <= 0) {
         const exiting = gameState.cities[targetIndex];
         if (!exiting) return { blockedFrozen: false };
@@ -10209,7 +10260,7 @@ async function pushChain(targetIndex) {
         return { blockedFrozen: false };
     }
 
-    const nextLeft = UPPER_ORDER[pos - 1];
+    const nextLeft = activeOrder[pos - 1];
 
     // If occupied, push that one further left (recursively)
     if (gameState.cities[targetIndex]) {
@@ -10219,7 +10270,7 @@ async function pushChain(targetIndex) {
             console.log("[pushChain] Blocked by frozen foe; cannot shove.", occupant);
             return { blockedFrozen: true };
         }
-        const result = await pushChain(nextLeft);
+        const result = await pushChain(nextLeft, activeOrder);
         if (result?.blockedFrozen) {
             return { blockedFrozen: true };
         }
@@ -13540,8 +13591,18 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
                 // Clamp at the far right; cannot go past 10
                 break;
             }
+
+            if (s.destroyedCities?.[next]) {
+                // Cannot enter a destroyed city
+                break;
+            }
+
             const blocker = s.cities[next];
             if (blocker && blocker.id != null) {
+                // Stop at any blocker; frozen foes explicitly stop shoves
+                if (isFrozen(blocker)) {
+                    break;
+                }
                 break;
             }
 

@@ -748,7 +748,7 @@ export function checkCoastalCities(state = gameState) {
     return { left, right };
 }
 
-function applyCountdownLandingEffects(upperIdx, gameState) {
+function applyCountdownLandingEffects(upperIdx, gameState, { markOpts } = {}) {
     const citySlots = document.querySelectorAll(".city-slot");
     const upperSlot = citySlots[upperIdx];
     const lowerIdx  = upperIdx + 1;
@@ -837,13 +837,15 @@ function applyCountdownLandingEffects(upperIdx, gameState) {
     }
 
     // 3) Mark the city as destroyed (upper + lower)
-    markCityDestroyed(upperIdx, gameState, { by: "countdown" });
+    // Default to countdown destruction unless caller overrides.
+    markCityDestroyed(upperIdx, gameState, markOpts || { by: "countdown" });
 }
 
 function applyDestroyCity(upperIdx, state = gameState) {
     if (upperIdx == null) return;
     const s = state || gameState;
-    applyCountdownLandingEffects(upperIdx, s);
+    // Treat destroyCity() as non-countdown so it can be restored later.
+    applyCountdownLandingEffects(upperIdx, s, { markOpts: { by: "effect" } });
     const cityName = getCityNameFromIndex(upperIdx + 1);
     appendGameLogEntry(`${cityName} was destroyed.`, s);
 }
@@ -4798,6 +4800,64 @@ function refreshAllCityOutlines(gameState, options = {}) {
 
     const citySlots = document.querySelectorAll(".city-slot");
     if (!citySlots.length) return;
+
+    // Reapply destroyed-city overlays after page refresh or DOM rebuild.
+    const destroyedMap = gameState?.destroyedCities || {};
+    Object.keys(destroyedMap).forEach(k => {
+        const upperIdx = Number(k);
+        if (!Number.isInteger(upperIdx)) return;
+        const upperSlot = citySlots[upperIdx];
+        const lowerSlot = citySlots[upperIdx + 1];
+        [upperSlot, lowerSlot].forEach(slot => {
+            if (!slot) return;
+            slot.style.backgroundColor = "black";
+            if (getComputedStyle(slot).position === "static") {
+                slot.style.position = "relative";
+            }
+            const area = slot.querySelector(".city-card-area");
+            if (area) {
+                if (getComputedStyle(area).position === "static") {
+                    area.style.position = "relative";
+                }
+                area.style.zIndex = "2";
+            }
+            let dimmer = slot.querySelector(".destroyed-city-dimmer");
+            if (!dimmer) {
+                dimmer = document.createElement("div");
+                dimmer.className = "destroyed-city-dimmer";
+                dimmer.style.position = "absolute";
+                dimmer.style.top = "0";
+                dimmer.style.left = "0";
+                dimmer.style.right = "0";
+                dimmer.style.bottom = "0";
+                dimmer.style.background = "rgba(0,0,0,0.5)";
+                dimmer.style.pointerEvents = "none";
+                dimmer.style.zIndex = "0";
+                slot.appendChild(dimmer);
+            }
+            let overlay = slot.querySelector(".destroyed-city-overlay");
+            if (!overlay) {
+                overlay = document.createElement("div");
+                overlay.className = "destroyed-city-overlay";
+                overlay.style.position = "absolute";
+                overlay.style.top = "0";
+                overlay.style.left = "0";
+                overlay.style.right = "0";
+                overlay.style.bottom = "0";
+                overlay.style.pointerEvents = "none";
+                overlay.style.display = "flex";
+                overlay.style.alignItems = "center";
+                overlay.style.justifyContent = "center";
+                overlay.style.fontSize = "64px";
+                overlay.style.fontWeight = "bold";
+                overlay.style.color = "red";
+                overlay.style.textShadow = "0 0 8px black";
+                overlay.style.zIndex = "3";
+                overlay.textContent = "X";
+                slot.appendChild(overlay);
+            }
+        });
+    });
 
     // 1) Clear everything first
     citySlots.forEach(slot => {
