@@ -4066,6 +4066,230 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5704",
+    name: "Martian Manhunter",
+    image: `${cardArtFolder}/martianManhunter.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Do Not Resist!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5705",
+    name: "Dr Fate",
+    image: `${cardArtFolder}/drFate.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "19",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Scan 3 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO 1 revealed card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `It Is Fate!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,3)`,`applyScanEffects(ko,closeAfter(1))`]
+      }
+    ]
+  },
+  {
+    id: "5706",
+    name: "Constantine",
+    image: `${cardArtFolder}/constantine.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "13",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Permanently KO up to 5 random Henchmen or Villains from the KO'd Pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Let's Just Make This Quick`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `koFromKO(5)`
+      }
+    ]
+  },
+  {
+    id: "5707",
+    name: "Zatanna",
+    image: `${cardArtFolder}/zatanna.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "13",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: All Heroes regain 1 random Icon Ability use.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `!tropelet`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `gainIconUse(all,1,random)`
+      }
+    ]
+  },
+  {
+    id: "5708",
+    name: "Etrigan",
+    image: `${cardArtFolder}/etrigan.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "25",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Reward: CHOOSE : Deal 10 Damage to a Henchman or Villain. <span class="line-gap"></span> 
+               OR <span class="line-gap"></span> 
+               Deal 10 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose Reward!`
+      },
+      {
+          text: `Damage a Foe`
+      },
+      {
+          text: `Damage the Overlord`
+      }
+    ],
+    abilitiesEffects: [
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`damageFoe(10,any)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`damageOverlord(10)`]
+      }
+    ]
+  },
+  {
+    id: "5709",
+    name: "Swamp Thing",
+    image: `${cardArtFolder}/swampThing.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "25",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Clash <span class="line-gap"></span> 
+               Reward: Deal 5 Damage to up to 2 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Harm the Green!`
+      },
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageFoeMulti(5,2,any)`]
+      }
+    ]
+  },
 ]
 
 
@@ -4092,16 +4316,6 @@ export const villains = [
 // Z: zilius zox, zoom
 
 
-// HEROES AS VILLAINS - These have arts
-// C: constantine
-// D: dr fate
-// E: etrigan
-// F: firestorm
-// M: martian manhunter
-// S: swamp thing
-// Z: zatanna
-
-
 // HEROES AS VILLAINS - These do not have arts yet
 // A: Aqualad, arsenal, artemis
 // B: Batgirl, Batman Beyond, beast boy, blue beetle
@@ -4120,7 +4334,7 @@ export const villains = [
 // V: Vixen
 // W: Wonder Girl, white lantern (kyle)
 
-// VD modifier cards - New card type?
+// VD MODIFIER CARDS - New card type?
 // D: deadman
 // G: gcpd batman
 // W: white lanterns: anti-monitor, deadman, swamp thing

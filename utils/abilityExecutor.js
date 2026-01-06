@@ -5005,6 +5005,50 @@ function loseIconUseForHero(heroId, count = 1, mode = "random", state = gameStat
     appendGameLogEntry(`${heroName} lost ${Math.max(1, Number(count) || 0)} use(s) of ${picked.name}.`, s);
 }
 
+function gainIconUseForHero(heroId, count = 1, mode = "random", state = gameState) {
+    const s = state || gameState;
+    if (!heroId) return;
+    const heroObj = heroes.find(h => String(h.id) === String(heroId));
+    const hState = s.heroData?.[heroId];
+    if (!heroObj || !hState) return;
+
+    const { effects, names } = getHeroAbilitiesWithTemp(heroId, s);
+    const candidates = [];
+
+    effects.forEach((eff, idx) => {
+        if (!eff || (eff.type || "").toLowerCase() === "passive") return;
+        const usesMax = Number(eff.uses || 0);
+        if (!Number.isFinite(usesMax) || usesMax <= 0) return;
+        const remaining = hState.currentUses?.[idx] == null ? usesMax : Number(hState.currentUses[idx]);
+        if (remaining >= usesMax) return; // already full
+        candidates.push({ idx, remaining, usesMax, name: names?.[idx]?.text || `Ability ${idx + 1}` });
+    });
+
+    if (!candidates.length) return;
+
+    let picked;
+    const normMode = String(mode || "random").toLowerCase();
+    if (normMode === "highest") {
+        const maxRemain = Math.max(...candidates.map(c => c.remaining));
+        const tops = candidates.filter(c => c.remaining === maxRemain);
+        picked = tops[Math.floor(Math.random() * tops.length)];
+    } else {
+        picked = candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    if (!picked) return;
+
+    const inc = Math.max(1, Number(count) || 0);
+    const newRemaining = Math.min(picked.usesMax, picked.remaining + inc);
+    if (!hState.currentUses) hState.currentUses = {};
+    hState.currentUses[picked.idx] = newRemaining;
+    heroObj.currentUses = heroObj.currentUses || {};
+    heroObj.currentUses[picked.idx] = newRemaining;
+
+    const heroName = heroObj.name || `Hero ${heroId}`;
+    appendGameLogEntry(`${heroName} regained ${Math.min(inc, picked.usesMax - picked.remaining)} use(s) of ${picked.name}.`, s);
+}
+
 EFFECT_HANDLERS.loseIconUse = function(args = [], card, selectedData = {}) {
     const who = String(args?.[0] ?? "current").toLowerCase();
     const amount = Math.max(1, Number(args?.[1] ?? 1) || 1);
@@ -5026,6 +5070,33 @@ EFFECT_HANDLERS.loseIconUse = function(args = [], card, selectedData = {}) {
         const currentId = heroIds[idx];
         if (currentId != null) {
             loseIconUseForHero(currentId, amount, mode, s);
+        }
+    }
+
+    saveGameState(s);
+};
+
+EFFECT_HANDLERS.gainIconUse = function(args = [], card, selectedData = {}) {
+    const who = String(args?.[0] ?? "current").toLowerCase();
+    const amount = Math.max(1, Number(args?.[1] ?? 1) || 1);
+    const mode = args?.[2] ?? "random";
+    const s = selectedData?.state || gameState;
+    if (!s || !Array.isArray(s.heroes)) return;
+
+    const heroIds = s.heroes;
+
+    if (who === "all") {
+        heroIds.forEach(hid => gainIconUseForHero(hid, amount, mode, s));
+    } else if (who === "random") {
+        const alive = heroIds.filter(hid => s.heroData?.[hid]);
+        if (!alive.length) return;
+        const pick = alive[Math.floor(Math.random() * alive.length)];
+        gainIconUseForHero(pick, amount, mode, s);
+    } else {
+        const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
+        const currentId = heroIds[idx];
+        if (currentId != null) {
+            gainIconUseForHero(currentId, amount, mode, s);
         }
     }
 
