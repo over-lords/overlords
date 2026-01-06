@@ -1,5 +1,9 @@
 const newsData = [
     {
+        date: "January 6th, 2026",
+        text: "Added 4 more Playable Characters and 3 more missions!"
+    },
+    {
         date: "January 3rd, 2026",
         text: "With 6 playable characters and 4 missions down, Overlords only grows even further towards a proper beta release. Still no multiplayer!"
     },
