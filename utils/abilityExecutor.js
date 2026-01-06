@@ -9178,6 +9178,23 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
         return;
     }
 
+    if (normWho === "all") {
+        const cities = Array.isArray(state.cities) ? state.cities : [];
+        let applied = false;
+        cities.forEach((entry, idx) => {
+            if (!entry || entry.id == null) return;
+            // Upper row indices are even: 0,2,4,6,8,10
+            if (idx % 2 !== 0) return;
+            const card = findCardInAllSources(entry.id);
+            const type = String(card?.type || "").toLowerCase();
+            if (type !== "henchman" && type !== "villain") return;
+            applyFreezeToEntry(entry, idx, state, { howLong, heroId });
+            applied = true;
+        });
+        if (!applied) console.log("[freezeVillain] No upper-row foes found for 'all'.");
+        return;
+    }
+
     if (normWho === "allhenchmen") {
         const cities = Array.isArray(state.cities) ? state.cities : [];
         let applied = false;

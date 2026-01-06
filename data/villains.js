@@ -250,7 +250,8 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `At the end of a turn in which Parasite took Damage, increase his Damage by 1. <span class="line-gap"></span> Reward: Deal 3 Damage to up to 2 Henchmen or Villains.`
+        text: `At the end of a turn in which Parasite took Damage, increase his Damage by 1. <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to up to 2 Henchmen or Villains.`
       }
     ],
     abilitiesNamePrint: [
@@ -1339,7 +1340,10 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Takeover 2 <span class="line-gap"></span> Might of the Overlord: Play the next 2 Enemies from the E&A. <span class="line-gap"></span><span class="line-gap"></span> Teleport <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: Play the next 2 Enemies from the E&A. <span class="line-gap"></span><span class="line-gap"></span> 
+               Teleport <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -1378,9 +1382,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`enemyDraw(2,nextEnemy)`]
       }
     ],
@@ -3539,11 +3540,188 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5691",
+    name: "Blackfire",
+    image: `${cardArtFolder}/blackfire.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: [`enemyDraw(1)`]
+      }
+    ]
+  },
+  {
+    id: "5692",
+    name: "Upside-Down Man",
+    image: `${cardArtFolder}/upsideDownMan.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League Dark",
+    hp: "18",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 3 <span class="line-gap"></span> 
+               Might of the Overlord: Play the next Villain from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
+               Teleport <span class="line-gap"></span> 
+               Reward: Don't draw from the Villain Deck next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `What a Wonderful Surprise!`
+      },
+      {
+        text: `Now You're Just Like Me!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(3)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `disableVillainDraw(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Hehehe!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`rallyNextHenchVillains(1,villainsOnly)`]
+      }
+    ],
+  },
+  {
+    id: "5693",
+    name: "Mr Bloom",
+    image: `${cardArtFolder}/mrBloom.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: KO 2 Bystanders. <span class="line-gap"></span><span class="line-gap"></span> 
+               Reward: Freeze all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Enjoy the Bliss!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(all)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `See? They Love It!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`koBystander(2)`]
+      }
+    ],
+  },
+  {
+    id: "5694",
+    name: "Oblivion",
+    image: `${cardArtFolder}/oblivion.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "21",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to up to 2 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: [`damageFoeMulti(3,2,any)`]
+      }
+    ]
+  },
 ]
 
 
 // A: appelaxian golem, arkillo, atomica, atrocitus
-// B: bizarro, black adam, black beetle, blackfire, black flash, bleez, bonk, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// B: bizarro, black adam, black beetle, black flash, bleez, bonk, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
 // C: captain boomerang, captain cold, cheshire, chucko, cinderblock, count vertigo, curare, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
 // D: dawnbreaker, deathstorm, dee dee, devastation, devastator, dr light, drowned, dr sivana
 // E: envy
