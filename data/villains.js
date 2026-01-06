@@ -3717,6 +3717,249 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5695",
+    name: "Hyperclan",
+    image: `${cardArtFolder}/hyperclan.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: KO a Bystander. <span class="line-gap"></span><span class="line-gap"></span> 
+               Charge 1 <span class="line-gap"></span> 
+               Reward: KO all Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Planet's Ours Now!`
+      },
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageFoe(999,allHenchmen)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `They Will Serve Us!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`koBystander(1)`]
+      }
+    ],
+  },
+  {
+    id: "5696",
+    name: "The Elite",
+    image: `${cardArtFolder}/theElite.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: Destroy the Rightmost City. <span class="line-gap"></span><span class="line-gap"></span> 
+               Teleport <span class="line-gap"></span> 
+               Reward: Draw 3, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Truth and Justice? That's Rubbish.`
+      },
+      {
+        text: `Bonnie!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(3)`,`travelPlus(1)`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `They'll Come Around`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`destroyCity(1)`]
+      }
+    ],
+  },
+  {
+    id: "5697",
+    name: "Detective Chimp",
+    image: `${cardArtFolder}/detectiveChimp.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "9",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: KO 2 Mights of the Overlord from the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: `koMightFromVD(2)`
+      }
+    ]
+  },
+  {
+    id: "5698",
+    name: "Frankenstein",
+    image: `${cardArtFolder}/frankenstein.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "18",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: KO a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageFoe(999,any)`]
+      }
+    ]
+  },
+  {
+    id: "5699",
+    name: "Orchid",
+    image: `${cardArtFolder}/orchid.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Teleport the leftmost foe to the rightmost unoccupied City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `The House is Always Near`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `teleportFoeElsewhere(leftmost,rightmost)`
+      }
+    ]
+  },
+  {
+    id: "5700",
+    name: "Amethyst",
+    image: `${cardArtFolder}/amethyst.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Restore all of your KO'd Action Cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`restoreKOdHeroCards(40,current)`]
+      }
+    ]
+  },
 ]
 
 
@@ -3726,8 +3969,8 @@ export const villains = [
 // D: dawnbreaker, deathstorm, dee dee, devastation, devastator, dr light, drowned, dr sivana
 // E: envy
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
-// G: gcpd batman, general eiling, general zod, ghoul, girder, gizmo, gluttony, golden glider, greed, grid
-// H: harm, heatwave, hyperclan
+// G: general eiling, general zod, ghoul, girder, gizmo, gluttony, golden glider, greed, grid
+// H: harm, heatwave
 // I: imperiex prime, inertia, inque
 // J: jericho, jinx, johnny quick
 // K: killer frost, king kobra, king shark, klarion, krona
@@ -3738,21 +3981,14 @@ export const villains = [
 // Q: queen bee
 // R: rainbow raider, ravager (rose), red death, reign, reverse flash
 // S: scar, shade, shimmer, shriek, siren, sloth, soranik sinestro, spellbinder, sportsmaster, superwoman
-// T: tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle
-// W: woof, wrath, white lanterns: anti-monitor, deadman, swamp thing
+// T: tar pit, terror twins, the brain, the top, the trickster, the turtle
+// W: woof, wrath
 // Z: zilius zox, zoom
-
-
-// HEROES AS VILLAINS - These guys do not have real hero counterparts, but they do have arts
-// A: amethyst
-// D: detective chimp
-// F: frankenstein
-// O: orchid
 
 
 // HEROES AS VILLAINS - These have arts
 // C: constantine
-// D: dr fate, deadman
+// D: dr fate
 // E: etrigan
 // F: firestorm
 // H: hawkwoman
@@ -3778,3 +4014,8 @@ export const villains = [
 // T: Tempest
 // V: Vixen
 // W: Wonder Girl, white lantern (kyle)
+
+// VD modifier cards - New card type?
+// D: deadman
+// G: gcpd batman
+// W: white lanterns: anti-monitor, deadman, swamp thing

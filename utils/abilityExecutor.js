@@ -2872,10 +2872,19 @@ EFFECT_HANDLERS.teleportFoeElsewhere = function(args = [], card, selectedData = 
         return;
     }
     let destIdx = null;
-    if (destRaw != null && !Number.isNaN(Number(destRaw))) {
-        const num = Number(destRaw);
-        if (Number.isInteger(num) && num >= 0 && num < s.cities.length && !s.cities[num] && !s.destroyedCities?.[num] && num % 2 === 0) {
-            destIdx = num;
+    if (destRaw != null) {
+        const destStr = String(destRaw).toLowerCase();
+        if (destStr === "rightmost") {
+            const choice = openSlots.reduce((best, cur) => (best == null || cur.idx > best.idx ? cur : best), null);
+            destIdx = choice?.idx ?? null;
+        } else if (destStr === "leftmost") {
+            const choice = openSlots.reduce((best, cur) => (best == null || cur.idx < best.idx ? cur : best), null);
+            destIdx = choice?.idx ?? null;
+        } else if (!Number.isNaN(Number(destRaw))) {
+            const num = Number(destRaw);
+            if (Number.isInteger(num) && num >= 0 && num < s.cities.length && !s.cities[num] && !s.destroyedCities?.[num] && num % 2 === 0) {
+                destIdx = num;
+            }
         }
     }
     if (destIdx == null) {
