@@ -2260,7 +2260,7 @@ export const villains = [
 // Z: zilius zox, zoom
 
 
-//HEROES AS VILLAINS DO NOT SHOW LIST
+//HEROES AS VILLAINS DO NOT SHOW LIST - These have arts
 // A: amethyst
 // C: constantine
 // D: detective chimp, dr fate, deadman
@@ -2271,3 +2271,21 @@ export const villains = [
 // O: orchid
 // S: shazam, swamp thing
 // Z: zatanna
+
+// HEROES AS VILLAINS DO NOT SHOW LIST - These do not have arts yet
+// A: Aqualad, arsenal, artemis
+// B: Batgirl, Batman Beyond, beast boy, blue beetle
+// D: Donna Troy
+// G: Green arrow, green lantern (John)
+// H: Hawkman
+// J: jason blood
+// K: kid flash
+// L: Lobo, lex luthor
+// M: Mera, miss martian
+// N: Nightwing
+// O: omen
+// R: Robin, Red Hood, Red Robin, red lantern (guy), raven
+// S: Supergirl, Superboy, starfire, sinestro
+// T: Tempest
+// V: Vixen
+// W: Wonder Girl, white lantern (kyle)
