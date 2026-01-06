@@ -3960,6 +3960,78 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5701",
+    name: "Hawkwoman",
+    image: `${cardArtFolder}/hawkwoman.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: 
+               Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Haaaa!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: ["draw(1)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5632",
+    name: "Shazam",
+    image: `${cardArtFolder}/shazam.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "24",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Deal 10 Damage to up to 2 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Shazam!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageFoeMulti(10,2,any)`]
+      }
+    ]
+  },
 ]
 
 
@@ -3991,7 +4063,6 @@ export const villains = [
 // D: dr fate
 // E: etrigan
 // F: firestorm
-// H: hawkwoman
 // M: martian manhunter
 // S: shazam, swamp thing
 // Z: zatanna
