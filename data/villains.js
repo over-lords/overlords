@@ -4042,7 +4042,7 @@ export const villains = [
 // E: envy
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
 // G: general eiling, general zod, ghoul, girder, gizmo, gluttony, golden glider, greed, grid
-// H: harm, heatwave
+// H: heatwave
 // I: imperiex prime, inertia, inque
 // J: jericho, jinx, johnny quick
 // K: killer frost, king kobra, king shark, klarion, krona
