@@ -9934,6 +9934,20 @@ export async function triggerRuleEffects(condition, payload = {}, state = gameSt
                 }
             };
 
+            const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));
+            const usesMax = hasFiniteUses ? Number(eff.uses) : Number.POSITIVE_INFINITY;
+            const usesKey = `${card.type || card.cardType || "Card"}:${card.id ?? card.name ?? "unknown"}::${idx}`;
+            if (typeNorm !== "optional" && hasFiniteUses) {
+                if (!s.ruleAbilityUses) s.ruleAbilityUses = {};
+                const remaining = s.ruleAbilityUses[usesKey] == null ? usesMax : s.ruleAbilityUses[usesKey];
+                if (remaining <= 0) {
+                    console.log(`[triggerRuleEffects] No uses left for ${card.name} effect idx ${idx}; skipping.`);
+                    continue;
+                }
+                s.ruleAbilityUses[usesKey] = Math.max(0, remaining - 1);
+                try { saveGameState(s); } catch (_) {}
+            }
+
             if (typeNorm === "optional") {
                 // Uses gating: align with existing hero optional handling
                 const hasFiniteUses = eff.uses != null && eff.uses !== "" && Number.isFinite(Number(eff.uses));

@@ -967,7 +967,7 @@ export function renderCard(cardId, container, opts = {}) {
     textBox.style.textAlign = 'left';
     textBox.style.fontSize = '10px';
     textBox.style.lineHeight = '1.15em';
-    textBox.style.marginRight = '10px';
+    textBox.style.marginRight = '16px';
     textBox.style.overflow = 'hidden';
 
     if (Array.isArray(cardData.abilitiesText)) {

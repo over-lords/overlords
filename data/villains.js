@@ -3732,14 +3732,13 @@ export const villains = [
 // J: jericho, jinx, johnny quick
 // K: killer frost, king kobra, king shark, klarion, krona
 // L: lust, lyssa drak
-// M: mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr mxyzptlik, multiplex, murder machine
-// O: oblivion, owlman
+// M: mammoth, match, merciless, mister twister, monsieur mallah, mr mxyzptlik, multiplex, murder machine
+// O: owlman
 // P: pied piper, power ring
 // Q: queen bee
 // R: rainbow raider, ravager (rose), red death, reign, reverse flash
 // S: scar, shade, shimmer, shriek, siren, sloth, soranik sinestro, spellbinder, sportsmaster, superwoman
 // T: tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle
-// U: upside down man
 // W: woof, wrath, white lanterns: anti-monitor, deadman, swamp thing
 // Z: zilius zox, zoom
 
