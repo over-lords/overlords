@@ -83,9 +83,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`koBystander(2)`]
       }
     ],
@@ -2176,7 +2173,8 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+        text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> 
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
       }
     ],
     abilitiesNamePrint: [
@@ -2996,28 +2994,573 @@ export const villains = [
       }
     ],
   },
+  {
+    id: "5676",
+    name: "Scarecrow",
+    image: `${cardArtFolder}/scarecrow.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "3",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging Scarecrow. <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Can't Run from Your Fears!`
+      },
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5677",
+    name: "Psycho Pirate",
+    image: `${cardArtFolder}/psychoPirate.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "4",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `At the start of each turn, one of six random effects will occur. <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Emotional Mayhem!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnStart`,
+        effect: `randomEffect(damageHero(2,current),koBystander(1),halfDamage(current,next),damageOverlord(2),draw(1),travelPlus(1))`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(2)`,`travelPlus(1)`]
+      }
+    ]
+  },
+  {
+    id: "5678",
+    name: "Copperhead",
+    image: `${cardArtFolder}/copperhead.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "4",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain until the end of your Hero's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any,next)`
+      }
+    ]
+  },
+  {
+    id: "5679",
+    name: "Talia Al Ghul",
+    image: `${cardArtFolder}/taliaAlGhul.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "7",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Resurrect 1 KO'd Henchman for every active Hero. <span class="line-gap"></span> 
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> 
+               OPTIONAL : KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Daughter of the Demon`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `The League is Endless, Beloved`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`reviveKodFoe(getActiveTeamCount(all),henchmenOnly)`]
+      }
+    ],
+  },
+  {
+    id: "5680",
+    name: "KGBeast",
+    image: `${cardArtFolder}/kgBeast.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "4",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> Reward: Deal 1 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Nyet!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(1,random)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(1)`
+      }
+    ]
+  },
+  {
+    id: "5681",
+    name: "Poison Ivy",
+    image: `${cardArtFolder}/poisonIvy.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reduce incoming Damage to Poison Ivy by 1. <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We Go Way Back...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `reduceIncomingDamageBy(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5682",
+    name: "Clock King",
+    image: `${cardArtFolder}/clockKing.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Deal the current hour in Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: `damageOverlord(getCurrentHour)`
+      }
+    ]
+  },
+  {
+    id: "5683",
+    name: "Hush",
+    image: `${cardArtFolder}/hush.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "9",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               If your Hero ends their turn engaged with Hush, KO the top card of their deck. <span class="line-gap"></span> 
+               Might of the Overlord: All Henchmen gain 3 HP. <span class="line-gap"></span> 
+               Reward: Restore up to 2 KO'd cards from your Hero's discard pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Hush Now...`
+      },
+      {
+        text: `Our Little Secret`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `koHeroTopCard(1,current)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`restoreKOdHeroCards(2,current)`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Stir Things Up`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`damageFoe(-3,allHenchmen)`]
+      }
+    ],
+  },
+  {
+    id: "5684",
+    name: "Prometheus",
+    image: `${cardArtFolder}/prometheus.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Prometheus cannot be damaged by the same card more than once. <span class="line-gap"></span> Reward: Rescue 2 Bystanders.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I've Studied You`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `damaged`,
+        effect: `logDamageCheckDamage()`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `rescueBystander(2)`
+      }
+    ]
+  },
+  {
+    id: "5685",
+    name: "Mr Freeze",
+    image: `${cardArtFolder}/mrFreeze.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "11",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5686",
+    name: "Azrael",
+    image: `${cardArtFolder}/azrael.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: OPTIONAL : Play the next Ally from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1,nextAlly)`
+      }
+    ]
+  },
+  {
+    id: "5687",
+    name: "Killer Croc",
+    image: `${cardArtFolder}/killerCroc.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "13",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      }
+    ]
+  },
+  {
+    id: "5688",
+    name: "Solomon Grundy",
+    image: `${cardArtFolder}/solomonGrundy.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: [`enemyDraw(1)`]
+      }
+    ]
+  },
+  {
+    id: "5689",
+    name: "Everyman",
+    image: `${cardArtFolder}/everyman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `On entry, Everyman's HP and Damage shift to match whatever foe is directly left of him on the board. <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Just Gonna Borrow This`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: [`setCurrentHP(getNextCurrentHP)`,`setCurrentDamage(getNextCurrentDamage)`]
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: [`enemyDraw(1)`]
+      }
+    ]
+  },
+  {
+    id: "5690",
+    name: "Talon",
+    image: `${cardArtFolder}/talon.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 1 Damage to the Overlord and 1 Damage to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(1)`,`damageFoe(1,any)`]
+      }
+    ]
+  },
 ]
 
 
-// A: appelaxian golem, arkillo, atomica, atrocitus, azrael
+// A: appelaxian golem, arkillo, atomica, atrocitus
 // B: bizarro, black adam, black beetle, blackfire, black flash, bleez, bonk, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
-// C: captain boomerang, captain cold, cheshire, chucko, cinderblock, clock king, copperhead, count vertigo, curare, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
+// C: captain boomerang, captain cold, cheshire, chucko, cinderblock, count vertigo, curare, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
 // D: dawnbreaker, deathstorm, dee dee, devastation, devastator, dr light, drowned, dr sivana
-// E: envy, everyman
+// E: envy
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
 // G: gcpd batman, general eiling, general zod, ghoul, girder, gizmo, gluttony, golden glider, greed, grid
-// H: harm, heatwave, hush, hyperclan
+// H: harm, heatwave, hyperclan
 // I: imperiex prime, inertia, inque
 // J: jericho, jinx, johnny quick
-// K: kgbeast, killer croc, killer frost, king kobra, king shark, klarion, krona
+// K: killer frost, king kobra, king shark, klarion, krona
 // L: lust, lyssa drak
-// M: mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr freeze, mr mxyzptlik, multiplex, murder machine
+// M: mammoth, match, merciless, mister twister, monsieur mallah, mr bloom, mr mxyzptlik, multiplex, murder machine
 // O: oblivion, owlman
-// P: pied piper, poison ivy, power ring, prometheus, psycho pirate
+// P: pied piper, power ring
 // Q: queen bee
 // R: rainbow raider, ravager (rose), red death, reign, reverse flash
-// S: scar, scarecrow, shade, shimmer, shriek, siren, sloth, solomon grundy, soranik sinestro, spellbinder, sportsmaster, superwoman
-// T: talia al ghul, talon, tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle
+// S: scar, shade, shimmer, shriek, siren, sloth, soranik sinestro, spellbinder, sportsmaster, superwoman
+// T: tar pit, terror twins, the brain, the elite, the top, the trickster, the turtle
 // U: upside down man
 // W: woof, wrath, white lanterns: anti-monitor, deadman, swamp thing
 // Z: zilius zox, zoom

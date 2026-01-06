@@ -618,7 +618,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: `villainDraw(getActiveTeamCount(Flash))`
+                effect: `villainDraw(getActiveTeamCount(Flash,full))`
             }
         ]
     },

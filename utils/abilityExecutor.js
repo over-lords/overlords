@@ -749,7 +749,8 @@ function markFoeDamagedThisTurn(entry, state = gameState) {
 
 function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     if (!teamName) return 0;
-    const teamKey = String(teamName).toLowerCase().trim();
+    const raw = Array.isArray(teamName) ? teamName[0] : teamName;
+    const teamKey = String(raw).toLowerCase().trim();
     const s = state || gameState;
     if (isTeamBonusSuppressed(teamKey, s)) {
         console.log(`[getActiveTeamCount] Team bonuses suppressed for ${teamKey}; returning 0.`);
@@ -757,7 +758,7 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     }
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     let count = 0;
-    const excludeSelf = teamKey !== "all";
+    const excludeSelf = !(Array.isArray(teamName) && String(teamName[1]).toLowerCase().trim() === "full") && teamKey !== "all";
 
     heroIds.forEach(id => {
         if (excludeSelf && heroId != null && String(id) === String(heroId)) return; // exclude activating hero unless counting all
@@ -1029,6 +1030,31 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "getcurrentcityindex") {
         const idx = getCurrentCityIndex(state);
         return Number.isInteger(idx) ? idx : 0;
+    }
+    if (lower === "getcurrenthour") {
+        const h = new Date().getHours(); // 0-23 local time
+        if (!Number.isFinite(h)) return 0;
+        const twelveHour = (h % 12) === 0 ? 12 : (h % 12);
+        return twelveHour;
+    }
+    if (lower === "getnextcurrenthp") {
+        const idx = getCurrentCityIndex(state);
+        const target = Number.isInteger(idx) ? idx - 2 : null;
+        if (target == null || target < 0) return 0;
+        const entry = Array.isArray(state?.cities) ? state.cities[target] : null;
+        if (!entry) return 0;
+        const hp = (typeof entry.currentHP === "number")
+            ? entry.currentHP
+            : (entry.instanceId && state?.villainHP ? state.villainHP[entry.instanceId] : null);
+        return Number.isFinite(hp) ? hp : 0;
+    }
+    if (lower === "getnextcurrentdamage") {
+        const idx = getCurrentCityIndex(state);
+        const target = Number.isInteger(idx) ? idx - 2 : null;
+        if (target == null || target < 0) return 0;
+        const entry = Array.isArray(state?.cities) ? state.cities[target] : null;
+        if (!entry) return 0;
+        return getEffectiveFoeDamage(entry) || 0;
     }
     if (lower === "rescuedbystanderscount") {
         return getTotalRescuedBystanders(state);
@@ -3776,6 +3802,104 @@ EFFECT_HANDLERS.foeCaptureBystander = function(args = [], card, selectedData = {
     }
 };
 
+EFFECT_HANDLERS.randomEffect = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    const list = Array.isArray(args) ? args.flat() : [];
+    const effects = list
+        .filter(Boolean)
+        .map(eff => Array.isArray(eff) ? eff : String(eff))
+        .flat();
+    if (!effects.length) {
+        console.warn("[randomEffect] No effects provided.");
+        return;
+    }
+    const pick = effects[Math.floor(Math.random() * effects.length)];
+    try {
+        executeEffectSafely(pick, card, { state: s, slotIndex: selectedData?.slotIndex, foeEntry: selectedData?.foeEntry });
+    } catch (err) {
+        console.warn("[randomEffect] Failed to execute chosen effect", err);
+    }
+};
+
+EFFECT_HANDLERS.setCurrentHP = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    let entry = selectedData?.foeEntry || null;
+    let slotIndex = selectedData?.slotIndex;
+    if ((!entry || slotIndex == null) && Array.isArray(s.cities)) {
+        if (slotIndex == null && entry && entry.slotIndex != null) slotIndex = entry.slotIndex;
+        if (!entry && slotIndex != null) entry = s.cities[slotIndex] || null;
+    }
+    if (!entry) {
+        console.warn("[setCurrentHP] No foe entry provided.");
+        return;
+    }
+
+    const prev = s._activeEffectFoeSlot;
+    const hadPrev = Object.prototype.hasOwnProperty.call(s, "_activeEffectFoeSlot");
+    if (typeof slotIndex === "number") s._activeEffectFoeSlot = slotIndex;
+
+    const heroId = selectedData?.currentHeroId ?? null;
+    const rawVal = args?.[0] ?? 0;
+    const resolved = resolveNumericValue(rawVal, heroId, s);
+    const val = Math.max(0, Number(resolved) || 0);
+
+    try {
+        entry.currentHP = val;
+        entry.maxHP = Math.max(Number(entry.maxHP) || val, val);
+        const key = getEntryKey(entry) || String(entry.id || "");
+        if (!s.villainHP) s.villainHP = {};
+        if (key) s.villainHP[key] = val;
+        if (entry.id != null) s.villainHP[String(entry.id)] = val;
+        if (typeof slotIndex === "number") {
+            entry.slotIndex = slotIndex;
+            try { refreshFoeCardUI(slotIndex, entry); } catch (_) {}
+        }
+    } finally {
+        if (hadPrev) s._activeEffectFoeSlot = prev;
+        else delete s._activeEffectFoeSlot;
+    }
+};
+
+EFFECT_HANDLERS.setCurrentDamage = function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    let entry = selectedData?.foeEntry || null;
+    let slotIndex = selectedData?.slotIndex;
+    if ((!entry || slotIndex == null) && Array.isArray(s.cities)) {
+        if (slotIndex == null && entry && entry.slotIndex != null) slotIndex = entry.slotIndex;
+        if (!entry && slotIndex != null) entry = s.cities[slotIndex] || null;
+    }
+    if (!entry) {
+        console.warn("[setCurrentDamage] No foe entry provided.");
+        return;
+    }
+
+    const prev = s._activeEffectFoeSlot;
+    const hadPrev = Object.prototype.hasOwnProperty.call(s, "_activeEffectFoeSlot");
+    if (typeof slotIndex === "number") s._activeEffectFoeSlot = slotIndex;
+
+    const heroId = selectedData?.currentHeroId ?? null;
+    const rawVal = args?.[0] ?? 0;
+    const resolved = resolveNumericValue(rawVal, heroId, s);
+    const val = Math.max(0, Number(resolved) || 0);
+
+    try {
+        const base = getBaseFoeDamage(entry);
+        entry.currentDamage = val;
+        entry.currentDamageBonus = val - base;
+        const key = getEntryKey(entry);
+        if (key && s.villainHP && typeof s.villainHP[key] === "number") {
+            // no-op; damage doesn't touch HP
+        }
+        if (typeof slotIndex === "number") {
+            entry.slotIndex = slotIndex;
+            try { refreshFoeCardUI(slotIndex, entry); } catch (_) {}
+        }
+    } finally {
+        if (hadPrev) s._activeEffectFoeSlot = prev;
+        else delete s._activeEffectFoeSlot;
+    }
+};
+
 EFFECT_HANDLERS.damageHeroAtCity = function(args = [], card, selectedData = {}) {
     let cityIdx = args?.[0] ?? null;
     const amount = args?.[1] ?? 0;
@@ -5347,13 +5471,20 @@ EFFECT_HANDLERS.reduceTo = function(args = [], card, selectedData = {}) {
     reduceToHandler(targetHP, targetSpec, selectedData?.state || gameState);
 };
 
-function restoreKOdCardsForHero(heroId, state = gameState) {
+function restoreKOdCardsForHero(heroId, state = gameState, count = null) {
     const s = state || gameState;
     if (!s || !heroId) return;
     const hState = s.heroData?.[heroId];
     if (!hState) return;
     if (Array.isArray(hState.permanentKO) && hState.permanentKO.length) {
-        hState.permanentKO = [];
+        if (count == null) {
+            hState.permanentKO = [];
+        } else {
+            const num = Math.max(0, Number(count) || 0);
+            if (num > 0) {
+                hState.permanentKO.splice(0, num);
+            }
+        }
     }
 }
 
@@ -5758,20 +5889,36 @@ EFFECT_HANDLERS.add = function(args = [], card, selectedData = {}) {
     addFromDeck(count, who, selectedData?.state || gameState);
 };
 EFFECT_HANDLERS.restoreKOdHeroCards = function(args = [], card, selectedData = {}) {
-    const who = String(args?.[0] ?? "current").toLowerCase();
+    const a0 = args?.[0];
+    const a1 = args?.[1];
     const s = selectedData?.state || gameState;
     if (!s || !Array.isArray(s.heroes)) return;
 
+    const isNum = Number.isFinite(Number(a0));
+    const count = isNum ? Math.max(0, Number(a0) || 0) : null; // null means restore all
+    const whoRaw = isNum ? (a1 ?? "current") : (a0 ?? "current");
+    const who = String(whoRaw || "current").toLowerCase();
+
     if (who === "all") {
-        s.heroes.forEach(hid => restoreKOdCardsForHero(hid, s));
-        appendGameLogEntry(`All Heroes' KO'd Action Cards are restored to their discard piles.`, s);
+        s.heroes.forEach(hid => restoreKOdCardsForHero(hid, s, count));
+        appendGameLogEntry(
+            count == null
+                ? `All Heroes' KO'd Action Cards are restored to their discard piles.`
+                : `Up to ${count} KO'd Action Cards are restored for each Hero.`,
+            s
+        );
     } else {
         const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
         const hid = s.heroes[idx];
         if (hid != null) {
-            restoreKOdCardsForHero(hid, s);
+            restoreKOdCardsForHero(hid, s, count);
             const name = heroes.find(h => String(h.id) === String(hid))?.name || `Hero ${hid}`;
-            appendGameLogEntry(`${name}'s KO'd action cards are restored to their discard pile.`, s);
+            appendGameLogEntry(
+                count == null
+                    ? `${name}'s KO'd action cards are restored to their discard pile.`
+                    : `${name} restores up to ${count} KO'd action cards to their discard pile.`,
+                s
+            );
         }
     }
     saveGameState(s);
@@ -6588,9 +6735,12 @@ EFFECT_HANDLERS.disableProtectOn = function(args = [], card, selectedData = {}) 
 };
 
 EFFECT_HANDLERS.reviveKodFoe = function(args = [], card, selectedData = {}) {
-    const count = args?.[0] ?? 1;
+    const heroId = selectedData?.currentHeroId ?? null;
+    const s = selectedData?.state || gameState;
+    const rawCount = args?.[0] ?? 1;
+    const count = resolveNumericValue(rawCount, heroId, s);
     const flag = args?.[1] ?? null;
-    reviveKodFoe(count, selectedData?.state || gameState, flag);
+    reviveKodFoe(count, s, flag);
 };
 
 function isHeroSelectorValue(val) {
@@ -10495,6 +10645,24 @@ function moveCardModelAndDOM(fromIndex, toIndex) {
     const node = fromArea.querySelector(".card-wrapper");
     if (!node) return;
 
+EFFECT_HANDLERS.reduceIncomingDamageBy = function(args = [], card, selectedData = {}) {
+    const amt = Math.max(0, Number(args?.[0] ?? 0) || 0);
+    const s = selectedData?.state || gameState;
+    const entry = selectedData?.foeEntry;
+    const slotIndex = selectedData?.slotIndex;
+    if (!entry || amt <= 0) {
+        console.warn("[reduceIncomingDamageBy] Missing foe entry or invalid amount", { amt, entry });
+        return;
+    }
+    entry.incomingDamageReduction = (Number(entry.incomingDamageReduction) || 0) + amt;
+    if (typeof slotIndex === "number") {
+        entry.slotIndex = slotIndex;
+    }
+    try {
+        getEffectiveFoeDamage(entry);
+    } catch (_) {}
+};
+
     node.classList.add("city-card-slide-left");
 
     toArea.innerHTML = "";
@@ -13043,6 +13211,16 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         ? Math.abs(effectiveAmount)
         : applyDoubleDamageAgainstFoe(effectiveAmount, { slotIndex }, s);
 
+    // Apply foe-side flat incoming damage reduction (e.g., Poison Ivy passive)
+    let reducedAmount = effWithFoeMods;
+    if (!isHeal) {
+        const incomingRed = Math.max(0, Number(entry.incomingDamageReduction || 0));
+        if (incomingRed > 0) {
+            reducedAmount = Math.max(0, effWithFoeMods - incomingRed);
+            console.log(`[damageFoe] Incoming damage reduced by ${incomingRed}: ${effWithFoeMods} -> ${reducedAmount} (slot ${slotIndex})`);
+        }
+    }
+
     const heroName = heroId != null
         ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
         : "Hero";
@@ -13055,8 +13233,8 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         newHP = Math.min(baseHP, currentHP + effWithFoeMods);
         appliedHeal = Math.max(0, newHP - currentHP);
     } else {
-        newHP = Math.max(0, currentHP - effWithFoeMods);
-        appliedDamage = Math.max(0, Math.min(effWithFoeMods, currentHP));
+        newHP = Math.max(0, currentHP - reducedAmount);
+        appliedDamage = Math.max(0, Math.min(reducedAmount, currentHP));
         playDamageSfx(appliedDamage);
     }
 
