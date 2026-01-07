@@ -2953,8 +2953,8 @@ export const villains = [
     abilitiesText: [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Resurrect the first 2 KO'd Henchmen. <span class="line-gap"></span><span class="line-gap"></span> 
                If your Hero ends their turn engaged with Two-Face, there is a 50% chance they take 2 Damage. <span class="line-gap"></span> 
-               Might of the Overlord: Resurrect the first 2 KO'd Henchmen. <span class="line-gap"></span> 
                Reward: KO all Henchmen.`
       }
     ],
@@ -5840,16 +5840,121 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5752",
+    name: "Cinderblock",
+    image: `${cardArtFolder}/cinderblock.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "12",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5753",
+    name: "Dr Sivana",
+    image: `${cardArtFolder}/drSivana.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Shazam",
+    hp: "4",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If your Hero ends their turn engaged with Dr Sivana, draw 1 from the Villain Deck. <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Brought Friends!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `villainDraw(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(3)`]
+      }
+    ]
+  },
+  {
+    id: "5754",
+    name: "The Brain",
+    image: `${cardArtFolder}/theBrain.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "8",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If your Hero ends their turn engaged with The Brain, draw 1 from the Villain Deck. <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Destroy Them!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `villainDraw(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(3)`]
+      }
+    ]
+  },
 ]
 
 
 // A: appelaxian golem, atomica
-// B: black adam, black beetle, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
-// C: cheshire, cinderblock, count vertigo, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-// D: dawnbreaker, deathstorm, devastation, devastator, dr light, drowned, dr sivana
+// B: black adam, black beetle, black hand, black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// C: cheshire, count vertigo, cyborg (7): batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
+// D: dawnbreaker, deathstorm, devastation, devastator, dr light, drowned
 // E: envy
-// F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
-// G: general eiling, gizmo, gluttony, greed, grid
+// F: felix faust, fake titans (6): aqualad, kid flash, omen, wonder girl, robin, speedy
+// G: general eiling, gluttony, greed, grid
 // I: imperiex prime
 // J: jinx, johnny quick
 // K: king kobra, klarion, krona
@@ -5860,7 +5965,7 @@ export const villains = [
 // Q: queen bee
 // R: red death
 // S: scar, shade, shimmer, siren, sloth, sportsmaster, superwoman
-// T: terror twins, the brain
+// T: terror twins
 // W: wrath
 
 
