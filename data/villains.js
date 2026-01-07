@@ -201,7 +201,7 @@ export const villains = [
     abilitiesText: [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
-                Might of the Overlord: Draw 2 cards from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
+                Might of the Overlord: Draw 2 from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
                   Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
       }
     ],
@@ -232,9 +232,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`villainDraw(2)`]
       }
     ],
@@ -539,9 +536,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`rallyNextHenchVillains(2)`]
       }
     ],
@@ -955,9 +949,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`koCapturedBystander(all)`]
       }
     ],
@@ -1058,9 +1049,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`koTopHeroDiscard(all)`]
       }
     ],
@@ -1481,7 +1469,7 @@ export const villains = [
     abilitiesText: [
       {
         text: `Takeover 2 <span class="line-gap"></span> 
-               Might of the Overlord: All Heroes lose a random Icon Ability use. If a Hero has none to lose, they take 3 Damage. <span class="line-gap"></span> 
+               Might of the Overlord: All Heroes lose a random Icon Ability use. <span class="line-gap"></span> 
                Heroes cannot Retreat when engaging Batman. <span class="line-gap"></span> 
                Reward: CHOOSE: KO a Henchman or Villain in Gotham OR Freeze a Henchman or Villain.`
       }
@@ -1535,9 +1523,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`loseIconUse(1,random,all)`]
       }
     ],
@@ -1739,9 +1724,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`destroyCity(1)`]
       }
     ],
@@ -1799,9 +1781,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`destroyCity(1)`]
       }
     ],
@@ -1937,9 +1916,6 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`damageHero(2,all,ignoreDT)`]
       }
     ],
@@ -3585,7 +3561,7 @@ export const villains = [
     image: `${cardArtFolder}/upsideDownMan.jpg`,
     type: "Villain",
     doNotShow: "false",
-    hero: "Justice League Dark",
+    hero: "Justice League",
     hp: "18",
     damage: "3",
     abilitiesText: [
@@ -5881,7 +5857,7 @@ export const villains = [
     image: `${cardArtFolder}/drSivana.jpg`,
     type: "Villain",
     doNotShow: "false",
-    hero: "Shazam",
+    hero: "Justice League",
     hp: "4",
     damage: "1",
     abilitiesText: [
@@ -5945,27 +5921,1123 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5755",
+    name: "Monsieur Mallah",
+    image: `${cardArtFolder}/monsieurMallah.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Increase your Hero's Travel Budget by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: [`travelPlus(1)`]
+      }
+    ]
+  },
+  {
+    id: "5756",
+    name: "Jinx",
+    image: `${cardArtFolder}/jinx.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Teen Titan",
+    hp: "8",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `All cards against Jinx have a 50% chance of failing to work. <span class="line-gap"></span> 
+               Reward: Don't draw from the Villain Deck next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Just Not Your Day, Is It?`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `isAttacked`,
+        effect: `applyVariableCardSuccess(0.5)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`disableVillainDraw(1)`]
+      }
+    ]
+  },
+  {
+    id: "5757",
+    name: "Shimmer",
+    image: `${cardArtFolder}/shimmer.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5758",
+    name: "Sportsmaster",
+    image: `${cardArtFolder}/sportsmaster.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "9",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5759",
+    name: "Match",
+    image: `${cardArtFolder}/match.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5760",
+    name: "Mammoth",
+    image: `${cardArtFolder}/mammoth.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5761",
+    name: "Black Beetle",
+    image: `${cardArtFolder}/blackBeetle.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `For the Reach!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5762",
+    name: "Klarion",
+    image: `${cardArtFolder}/klarion.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 3 <span class="line-gap"></span> 
+                Might of the Overlord: Draw 2 from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
+                  Reward: Shove all unengaged foes as far right as possible.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Oooh, Goodie!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(3)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `shoveVillain(allUnengaged,10)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Let's Play!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`villainDraw(2)`]
+      }
+    ],
+  },
+  {
+    id: "5763",
+    name: "Queen Bee",
+    image: `${cardArtFolder}/queenBee.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: KO the top card of each Hero's discard pile. <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Learn Your Place!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Target Their Weaknesses!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`koTopHeroDiscard(1,all)`]
+      }
+    ],
+  },
+  {
+    id: "5764",
+    name: "Cheshire",
+    image: `${cardArtFolder}/Cheshire.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5765",
+    name: "Appelaxian Golem",
+    image: `${cardArtFolder}/Appelaxian Golem.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Kreee!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5766",
+    name: "King Kobra",
+    image: `${cardArtFolder}/kingKobra.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "13",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Play the next 2 Henchmen from the Villain Deck. <span class="line-gap"></span> 
+               Reward: KO all Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Sometimes a God Must Stoop to Conquer!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageFoe(999,allHenchmen)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Kill Them Already!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`rallyNextHenchVillains(2,henchmenOnly)`]
+      }
+    ],
+  },
+  {
+    id: "5767",
+    name: "Terror Twins",
+    image: `${cardArtFolder}/terrorTwins.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "8",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5768",
+    name: "Count Vertigo",
+    image: `${cardArtFolder}/countVertigo.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Arrow",
+    hp: "11",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Restore all Henchmen to full HP. <span class="line-gap"></span> 
+               Reward: KO all Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Ascend to my Throne, At Last!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageFoe(999,allHenchmen)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Men, To Arms!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`damageFoe(-5,allHenchmen)`]
+      }
+    ],
+  },
+  {
+    id: "5769",
+    name: "Shade",
+    image: `${cardArtFolder}/shade.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I'll Just Be on my Way...`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5770",
+    name: "Imperiex-Prime",
+    image: `${cardArtFolder}/imperiexPrime.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "50",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 3 <span class="line-gap"></span> 
+               Might of the Overlord: Destroy the Rightmost City and play the next Enemy from the E&A. <span class="line-gap"></span><span class="line-gap"></span> 
+               Teleport <span class="line-gap"></span> 
+               Reward: Deal 10 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Behold! Your Death has Arrived!`
+      },
+      {
+        text: `Accept Your Fate!`
+      },
+      {
+          text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(3)`
+      },
+      {
+          effect: `damageOverlord(10)`,
+          condition: `uponDefeat`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Another Universe Falls!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`destroyCity(1)`,`enemyDraw(1,nextEnemy)`]
+      }
+    ],
+  },
+  {
+    id: "5771",
+    name: "Black Adam",
+    image: `${cardArtFolder}/blackAdam.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "24",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+                Might of the Overlord: Play 2 Enemies from the E&A. <span class="line-gap"></span><span class="line-gap"></span> 
+                  Charge 1 <span class="line-gap"></span> 
+                    Reward: Play the next 2 Allies from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Shazam!`
+      },
+      {
+        text: `All Is Right!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(2,nextAlly)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Shazam!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`enemyDraw(2,nextEnemy)`]
+      }
+    ],
+  },
+  {
+    id: "5772",
+    name: "General Eiling",
+    image: `${cardArtFolder}/generalEiling.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Bring me Superman!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5773",
+    name: "Dr Light",
+    image: `${cardArtFolder}/drLight.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "11",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Don't draw from the Villain Deck next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Behold! The Worst Day of Your Life.`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `disableVillainDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5774",
+    name: "Felix Faust",
+    image: `${cardArtFolder}/felixFaust.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Justice League",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Draw 2, and OPTIONAL : KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Will All Serve Me!`
+      },
+      {
+        text: `Reward!`
+      },
+      {
+        text: `KO the top card of the Villain Deck`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `draw(2)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: [`koTopVillainDeck(1)`]
+      }
+    ]
+  },
+  {
+    id: "5775",
+    name: "Power Ring",
+    image: `${cardArtFolder}/powerRing.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Crime Syndicate",
+    hp: "19",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               If you end your turn engaged with Power Ring, he takes 1 Damage. <span class="line-gap"></span> 
+               Reward: Your Hero's DT becomes 3 until the end of their next turn, and deal 2 Damage to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Know My Fear!`
+      },
+      {
+        text: `So Afraid...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `damageFoe(1,getCurrentCityIndex)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`setHeroDTtoX(current,3,nextEnd)`,`damageFoe(2,any)`]
+      }
+    ]
+  },
+  {
+    id: "5776",
+    name: "Superwoman",
+    image: `${cardArtFolder}/superwoman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Crime Syndicate",
+    hp: "22",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 3 <span class="line-gap"></span> 
+               Might of the Overlord: Deal 2 Damage to all Heroes (ignoring their Damage Thresholds). <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging Superman. <span class="line-gap"></span> 
+               Reward: KO a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Think I'll Keep You...`
+      },
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+          text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(3)`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+          type: `quick`,
+          condition: `uponDefeat`,
+          effect: [`damageFoe(999,any)`]
+      },
+    ],
+    mightNamePrint: [
+      {
+          text: `No One Can Stop Me!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`damageHero(2,all,ignoreDT)`]
+      }
+    ],
+  },
+  {
+    id: "5777",
+    name: "Owlman",
+    image: `${cardArtFolder}/owlman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Crime Syndicate",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: All Heroes lose a random Icon Ability use. <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging Owlman. <span class="line-gap"></span> 
+               Reward: Your Hero regains up to 2 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Nothing Matters...`
+      },
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+          text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+          effect: `regainLife(2)`,
+          condition: `uponDefeat`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `I Am The Abyss...`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`loseIconUse(1,random,all)`]
+      }
+    ],
+  },
+  {
+    id: "5778",
+    name: "Johnny Quick",
+    image: `${cardArtFolder}/johnnyQuick.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Crime Syndicate",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Didn't See That Coming?`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5779",
+    name: "Atomica",
+    image: `${cardArtFolder}/atomica.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Crime Syndicate",
+    hp: "13",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               The first time each turn a Hero uses a card to damage Atomica, they take 1 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> 
+               Reward: Regain 1 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Hiya, Guys!`
+      },
+      {
+        text: `Oops! That was Supposed to Kill You!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `firstAttackPerTurn`,
+        effect: `damageHero(1,current,ignoreDT)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`regainLife(1)`]
+      }
+    ]
+  },
+  {
+    id: "5780",
+    name: "Devastation",
+    image: `${cardArtFolder}/devastation.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Wonder Woman",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Bring It!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5781",
+    name: "Deathstorm",
+    image: `${cardArtFolder}/deathstorm.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Crime Syndicate",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               The first time each turn a Hero uses a card to damage Deathstorm, KO the top card of their deck. <span class="line-gap"></span> 
+               Reward: Draw 2, and increase your Hero's Travel Budget by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Hrngg...`
+      },
+      {
+        text: `Wait! Where's My Pants?`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `firstAttackPerTurn`,
+        effect: `koHeroTopCard(1,current)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(2)`,`travelPlus(1)`]
+      }
+    ]
+  },
+  {
+    id: "5782",
+    name: "Grid",
+    image: `${cardArtFolder}/grid.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Crime Syndicate",
+    hp: "18",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               While engaged against Grid, your Hero's Icon Abilities are disabled. <span class="line-gap"></span> 
+               Reward: Draw 1, and increase your Hero's Travel Budget by 1 for this turn. <span class="line-gap"></span> 
+               Also, Scan 1 from the Villain Deck. OPTIONAL : KO the revealed card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Grid Online`
+      },
+      {
+        text: `You - on the other hand - are Offline.`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `passive`,
+        effect: `disableIconAbilitiesAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1)`,`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      }
+    ]
+  },
 ]
 
 
-// A: appelaxian golem, atomica
-// B: black adam, black beetle, black hand, black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
-// C: cheshire, count vertigo, cyborg (7): batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-// D: dawnbreaker, deathstorm, devastation, devastator, dr light, drowned
+// B: black hand, black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// C: cyborg (7): batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
+// D: dawnbreaker, devastator, drowned
 // E: envy
-// F: felix faust, fake titans (6): aqualad, kid flash, omen, wonder girl, robin, speedy
-// G: general eiling, gluttony, greed, grid
-// I: imperiex prime
-// J: jinx, johnny quick
-// K: king kobra, klarion, krona
+// F: fake titans (6): aqualad, kid flash, omen, wonder girl, robin, speedy
+// G: gluttony, greed
 // L: lust
-// M: mammoth, match, merciless, monsieur mallah, murder machine
-// O: owlman
-// P: power ring
-// Q: queen bee
+// M: merciless, murder machine
 // R: red death
-// S: scar, shade, shimmer, siren, sloth, sportsmaster, superwoman
-// T: terror twins
+// S: scar, sloth
 // W: wrath
 
 
