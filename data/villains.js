@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/183eccc00ae1c98d86ec3676a9b859c01dd0b4e2/Public/Images/Card%20Assets/Villains";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/53939d4e3bbbf5562112f72ab03614ddea0122a3/Public/Images/Card%20Assets/Villains";
 
 // ids 5601-7000
 
@@ -7022,6 +7022,32 @@ export const villains = [
       {
         condition: `uponDefeat`,
         effect: [`draw(1)`,`travelPlus(1)`,`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      }
+    ]
+  },
+  {
+    id: "5783",
+    name: "Onomatopoeia",
+    image: `${cardArtFolder}/onomatopoeia.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Arrow",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+          text: `Reward!`
+      }
+  ],
+  abilitiesEffects: [
+      {
+          effect: `draw(1)`,
+          condition: `uponDefeat`
       }
     ]
   },
