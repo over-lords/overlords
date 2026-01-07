@@ -9966,9 +9966,3 @@ export const villains = [
     ]
   },
 ]
-
-
-// VD MODIFIER CARDS - New card type?
-// D: deadman
-// G: gcpd batman
-// W: white lanterns: anti-monitor, deadman, swamp thing
