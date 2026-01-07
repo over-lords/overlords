@@ -4349,7 +4349,7 @@ export const villains = [
 // Z: zilius zox, zoom
 
 
-// HEROES AS VILLAINS - These do not have arts yet
+// HEROES AS VILLAINS
 // A: Aqualad, arsenal, artemis
 // B: Batgirl, Batman Beyond, beast boy, blue beetle
 // D: Donna Troy
