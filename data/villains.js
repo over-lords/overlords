@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/3cb11d16883dbe09e7fd3714a276a45928376b6d/Public/Images/Card%20Assets/Villains";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/183eccc00ae1c98d86ec3676a9b859c01dd0b4e2/Public/Images/Card%20Assets/Villains";
 
 // ids 5601-7000
 
@@ -20,7 +20,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Charge!`
+        text: `My Life, For Zod!`
       },
       {
         text: `Reward!`
@@ -4323,49 +4323,502 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5711",
+    name: "Bizarro",
+    image: `${cardArtFolder}/bizarro.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Bizarro's Here to Save the Day!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5712",
+    name: "General Zod",
+    image: `${cardArtFolder}/generalZod.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "23",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 3 <span class="line-gap"></span> 
+               Might of the Overlord: KO the top card of every Hero's deck. <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Am Krypton's Savior!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(3)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Kneel Before Zod!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`koHeroTopCard(1,all)`]
+      }
+    ],
+  },
+  {
+    id: "5713",
+    name: "Mr Mxyzptlk",
+    image: `${cardArtFolder}/mrMxyzptlik.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Mr Mxyzptlk's HP and Damage are set to random values each time he enters the board. <span class="line-gap"></span> 
+               Reward: Play the next Ally from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Now Dance, Little Man!`
+      },
+      {
+        text: `I'll Give 'em a Wallop!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: [`setCurrentHP(randomNumber(3,18))`,`setCurrentDamage(randomNumber(1,5))`]
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`enemyDraw(1,nextAlly)`]
+      }
+    ]
+  },
+  {
+    id: "5714",
+    name: "Reign",
+    image: `${cardArtFolder}/Reign.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "17",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: KO 2 Bystanders. <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Want a Real Fight!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Bring It On!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`koBystander(2)`]
+      }
+    ],
+  },
+  {
+    id: "5715",
+    name: "Shriek",
+    image: `${cardArtFolder}/Shriek.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "8",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5716",
+    name: "Inque",
+    image: `${cardArtFolder}/Inque.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "14",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5717",
+    name: "Curare",
+    image: `${cardArtFolder}/Curare.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "9",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5718",
+    name: "Spellbinder",
+    image: `${cardArtFolder}/Spellbinder.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the end of a turn in which Spellbinder took Damage, increase his Damage by 1. <span class="line-gap"></span> 
+               Reward: Deal 1 Damage to all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Must Push Deeper`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndWasDamaged`,
+        effect: `increaseVillainDamage(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageFoe(1,all)`
+      }
+    ]
+  },
+  {
+    id: "5719",
+    name: "Vigilante",
+    image: `${cardArtFolder}/Ghoul.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "3",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5720",
+    name: "Dee Dee",
+    image: `${cardArtFolder}/deeDee.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "4",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: `draw(2)`
+      }
+    ]
+  },
+  {
+    id: "5721",
+    name: "Woof",
+    image: `${cardArtFolder}/Woof.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "7",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5722",
+    name: "Bonk",
+    image: `${cardArtFolder}/Bonk.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `draw(1)`
+      }
+    ]
+  },
+  {
+    id: "5723",
+    name: "Chucko",
+    image: `${cardArtFolder}/Chucko.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Batman Beyond",
+    hp: "3",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 1 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(1)`
+      }
+    ]
+  },
 ]
 
 
 // A: appelaxian golem, arkillo, atomica, atrocitus
-// B: bizarro, black adam, black beetle, black flash, bleez, bonk, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
-// C: captain boomerang, captain cold, cheshire, chucko, cinderblock, count vertigo, curare, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-// D: dawnbreaker, deathstorm, dee dee, devastation, devastator, dr light, drowned, dr sivana
+// B: black adam, black beetle, black flash, bleez, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// C: captain boomerang, captain cold, cheshire, cinderblock, count vertigo, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
+// D: dawnbreaker, deathstorm, devastation, devastator, dr light, drowned, dr sivana
 // E: envy
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
-// G: general eiling, general zod, ghoul, girder, gizmo, gluttony, golden glider, greed, grid
+// G: general eiling, girder, gizmo, gluttony, golden glider, greed, grid
 // H: heatwave
-// I: imperiex prime, inertia, inque
+// I: imperiex prime, inertia
 // J: jericho, jinx, johnny quick
 // K: killer frost, king kobra, king shark, klarion, krona
 // L: lust, lyssa drak
-// M: mammoth, match, merciless, mister twister, monsieur mallah, mr mxyzptlik, multiplex, murder machine
+// M: mammoth, match, merciless, mister twister, monsieur mallah, multiplex, murder machine
 // O: owlman
 // P: pied piper, power ring
 // Q: queen bee
-// R: rainbow raider, ravager (rose), red death, reign, reverse flash
-// S: scar, shade, shimmer, shriek, siren, sloth, soranik sinestro, spellbinder, sportsmaster, superwoman
+// R: rainbow raider, ravager (rose), red death, reverse flash
+// S: scar, shade, shimmer, siren, sloth, soranik sinestro, sportsmaster, superwoman
 // T: tar pit, terror twins, the brain, the top, the trickster, the turtle
-// W: woof, wrath
+// W: wrath
 // Z: zilius zox, zoom
 
 
 // HEROES AS VILLAINS
-// A: Aqualad, arsenal, artemis
-// B: Batgirl, Batman Beyond, beast boy, blue beetle
-// D: Donna Troy
-// G: Green arrow, green lantern (John)
-// H: Hawkman
-// J: jason blood
-// K: kid flash
-// L: Lobo, lex luthor
-// M: Mera, miss martian
-// N: Nightwing
+// A: aqualad, arsenal, artemis
+// B: batgirl, batmanBeyond, beastBoy, blueBeetle
+// D: donnaTroy
+// G: greenArrow, johnStewart
+// H: hawkman
+// J: jasonBlood
+// K: kidFlash
+// L: lobo, lexLuthor
+// M: mera, missMartian
+// N: nightwing
 // O: omen
-// R: Red Hood, Red Robin, red lantern (guy), raven
-// S: Supergirl, Superboy, starfire, sinestro
-// T: Tempest
-// V: Vixen
-// W: Wonder Girl, white lantern (kyle)
+// R: redHood, redRobin, guyGardner, raven
+// S: supergirl, superboy, starfire, sinestro
+// T: tempest
+// V: vixen
+// W: wonderGirl, whiteLantern
 
 // VD MODIFIER CARDS - New card type?
 // D: deadman

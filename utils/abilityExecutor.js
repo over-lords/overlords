@@ -1063,6 +1063,20 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
         return findKOdHeroes(state);
     }
 
+    const randMatch = val.match(/^randomnumber\(([^,]+),([^)]+)\)$/i);
+    if (randMatch) {
+        const minRaw = randMatch[1].trim();
+        const maxRaw = randMatch[2].trim();
+        const minVal = resolveNumericValue(minRaw, heroId, state);
+        const maxVal = resolveNumericValue(maxRaw, heroId, state);
+        const min = Number(minVal);
+        const max = Number(maxVal);
+        if (!Number.isFinite(min) || !Number.isFinite(max)) return 0;
+        const low = Math.min(min, max);
+        const high = Math.max(min, max);
+        return Math.floor(Math.random() * (high - low + 1)) + low;
+    }
+
     const activeMatch = val.match(/^getactiveteamcount\(([^)]+)\)$/i);
     if (activeMatch) {
         return getActiveTeamCount(activeMatch[1], heroId, state);
@@ -9870,10 +9884,7 @@ export function executeEffectSafely(effectString, card, selectedData) {
             }
 
         const fnName = match[1];
-        const rawArgs = match[2]
-            .split(",")
-            .map(a => a.trim())
-            .filter(a => a.length > 0);
+        const rawArgs = splitEffectArgs(match[2]);
 
         // Resolve arguments into JS types when possible
         const parsedArgs = rawArgs.map(arg => {
@@ -9897,6 +9908,27 @@ export function executeEffectSafely(effectString, card, selectedData) {
             console.warn(`[executeEffectSafely] Handler '${fnName}' failed: ${err.message}`);
         }
     }
+}
+
+function splitEffectArgs(argString = "") {
+    const args = [];
+    let depth = 0;
+    let current = "";
+
+    for (const ch of argString) {
+        if (ch === "(") depth++;
+        if (ch === ")") depth--;
+
+        if (ch === "," && depth === 0) {
+            if (current.trim()) args.push(current.trim());
+            current = "";
+        } else {
+            current += ch;
+        }
+    }
+
+    if (current.trim()) args.push(current.trim());
+    return args;
 }
 
 export async function triggerRuleEffects(condition, payload = {}, state = gameState) {
