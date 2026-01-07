@@ -4947,30 +4947,391 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5729",
+    name: "Girder",
+    image: `${cardArtFolder}/girder.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5730",
+    name: "Killer Frost",
+    image: `${cardArtFolder}/killerFrost.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "13",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5731",
+    name: "Heat Wave",
+    image: `${cardArtFolder}/heatWave.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "7",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5732",
+    name: "Captain Boomerang",
+    image: `${cardArtFolder}/captainBoomerang.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "5",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 2 Damage to the Overlord, and OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5733",
+    name: "Reverse Flash",
+    image: `${cardArtFolder}/reverseFlash.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `In a Flash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5734",
+    name: "King Shark",
+    image: `${cardArtFolder}/kingShark.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "14",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord, and OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `In a Flash!`
+      },
+      {
+        text: `Reward!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["damageOverlord(3)"]
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5735",
+    name: "Captain Cold",
+    image: `${cardArtFolder}/captainCold.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: Freeze all Henchmen and Villains, then draw 2 from the Villain Deck. <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I'm the Leader!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Okay... I'll Play Fair, Not!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`freezeVillain(all)`,`villainDraw(2)`]
+      }
+    ],
+  },
+  {
+    id: "5736",
+    name: "Zoom",
+    image: `${cardArtFolder}/zoom.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Deal 4 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Try Harder!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["damageOverlord(4)"]
+      }
+    ]
+  },
+  {
+    id: "5737",
+    name: "Tar Pit",
+    image: `${cardArtFolder}/tarPit.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "14",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Mmm, Goopy!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["damageOverlord(2)"]
+      }
+    ]
+  },
+  {
+    id: "5738",
+    name: "Golden Glider",
+    image: `${cardArtFolder}/goldenGlider.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We Need to Move!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["damageOverlord(2)"]
+      }
+    ]
+  },
 ]
 
 
 // A: appelaxian golem, arkillo, atomica, atrocitus
 // B: black adam, black beetle, bleez, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
-// C: captain boomerang, captain cold, cheshire, cinderblock, count vertigo, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
+// C: cheshire, cinderblock, count vertigo, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
 // D: dawnbreaker, deathstorm, devastation, devastator, dr light, drowned, dr sivana
 // E: envy
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
-// G: general eiling, girder, gizmo, gluttony, golden glider, greed, grid
-// H: heatwave
+// G: general eiling, gizmo, gluttony, greed, grid
 // I: imperiex prime
 // J: jericho, jinx, johnny quick
-// K: killer frost, king kobra, king shark, klarion, krona
+// K: king kobra, klarion, krona
 // L: lust, lyssa drak
 // M: mammoth, match, merciless, monsieur mallah, multiplex, murder machine
 // O: owlman
 // P: power ring
 // Q: queen bee
-// R: rainbow raider, ravager (rose), red death, reverse flash
+// R: rainbow raider, ravager (rose), red death
 // S: scar, shade, shimmer, siren, sloth, soranik sinestro, sportsmaster, superwoman
-// T: tar pit, terror twins, the brain, the turtle
+// T: terror twins, the brain, the turtle
 // W: wrath
-// Z: zilius zox, zoom
+// Z: zilius zox
 
 
 // HEROES AS VILLAINS
