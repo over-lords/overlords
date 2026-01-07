@@ -712,29 +712,46 @@ function applyHalfDamageModifier(amount, heroId, state = gameState) {
 
 function foeHasHalfDamageModifierAgainstHero(entry, heroId, state = gameState) {
     const s = state || gameState;
+
     const heroObj = heroes.find(h => String(h.id) === String(heroId));
     if (!heroObj) return false;
+
     const heroTeams = getHeroTeamsForCard(heroObj);
-    if (!heroTeams.length) return false;
+    // NOTE: we intentionally do NOT early-return here anymore,
+    // because the new "all" flag must still work even if heroTeams is empty.
 
     const foeCard = findCardInAllSources(entry.id);
-    const effects = Array.isArray(foeCard?.abilitiesEffects) ? foeCard.abilitiesEffects : [];
+    const effects = Array.isArray(foeCard?.abilitiesEffects)
+        ? foeCard.abilitiesEffects
+        : [];
 
     for (const eff of effects) {
         if (!eff || (eff.type || "").toLowerCase() !== "passive") continue;
+
         const raw = eff.effect;
         const list = Array.isArray(raw) ? raw : [raw];
+
         for (const e of list) {
             if (typeof e !== "string") continue;
+
             const m = e.trim().match(/^halveincomingdamagefrom\(([^)]+)\)$/i);
             if (!m) continue;
-            const teamKey = m[1].trim().toLowerCase();
-            if (!teamKey) continue;
-            if (heroTeams.some(t => t === teamKey)) {
+
+            const key = m[1].trim().toLowerCase();
+            if (!key) continue;
+
+            // NEW: global modifier
+            if (key === "all") {
+                return true;
+            }
+
+            // Existing behavior: team-based modifier
+            if (heroTeams.length && heroTeams.some(t => t === key)) {
                 return true;
             }
         }
     }
+
     return false;
 }
 

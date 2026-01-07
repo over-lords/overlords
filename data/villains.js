@@ -7051,23 +7051,298 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5784",
+    name: "The Drowned",
+    image: `${cardArtFolder}/drowned.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Dark Knight",
+    hp: "30",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging The Drowned. <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Drown!`
+      },
+      {
+        text: `I'm Not Trapped With You`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageFoe(2,all)`
+      }
+    ]
+  },
+  {
+    id: "5785",
+    name: "The Murder Machine",
+    image: `${cardArtFolder}/murderMachine.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Dark Knight",
+    hp: "30",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> 
+               Heroes cannot use their Icon Abilities when engaging The Murder Machine. <span class="line-gap"></span> 
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Thank You, Alfred...`
+      },
+      {
+        text: `Fell For It Again`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `passive`,
+        effect: `disableIconAbilitiesAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      }
+    ]
+  },
+  {
+    id: "5786",
+    name: "The Red Death",
+    image: `${cardArtFolder}/redDeath.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Dark Knight",
+    hp: "30",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging The Red Death. <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I'll Be Quick About It...`
+      },
+      {
+        text: `You're All Mine Now`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5787",
+    name: "The Dawnbreaker",
+    image: `${cardArtFolder}/dawnbreaker.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Dark Knight",
+    hp: "30",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               All Heroes deal half Damage against The Dawnbreaker. <span class="line-gap"></span> 
+               Reward: All Heroes regain up to 2 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Everyone Fears Something...`
+      },
+      {
+        text: `Lights Out.`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `passive`,
+        effect: `halveIncomingDamageFrom(all)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `regainLife(2,all)`
+      }
+    ]
+  },
+  {
+    id: "5788",
+    name: "The Devastator",
+    image: `${cardArtFolder}/devastator.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Dark Knight",
+    hp: "30",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Clash <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging The Devastator. <span class="line-gap"></span> 
+               Reward: Deal 10 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Clash!`
+      },
+      {
+        text: `I Will Win!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        condition: `none`,
+        effect: `hasClash`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(10)`
+      }
+    ]
+  },
+  {
+    id: "5789",
+    name: "The Merciless",
+    image: `${cardArtFolder}/merciless.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Dark Knight",
+    hp: "30",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging The Merciless. <span class="line-gap"></span> 
+               When The Merciless Damages a Hero, that Hero, and all others, take 1 additional Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> 
+               Reward: Deal 10 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `I Will Win!`
+      },
+      {
+        text: `You Will All Pay!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `damageHero(1,all,ignoreDT)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(10)`
+      }
+    ]
+  },
 ]
 
 
 // B: black hand, black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
 // C: cyborg (7): batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-// D: dawnbreaker, devastator, drowned
 // E: envy
 // F: fake titans (6): aqualad, kid flash, omen, wonder girl, robin, speedy
 // G: gluttony, greed
 // L: lust
-// M: merciless, murder machine
-// R: red death
 // S: scar, sloth
 // W: wrath
 
 
-// HEROES AS VILLAINS
+// HEROES AS VILLAINS (31 left)
 // A: aqualad, arsenal, artemis
 // B: batgirl, batmanBeyond, beastBoy, blueBeetle
 // D: donnaTroy
