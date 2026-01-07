@@ -477,8 +477,6 @@ export const tactics = [
       {
         type: `passive`,
         condition: `villainDrawn()`,
-        uses: `0`,
-        shared: `no`,
         effect: `villainGainCharge(1)`
       }
     ],
@@ -490,9 +488,6 @@ export const tactics = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: `rallyNextHenchVillains(3)`
       }
     ]
@@ -711,7 +706,7 @@ export const tactics = [
       {
         text: `Required: A maximum of 10 Henchmen, 20 Villains, 5 Bystanders, 6 Mights of the Overlord, 3 Scenarios, and a minimum of 2 Tactics and 2 Overlords. <span class="line-gap"></span>
                 Double the Damage of all Villains. <span class="line-gap"></span>
-                  All Heroes gain a 1/Game Icon Ability: On their turn, KO a Henchman or Villain. <span class="line-gap"></span>
+                  All Heroes gain an Icon Ability: "1/Game: KO a Henchman or Villain". <span class="line-gap"></span>
                     Might of the Overlord: KO a Hero.`
       }
     ],
@@ -727,15 +722,12 @@ export const tactics = [
       {
         type: `quick`,
         condition: `villainDrawn()`,
-        uses: `999`,
-        shared: `no`,
         effect: `doubleVillainDamage()`
       },
       {
         type: `quick`,
-        condition: `gameStart()`,
+        condition: `turnStart`,
         uses: `1`,
-        shared: `no`,
         effect: `grantInstantKOToAll()`
       }
     ],
@@ -747,9 +739,6 @@ export const tactics = [
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
         effect: [`damageHero(999,random,ignoreDT)`]
       }
     ]

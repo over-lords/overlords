@@ -290,7 +290,7 @@ export const scenarios = [
         abilitiesEffects: [
             {
                 type: `passive`,
-                effect: [`doubleDamageAgainst(Squad,permanent)`,`doubleDamageAgainst(Legion,permanent)`]
+                effect: [`doubleDamageAgainst(Squad,permanent,5212)`,`doubleDamageAgainst(Legion,permanent,5212)`]
             }
         ]
     },

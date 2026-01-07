@@ -643,51 +643,41 @@ export const overlords = [
     doNotShow: "true",
     abilitiesText: [
       {
-        text: `Each time a Villain is KO'd by a Hero, there is a 1 in 6 chance that Hero takes 5 Damage, and a 1 in 6 chance that Hero regains up to 5 HP. <span class="line-gap"></span> 
-               Might of the Overlord: Play the first 3 KO'd Henchmen.<span class="line-gap"></span> 
-               Bonus Feature: Once per turn, if a [ICON:Squad] Hero damages Amanda Waller, there is a 1 in 6 chance they take 10 Damage.`
+        text: `Each time a Villain is KO'd by a Hero, that Hero may either take 5 Damage or gain 5 HP. <span class="line-gap"></span> 
+               Might of the Overlord: Resurrect the first 3 KO'd Henchmen. <span class="line-gap"></span> 
+               Bonus Feature: The first time each turn a [ICON:Squad] Hero Damages Amanda Waller, there is a chance they take 10 Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
         text: `Was that one of ours?`
+      },
+      {
+        text: `Remember, Convict... I Own You.`
       }
     ],
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `kodVillain`,
-        uses: `999`,
-        shared: `no`,
-        effect: `healOrHurt(current,5)`
+        condition: `villainKOd`,
+        chance: 0.33,
+        effect: `randomEffect(damageHero(5,lastDamageCauser),regainLife(5,lastDamageCauser))`
+      },
+      {
+        type: `quick`,
+        condition: [`firstAttackPerTurn`,`isDamagedBy(Squad)`],
+        effect: `damageHero(10,current)`
       }
     ],
     mightNamePrint: [
       {
-          text: `Endless Operatives.`
+          text: `I Have Endless Operatives`
       }
     ],
     mightEffects: [
       {
         type: `might`,
-        condition: `might`,
-        uses: `999`,
-        shared: `no`,
-        effect: `resurrectHenchmen(3)`
-      }
-    ],
-    bonusNamePrint: [
-      {
-        text: `Remember, Convict.`
-      }
-    ],
-    bonusEffects: [
-      {
-        type: `quick`,
-        condition: `OPTisDamagedBy(Squad)`,
-        uses: `999`,
-        shared: `no`,
-        effect: `possibleDamageAttacker(10)`
+        effect: `reviveKodFoe(3,henchmenOnly)`
       }
     ]
   },
