@@ -128,21 +128,20 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: At the start of his turn, Shazam can deal 10 Damage to a Henchman or Villain. Then, he cannot deal Damage until the start of his next turn.`
+        text: `3/Game: Once per turn, deal 10 Damage to a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Damage Henchman or Villain`
+        text: `Damage a Henchman or Villain`
       }
     ],
     abilitiesEffects: [
       {
         type: `standard`,
-        condition: `none`,
+        howOften: `OPT`,
         uses: `3`,
-        shared: `no`,
-        effect: `damageOneVillainSleepHero(10)`
+        effect: `damageFoe(10,any)`
       }
     ]
   },
@@ -296,7 +295,7 @@ export const heroes = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Deal 6 Damage to one Henchmen or Villain`
+        text: `Deal 6 Damage to a Henchmen or Villain`
       },
       {
         text: `KO the top 4 cards of your Deck to Regain 4 HP`
@@ -305,17 +304,13 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `standard`,
-        condition: `none`,
         uses: `2`,
-        shared: `no`,
         effect: `damageFoe(6,any)`
       },
       {
         type: `standard`,
-        condition: `none`,
         uses: `3`,
-        shared: `no`,
-        effect: [`koFromDecktop(4)`,`regainLife(4)`]
+        effect: [`koHeroTopCard(4,current)`,`regainLife(4)`]
       }
     ]
   },
@@ -334,28 +329,29 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: After damaging them, Lock a Henchman or Villain in their City. OPTIONAL: Donna Troy can then Withdraw.`
+        text: `2/Game: Double the Damage of one of Donna Troy's cards, and if you do, negate its additional effects. <span class="line-gap"></span> 
+               1/Game: Freeze a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Lock them in the City`
+        text: `Donna Troy: Ignore the Text, Double the Damage`
+      },
+      {
+        text: `Freeze a Henchman or Villain`
       }
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: `hasDamagedVillain`,
-        uses: `3`,
-        shared: `no`,
-        effect: `freezeVillain(lastDamagedFoe)`
+        type: `optional`,
+        condition: `wouldUseDamageCard`,
+        uses: `2`,
+        effect: `doubleDamage(ignoreEffectText)`
       },
       {
-        type: `optional`,
-        condition: `usedOtherFaceAbility`,
-        uses: `999`,
-        shared: `no`,
-        effect: `retreatHeroToHQ`
+        type: `standard`,
+        uses: `1`,
+        effect: `freezeVillain(any)`
       }
     ]
   },
@@ -374,7 +370,8 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `All Henchmen and Villains damaged by Starfire during her turn take 1 additional Damage at the end of her turns. <span class="line-gap"></span> 3/Game: Once per turn, move all unengaged Henchmen and Villains as far right as possible.`
+        text: `All Henchmen and Villains damaged by Starfire during her turn take 1 additional Damage at the end of her turns. <span class="line-gap"></span> 
+               3/Game: Once per turn, shove all unengaged Henchmen and Villains as far right as possible.`
       }
     ],
     abilitiesNamePrint: [
@@ -382,23 +379,20 @@ export const heroes = [
         text: `Burn them`
       },
       {
-        text: `Move all unengaged to the right`
+        text: `Shove all unengaged foes right`
       }
     ],
     abilitiesEffects: [
       {
         type: `passive`,
         condition: `endTurn`,
-        uses: `0`,
-        shared: `no`,
         effect: `burnDamaged(1)`
       },
       {
         type: `standard`,
-        condition: `none`,
+        howOften: `OPT`,
         uses: `3`,
-        shared: `no`,
-        effect: `moveUnengagedRight(Max)`
+        effect: `shoveVillain(allUnengaged,10)`
       }
     ]
   },
@@ -417,7 +411,8 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `5/Game: Discard 1, Draw 1. <span class="line-gap"></span> 1/Game: Discard 1, Retrieve 1 from Beast Boy's discard pile.`
+        text: `5/Game: Discard 1, Draw 1. <span class="line-gap"></span> 
+               1/Game: Discard 1, Retrieve 1 from Beast Boy's discard pile.`
       }
     ],
     abilitiesNamePrint: [
@@ -460,7 +455,8 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Superboy can use his cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 2/Game: Superboy can ignore taking Damage, or he can Protect another Hero.`
+        text: `Superboy can use his cards to Damage adjacent Henchmen and Villains; the additional effects of those cards are negated. <span class="line-gap"></span> 
+               2/Game: Superboy can ignore taking Damage, or he can Protect another Hero.`
       }
     ],
     abilitiesNamePrint: [
@@ -632,7 +628,8 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> 3/Game: If Lobo Damages a Villain, he can regain the Damage amount as HP.`
+        text: `Permanent KO. <span class="line-gap"></span> 
+               3/Game: If Lobo Damages a Villain, he can regain the Damage amount as HP.`
       }
     ],
     abilitiesNamePrint: [
@@ -675,7 +672,9 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> Deathstroke cannot be damaged more than once by each Henchman or Villain. <span class="line-gap"></span> 3/Game: Once per turn, discard 2 and KO a Henchman or Villain.`
+        text: `Permanent KO. <span class="line-gap"></span> 
+               Deathstroke cannot be damaged more than once by each Henchman or Villain. <span class="line-gap"></span> 
+               3/Game: Once per turn, discard 2 and KO a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -686,7 +685,7 @@ export const heroes = [
         text: `Can't get me twice`
       },
       {
-        text: `Discard 1 to KO a Henchman or Villain`
+        text: `Discard 2 to KO a Henchman or Villain`
       }
     ],
     abilitiesEffects: [
@@ -709,7 +708,7 @@ export const heroes = [
         condition: `none`,
         uses: `3`,
         shared: `no`,
-        effect: `discardXKOX(1,1)`
+        effect: `discardXKOX(2,1)`
       }
     ]
   },
@@ -834,7 +833,8 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `Once per turn, if Lex Luthor reduces a Henchman or Villain to 1 HP, he can KO it. <span class="line-gap"></span> 3/Game: Once per turn, KO the top 3 cards of Lex Luthor's deck and KO his engaged Henchman or Villain. No one gains their Upon Victory effect.`
+        text: `Once per turn, if Lex Luthor reduces a Henchman or Villain to 1 HP, he can KO it. <span class="line-gap"></span> 
+               3/Game: Once per turn, KO the top 3 cards of Lex Luthor's deck and KO his engaged Henchman or Villain. No one gains their Upon Victory effect.`
       }
     ],
     abilitiesNamePrint: [
@@ -1157,42 +1157,31 @@ export const heroes = [
     travel: "3",
     abilitiesText: [
       {
-        text: `2/Game: Supergirl can ignore taking Damage, or she can Protect another Hero. <span class="line-gap"></span> 1/Game: Rescue the Captured Bystanders from a Henchman or Villain and deal 2 Damage to them.`
+        text: `2/Game: Once per turn, Supergirl can Block herself or another Hero. <span class="line-gap"></span> 
+               2/Game: Supergirl can rescue all Captured Bystanders from a foe and deal 2 Damage to them.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Ignore the Damage`
+        text: `Supergirl: Block the Damage`
       },
       {
-        text: `Protect another Hero`
-      },
-      {
-        text: `Rescue Bystander and Damage Capturer`
+        text: `Rescue Captured Bystanders and Damage Foe`
       }
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
-        condition: `damageSelf`,
+        type: `optional`,
+        condition: `damageHero`,
+        howOften: `OPT`,
         uses: `2`,
-        shared: `yes`,
-        effect: `ignoreDamage`
-      },
-      {
-        type: `quick`,
-        condition: `damageOther`,
-        uses: `2`,
-        shared: `yes`,
-        effect: `protectHero`
+        effect: `blockDamage()`
       },
       {
         type: `standard`,
-        condition: `villainHasBystander`,
-        uses: `1`,
-        shared: `no`,
-        effect: `rescueBystanderDamageCapturer(2)`
-      }
+        uses: `2`,
+        effect: [`rescueCapturedBystander(any)`,`damageFoe(2,lastRescuedFrom)`]
+      },
     ]
   },
   {
@@ -2303,7 +2292,7 @@ export const heroes = [
     color: "red",
     teams: ["Flash","Titans","Justice"],
     hp: "10",
-    damageThreshold: "3",
+    damageThreshold: "2",
     retreat: "2",
     travel: "3",
     abilitiesText: [
@@ -2679,65 +2668,6 @@ export const heroes = [
   },
   {
     id: "60",
-    name: "Deadman",
-    image: `${cardArtFolder}/Deadman.jpg`,
-    type: "Hero",
-    category: "Tactician",
-    doNotShow: "true",
-    color: "ivory",
-    teams: ["Dark"],
-    hp: "0",
-    damageThreshold: "0",
-    retreat: "0",
-    travel: "0",
-    abilitiesText: [
-      {
-        text: `Deadman can take over Henchmen, Villains, and other Heroes 
-              in order to deal damage. He can use the Heroes to take regular 
-              turns, and the Henchmen and Villains to move up to one city 
-              over (on top of his chosen foe) and into the Hero space to deal 
-              his host’s damage twice to the Henchman or Villain in that city. 
-              If he possesses a Henchman or Villain with Bystanders, he can 
-              omit one of his two attacks to release them all.
-              <span class="line-gap"></span>
-              At the end of his turn, he must leave his host. If they were left 
-              in a city, they take damage as normal, and if it was a Henchman 
-              or Villain that he possessed, and they were not KO'd from the 
-              damage, they then slide to the closest city to the left and 
-              resume their evil acts. If his villanous host was KO’d, 
-              then he gains their Reward effect.
-              <span class="line-gap"></span>
-              Deadman cannot win games. If he is the last Hero, 
-              then Evil Wins.`
-      }
-    ],
-    abilitiesNamePrint: [
-      {
-        text: `Borrow a Foe's Body`
-      },
-      {
-        text: `Borrow a Hero's Body`
-      },
-    ],
-    abilitiesEffects: [
-      {
-        type: `quick`,
-        condition: `beforeTravel`,
-        uses: `999`,
-        shared: `no`,
-        effect: `deadmanBorrowVillain`
-      },
-      {
-        type: `quick`,
-        condition: `beforeTravel`,
-        uses: `999`,
-        shared: `no`,
-        effect: `deadmanBorrowHero`
-      }
-    ]
-  },
-  {
-    id: "61",
     name: "Harley Quinn",
     image: `${cardArtFolder}/Harley Quinn.jpg`,
     type: "Hero",
@@ -2790,7 +2720,7 @@ export const heroes = [
     ]
   },
   {
-    id: "62",
+    id: "61",
     name: "Captain Boomerang",
     image: `${cardArtFolder}/Captain Boomerang.jpg`,
     type: "Hero",
@@ -2843,7 +2773,7 @@ export const heroes = [
     ]
   },
   {
-    id: "63",
+    id: "62",
     name: "Parasite",
     image: `${cardArtFolder}/Parasite.jpg`,
     type: "Hero",
@@ -2896,7 +2826,7 @@ export const heroes = [
     ]
   },
   {
-    id: "64",
+    id: "63",
     name: "Cheetah",
     image: `${cardArtFolder}/Cheetah.jpg`,
     type: "Hero",

@@ -2149,6 +2149,31 @@ export const heroCards = [
     ]
   },
   {
+    id: "721",
+    type: "Main",
+    name: "Stronger than Superman",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/strongerThanSuperman.jpg`,
+    perDeck: "1",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every KO'd Bystander and  3 for every KO'd Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Increase card's damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: [`increaseCardDamage(getKOdBystanders)`,`increaseCardDamage(3*findKOdHeroes)`]
+      }
+    ]
+  },
+  {
     id: "1061",
     type: "Main",
     name: "I Am Batman",
