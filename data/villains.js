@@ -7644,12 +7644,281 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5798",
+    name: "Fake Kid Flash",
+    image: `${cardArtFolder}/fakeKidFlash.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Fake Titan",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Let's See If You Can Keep Up!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5799",
+    name: "Fake Wonder Girl",
+    image: `${cardArtFolder}/fakeWonderGirl.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Fake Titan",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We're Just As Strong As You!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5800",
+    name: "Fake Aqualad",
+    image: `${cardArtFolder}/fakeAqualad.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Fake Titan",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Crashing Down!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5801",
+    name: "Fake Speedy",
+    image: `${cardArtFolder}/fakeSpeedy.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Fake Titan",
+    hp: "9",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span> 
+               Reward: Deal 1 Damage to up to 2 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Bang!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(1,random,ignoreDT)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageFoeMulti(1,2,any)`
+      }
+    ]
+  },
+  {
+    id: "5802",
+    name: "Fake Omen",
+    image: `${cardArtFolder}/fakeOmen.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Fake Titan",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      }
+    ]
+  },
+  {
+    id: "5803",
+    name: "Fake Robin",
+    image: `${cardArtFolder}/fakeRobin.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Fake Titan",
+    hp: "8",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Draw 1, and deal 1 Damage to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`damageFoe(1,any)`]
+      }
+    ]
+  },
+  {
+    id: "5804",
+    name: "Cyborg Captain Cold",
+    image: `${cardArtFolder}/cyborgCaptainCold.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Brother Eye",
+    hp: "11",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5805",
+    name: "Cyborg Booster Gold",
+    image: `${cardArtFolder}/cyborgBoosterGold.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Brother Eye",
+    hp: "14",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Draw 1, and OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Eye See You!`
+      },
+      {
+        text: `Reward!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `draw(1)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
 ]
 
 
 // B: black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
 // C: cyborg (7): batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-// F: fake titans (6): aqualad, kid flash, omen, wonder girl, robin, speedy
 
 
 // HEROES AS VILLAINS (31 left)
