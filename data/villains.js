@@ -202,7 +202,7 @@ export const villains = [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
                 Might of the Overlord: Draw 2 from the Villain Deck. <span class="line-gap"></span><span class="line-gap"></span> 
-                  Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+                  Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -2153,7 +2153,7 @@ export const villains = [
     abilitiesText: [
       {
         text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> 
-               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -3103,7 +3103,7 @@ export const villains = [
         text: `Takeover 1 <span class="line-gap"></span> 
                Might of the Overlord: Resurrect 1 KO'd Henchman for every active Hero. <span class="line-gap"></span> 
                Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> 
-               OPTIONAL : KO the top card of the Villain Deck.`
+               OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -3397,7 +3397,7 @@ export const villains = [
     abilitiesText: [
       {
         text: `Charge 1 <span class="line-gap"></span> 
-               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -6639,7 +6639,7 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Teleport <span class="line-gap"></span> Reward: Draw 2, and OPTIONAL : KO the top card of the Villain Deck.`
+        text: `Teleport <span class="line-gap"></span> Reward: Draw 2, and OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -6905,7 +6905,7 @@ export const villains = [
   {
     id: "5780",
     name: "Devastation",
-    image: `${cardArtFolder}/devastation.jpg`,
+    image: `${cardArtFolder}/Devastation.jpg`,
     type: "Villain",
     doNotShow: "false",
     hero: "Wonder Woman",
@@ -7107,7 +7107,7 @@ export const villains = [
       {
         text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> 
                Heroes cannot use their Icon Abilities when engaging The Murder Machine. <span class="line-gap"></span> 
-               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -7449,7 +7449,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `turnEndEngaged`,
-        effect: `koTopHeroDiscard(1)`
+        effect: `koTopHeroDiscard(1,current)`
       },
       {
         condition: `uponDefeat`,
@@ -7564,7 +7564,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `turnEndEngaged`,
-        effect: `koTopHeroDiscard(1)`
+        effect: `koTopHeroDiscard(1,current)`
       },
       {
         type: `quick`,
@@ -7798,7 +7798,7 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the top card of the Villain Deck.`
+        text: `Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
       }
     ],
     abilitiesNamePrint: [
@@ -7914,30 +7914,1340 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5806",
+    name: "Cyborg Frankenstein",
+    image: `${cardArtFolder}/cyborgFrankenstein.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Brother Eye",
+    hp: "18",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: KO a Henchman or Villain, and OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageFoe(999,any)`]
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5807",
+    name: "Cyborg Green Lantern (John Stewart)",
+    image: `${cardArtFolder}/cyborgGreenLantern.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Brother Eye",
+    hp: "17",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Draw 1 and increase your Hero's Damage Threshold by 1 until the end of their next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `No One Escapes My Sight!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`increaseHeroDT(currentHero,1,endNextTurn)`]
+      }
+    ]
+  },
+  {
+    id: "5808",
+    name: "Cyborg Batman",
+    image: `${cardArtFolder}/cyborgBatman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Brother Eye",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Heroes cannot Retreat or use Icon Abilities when engaging Batman. <span class="line-gap"></span> 
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+        text: `What Do You Think You're Doing?`
+      },
+      {
+          text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `passive`,
+        effect: `disableIconAbilitiesAgainst()`
+      },
+      {
+          effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`],
+          condition: `uponDefeat`
+      }
+    ]
+  },
+  {
+    id: "5809",
+    name: "Cyborg Wonder Woman",
+    image: `${cardArtFolder}/cyborgWonderWoman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Brother Eye",
+    hp: "16",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Eye Am All-Powerful!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5810",
+    name: "Cyborg Superman",
+    image: `${cardArtFolder}/cyborgSupermanEye.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Brother Eye",
+    hp: "18",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: KO a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Will Soon be Ceased!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageFoe(999,any)`
+      }
+    ]
+  },
+  {
+    id: "5811",
+    name: "Black Lantern Captain Boomerang",
+    image: `${cardArtFolder}/blackLanternCaptainBoomerang.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Heads Up!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(1,random)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5812",
+    name: "Black Lantern Elongated Man",
+    image: `${cardArtFolder}/blackLanternElongatedMan.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5813",
+    name: "Black Lantern Hawk",
+    image: `${cardArtFolder}/blackLanternHawk.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "8",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 1 Damage to the Overlord and KO a Henchman.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Why'd You Get All Quiet?`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(1)`,`damageFoe(999,anyHenchman)`]
+      }
+    ]
+  },
+  {
+    id: "5814",
+    name: "Black Lantern Blue Beetle (Ted Kord)",
+    image: `${cardArtFolder}/blackLanternBlueBeetle.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Regain up to 2 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `regainLife(2)`
+      }
+    ]
+  },
+  {
+    id: "5815",
+    name: "Black Lantern Green Arrow",
+    image: `${cardArtFolder}/blackLanternGreenArrow.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Heroes engaged with Green Arrow cannot use their Icon Abilities. <span class="line-gap"></span> 
+                Reward: Draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `C'mon Pretty Bird...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableIconAbilitiesAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `draw(1)`
+      }
+    ]
+  },
+  {
+    id: "5816",
+    name: "Black Lantern Batman",
+    image: `${cardArtFolder}/blackLanternBatman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Heroes engaged with Batman cannot use their Icon Abilities. <span class="line-gap"></span> 
+                Reward: Draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Hrkaa...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableIconAbilitiesAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `draw(1)`
+      }
+    ]
+  },
+  {
+    id: "5817",
+    name: "Black Lantern Terra",
+    image: `${cardArtFolder}/blackLanternTerra.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "12",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+                Reward: Restore a Destroyed City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Gar... It's Me...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `restoreCity(1)`
+      }
+    ]
+  },
+  {
+    id: "5818",
+    name: "Black Lantern Hawkman and Hawkwoman",
+    image: `${cardArtFolder}/blackLanternHawkmanAndHawkwoman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "24",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+                Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Guess We're Back Again!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1)`]
+      }
+    ]
+  },
+  {
+    id: "5819",
+    name: "Black Lantern Vibe",
+    image: `${cardArtFolder}/blackLanternVibe.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "9",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+                Reward: Restore a Destroyed City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Radical`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `restoreCity(1)`
+      }
+    ]
+  },
+  {
+    id: "5820",
+    name: "Black Lantern Titans",
+    image: `${cardArtFolder}/blackLanternTitans.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+                 Heroes cannot Retreat when engaging The Titans. <span class="line-gap"></span> 
+                   Reward: Draw 2, and increase your Hero's Travel Budget by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Titans, Go!`
+      },
+      {
+        text: `Together Again!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(2)`,`travelPlus(1)`]
+      }
+    ],
+  },
+  {
+    id: "5821",
+    name: "Black Lantern Professor Zoom",
+    image: `${cardArtFolder}/blackLanternProfessorZoom.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Draw 2, and increase your Hero's Travel Budget by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Barry!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(2)`,`travelPlus(1)`]
+      }
+    ],
+  },
+  {
+    id: "5822",
+    name: "Black Lantern Aquaman",
+    image: `${cardArtFolder}/blackLanternAquaman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: KO a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Behold, a King is Risen!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageFoe(999,any)`]
+      }
+    ],
+  },
+  {
+    id: "5823",
+    name: "Black Lantern Firestorm",
+    image: `${cardArtFolder}/blackLanternFirestorm.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "19",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               The first time each turn your Hero deals Damage to Firestorm, KO the top card of their deck. If your Hero ends their turn engaged with Firestorm, KO the top card of their discard pile. <span class="line-gap"></span> 
+               Reward: Restore all KO'd cards in your Hero's discard pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I'll Eat Your Heart!`
+      },
+      {
+        text: `NaCl`
+      },
+      {
+        text: `Yummy`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `firstAttackPerTurn`,
+        effect: `koHeroTopCard(1,current)`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `koTopHeroDiscard(1,current)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`restoreKOdHeroCards(50,current)`]
+      }
+    ]
+  },
+  {
+    id: "5824",
+    name: "Black Lantern Wonder Woman",
+    image: `${cardArtFolder}/blackLanternWonderWoman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 5 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Your Love Won't Save You!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(5)`]
+      }
+    ],
+  },
+  {
+    id: "5825",
+    name: "Black Lantern Martian Manhunter",
+    image: `${cardArtFolder}/blackLanternMartianManhunter.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "18",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Freeze and give Curse 3 to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Give In!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`freezeVillain(any)`,`giveVillainPassive(curse(3),lastFrozen)`]
+      }
+    ],
+  },
+  {
+    id: "5826",
+    name: "Black Lantern Superman",
+    image: `${cardArtFolder}/blackLanternSuperman.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "22",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Deal 7 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `You Can't Win!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(7)`]
+      }
+    ],
+  },
+  {
+    id: "5827",
+    name: "Black Lantern Superboy-Prime",
+    image: `${cardArtFolder}/blackLanternSuperboyPrime.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "27",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               If your Hero ends their turn engaged with Superboy-Prime, draw from the E&A. <span class="line-gap"></span> 
+               Reward: Deal 5 Damage to the Overlord and play the next Ally from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `What's Happening?!`
+      },
+      {
+        text: `Multiversal Upheaval`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `enemyDraw(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(5)`,`enemyDraw(1,nextAlly)`]
+      }
+    ]
+  },
+  {
+    id: "5828",
+    name: "Black Lantern Spectre",
+    image: `${cardArtFolder}/blackLanternSpectre.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "30",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Clash <span class="line-gap"></span> 
+               Reward: Restore all Destroyed Cities.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I am Death's Vengeance!`
+      },
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`restoreCity(6)`]
+      }
+    ]
+  },
+  {
+    id: "5829",
+    name: "Black Lantern Anti-Monitor",
+    image: `${cardArtFolder}/blackLanternAntiMonitor.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "50",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+               Reward: KO all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageFoe(999,all)`]
+      }
+    ]
+  },
+  {
+    id: "5830",
+    name: "Batman Beyond",
+    image: `${cardArtFolder}/batmanBeyond.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Heroes cannot Retreat when engaging Batman Beyond. <span class="line-gap"></span> 
+               Reward: CHOOSE: KO a Henchman or Villain OR Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+          text: `Choose Reward!`
+      },
+      {
+          text: `KO a Foe`
+      },
+      {
+          text: `Freeze a Foe`
+      },
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`damageFoe(999,any)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`freezeVillain(any)`]
+      },
+    ]
+  },
+  {
+    id: "5831",
+    name: "Green Lantern (John Stewart)",
+    image: `${cardArtFolder}/johnStewart.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "16",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Your Hero's DT becomes 3 until the end of their next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Light 'em Up!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `setHeroDTtoX(current,3,nextEnd)`
+      }
+    ]
+  },
+  {
+    id: "5832",
+    name: "Red Lantern (Guy Gardner)",
+    image: `${cardArtFolder}/guyGardner.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "15",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Deal 1 Damage to all Henchmen, Villains, and the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Hraaa!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageFoe(1,all)`,`damageOverlord(1)`]
+      }
+    ]
+  },
+  {
+    id: "5832",
+    name: "White Lantern (Kyle Rayner)",
+    image: `${cardArtFolder}/whiteLantern.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "25",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Restore all KO'd Heroes to 3 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Don't Make This Harder!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`resurrectHero(all,3)`]
+      }
+    ]
+  },
+  {
+    id: "5833",
+    name: "Hawkman",
+    image: `${cardArtFolder}/hawkman.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "14",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: 
+               Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Fall!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: ["draw(1)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5834",
+    name: "Green Arrow",
+    image: `${cardArtFolder}/greenArrow.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "11",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Heroes engaged with Green Arrow cannot use their Icon Abilities. <span class="line-gap"></span> 
+                Reward: Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `They're Under My Protection!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableIconAbilitiesAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `draw(2)`
+      }
+    ]
+  },
+  {
+    id: "5835",
+    name: "Aqualad",
+    image: `${cardArtFolder}/aqualad.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Aqualad's Damage increases to 3 whilst he is in a Coastal City. <span class="line-gap"></span> 
+                 Reward: Deal 7 Damage to a Henchman or Villain in a Coastal City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Man, I Love Fish! - Aqualad, probably`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `checkVillainCity(coastal)`,
+        effect: `increaseVillainDamage(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageFoe(7,anyCoastal)`
+      }
+    ],
+  },
+  {
+    id: "5836",
+    name: "Tempest",
+    image: `${cardArtFolder}/tempest.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "18",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Tempest's Damage increases to 3 whilst he is in a Coastal City. <span class="line-gap"></span> 
+                 Reward: Deal 1 Damage to all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Man, I Love Fish! - Tempest, probably`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `checkVillainCity(coastal)`,
+        effect: `increaseVillainDamage(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageFoe(1,all)`
+      }
+    ],
+  },
+  {
+    id: "5837",
+    name: "Mera",
+    image: `${cardArtFolder}/mera.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "18",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Mera's Damage increases to 3 whilst she is in a Coastal City. <span class="line-gap"></span> 
+                 Reward: Deal 2 Damage to all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Man, I Love Fish! - Mera, probably`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        condition: `checkVillainCity(coastal)`,
+        effect: `increaseVillainDamage(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageFoe(2,all)`
+      }
+    ],
+  },
+  {
+    id: "5838",
+    name: "Lobo",
+    image: `${cardArtFolder}/lobo.png`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "22",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 9 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Frag It!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(9)`
+      }
+    ]
+  },
+  {
+    id: "5839",
+    name: "Supergirl",
+    image: `${cardArtFolder}/supergirl.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "22",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 4 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Hey Ugly!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(4)`
+      }
+    ]
+  },
+  {
+    id: "5840",
+    name: "Superboy",
+    image: `${cardArtFolder}/superboy.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Draw 2, and increase your Hero's Travel Budget by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `My Turn!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(2)`,`travelPlus(1)`]
+      }
+    ]
+  },
 ]
 
 
-// B: black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
-// C: cyborg (7): batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-
-
-// HEROES AS VILLAINS (31 left)
-// A: aqualad, arsenal, artemis
-// B: batgirl, batmanBeyond, beastBoy, blueBeetle
+// HEROES AS VILLAINS
+// A: arsenal, artemis
+// B: batgirl, beastBoy, blueBeetle
 // D: donnaTroy
-// G: greenArrow, johnStewart
-// H: hawkman
 // J: jasonBlood
 // K: kidFlash
-// L: lobo, lexLuthor
-// M: mera, missMartian
+// L: lexLuthor
+// M: missMartian
 // N: nightwing
 // O: omen
-// R: redHood, redRobin, guyGardner, raven
-// S: supergirl, superboy, starfire, sinestro
-// T: tempest
+// R: redHood, redRobin, raven
+// S: starfire, sinestro
 // V: vixen
-// W: wonderGirl, whiteLantern
+// W: wonderGirl
 
 // VD MODIFIER CARDS - New card type?
 // D: deadman
