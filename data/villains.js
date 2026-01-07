@@ -5132,7 +5132,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `In a Flash!`
+        text: `Nom Nom!`
       },
       {
         text: `Reward!`
@@ -5309,29 +5309,559 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5739",
+    name: "The Turtle",
+    image: `${cardArtFolder}/theTurtle.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging The Turtle. <span class="line-gap"></span>
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Please, Stay a While!`
+      },
+      {
+        text: `Slow Down!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["damageOverlord(2)"]
+      }
+    ]
+  },
+  {
+    id: "5740",
+    name: "Rainbow Raider",
+    image: `${cardArtFolder}/rainbowRaider.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: CHOOSE: Draw 2. <span class="line-gap"></span> OR <span class="line-gap"></span> Play the next Ally from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+          text: `Choose Reward!`
+      },
+      {
+          text: `Draw 2`
+      },
+      {
+          text: `Play the next Ally card`
+      }
+  ],
+  abilitiesEffects: [
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`draw(2)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`enemyDraw(1,nextAlly)`]
+      }
+    ]
+  },
+  {
+    id: "5741",
+    name: "Lyssa Drak",
+    image: `${cardArtFolder}/lyssaDrak.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `[ICON:Lantern] Heroes deal half Damage against Lyssa Drak. <span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Know What You Fear`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `halveIncomingDamageFrom(Lantern)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5742",
+    name: "Atrocitus",
+    image: `${cardArtFolder}/atrocitus.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "22",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 3 <span class="line-gap"></span> 
+               Might of the Overlord: All Heroes take 3 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span><span class="line-gap"></span> 
+               Teleport <span class="line-gap"></span> 
+               Reward: Deal 6 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We'll Burn You All!`
+      },
+      {
+        text: `I Am Rage!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(3)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(6)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Welcome to Hell!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`damageHero(3,all,ignoreDT)`]
+      }
+    ],
+  },
+  {
+    id: "5743",
+    name: "Soranik Sinestro",
+    image: `${cardArtFolder}/soranikSinestro.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: All Heroes take 2 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span><span class="line-gap"></span> 
+               Teleport <span class="line-gap"></span> 
+               Reward: CHOOSE : Draw 2.  OR  Skip the next 2 Villain Deck draws.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `For My Father!`
+      },
+      {
+        text: `Let us Continue!`
+      },
+      {
+          text: `Choose Reward!`
+      },
+      {
+          text: `Draw 2`
+      },
+      {
+          text: `Skip 2 Villain Deck Draws`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`draw(2)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`disableVillainDraw(2)`]
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `2 More Lashings!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`damageHero(2,all,ignoreDT)`]
+      }
+    ],
+  },
+  {
+    id: "5744",
+    name: "Krona",
+    image: `${cardArtFolder}/krona.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Heed my Words!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5745",
+    name: "Multiplex",
+    image: `${cardArtFolder}/multiplex.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Flash",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Stop drawing from the Villain Deck. <span class="line-gap"></span> 
+               Each turn, the rightmost copy of Multiplex makes another immediately in the space to his left. In order to defeat Multiplex, all copies must be defeated. <span class="line-gap"></span>
+               Reward: Deal 7 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Wait! I got this.`
+      },
+      {
+        text: `How about Another?`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `passive`,
+        effect: `disableVillainDraw()`
+      },
+      {
+        condition: `isRightmostFoe`,
+        effect: `rallyCopies(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageOverlord(7)`
+      }
+    ]
+  },
+  {
+    id: "5746",
+    name: "Zilius Zox",
+    image: `${cardArtFolder}/ziliusZox.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "14",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Draw 1, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Lemme at 'em!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1)`]
+      }
+    ]
+  },
+  {
+    id: "5747",
+    name: "Bleez",
+    image: `${cardArtFolder}/bleez.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> Reward: Deal 2 Damage to all Henchmen and Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Rip Out Your Heart!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageFoe(2,all)`]
+      }
+    ]
+  },
+  {
+    id: "5748",
+    name: "Arkillo",
+    image: `${cardArtFolder}/arkillo.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `[ICON:Lantern] Heroes deal half Damage against Arkillo. <span class="line-gap"></span><span class="line-gap"></span><span class="line-gap"></span> Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Come Here Little One...`
+      },
+      {
+        text: `Your Fear Looks Tasty...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `halveIncomingDamageFrom(Lantern)`
+      },
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "5749",
+    name: "Ravager",
+    image: `${cardArtFolder}/ravagerRose.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Draw 2, and OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(2)"]
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5750",
+    name: "Jericho",
+    image: `${cardArtFolder}/jericho.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "7",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> Reward: Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `draw(2)`
+      }
+    ]
+  },
+  {
+    id: "5751",
+    name: "Gizmo",
+    image: `${cardArtFolder}/gizmo.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Teen Titan",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Gizmo regains all lost HP at the end of each turn. <span class="line-gap"></span> Reward: Draw 2 and regain 1 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Fix Fix Fix!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEnd`,
+        effect: `damageFoe(-5,getCurrentCityIndex)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(2)`,`regainLife(1)`]
+      }
+    ]
+  },
 ]
 
 
-// A: appelaxian golem, arkillo, atomica, atrocitus
-// B: black adam, black beetle, bleez, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// A: appelaxian golem, atomica
+// B: black adam, black beetle, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
 // C: cheshire, cinderblock, count vertigo, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
 // D: dawnbreaker, deathstorm, devastation, devastator, dr light, drowned, dr sivana
 // E: envy
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
 // G: general eiling, gizmo, gluttony, greed, grid
 // I: imperiex prime
-// J: jericho, jinx, johnny quick
+// J: jinx, johnny quick
 // K: king kobra, klarion, krona
-// L: lust, lyssa drak
-// M: mammoth, match, merciless, monsieur mallah, multiplex, murder machine
+// L: lust
+// M: mammoth, match, merciless, monsieur mallah, murder machine
 // O: owlman
 // P: power ring
 // Q: queen bee
-// R: rainbow raider, ravager (rose), red death
-// S: scar, shade, shimmer, siren, sloth, soranik sinestro, sportsmaster, superwoman
-// T: terror twins, the brain, the turtle
+// R: red death
+// S: scar, shade, shimmer, siren, sloth, sportsmaster, superwoman
+// T: terror twins, the brain
 // W: wrath
-// Z: zilius zox
 
 
 // HEROES AS VILLAINS
