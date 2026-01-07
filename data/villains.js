@@ -3263,7 +3263,7 @@ export const villains = [
     doNotShow: "false",
     hero: "Batman",
     hp: "9",
-    damage: "0",
+    damage: "1",
     abilitiesText: [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
@@ -3711,7 +3711,6 @@ export const villains = [
         effect: `charge(1)`
       },
       {
-        type: `optional`,
         condition: `uponDefeat`,
         effect: [`damageFoeMulti(3,2,any)`]
       }
