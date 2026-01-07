@@ -1181,7 +1181,8 @@ export const villains = [
     damage: "1",
     abilitiesText: [
       {
-        text: `Teleport <span class="line-gap"></span> Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
       }
     ],
     abilitiesNamePrint: [
@@ -1264,7 +1265,9 @@ export const villains = [
     damage: "2",
     abilitiesText: [
       {
-        text: `Teleport <span class="line-gap"></span> The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> Reward: OPTIONAL : Draw 3, and Travel to engage the Overlord.`
+        text: `Teleport <span class="line-gap"></span> 
+               The first time each turn a Hero uses a card to damage Shadow Thief, they take 1 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw 3, and Travel to engage the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -3267,8 +3270,8 @@ export const villains = [
     abilitiesText: [
       {
         text: `Takeover 1 <span class="line-gap"></span> 
+               Might of the Overlord: All Henchmen gain 3 HP. <span class="line-gap"></span><span class="line-gap"></span> 
                If your Hero ends their turn engaged with Hush, KO the top card of their deck. <span class="line-gap"></span> 
-               Might of the Overlord: All Henchmen gain 3 HP. <span class="line-gap"></span> 
                Reward: Restore up to 2 KO'd cards from your Hero's discard pile.`
       }
     ],
@@ -4776,28 +4779,196 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5724",
+    name: "Pied Piper",
+    image: `${cardArtFolder}/piedPiper.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the start of each turn, Pied Piper captures a Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Come my Pretties!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnStart`,
+        effect: `foeCaptureBystander(getCurrentCityIndex,1)`
+      }
+    ]
+  },
+  {
+    id: "5725",
+    name: "The Top",
+    image: `${cardArtFolder}/theTop.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "6",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               The first time each turn a Hero uses a card to damage The Top, they take 1 Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Guess You're On Bottom, Because I'm...`
+      },
+      {
+        text: `Oops! Confused?`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `firstAttackPerTurn`,
+        effect: `damageHero(1,current,ignoreDT)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: [`freezeVillain(any)`]
+      }
+    ]
+  },
+  {
+    id: "5726",
+    name: "Trickster",
+    image: `${cardArtFolder}/theTrickster.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Reward: Deal 1 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(1)`
+      }
+    ]
+  },
+  {
+    id: "5727",
+    name: "Black Flash",
+    image: `${cardArtFolder}/blackFlash.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Flash",
+    hp: "20",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `If an [ICON:Flash] Hero ends their turn engaged with the Black Flash, they take 3 Damage (ignoring their Damage Threshold). <span class="line-gap"></span> 
+               Reward: Deal 7 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `damageHero(3,current,ignoreDT)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(7)`]
+      }
+    ]
+  },
+  {
+    id: "5728",
+    name: "Inertia",
+    image: `${cardArtFolder}/inertia.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Flash",
+    hp: "12",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I'll Make You Pay!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
+      }
+    ]
+  },
 ]
 
 
 // A: appelaxian golem, arkillo, atomica, atrocitus
-// B: black adam, black beetle, black flash, bleez, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// B: black adam, black beetle, bleez, black hand, black lanterns: anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
 // C: captain boomerang, captain cold, cheshire, cinderblock, count vertigo, cyborg: batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
 // D: dawnbreaker, deathstorm, devastation, devastator, dr light, drowned, dr sivana
 // E: envy
 // F: felix faust, fake titans: aqualad, kid flash, omen, wonder girl, robin, speedy
 // G: general eiling, girder, gizmo, gluttony, golden glider, greed, grid
 // H: heatwave
-// I: imperiex prime, inertia
+// I: imperiex prime
 // J: jericho, jinx, johnny quick
 // K: killer frost, king kobra, king shark, klarion, krona
 // L: lust, lyssa drak
-// M: mammoth, match, merciless, mister twister, monsieur mallah, multiplex, murder machine
+// M: mammoth, match, merciless, monsieur mallah, multiplex, murder machine
 // O: owlman
-// P: pied piper, power ring
+// P: power ring
 // Q: queen bee
 // R: rainbow raider, ravager (rose), red death, reverse flash
 // S: scar, shade, shimmer, siren, sloth, soranik sinestro, sportsmaster, superwoman
-// T: tar pit, terror twins, the brain, the top, the trickster, the turtle
+// T: tar pit, terror twins, the brain, the turtle
 // W: wrath
 // Z: zilius zox, zoom
 
