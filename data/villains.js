@@ -9231,23 +9231,742 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5841",
+    name: "Beast Boy",
+    image: `${cardArtFolder}/beastBoy.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "13",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Add 1 card from your Hero's deck to your hand.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Animal Style!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`add(1,current)`]
+      }
+    ]
+  },
+  {
+    id: "5842",
+    name: "Blue Beetle",
+    image: `${cardArtFolder}/blueBeetle.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Clash <span class="line-gap"></span> 
+               Heroes cannot Retreat when engaging Blue Beetle. <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Clash!`
+      },
+      {
+        text: `Bug, Keep Them Here!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
+  {
+    id: "5843",
+    name: "Jason Blood",
+    image: `${cardArtFolder}/jasonBlood.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "5",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If Jason Blood escapes, Etrigan enters the board. <span class="line-gap"></span> 
+               Reward: Draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Gone gone, the form of man!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `drawSpecificVillain(5708)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(1)`]
+      }
+    ]
+  },
+  {
+    id: "5844",
+    name: "Lex Luthor",
+    image: `${cardArtFolder}/lexLuthor.png`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Superman",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: All Heroes lose a random Icon Ability use. <span class="line-gap"></span> 
+               Reward: KO a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Must I Do Everything Myself?`
+      },
+      {
+          text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+          effect: `damageFoe(999,any)`,
+          condition: `uponDefeat`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Metropolis is Mine!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`loseIconUse(1,random,all)`]
+      }
+    ],
+  },
+  {
+    id: "5845",
+    name: "Miss Martian",
+    image: `${cardArtFolder}/missMartian.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "17",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> 
+               Reward: Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Surrender!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      }
+    ]
+  },
+  {
+    id: "5846",
+    name: "Nightwing",
+    image: `${cardArtFolder}/nightwing.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "11",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Flying High!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(2)`]
+      }
+    ]
+  },
+  {
+    id: "5847",
+    name: "Red Hood",
+    image: `${cardArtFolder}/redHood.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "12",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Coming Through!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(3)`]
+      }
+    ]
+  },
+  {
+    id: "5848",
+    name: "Starfire",
+    image: `${cardArtFolder}/starfire.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "17",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Deal 7 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Yield!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(7)`]
+      }
+    ]
+  },
+  {
+    id: "5849",
+    name: "Wonder Girl",
+    image: `${cardArtFolder}/wonderGirl.png`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "20",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 2 Damage to the Overlord and Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Just Give Up!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`damageOverlord(2)`,`freezeVillain(any)`]
+      }
+    ]
+  },
+  {
+    id: "5850",
+    name: "Sinestro",
+    image: `${cardArtFolder}/sinestro.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Green Lantern",
+    hp: "18",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: KO the top card of every Hero's deck. <span class="line-gap"></span> 
+               Teleport <span class="line-gap"></span> 
+               Reward: KO all Henchmen.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Can Practically Taste Your Fear...`
+      },
+      {
+        text: `Give In To Your Fears!`
+      },
+      {
+          text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+          effect: `damageFoe(999,allHenchmen)`,
+          condition: `uponDefeat`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Sinestro's Might!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`koHeroTopCard(1,all)`]
+      }
+    ],
+  },
+  {
+    id: "5851",
+    name: "Red Robin",
+    image: `${cardArtFolder}/redRobin.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "10",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Draw 1, and your Hero's Travel Budget permanently increases by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I'll Scout Ahead!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1,permanent)`]
+      }
+    ]
+  },
+  {
+    id: "5852",
+    name: "Arsenal",
+    image: `${cardArtFolder}/arsenal.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "12",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 2 Damage. <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Got You!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(2,random)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5853",
+    name: "Artemis",
+    image: `${cardArtFolder}/artemis.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `If unengaged at the end of a Hero's turn, a random Hero will take 1 Damage. <span class="line-gap"></span> 
+               Reward: OPTIONAL : Draw from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Got You!`
+      },
+      {
+        text: `Draw from the E&A`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndNotEngaged`,
+        effect: `damageHero(1,random)`
+      },
+      {
+        type: `optional`,
+        condition: `uponDefeat`,
+        effect: `enemyDraw(1)`
+      }
+    ]
+  },
+  {
+    id: "5854",
+    name: "Kid Flash",
+    image: `${cardArtFolder}/kidFlash.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "12",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 2 <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Totally Crash`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: ["draw(2)","travelPlus(1)"]
+      }
+    ]
+  },
+  {
+    id: "5855",
+    name: "Batgirl",
+    image: `${cardArtFolder}/batgirl.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Heroes cannot Retreat when engaging Batgirl. <span class="line-gap"></span> 
+               Reward: CHOOSE: KO a Henchman or Villain in Gotham OR Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Where Do You Think You're Going?`
+      },
+      {
+          text: `Choose Reward!`
+      },
+      {
+          text: `KO a Foe in Gotham`
+      },
+      {
+          text: `Freeze any Foe`
+      },
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `disableRetreatAgainst()`
+      },
+      {
+          type: `chooseOption`,
+          effect: `chooseYourEffect`,
+          condition: `uponDefeat`
+      },
+      {
+          type: `chooseOption(1)`,
+          effect: [`damageFoe(999,10)`]
+      },
+      {
+          type: `chooseOption(2)`,
+          effect: [`freezeVillain(any)`]
+      },
+    ]
+  },
+  {
+    id: "5856",
+    name: "Donna Troy",
+    image: `${cardArtFolder}/donnaTroy.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "21",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Charge!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `freezeVillain(any)`
+      }
+    ]
+  },
+  {
+    id: "5857",
+    name: "Vixen",
+    image: `${cardArtFolder}/vixen.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "16",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Add 1 card from your Hero's deck to your hand.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Speed of a Cheetah!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`add(1,current)`]
+      }
+    ]
+  },
+  {
+    id: "5858",
+    name: "Raven",
+    image: `${cardArtFolder}/raven.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "20",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span> 
+               Reward: Draw 1, and your Hero's Travel Budget permanently increases by 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Azarath, Metrion, Zinthos!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(1)`,`travelPlus(1,permanent)`]
+      }
+    ]
+  },
+  {
+    id: "5859",
+    name: "Omen",
+    image: `${cardArtFolder}/omen.jpg`,
+    type: "Villain",
+    doNotShow: "true",
+    hero: "Legion of Doom",
+    hp: "13",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Teleport <span class="line-gap"></span><span class="line-gap"></span> 
+               Reward: Scan 2 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO your choice of the revealed cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Know Your Moves Before You Do!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `onEntry`,
+        effect: `teleport`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`scanDeck(villain,2)`,`applyScanEffects(ko,closeAfter(2))`]
+      }
+    ]
+  },
 ]
 
-
-// HEROES AS VILLAINS
-// A: arsenal, artemis
-// B: batgirl, beastBoy, blueBeetle
-// D: donnaTroy
-// J: jasonBlood
-// K: kidFlash
-// L: lexLuthor
-// M: missMartian
-// N: nightwing
-// O: omen
-// R: redHood, redRobin, raven
-// S: starfire, sinestro
-// V: vixen
-// W: wonderGirl
 
 // VD MODIFIER CARDS - New card type?
 // D: deadman
