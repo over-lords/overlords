@@ -165,7 +165,7 @@ export const henchmen = [
     abilitiesText: [
       {
         text: `Teleport <span class="line-gap"></span>
-               Reward: OPTIONAL : Knockback.`
+               Reward: OPTIONAL : Knockback a Henchman or Villain.`
       }
     ],
     abilitiesNamePrint: [
@@ -173,7 +173,7 @@ export const henchmen = [
         text: `From Hell they Come!`
       },
       {
-        text: `Return a Henchman or Villain`
+        text: `Return a foe to the top of the Villain Deck`
       }
     ],
     abilitiesEffects: [

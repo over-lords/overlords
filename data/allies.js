@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/fc271a8062837c99e1c991fb0aa263eb7ffc54d1/Public/Images/Card%20Assets/Allies";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/6d6f64d594f27ea404661c3ad5d3017261d37a71/Public/Images/Card%20Assets/Allies";
 
 // ids 4551-4850
 
@@ -2351,9 +2351,114 @@ export const allies = [
             }
         ]
     },
+    {
+        id: "4651",
+        name: "White Lantern Deadman",
+        image: `${cardArtFolder}/whiteLanternDeadman.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Permanently KO all Henchmen and Villains in the KO'd Pile and all Heroes gain 3 HP.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Live.`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`koFromKO(999)`,`regainLife(3,all)`]
+            }
+        ]
+    },
+    {
+        id: "4652",
+        name: "White Lantern Anti-Monitor",
+        image: `${cardArtFolder}/whiteLanternAntiMonitor.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Permanently KO all Henchmen and Villains in the KO'd Pile and deal 5 Damage to all Henchmen and Villains.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Live.`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`koFromKO(999)`,`damageFoe(5,all)`]
+            }
+        ]
+    },
+    {
+        id: "4653",
+        name: "White Lantern Swamp Thing",
+        image: `${cardArtFolder}/whiteLanternSwampThing.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Permanently KO all Henchmen and Villains in the KO'd Pile and deal 10 Damage to the Overlord.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `Live.`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`koFromKO(999)`,`damageOverlord(10)`]
+            }
+        ]
+    },
+    {
+        id: "4654",
+        name: "GCPD Batman",
+        image: `${cardArtFolder}/GCPD Batman.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `KO the Henchman or Villain in Gotham.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `You're Under Arrest`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`damageFoe(999,10)`]
+            }
+        ]
+    },
+    {
+        id: "4655",
+        name: "Deadman",
+        image: `${cardArtFolder}/deadman.jpg`,
+        type: "Ally",
+        doNotShow: "false",
+        abilitiesText: [
+            {
+                text: `Knockback a Henchman or Villain.`
+            }
+        ],
+        abilitiesNamePrint: [
+            {
+                text: `I'm Gonna Take Over for a Second...`
+            }
+        ],
+        abilitiesEffects: [
+            {
+                effect: [`knockback(any)`]
+            }
+        ]
+    },
 ]
-
-// VD MODIFIER CARDS - New card type?
-// D: deadman
-// G: gcpd batman
-// W: white lanterns: anti-monitor, deadman, swamp thing
