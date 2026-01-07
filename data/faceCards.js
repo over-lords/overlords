@@ -2168,7 +2168,8 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Nightwing's damaging cards gain +1 for each of his active Teammates. <span class="line-gap"></span> 3/Game: Once per turn, double the Damage of another Hero's card.`
+        text: `Nightwing's damaging cards gain +1 for each of his active Teammates. <span class="line-gap"></span> 
+               3/Game: Once per turn, double the Damage of another Hero's card.`
       }
     ],
     abilitiesNamePrint: [
@@ -2182,17 +2183,13 @@ export const heroes = [
     abilitiesEffects: [
       {
         type: `passive`,
-        condition: `getTeammatesActive`,
-        uses: `0`,
-        shared: `no`,
-        effect: `increaseDamage(1)`
+        effect: [`increaseAllCardDamage(getActiveTeamCount(Bat))`,`increaseAllCardDamage(getActiveTeamCount(Titans))`]
       },
       {
-        type: `quick`,
-        condition: `allyAttacks(Any)`,
+        type: `optional`,
+        condition: `otherHeroAttacks`,
         uses: `3`,
-        shared: `no`,
-        effect: `doubleAllysDamage`
+        effect: `doubleDamage(current,nextCardOnly)`
       }
     ]
   },
@@ -2211,7 +2208,8 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `3/Game: Scan 3 cards from the Villain Deck, you can KO one of them. <span class="line-gap"></span> 3/Game: Before they draw, increase another Hero's draw selection to 4 cards.`
+        text: `3/Game: Scan 3 cards from the Villain Deck, you can KO one of them. <span class="line-gap"></span> 
+               3/Game: Before they draw, increase another Hero's draw selection to 4 cards.`
       }
     ],
     abilitiesNamePrint: [

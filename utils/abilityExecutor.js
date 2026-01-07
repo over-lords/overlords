@@ -2460,7 +2460,7 @@ function damageHeroAtCity(cityLowerIndex, amount, state = gameState) {
         console.warn("[damageHeroAtCity] Invalid city index:", cityLowerIndex);
         return;
     }
-    const targetLower = lowerIdx + 1; // heroData.cityIndex uses lower slot (1-based)
+    const targetLower = lowerIdx; // heroData.cityIndex uses lower slot (1-based)
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     for (const hid of heroIds) {
         const hState = s.heroData?.[hid];
