@@ -986,7 +986,6 @@ export const villains = [
       },
       {
         type: `passive`,
-        condition: `none`,
         effect: `hasClash`
       },
       {
@@ -7289,7 +7288,7 @@ export const villains = [
       {
         text: `Charge 1 <span class="line-gap"></span> 
                Heroes cannot Retreat when engaging The Merciless. <span class="line-gap"></span> 
-               When The Merciless Damages a Hero, that Hero, and all others, take 1 additional Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> 
+               When The Merciless Damages a Hero, that Hero, and all others, takes 1 additional Damage (ignoring their Damage Thresholds). <span class="line-gap"></span> 
                Reward: Deal 10 Damage to the Overlord.`
       }
     ],
@@ -7329,17 +7328,328 @@ export const villains = [
       }
     ]
   },
+  {
+    id: "5790",
+    name: "Scar",
+    image: `${cardArtFolder}/scar.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "15",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: Play the first 2 KO'd Henchmen or Villains. <span class="line-gap"></span> 
+               Reward: KO a Henchman.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `The Dead Shall Rise!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `damageFoe(999,anyHenchman)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Consume Your Fear! Devour Your Hope!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`reviveKodFoe(2)`]
+      }
+    ],
+  },
+  {
+    id: "5791",
+    name: "Black Hand",
+    image: `${cardArtFolder}/blackHand.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Blackest Night",
+    hp: "13",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Takeover 2 <span class="line-gap"></span> 
+               Might of the Overlord: Play the first 2 KO'd Henchmen or Villains. <span class="line-gap"></span> 
+               Reward: Permanently KO 3 KO'd Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `William Hand, Rise!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEscape`,
+        effect: `takeover(2)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: `koFromKO(3)`
+      }
+    ],
+    mightNamePrint: [
+      {
+          text: `Fallen Soldiers, Rise Again!`
+      }
+    ],
+    mightEffects: [
+      {
+        type: `might`,
+        effect: [`reviveKodFoe(2)`]
+      }
+    ],
+  },
+  {
+    id: "5792",
+    name: "Greed",
+    image: `${cardArtFolder}/greed.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Deadly Sin",
+    hp: "14",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `If your Hero ends their turn engaged with Greed, KO the top card of their discard pile. <span class="line-gap"></span> 
+               Reward: Restore 2 KO'd Action Cards to your discard pile.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Mine Mine Mine!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `koTopHeroDiscard(1)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`restoreKOdHeroCards(2,current)`]
+      }
+    ]
+  },
+  {
+    id: "5793",
+    name: "Envy",
+    image: `${cardArtFolder}/envy.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Deadly Sin",
+    hp: "10",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `At the end of a turn in which Envy took Damage, increase his Damage by 1. <span class="line-gap"></span> 
+               Reward: Draw 2, and your Hero's Travel Budget increases by 1 for this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Will Have That!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndWasDamaged`,
+        effect: `increaseVillainDamage(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(2)`,`travelPlus(1)`]
+      }
+    ]
+  },
+  {
+    id: "5794",
+    name: "Lust",
+    image: `${cardArtFolder}/lust.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Deadly Sin",
+    hp: "10",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `If your Hero ends their turn engaged with Lust, there is a 50% chance they take an additional 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span> 
+               Reward: Regain 1 HP.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Come Closer...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        chance: 0.5,
+        effect: `damageHero(1,current,ignoreDT)`
+      },
+      {
+        condition: `uponDefeat`,
+        effect: [`regainLife(1)`]
+      }
+    ]
+  },
+  {
+    id: "5795",
+    name: "Gluttony",
+    image: `${cardArtFolder}/gluttony.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Deadly Sin",
+    hp: "14",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `At the end of a turn in which Gluttony took Damage, increase his Damage by 1. If your Hero ends their turn engaged with Gluttony, KO the top card of their discard pile. <span class="line-gap"></span> 
+               Reward: Draw 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Mmmm, Tasty!`
+      },
+      {
+        text: `Glug, Glug, amirite?`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `turnEndWasDamaged`,
+        effect: `increaseVillainDamage(1)`
+      },
+      {
+        type: `quick`,
+        condition: `turnEndEngaged`,
+        effect: `koTopHeroDiscard(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`draw(1)`]
+      }
+    ]
+  },
+  {
+    id: "5796",
+    name: "Sloth",
+    image: `${cardArtFolder}/sloth.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Deadly Sin",
+    hp: "14",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Clash <span class="line-gap"></span> 
+               Reward: Freeze a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Stay a While...`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `passive`,
+        effect: `hasClash`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: [`freezeVillain(any)`]
+      }
+    ]
+  },
+  {
+    id: "5797",
+    name: "Wrath",
+    image: `${cardArtFolder}/wrath.jpg`,
+    type: "Villain",
+    doNotShow: "false",
+    hero: "Deadly Sin",
+    hp: "16",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: Deal 3 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Get Angry!`
+      },
+      {
+        text: `Reward!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
+      {
+        type: `quick`,
+        condition: `uponDefeat`,
+        effect: `damageOverlord(3)`
+      }
+    ]
+  },
 ]
 
 
-// B: black hand, black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
+// B: black lanterns (19): anti-monitor, aquaman, batman, blue beetle, captain boomerang, elongated man, firestorm, green arrow, hawk, hawkman and hawkwoman, martian manhunter, professor zoom, spectre, superboy prime, superman, terra, titans, vibe, wonder woman
 // C: cyborg (7): batman, booster gold, captain cold, frankenstein, green lantern, supermanEye, wonder woman
-// E: envy
 // F: fake titans (6): aqualad, kid flash, omen, wonder girl, robin, speedy
-// G: gluttony, greed
-// L: lust
-// S: scar, sloth
-// W: wrath
 
 
 // HEROES AS VILLAINS (31 left)
