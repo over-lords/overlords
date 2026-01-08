@@ -171,60 +171,82 @@
             }
 
             .tab-strip-wrap{
-            position: relative;
+                position: relative;
             }
 
             /* The scrollable bar stays as-is */
             #filters.scroll-tabs{
-            overflow-x: auto;
-            overflow-y: hidden;
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 10px;
-            padding: 8px 44px; /* reserve space so arrows don't cover buttons */
+                overflow-x: auto;
+                overflow-y: hidden;
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 10px;
+                padding: 8px 44px; /* reserve space so arrows don't cover buttons */
             }
 
             /* Base arrow button */
             .tab-scroll-btn{
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            margin-top: -5px;
-            z-index: 5000;
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                margin-top: -5px;
+                z-index: 5000;
 
-            width: 32px;
-            height: 64px;
-            border: 2px solid black;
-            background: rgba(255,255,255,0.9);
+                width: 32px;
+                height: 64px;
+                border: 2px solid black;
+                background: rgba(255,255,255,0.9);
 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
 
-            font-size: 28px;
-            font-weight: bold;
-            line-height: 1;
-            cursor: pointer;
+                font-size: 28px;
+                font-weight: bold;
+                line-height: 1;
+                cursor: pointer;
 
-            user-select: none;
+                user-select: none;
             }
 
             /* Left: half circle (pill) that juts into view */
             .tab-scroll-left{
-            left: 0;
-            border-radius: 0 999px 999px 0;
-            border-left: none; /* so it looks like it emerges from screen edge */
+                left: 0;
+                border-radius: 0 999px 999px 0;
+                border-left: none; /* so it looks like it emerges from screen edge */
             }
 
             /* Right: half circle (pill) that juts into view */
             .tab-scroll-right{
-            right: 0;
-            border-radius: 999px 0 0 999px;
-            border-right: none;
+                right: 0;
+                border-radius: 999px 0 0 999px;
+                border-right: none;
             }
 
             .tab-scroll-btn:active{
-            transform: translateY(-50%) scale(0.98);
+                transform: translateY(-50%) scale(0.98);
+            }
+
+            #subfilter-strip{
+                margin-top: 8px;
+            }
+
+            /* Reserve space so arrows don't cover subfilter buttons (same as main bar) */
+            #subfilters.scroll-tabs{
+                gap: 10px;
+                padding: 8px 44px;
+            }
+
+            /* Half-pill arrows for subfilter strip (same shape as main arrows) */
+            .sub-scroll-left{
+                left: 0;
+                border-radius: 0 999px 999px 0;
+                border-left: none;
+            }
+            .sub-scroll-right{
+                right: 0;
+                border-radius: 999px 0 0 999px;
+                border-right: none;
             }
         </style>
 </head>
@@ -260,6 +282,16 @@
                     <button class="tab-button" data-filter="bystanders">Bystanders</button>
                 </div>
             <button class="tab-scroll-btn tab-scroll-right" type="button" aria-label="Scroll tabs right">›</button>
+        </div>
+
+        <div class="tab-strip-wrap" id="subfilter-strip" style="display:none;">
+            <button class="tab-scroll-btn sub-scroll-left" type="button" aria-label="Scroll subfilters left">‹</button>
+
+            <div class="tab-buttons scroll-tabs" id="subfilters">
+                <!-- JS will inject buttons here -->
+            </div>
+
+            <button class="tab-scroll-btn sub-scroll-right" type="button" aria-label="Scroll subfilters right">›</button>
         </div>
 
         <br>
@@ -416,7 +448,7 @@
                     const text =
                         card.name +
                         JSON.stringify(card.abilitiesText || []) +
-                        (card.keywords || []).join(" ");
+                        extractKeywordsFromAbilities(card.abilitiesText || []).join(" ");
                     return text.toLowerCase().includes(search);
                     })
                     .forEach(card => {
@@ -499,9 +531,101 @@
             scenarios: scenarios
             };
 
+            let activeSubfilter = "all";
+
+            const SUBFILTER_CONFIG = {
+            action:   { label: "Hero",     key: "hero",     sort: (a,b) => a.localeCompare(b) }, // Actions by hero
+            heroes:   { label: "Category", key: "category", sort: (a,b) => a.localeCompare(b) }, // Heroes by category
+            henchmen: { label: "HP",       key: "hp",       sort: (a,b) => Number(a) - Number(b) }, // Henchmen by hp
+            overlords:{ label: "Level",    key: "level",    sort: (a,b) => Number(a) - Number(b) }, // Overlords by level
+            villains: { label: "Hero",     key: "hero",     sort: (a,b) => a.localeCompare(b) }, // Villains by hero
+            };
+
+            function getSubfilterValues(cards, key, sortFn) {
+                let working = cards;
+
+                if (activeFilter === "action") {
+                    working = cards.filter(c => isHeroVisibleByName(c.hero));
+                }
+
+                const vals = working
+                    .map(c => c?.[key])
+                    .filter(v => typeof v === "string" && v.trim().length > 0)
+                    .map(v => v.trim());
+
+                const uniq = Array.from(new Set(vals));
+                uniq.sort(sortFn);
+
+                return ["all", ...uniq];
+            }
+
+            function buildSubfilterStrip() {
+            const strip = document.getElementById("subfilter-strip");
+            const bar   = document.getElementById("subfilters");
+
+            const cfg = SUBFILTER_CONFIG[activeFilter];
+            if (!cfg) {
+                // Hide when not applicable
+                activeSubfilter = "all";
+                strip.style.display = "none";
+                bar.innerHTML = "";
+                return;
+            }
+
+            // Show when applicable
+            strip.style.display = "block";
+            requestAnimationFrame(updateSubfilterScrollBtns);
+
+            const baseCards = FILTERS[activeFilter] || [];
+            const values = getSubfilterValues(baseCards, cfg.key, cfg.sort);
+
+            // If the current activeSubfilter no longer exists, reset to all
+            if (!values.includes(activeSubfilter)) activeSubfilter = "all";
+
+            // Render buttons
+            bar.innerHTML = "";
+            values.forEach(v => {
+                const btn = document.createElement("button");
+                btn.className = "tab-button" + (v === activeSubfilter ? " active" : "");
+                btn.dataset.subfilter = v;
+
+                // Button text: "All" then the value (and optionally label prefix)
+                if (v === "all") {
+                btn.textContent = "All";
+                } else {
+                btn.textContent = v;
+                }
+
+                bar.appendChild(btn);
+            });
+
+            // Reset scroll position when switching main filters
+            bar.scrollLeft = 0;
+
+            // Update arrow visibility for this bar
+            updateSubfilterScrollBtns();
+            }
+
+
+            function applySubfilter(cards) {
+                if (activeSubfilter === "all") return cards;
+
+                const cfg = SUBFILTER_CONFIG[activeFilter];
+                if (!cfg) return cards;
+
+                const key = cfg.key;
+                return cards.filter(c => String(c?.[key] ?? "").trim() === activeSubfilter);
+            }
+
             function renderFilteredList() {
-                const cards = FILTERS[activeFilter] || [];
-                buildTab("card-list", cards);
+                let cards = FILTERS[activeFilter] || [];
+
+                if (activeFilter === "action") {
+                    cards = cards.filter(c => isHeroVisibleByName(c.hero));
+                }
+
+                const subFiltered = applySubfilter(cards);
+                buildTab("card-list", subFiltered);
             }
 
             // Filter button click handling (event delegation)
@@ -515,6 +639,14 @@
 
             // update filter and re-render
             activeFilter = btn.dataset.filter;
+
+            // reset subfilter whenever main filter changes
+            activeSubfilter = "all";
+
+            // build (or hide) the subfilter strip for this filter
+            buildSubfilterStrip();
+
+            // render list with new filters
             renderFilteredList();
             });
 
@@ -522,16 +654,17 @@
             document.getElementById("card-search").addEventListener("input", renderFilteredList);
 
             // Initial render
+            buildSubfilterStrip();
             renderFilteredList();
 
             const filterBar = document.getElementById("filters");
 
             document.querySelector(".tab-scroll-left").addEventListener("click", () => {
-                filterBar.scrollBy({ left: -400, behavior: "smooth" });
+                filterBar.scrollBy({ left: -500, behavior: "smooth" });
             });
 
             document.querySelector(".tab-scroll-right").addEventListener("click", () => {
-                filterBar.scrollBy({ left: 400, behavior: "smooth" });
+                filterBar.scrollBy({ left: 500, behavior: "smooth" });
             });
 
             function updateTabScrollBtns(){
@@ -542,6 +675,56 @@
             filterBar.addEventListener("scroll", updateTabScrollBtns);
             window.addEventListener("resize", updateTabScrollBtns);
             updateTabScrollBtns();
+
+            document.getElementById("subfilters").addEventListener("click", (e) => {
+                const btn = e.target.closest("button[data-subfilter]");
+                if (!btn) return;
+
+                document.querySelectorAll("#subfilters .tab-button").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+
+                activeSubfilter = btn.dataset.subfilter;
+                renderFilteredList();
+            });
+
+            const subfilterBar = document.getElementById("subfilters");
+
+            document.querySelector(".sub-scroll-left").addEventListener("click", () => {
+            subfilterBar.scrollBy({ left: -400, behavior: "smooth" });
+            });
+
+            document.querySelector(".sub-scroll-right").addEventListener("click", () => {
+            subfilterBar.scrollBy({ left: 400, behavior: "smooth" });
+            });
+
+            function updateSubfilterScrollBtns() {
+            const strip = document.getElementById("subfilter-strip");
+            if (!strip || strip.style.display === "none") return;
+
+            const max = subfilterBar.scrollWidth - subfilterBar.clientWidth;
+
+            document.querySelector(".sub-scroll-left").style.display =
+                (subfilterBar.scrollLeft <= 2) ? "none" : "flex";
+
+            document.querySelector(".sub-scroll-right").style.display =
+                (subfilterBar.scrollLeft >= max - 2) ? "none" : "flex";
+            }
+
+            subfilterBar.addEventListener("scroll", updateSubfilterScrollBtns);
+            window.addEventListener("resize", updateSubfilterScrollBtns);
+
+            function isHeroVisibleByName(heroName) {
+                if (!heroName) return false;
+
+                const hero = heroes.find(
+                    h => h.name && h.name.toLowerCase() === heroName.toLowerCase()
+                );
+
+                // If hero not found, fail closed
+                if (!hero) return false;
+
+                return hero.doNotShow !== "true";
+            }
         </script>
 </body>
 </html>
