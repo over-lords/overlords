@@ -676,6 +676,105 @@ export function renderCard(cardId, container, opts = {}) {
     wrapper.classList.add('card-wrapper');
     wrapper.appendChild(card);
     return wrapper;
+  } else if (cardData.type === "Tactic") {
+
+    // Colors
+    const overlayColor = "rgba(26, 0, 42, 0.8)";
+
+    // === CARD BASE ===
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.style.position = 'relative';
+    card.style.width = '230px';
+    card.style.height = '350px';
+    card.style.overflow = 'hidden';
+    card.style.borderRadius = '8px';
+    card.style.border = '2px solid black';
+    card.style.boxShadow = '2px 3px 8px rgba(0,0,0,0.3)';
+    card.style.fontFamily = "'Racing Sans One', sans-serif";
+    card.style.backgroundColor = '#000';
+
+    // === FULL IMAGE ===
+    const img = document.createElement('img');
+    img.src = cardData.image;
+    img.alt = cardData.name;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    card.appendChild(img);
+
+    // === TOP TITLE STRIP ===
+    const topBar = document.createElement('div');
+    topBar.style.position = 'absolute';
+    topBar.style.top = '0';
+    topBar.style.left = '0';
+    topBar.style.width = '100%';
+    topBar.style.height = '40px';
+    topBar.style.background = overlayColor;
+    topBar.style.display = 'flex';
+    topBar.style.alignItems = 'center';
+    topBar.style.justifyContent = 'center';
+    topBar.style.color = '#d0d0d0';
+    topBar.style.fontSize = '20px';
+    topBar.style.fontWeight = 'bold';
+    topBar.style.textShadow = '1px 1px 3px black';
+    topBar.style.overflow = 'hidden';
+    topBar.style.whiteSpace = 'nowrap';
+    topBar.style.textAlign = 'center';
+    topBar.textContent = cardData.name;
+    card.appendChild(topBar);
+
+    requestAnimationFrame(() => {
+        shrinkToFitWidth(topBar, 10);
+    });
+
+    // === BOTTOM ABILITY STRIP ===
+    const bottomBar = document.createElement('div');
+    bottomBar.style.position = 'absolute';
+    bottomBar.style.bottom = '0';
+    bottomBar.style.left = '0';
+    bottomBar.style.width = '100%';
+    bottomBar.style.height = '100px';
+    bottomBar.style.background = overlayColor;
+    bottomBar.style.color = '#d0d0d0';
+    bottomBar.style.display = 'flex';
+    bottomBar.style.alignItems = 'center';
+    bottomBar.style.justifyContent = 'center';
+    bottomBar.style.padding = '0';
+    bottomBar.style.textAlign = 'center';
+    bottomBar.style.fontSize = '14px';
+    bottomBar.style.lineHeight = '0.95em';
+    bottomBar.style.overflow = 'hidden';
+    bottomBar.style.boxSizing = 'border-box';
+    card.appendChild(bottomBar);
+
+    const textBox = document.createElement('div');
+    textBox.style.width = '100%';
+    textBox.style.maxHeight = '100%';
+    textBox.style.overflow = 'hidden';
+    textBox.style.textAlign = "center";
+    textBox.style.margin = "0 auto";
+    textBox.style.padding = "0 10px";
+
+    if (Array.isArray(cardData.abilitiesText)) {
+        cardData.abilitiesText.forEach(a => {
+            const line = document.createElement('div');
+            line.innerHTML = renderAbilityText(a.text);
+            line.style.textAlign = "left";
+            line.style.width = "100%";
+            textBox.appendChild(line);
+        });
+    }
+
+    bottomBar.appendChild(textBox);
+
+    requestAnimationFrame(() => autoShrinkTextToFit(textBox, 9));
+
+    // === WRAP & RETURN ===
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('card-wrapper');
+    wrapper.appendChild(card);
+    return wrapper;
   } else if (cardData.type === "Henchman" || cardData.type === "Villain") {
 
     const isBoardRender = !!(

@@ -3147,7 +3147,7 @@ export const heroCards = [
     name: "Watch, Study, Strike",
     hero: "Robin",
     image: `${cardArtFolder}/Robin/watchStudyStrike.jpg`,
-    perDeck: "1",
+    perDeck: "2",
     damage: "1",
     abilitiesText: [
       {
