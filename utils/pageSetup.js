@@ -4091,10 +4091,10 @@ export function renderEnaBar(state = gameState) {
     //console.log("[renderEnaBar] enaList (after reverse):", enaList);
 
     if (!enaList.length) {
-        console.warn("[renderEnaBar] enaList EMPTY — rendering placeholder");
+        //console.warn("[renderEnaBar] enaList EMPTY — rendering placeholder");
 
         const emptyMsg = document.createElement("div");
-        emptyMsg.textContent = "No E&A Cards Drawn";
+        emptyMsg.textContent = "No E&A Cards Drawn.";
         emptyMsg.style.padding = "16px";
         bar.appendChild(emptyMsg);
         panel.appendChild(bar);
