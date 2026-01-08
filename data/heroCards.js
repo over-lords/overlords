@@ -2169,7 +2169,7 @@ export const heroCards = [
     abilitiesEffects: [
       {
         type: `quick`,
-        effect: [`increaseCardDamage(getKOdBystanders)`,`increaseCardDamage(3*findKOdHeroes)`]
+        effect: [`increaseCardDamage(getBystandersKOd)`,`increaseCardDamage(3*findKOdHeroes)`]
       }
     ]
   },
