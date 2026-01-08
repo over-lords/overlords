@@ -957,7 +957,7 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "80",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `Heroes cannot Retreat. <span class="line-gap"></span>
