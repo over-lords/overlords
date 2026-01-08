@@ -268,6 +268,43 @@
                         right: 16px;
         }
 
+        #ena-close {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.75);
+            color: rgb(115, 0, 255);
+            font-size: 14px;
+            width: 400px;
+            height: 28px;
+            border-radius: 8px 8px 0 0;
+            display: none; /* hidden until open */
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 990;
+            font-family: 'Racing Sans One', sans-serif;
+        }
+
+        #ena-close::before,
+        #ena-close::after {
+            content: "▲";
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        #ena-close::before {
+                        left: 16px;
+        }
+
+        #ena-close::after {
+                        right: 16px;
+        }
+
         #dropdown-content {
             overflow-y: auto;
             overflow-x: hidden;
@@ -365,6 +402,12 @@
             <div id="ko-content">KO'd Zone</div>
         </div>
     <div id="ko-close">Close KO'd Pile</div>
+
+    <div id="ena-tab"><img src="https://raw.githubusercontent.com/over-lords/overlords/27fdaee3cb8bbf3a20a8da4ea38ba8b8598557ce/Public/Images/Site%20Assets/ena.png"></div>
+        <div id="ena-panel">
+            <div id="ena-content">E&A Discard</div>
+        </div>
+    <div id="ena-close">Close E&A Discard Pile</div>
 
     <div id="overlord-frame-box">
         <img id="overlord-frame-img" src="https://raw.githubusercontent.com/over-lords/overlords/7774da0ec26845edd8dc6c07756b04e78fafcbff/Public/Images/Site%20Assets/overlordBorder.png">

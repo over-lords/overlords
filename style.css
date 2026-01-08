@@ -1800,6 +1800,83 @@ main-content,
 }
 
 /* ==================================================
+  E&A ZONE
+================================================== */
+#ena-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: rgba(126, 33, 255, 0.9);
+    border-width: 0;
+    box-sizing: border-box;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: max-height 0.45s ease;
+    z-index: 9800;
+}
+
+#ena-tab {
+    position: fixed;
+    top: 0;
+    right: 12.3%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.85);
+    width: 40px;
+    height: 28px;
+    border-radius: 0 0 8px 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 9800;
+}
+
+#ena-tab img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+#ena-close {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.75);
+  color: rgb(106, 0, 255);
+  font-size: 24px;
+  width: 40px;
+  height: 28px;
+  border-radius: 8px 8px 0 0;
+  display: none; /* hidden until open */
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  z-index: 9500;
+}
+
+#ena-close img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+#ena-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 auto;
+    padding: 20px;
+    font-family: 'Racing Sans One', sans-serif;
+    font-size: 30px;
+    color: black;
+}
+
+/* ==================================================
   KO'D ZONE
 ================================================== */
 #ko-panel {

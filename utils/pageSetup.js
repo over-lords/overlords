@@ -1098,6 +1098,28 @@ koClose.addEventListener("click", () => {
     }, 450);
 });
 
+const enaPanel = document.getElementById("ena-panel");
+const enaTab = document.getElementById("ena-tab");
+const enaClose = document.getElementById("ena-close");
+
+enaTab.addEventListener("click", () => {
+    if (typeof window !== "undefined" && typeof window.renderEnaBar === "function") {
+        window.renderEnaBar(gameState);
+    }
+
+    enaPanel.style.maxHeight = "85vh";
+    enaTab.style.display = "none";
+    enaClose.style.display = "flex";
+});
+
+enaClose.addEventListener("click", () => {
+    enaPanel.style.maxHeight = "0";
+    enaClose.style.display = "none";
+    setTimeout(() => {
+        enaTab.style.display = "flex";
+    }, 450);
+});
+
 const pivotBtn   = document.getElementById("discard-pivot-button");
 const slidePanel = document.getElementById("discard-slide-panel");
 const closeBtn   = document.getElementById("discard-slide-close");
@@ -4039,6 +4061,121 @@ export function renderKOBar(state = gameState) {
 }
 
 window.renderKOBar = renderKOBar;
+
+export function renderEnaBar(state = gameState) {
+    //console.log("[renderEnaBar] called", state);
+
+    const panel = document.getElementById("ena-content");
+    //console.log("[renderEnaBar] ko-content element:", panel);
+
+    if (!panel) {
+        console.warn("[renderEnaBar] ABORT: #ena-content not found in DOM");
+        return;
+    }
+
+    //console.log("[renderEnaBar] clearing panel");
+    panel.innerHTML = "";
+
+    const bar = document.createElement("div");
+    bar.style.display = "flex";
+    bar.style.flexWrap = "nowrap";
+    bar.style.overflowX = "auto";
+    bar.style.gap = "0";
+    bar.style.padding = "8px";
+    bar.style.alignItems = "center";
+
+    const hasEnaArray = Array.isArray(state.enemyAllyDiscard);
+    //console.log("[renderEnaBar] state.enaCards exists:", hasEnaArray, state.enaCards);
+
+    const enaList = hasEnaArray ? [...state.enemyAllyDiscard].reverse() : [];
+    //console.log("[renderEnaBar] enaList (after reverse):", enaList);
+
+    if (!enaList.length) {
+        console.warn("[renderEnaBar] enaList EMPTY — rendering placeholder");
+
+        const emptyMsg = document.createElement("div");
+        emptyMsg.textContent = "No E&A Cards Drawn";
+        emptyMsg.style.padding = "16px";
+        bar.appendChild(emptyMsg);
+        panel.appendChild(bar);
+
+        //console.log("[renderEnaBar] placeholder appended");
+        return;
+    }
+
+    //console.log("[renderEnaBar] renderCard typeof:", typeof renderCard);
+
+    for (const cardInfo of enaList) {
+        //console.log("[renderEnaBar] processing cardInfo:", cardInfo);
+
+        const { id, name } = cardInfo;
+
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "ena-card";
+        cardDiv.style.minWidth = "0px";
+        cardDiv.style.height = "160px";
+        cardDiv.style.flex = "0 0 auto";
+        cardDiv.style.marginRight = "-60px";
+        cardDiv.style.marginLeft = "-60px";
+        cardDiv.style.display = "flex";
+        cardDiv.style.justifyContent = "center";
+        cardDiv.style.alignItems = "center";
+
+        if (typeof renderCard === "function") {
+            try {
+                console.log("[renderEnaBar] calling renderCard with id:", id);
+
+                const scaleWrapper = document.createElement("div");
+                scaleWrapper.style.transform = "scale(0.48)";
+                scaleWrapper.style.transformOrigin = "center";
+                scaleWrapper.style.cursor = "pointer";
+                scaleWrapper.style.position = "relative";
+
+                const card = renderCard(String(id));
+                //console.log("[renderEnaBar] renderCard returned:", card);
+
+                const fullCardData = findCardInAllSources(String(id));
+
+                scaleWrapper.appendChild(card);
+
+                scaleWrapper.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    //console.log("[KO click] opening panel for:", fullCardData);
+                    openPanelForCard(fullCardData);
+                });
+
+                cardDiv.appendChild(scaleWrapper);
+
+            } catch (e) {
+                console.error("[renderEnaBar] renderCard threw error for", name, e);
+                cardDiv.textContent = name;
+            }
+        } else {
+            console.warn("[renderEnaBar] renderCard is NOT a function");
+            cardDiv.textContent = name;
+        }
+
+        bar.appendChild(cardDiv);
+        //console.log("[renderEnaBar] appended cardDiv for:", name);
+    }
+
+    panel.appendChild(bar);
+    //console.log("[renderEnaBar] bar appended to panel");
+
+    const label = document.createElement("div");
+    label.textContent = "Used E&A cards in order. Left is latest.";
+    label.style.marginTop = "12px";
+    label.style.marginLeft = "30px";
+    label.style.fontSize = "24px";
+    label.style.fontStyle = "italic";
+    label.style.color = "#000";
+    label.style.textAlign = "left";
+    label.style.pointerEvents = "none";
+
+    panel.appendChild(label);
+}
+
+window.renderEnaBar = renderEnaBar;
 
 function openPanelForCard(cardData) {
     if (!cardData || !cardData.type) return;

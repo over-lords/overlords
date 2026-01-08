@@ -14426,6 +14426,18 @@ export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
     const deck = gameState.enemyAllyDeck;
     const discard = gameState.enemyAllyDiscard;
 
+    for (let i = 0; i < discard.length; i++) {
+        const entry = discard[i];
+        if (entry && typeof entry === "object") continue;
+
+        const id = entry;
+        const cd = findCardInAllSources(id);
+        discard[i] = {
+            id,
+            name: cd?.name ?? "Unknown",
+        };
+    }
+
     const drawnCards = [];
 
     // Local Fisher–Yates shuffle for reshuffling the discard into a new deck
@@ -14449,7 +14461,12 @@ export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
 
         // Move all discard cards back into the deck and shuffle
         while (discard.length) {
-            deck.push(discard.pop());
+            const entry = discard.pop();
+
+            // entry might be {id,name} (new) or a raw id (old) — support both
+            const id = (entry && typeof entry === "object") ? entry.id : entry;
+
+            if (id != null) deck.push(id);
         }
         shuffleArray(deck);
 
@@ -14520,7 +14537,10 @@ export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
         // -------------------------------------------------
         // DISCARD HANDLING – every path moves drawn card to discard pile
         // -------------------------------------------------
-        discard.push(cardId);
+        discard.push({
+            id: cardId,
+            name: cardData.name
+        });
 
         drawnCards.push(cardData);
 
@@ -14698,6 +14718,14 @@ export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
                 }
             }
         }
+    }
+
+    try {
+        if (typeof window !== "undefined" && typeof window.renderEnaBar === "function") {
+            window.renderEnaBar(state);
+        }
+    } catch (e) {
+        console.warn("[koBystander] Failed to render KO bar", e);
     }
 
     saveGameState(gameState);
