@@ -1831,7 +1831,7 @@ main-content,
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 9700;
+    z-index: 900;
 }
 
 #ena-tab img {
