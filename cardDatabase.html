@@ -677,6 +677,18 @@
                 saveUIState();
             });
 
+            (function clearStateOnFreshEnter(){
+                const navEntry = performance.getEntriesByType?.("navigation")?.[0];
+                const navType = navEntry?.type; // "navigate" | "reload" | "back_forward" | "prerender"
+
+                // Treat anything except an explicit reload as a "fresh enter"
+                const isReload = (navType === "reload");
+
+                if (!isReload) {
+                    localStorage.removeItem("cardDBState");
+                }
+            })();
+
             if (!localStorage.getItem("cardDBState")) {
                 buildSubfilterStrip();
                 renderFilteredList();
