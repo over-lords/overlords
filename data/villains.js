@@ -1461,7 +1461,7 @@ export const villains = [
     name: "Batman",
     image: `${cardArtFolder}/batman.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "15",
     damage: "2",
@@ -1531,7 +1531,7 @@ export const villains = [
     name: "Superman",
     image: `${cardArtFolder}/superman.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "25",
     damage: "3",
@@ -1570,7 +1570,7 @@ export const villains = [
     name: "Wonder Woman",
     image: `${cardArtFolder}/wonderWoman.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "22",
     damage: "3",
@@ -1606,7 +1606,7 @@ export const villains = [
     name: "Green Lantern (Hal Jordan)",
     image: `${cardArtFolder}/greenLanternHal.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "20",
     damage: "2",
@@ -1641,7 +1641,7 @@ export const villains = [
     name: "Flash (Barry Allen)",
     image: `${cardArtFolder}/flashBarry.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "16",
     damage: "2",
@@ -2076,7 +2076,7 @@ export const villains = [
     name: "Flash (Wally West)",
     image: `${cardArtFolder}/flashWallyWest.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "16",
     damage: "2",
@@ -2111,7 +2111,7 @@ export const villains = [
     name: "Black Canary",
     image: `${cardArtFolder}/blackCanary.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "11",
     damage: "2",
@@ -2146,7 +2146,7 @@ export const villains = [
     name: "Cyborg",
     image: `${cardArtFolder}/cyborg.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "14",
     damage: "2",
@@ -2180,7 +2180,7 @@ export const villains = [
     name: "Aquaman",
     image: `${cardArtFolder}/aquaman.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "20",
     damage: "2",
@@ -3812,7 +3812,7 @@ export const villains = [
     name: "Detective Chimp",
     image: `${cardArtFolder}/detectiveChimp.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "9",
     damage: "1",
@@ -3838,7 +3838,7 @@ export const villains = [
     name: "Frankenstein",
     image: `${cardArtFolder}/frankenstein.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "18",
     damage: "3",
@@ -3873,7 +3873,7 @@ export const villains = [
     name: "Orchid",
     image: `${cardArtFolder}/orchid.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "14",
     damage: "2",
@@ -3907,7 +3907,7 @@ export const villains = [
     name: "Amethyst",
     image: `${cardArtFolder}/amethyst.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "16",
     damage: "2",
@@ -3942,7 +3942,7 @@ export const villains = [
     name: "Hawkwoman",
     image: `${cardArtFolder}/hawkwoman.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "16",
     damage: "2",
@@ -3978,7 +3978,7 @@ export const villains = [
     name: "Shazam",
     image: `${cardArtFolder}/shazam.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "24",
     damage: "3",
@@ -4014,7 +4014,7 @@ export const villains = [
     name: "Firestorm",
     image: `${cardArtFolder}/firestorm.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "17",
     damage: "2",
@@ -4048,7 +4048,7 @@ export const villains = [
     name: "Martian Manhunter",
     image: `${cardArtFolder}/martianManhunter.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "20",
     damage: "3",
@@ -4082,7 +4082,7 @@ export const villains = [
     name: "Dr Fate",
     image: `${cardArtFolder}/drFate.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "19",
     damage: "2",
@@ -4114,9 +4114,9 @@ export const villains = [
   {
     id: "5706",
     name: "Constantine",
-    image: `${cardArtFolder}/constantine.jpg`,
+    image: `${cardArtFolder}/contantine.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "13",
     damage: "2",
@@ -4150,7 +4150,7 @@ export const villains = [
     name: "Zatanna",
     image: `${cardArtFolder}/zatanna.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "13",
     damage: "2",
@@ -4184,18 +4184,22 @@ export const villains = [
     name: "Etrigan",
     image: `${cardArtFolder}/etrigan.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "25",
     damage: "3",
     abilitiesText: [
       {
-        text: `Reward: CHOOSE : Deal 10 Damage to a Henchman or Villain. <span class="line-gap"></span> 
+        text: `Charge 1 <span class="line-gap"></span> 
+               Reward: CHOOSE : Deal 10 Damage to a Henchman or Villain. <span class="line-gap"></span> 
                OR <span class="line-gap"></span> 
                Deal 10 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
+      {
+        text: `Rise, the form of Etrigan!`
+      },
       {
         text: `Choose Reward!`
       },
@@ -4207,6 +4211,11 @@ export const villains = [
       }
     ],
     abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `onEntry`,
+        effect: `charge(1)`
+      },
       {
           type: `chooseOption`,
           effect: `chooseYourEffect`,
@@ -4227,7 +4236,7 @@ export const villains = [
     name: "Swamp Thing",
     image: `${cardArtFolder}/swampThing.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "25",
     damage: "3",
@@ -4272,7 +4281,7 @@ export const villains = [
     name: "Robin",
     image: `${cardArtFolder}/robin.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "11",
     damage: "2",
@@ -8799,7 +8808,7 @@ export const villains = [
     name: "Batman Beyond",
     image: `${cardArtFolder}/batmanBeyond.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "17",
     damage: "2",
@@ -8848,7 +8857,7 @@ export const villains = [
     name: "Green Lantern (John Stewart)",
     image: `${cardArtFolder}/johnStewart.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "16",
     damage: "3",
@@ -8883,7 +8892,7 @@ export const villains = [
     name: "Red Lantern (Guy Gardner)",
     image: `${cardArtFolder}/guyGardner.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "15",
     damage: "3",
@@ -8914,11 +8923,11 @@ export const villains = [
     ]
   },
   {
-    id: "5832",
+    id: "5833",
     name: "White Lantern (Kyle Rayner)",
     image: `${cardArtFolder}/whiteLantern.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "25",
     damage: "3",
@@ -8949,11 +8958,11 @@ export const villains = [
     ]
   },
   {
-    id: "5833",
+    id: "5834",
     name: "Hawkman",
     image: `${cardArtFolder}/hawkman.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "14",
     damage: "3",
@@ -8985,11 +8994,11 @@ export const villains = [
     ]
   },
   {
-    id: "5834",
+    id: "5835",
     name: "Green Arrow",
     image: `${cardArtFolder}/greenArrow.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "11",
     damage: "2",
@@ -9019,11 +9028,11 @@ export const villains = [
     ]
   },
   {
-    id: "5835",
+    id: "5836",
     name: "Aqualad",
     image: `${cardArtFolder}/aqualad.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "17",
     damage: "2",
@@ -9054,11 +9063,11 @@ export const villains = [
     ],
   },
   {
-    id: "5836",
+    id: "5837",
     name: "Tempest",
     image: `${cardArtFolder}/tempest.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "18",
     damage: "2",
@@ -9089,11 +9098,11 @@ export const villains = [
     ],
   },
   {
-    id: "5837",
+    id: "5838",
     name: "Mera",
     image: `${cardArtFolder}/mera.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "18",
     damage: "2",
@@ -9124,7 +9133,7 @@ export const villains = [
     ],
   },
   {
-    id: "5838",
+    id: "5839",
     name: "Lobo",
     image: `${cardArtFolder}/lobo.png`,
     type: "Villain",
@@ -9160,11 +9169,11 @@ export const villains = [
     ]
   },
   {
-    id: "5839",
+    id: "5840",
     name: "Supergirl",
     image: `${cardArtFolder}/supergirl.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "22",
     damage: "3",
@@ -9196,11 +9205,11 @@ export const villains = [
     ]
   },
   {
-    id: "5840",
+    id: "5841",
     name: "Superboy",
     image: `${cardArtFolder}/superboy.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "20",
     damage: "3",
@@ -9232,11 +9241,11 @@ export const villains = [
     ]
   },
   {
-    id: "5841",
+    id: "5842",
     name: "Beast Boy",
     image: `${cardArtFolder}/beastBoy.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "13",
     damage: "2",
@@ -9268,11 +9277,11 @@ export const villains = [
     ]
   },
   {
-    id: "5842",
+    id: "5843",
     name: "Blue Beetle",
     image: `${cardArtFolder}/blueBeetle.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "14",
     damage: "2",
@@ -9286,7 +9295,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Charge!`
+        text: `Bug, Attack!`
       },
       {
         text: `Clash!`
@@ -9320,11 +9329,11 @@ export const villains = [
     ]
   },
   {
-    id: "5843",
+    id: "5844",
     name: "Jason Blood",
     image: `${cardArtFolder}/jasonBlood.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "5",
     damage: "1",
@@ -9356,7 +9365,7 @@ export const villains = [
     ]
   },
   {
-    id: "5844",
+    id: "5845",
     name: "Lex Luthor",
     image: `${cardArtFolder}/lexLuthor.png`,
     type: "Villain",
@@ -9403,11 +9412,11 @@ export const villains = [
     ],
   },
   {
-    id: "5845",
+    id: "5846",
     name: "Miss Martian",
     image: `${cardArtFolder}/missMartian.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "17",
     damage: "2",
@@ -9437,11 +9446,11 @@ export const villains = [
     ]
   },
   {
-    id: "5846",
+    id: "5847",
     name: "Nightwing",
     image: `${cardArtFolder}/nightwing.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "11",
     damage: "1",
@@ -9472,11 +9481,11 @@ export const villains = [
     ]
   },
   {
-    id: "5847",
+    id: "5848",
     name: "Red Hood",
     image: `${cardArtFolder}/redHood.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "12",
     damage: "2",
@@ -9508,11 +9517,11 @@ export const villains = [
     ]
   },
   {
-    id: "5848",
+    id: "5849",
     name: "Starfire",
     image: `${cardArtFolder}/starfire.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "17",
     damage: "3",
@@ -9543,11 +9552,11 @@ export const villains = [
     ]
   },
   {
-    id: "5849",
+    id: "5850",
     name: "Wonder Girl",
     image: `${cardArtFolder}/wonderGirl.png`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "20",
     damage: "2",
@@ -9579,7 +9588,7 @@ export const villains = [
     ]
   },
   {
-    id: "5850",
+    id: "5851",
     name: "Sinestro",
     image: `${cardArtFolder}/sinestro.jpg`,
     type: "Villain",
@@ -9634,11 +9643,11 @@ export const villains = [
     ],
   },
   {
-    id: "5851",
+    id: "5852",
     name: "Red Robin",
     image: `${cardArtFolder}/redRobin.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "10",
     damage: "1",
@@ -9669,11 +9678,11 @@ export const villains = [
     ]
   },
   {
-    id: "5852",
+    id: "5853",
     name: "Arsenal",
     image: `${cardArtFolder}/arsenal.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "12",
     damage: "2",
@@ -9705,11 +9714,11 @@ export const villains = [
     ]
   },
   {
-    id: "5853",
+    id: "5854",
     name: "Artemis",
     image: `${cardArtFolder}/artemis.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "10",
     damage: "2",
@@ -9741,11 +9750,11 @@ export const villains = [
     ]
   },
   {
-    id: "5854",
+    id: "5855",
     name: "Kid Flash",
     image: `${cardArtFolder}/kidFlash.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "12",
     damage: "2",
@@ -9776,11 +9785,11 @@ export const villains = [
     ]
   },
   {
-    id: "5855",
+    id: "5856",
     name: "Batgirl",
     image: `${cardArtFolder}/batgirl.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "14",
     damage: "2",
@@ -9825,11 +9834,11 @@ export const villains = [
     ]
   },
   {
-    id: "5856",
+    id: "5857",
     name: "Donna Troy",
     image: `${cardArtFolder}/donnaTroy.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "21",
     damage: "3",
@@ -9861,11 +9870,11 @@ export const villains = [
     ]
   },
   {
-    id: "5857",
+    id: "5858",
     name: "Vixen",
     image: `${cardArtFolder}/vixen.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "16",
     damage: "2",
@@ -9897,11 +9906,11 @@ export const villains = [
     ]
   },
   {
-    id: "5858",
+    id: "5859",
     name: "Raven",
     image: `${cardArtFolder}/raven.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "20",
     damage: "3",
@@ -9932,11 +9941,11 @@ export const villains = [
     ]
   },
   {
-    id: "5859",
+    id: "5860",
     name: "Omen",
     image: `${cardArtFolder}/omen.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Legion of Doom",
     hp: "13",
     damage: "1",

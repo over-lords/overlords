@@ -314,6 +314,8 @@
             import { renderCard, renderAbilityText } from './utils/cardRenderer.js';
             import { keywords } from './data/keywords.js';
 
+            const subfilterBar = document.getElementById("subfilters");
+
             export function findAnyCardById(id) {
                 const dataSources = [
                     heroes,
@@ -444,12 +446,12 @@
                     .slice()
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .filter(card => {
-                    if (!search) return true;
-                    const text =
-                        card.name +
-                        JSON.stringify(card.abilitiesText || []) +
-                        extractKeywordsFromAbilities(card.abilitiesText || []).join(" ");
-                    return text.toLowerCase().includes(search);
+                        if (!search) return true;
+                        const text =
+                            card.name +
+                            JSON.stringify(card.abilitiesText || []) +
+                            extractKeywordsFromAbilities(card.abilitiesText || []).join(" ");
+                        return text.toLowerCase().includes(search);
                     })
                     .forEach(card => {
                     const row = document.createElement("div");
@@ -560,50 +562,47 @@
             }
 
             function buildSubfilterStrip() {
-            const strip = document.getElementById("subfilter-strip");
-            const bar   = document.getElementById("subfilters");
+                const strip = document.getElementById("subfilter-strip");
+                const bar   = document.getElementById("subfilters");
 
-            const cfg = SUBFILTER_CONFIG[activeFilter];
-            if (!cfg) {
-                // Hide when not applicable
-                activeSubfilter = "all";
-                strip.style.display = "none";
-                bar.innerHTML = "";
-                return;
-            }
-
-            // Show when applicable
-            strip.style.display = "block";
-            requestAnimationFrame(updateSubfilterScrollBtns);
-
-            const baseCards = FILTERS[activeFilter] || [];
-            const values = getSubfilterValues(baseCards, cfg.key, cfg.sort);
-
-            // If the current activeSubfilter no longer exists, reset to all
-            if (!values.includes(activeSubfilter)) activeSubfilter = "all";
-
-            // Render buttons
-            bar.innerHTML = "";
-            values.forEach(v => {
-                const btn = document.createElement("button");
-                btn.className = "tab-button" + (v === activeSubfilter ? " active" : "");
-                btn.dataset.subfilter = v;
-
-                // Button text: "All" then the value (and optionally label prefix)
-                if (v === "all") {
-                btn.textContent = "All";
-                } else {
-                btn.textContent = v;
+                const cfg = SUBFILTER_CONFIG[activeFilter];
+                if (!cfg) {
+                    // Hide when not applicable
+                    activeSubfilter = "all";
+                    strip.style.display = "none";
+                    bar.innerHTML = "";
+                    return;
                 }
 
-                bar.appendChild(btn);
-            });
+                // Show when applicable
+                strip.style.display = "block";
+                requestAnimationFrame(updateSubfilterScrollBtns);
 
-            // Reset scroll position when switching main filters
-            bar.scrollLeft = 0;
+                const baseCards = FILTERS[activeFilter] || [];
+                const values = getSubfilterValues(baseCards, cfg.key, cfg.sort);
 
-            // Update arrow visibility for this bar
-            updateSubfilterScrollBtns();
+                // If the current activeSubfilter no longer exists, reset to all
+                if (!values.includes(activeSubfilter)) activeSubfilter = "all";
+
+                // Render buttons
+                bar.innerHTML = "";
+                values.forEach(v => {
+                    const btn = document.createElement("button");
+                    btn.className = "tab-button" + (v === activeSubfilter ? " active" : "");
+                    btn.dataset.subfilter = v;
+
+                    // Button text: "All" then the value (and optionally label prefix)
+                    if (v === "all") {
+                    btn.textContent = "All";
+                    } else {
+                    btn.textContent = v;
+                    }
+
+                    bar.appendChild(btn);
+                });
+
+                // Reset scroll position when switching main filters
+                bar.scrollLeft = 0;
             }
 
 
@@ -630,32 +629,32 @@
 
             // Filter button click handling (event delegation)
             document.getElementById("filters").addEventListener("click", (e) => {
-            const btn = e.target.closest("button[data-filter]");
-            if (!btn) return;
+                const btn = e.target.closest("button[data-filter]");
+                if (!btn) return;
 
-            // update active button styling
-            document.querySelectorAll("#filters .tab-button").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
+                // update active button styling
+                document.querySelectorAll("#filters .tab-button").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
 
-            // update filter and re-render
-            activeFilter = btn.dataset.filter;
+                // update filter and re-render
+                activeFilter = btn.dataset.filter;
 
-            // reset subfilter whenever main filter changes
-            activeSubfilter = "all";
+                // reset subfilter whenever main filter changes
+                activeSubfilter = "all";
 
-            // build (or hide) the subfilter strip for this filter
-            buildSubfilterStrip();
+                // build (or hide) the subfilter strip for this filter
+                buildSubfilterStrip();
 
-            // render list with new filters
-            renderFilteredList();
+                // render list with new filters
+                renderFilteredList();
+
+                saveUIState();
             });
 
-            // Search input re-renders using the current activeFilter
-            document.getElementById("card-search").addEventListener("input", renderFilteredList);
-
-            // Initial render
-            buildSubfilterStrip();
-            renderFilteredList();
+            if (!localStorage.getItem("cardDBState")) {
+                buildSubfilterStrip();
+                renderFilteredList();
+            }
 
             const filterBar = document.getElementById("filters");
 
@@ -672,7 +671,10 @@
                 document.querySelector(".tab-scroll-left").style.display = (filterBar.scrollLeft <= 2) ? "none" : "flex";
                 document.querySelector(".tab-scroll-right").style.display = (filterBar.scrollLeft >= max - 2) ? "none" : "flex";
             }
-            filterBar.addEventListener("scroll", updateTabScrollBtns);
+            filterBar.addEventListener("scroll", () => {
+                updateTabScrollBtns();
+                scheduleScrollSave();
+            });
             window.addEventListener("resize", updateTabScrollBtns);
             updateTabScrollBtns();
 
@@ -685,9 +687,8 @@
 
                 activeSubfilter = btn.dataset.subfilter;
                 renderFilteredList();
+                saveUIState();
             });
-
-            const subfilterBar = document.getElementById("subfilters");
 
             document.querySelector(".sub-scroll-left").addEventListener("click", () => {
             subfilterBar.scrollBy({ left: -400, behavior: "smooth" });
@@ -698,19 +699,23 @@
             });
 
             function updateSubfilterScrollBtns() {
-            const strip = document.getElementById("subfilter-strip");
-            if (!strip || strip.style.display === "none") return;
+                const strip = document.getElementById("subfilter-strip");
+                if (!strip || strip.style.display === "none") return;
 
-            const max = subfilterBar.scrollWidth - subfilterBar.clientWidth;
+                const max = subfilterBar.scrollWidth - subfilterBar.clientWidth;
 
-            document.querySelector(".sub-scroll-left").style.display =
-                (subfilterBar.scrollLeft <= 2) ? "none" : "flex";
+                document.querySelector(".sub-scroll-left").style.display =
+                    (subfilterBar.scrollLeft <= 2) ? "none" : "flex";
 
-            document.querySelector(".sub-scroll-right").style.display =
-                (subfilterBar.scrollLeft >= max - 2) ? "none" : "flex";
+                document.querySelector(".sub-scroll-right").style.display =
+                    (subfilterBar.scrollLeft >= max - 2) ? "none" : "flex";
             }
 
-            subfilterBar.addEventListener("scroll", updateSubfilterScrollBtns);
+            subfilterBar.addEventListener("scroll", () => {
+                updateSubfilterScrollBtns();
+                scheduleScrollSave();
+            });
+
             window.addEventListener("resize", updateSubfilterScrollBtns);
 
             function isHeroVisibleByName(heroName) {
@@ -725,6 +730,87 @@
 
                 return hero.doNotShow !== "true";
             }
+
+            function getUIState() {
+                return {
+                    filter: activeFilter,
+                    subfilter: activeSubfilter,
+                    search: document.getElementById("card-search")?.value || "",
+                    mainScroll: document.getElementById("filters")?.scrollLeft || 0,
+                    subScroll: document.getElementById("subfilters")?.scrollLeft || 0,
+                    pageScroll: window.scrollY || 0
+                };
+            }
+
+            function saveUIState() {
+                const state = getUIState();
+                localStorage.setItem("cardDBState", JSON.stringify(state));
+            }
+
+
+            document.getElementById("card-search").addEventListener("input", () => {
+                renderFilteredList();
+                saveUIState();
+            });
+
+            let scrollSaveScheduled = false;
+
+            function scheduleScrollSave() {
+                if (scrollSaveScheduled) return;
+                scrollSaveScheduled = true;
+
+                requestAnimationFrame(() => {
+                    scrollSaveScheduled = false;
+                    saveUIState();
+                });
+            }
+
+            window.addEventListener("scroll", scheduleScrollSave);
+
+
+            function restoreUIState() {
+                let state = null;
+
+                try {
+                    state = JSON.parse(localStorage.getItem("cardDBState"));
+                } catch {}
+
+                if (!state) return;
+
+                // Restore search
+                document.getElementById("card-search").value = state.search || "";
+
+                // Restore filters
+                activeFilter = state.filter || "all";
+                activeSubfilter = state.subfilter || "all";
+
+                // Sync button UI
+                document.querySelectorAll("#filters .tab-button").forEach(b =>
+                    b.classList.toggle("active", b.dataset.filter === activeFilter)
+                );
+
+                // Build subfilters BEFORE render
+                buildSubfilterStrip();
+
+                document.querySelectorAll("#subfilters .tab-button").forEach(b =>
+                    b.classList.toggle("active", b.dataset.subfilter === activeSubfilter)
+                );
+
+                // Render list
+                renderFilteredList();
+
+                // Restore scroll positions AFTER layout
+                requestAnimationFrame(() => {
+                    document.getElementById("filters").scrollLeft = state.mainScroll || 0;
+                    document.getElementById("subfilters").scrollLeft = state.subScroll || 0;
+                    window.scrollTo(0, state.pageScroll || 0);
+
+                    updateTabScrollBtns();
+                    updateSubfilterScrollBtns();
+                });
+            }
+
+            restoreUIState();
         </script>
 </body>
 </html>
