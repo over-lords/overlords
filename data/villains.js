@@ -3944,8 +3944,8 @@ export const villains = [
     type: "Villain",
     doNotShow: "false",
     hero: "Legion of Doom",
-    hp: "16",
-    damage: "2",
+    hp: "14",
+    damage: "3",
     abilitiesText: [
       {
         text: `Charge 1 <span class="line-gap"></span> Reward: 
@@ -8964,8 +8964,8 @@ export const villains = [
     type: "Villain",
     doNotShow: "false",
     hero: "Legion of Doom",
-    hp: "14",
-    damage: "3",
+    hp: "17",
+    damage: "2",
     abilitiesText: [
       {
         text: `Charge 1 <span class="line-gap"></span> Reward: 
