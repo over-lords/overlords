@@ -1,4 +1,4 @@
-const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/6d6f64d594f27ea404661c3ad5d3017261d37a71/Public/Images/Card%20Assets/Allies";
+const cardArtFolder = "https://raw.githubusercontent.com/over-lords/overlords/be08944d1790d0aef828c2efa05386f6438bd3a4/Public/Images/Card%20Assets/Allies";
 
 // ids 4551-4850
 
