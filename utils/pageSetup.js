@@ -4196,6 +4196,8 @@ function openPanelForCard(cardData) {
 
         case "Main":
         case "Bystander":
+        case "Enemy":
+        case "Ally":
             if (typeof window.buildMainCardPanel === "function") {
                 window.buildMainCardPanel(cardData);
             }
