@@ -1,5 +1,9 @@
 const newsData = [
     {
+        date: "January 8th, 2026",
+        text: "Added a Card Database in the Character Roster page!"
+    },
+    {
         date: "January 6th, 2026",
         text: "Added 4 more Playable Characters and 3 more missions!"
     },
