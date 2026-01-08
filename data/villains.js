@@ -9295,7 +9295,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Bug, Attack!`
+        text: `Scarab, Attack!`
       },
       {
         text: `Clash!`
