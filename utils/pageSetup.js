@@ -4123,7 +4123,7 @@ export function renderEnaBar(state = gameState) {
 
         if (typeof renderCard === "function") {
             try {
-                console.log("[renderEnaBar] calling renderCard with id:", id);
+                //console.log("[renderEnaBar] calling renderCard with id:", id);
 
                 const scaleWrapper = document.createElement("div");
                 scaleWrapper.style.transform = "scale(0.48)";
