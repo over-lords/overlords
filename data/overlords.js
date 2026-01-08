@@ -501,8 +501,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `At the end of a Hero's turn, if they engaged Ultraman, they take 1 Damage (ignoring their Damage Threshold). <span class="line-gap"></span>
-               Might of the Overlord: Ultraman enters the map as a 20 HP, 3 Damage Villain with Charge 1. If he is reduced to 0 HP, he is sent 
-               back to the Overlord space and his HP is reduced by 20. If he is not reduced to 0 HP before he reaches the end of the board, all Heroes take 3 Damage. <span class="line-gap"></span>
+               Might of the Overlord: Ultraman enters the map as a 20 HP, 3 Damage Villain with Charge 1. If he is reduced to 0 HP, he is sent back to the Overlord space and his HP is reduced by 20. If he is not reduced to 0 HP before he reaches the end of the board, all Heroes take 3 Damage. <span class="line-gap"></span>
                Bonus Feature: When a Hero is KO'd, Ultraman gains 10 HP. `
       }
     ],

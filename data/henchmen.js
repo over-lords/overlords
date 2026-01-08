@@ -486,7 +486,7 @@ export const henchmen = [
     abilitiesEffects: [
       {
         condition: `uponDefeat`,
-        effect: [`scanDeck(villain,3)`,`applyScanEffects(ko)`]
+        effect: [`scanDeck(villain,3)`,`applyScanEffects(ko,closeAfter(3))`]
       }
     ]
   },
