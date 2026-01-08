@@ -4184,7 +4184,7 @@ export const villains = [
     name: "Etrigan",
     image: `${cardArtFolder}/etrigan.jpg`,
     type: "Villain",
-    doNotShow: "false",
+    doNotShow: "true",
     hero: "Legion of Doom",
     hp: "25",
     damage: "3",
