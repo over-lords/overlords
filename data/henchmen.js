@@ -475,7 +475,7 @@ export const henchmen = [
     damage: "3",
     abilitiesText: [
       {
-        text: `Reward: Scan 3 from the Villain Deck. KO your choice of the revealed cards.`
+        text: `Reward: Scan 3 from the Villain Deck. OPTIONAL : KO your choice of the revealed cards.`
       }
     ],
     abilitiesNamePrint: [
