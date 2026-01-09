@@ -609,6 +609,8 @@ function markCityDestroyed(upperIdx, gameState, opts = {}) {
         console.warn("[markCityDestroyed] cityDestroyed trigger failed", err);
     }
 
+    try { playSoundEffect("cityDestroyed"); } catch (_) {}
+
     if (!Array.isArray(gameState.retreatBonusEntries)) gameState.retreatBonusEntries = [];
     if (upperIdx === CITY_ENTRY_UPPER) {
         gameState.retreatBonusEntries = gameState.retreatBonusEntries.filter(entry => !(entry && entry.sourceType === "city" && Number(entry.cityIndex) === Number(upperIdx)));

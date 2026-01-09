@@ -9,22 +9,52 @@
     <link rel="icon" href="https://raw.githubusercontent.com/over-lords/overlords/4c614c1ffe5a9d7194202bd24fae5e7c99d86333/Public/Images/Site%20Assets/favicon.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <title>Overlords</title>
+    <style>
+        .scroll-semicircle {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 64px;
+            height: 26px;
+            background: #e6e6e6;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 50;
+            user-select: none;
+        }
+
+        .scroll-up {
+            top: 0;
+            border-radius: 0 0 64px 64px;
+        }
+
+        .scroll-down {
+            bottom: 0;
+            border-radius: 64px 64px 0 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body style="background-color:white;">
     <div class="bg-image" alt="" style="opaCity: 35%;"></div>
     <div class="container">
-        <div class="title-box" id="title-box"></div>
-        <h1 class="glow-red" style="pointer-events: none;">Campaign</h1>
+        <div class="title-box" id="title-box" style="margin-top: -25px; left: -120px;"></div>
+        <h1 id="title-namePlate" class="glow-red" style="pointer-events: none; font-size: 2.8rem;">Campaign</h1>
 
         <div id="close-box" onclick="location.href='singlePlayer.html'">X</div>
 
-        <br><br><br><br><br><br>
+        <br><br><br><br>
 
         <!-- Campaign selector -->
         <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 14px;">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <div style="font-size: 32px; font-family: 'Racing Sans One', sans-serif; color: #fff; text-shadow: 0 0 6px #000; padding-left: 10px;">Campaign</div>
-            </div>
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-left: 10px;">
                 <label for="world-input" style="font-size: 22px; font-family: 'Racing Sans One', sans-serif; color: #fff; text-shadow: 0 0 6px #000;">World:</label>
                 <select id="world-input" style="width: 110px; padding: 6px 8px; border-radius: 10px; border: 2px solid #333; background:#161623; color:#fff;">
@@ -32,7 +62,17 @@
             </div>
 
             <div style="display: flex; gap: 12px; flex-wrap: nowrap; width: 100%; padding-left: 10px; padding-right: 30px; overflow-x: hidden; box-sizing: border-box; margin-bottom: 20px;">
-                <div id="level-list" style="flex: 1 1 60%; min-width: 0; max-height: 65vh; overflow-y: auto; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 10px;"></div>
+                <div id="level-list-wrap" style="flex: 1 1 60%; min-width: 0; position: relative;">
+                    <div id="scroll-up-btn" class="scroll-semicircle scroll-up hidden">▲</div>
+
+                    <div id="level-list"
+                        style="max-height: 55vh; overflow-y: auto; background: rgba(0,0,0,0.5);
+                            border: 2px solid #333; border-radius: 12px; padding: 10px;">
+                    </div>
+
+                    <div id="scroll-down-btn" class="scroll-semicircle scroll-down">▼</div>
+                </div>
+
                 <div id="play-outer-box" style="flex: 1 1 30%; min-width: 0; background: rgba(0,0,0,0.5); border: 2px solid #333; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; align-items: stretch; gap: 12px; justify-content: center; margin-right: 20px; min-height: 140px; box-sizing: border-box; align-self: flex-start;">
                 <button id="play-btn" disabled style="width: 100%; padding: 12px 14px; font-size: 18px; font-weight: 800; border: 3px solid #000; border-radius: 12px; background: #444; color: #bbb; cursor: not-allowed;">Play</button>
                     <div id="selected-label" style="color:#fff; font-size:16px; width: 100%; text-align: left;">Select a level to play.</div>
@@ -262,6 +302,8 @@
                 };
                 listEl.appendChild(row);
             });
+
+            updateScrollButtons();
         }
 
         function updatePlay() {
@@ -430,6 +472,33 @@
         window.initializeCampaign = () => {
             populateWorlds();
         };
+
+        const levelList = document.getElementById("level-list");
+        const scrollUpBtn = document.getElementById("scroll-up-btn");
+        const scrollDownBtn = document.getElementById("scroll-down-btn");
+
+        const SCROLL_AMOUNT = 160;
+
+        function updateScrollButtons() {
+            const atTop = levelList.scrollTop === 0;
+            const atBottom =
+                levelList.scrollTop + levelList.clientHeight >= levelList.scrollHeight - 1;
+
+            scrollUpBtn.classList.toggle("hidden", atTop);
+            scrollDownBtn.classList.toggle("hidden", atBottom);
+        }
+
+        // Button actions
+        scrollDownBtn.addEventListener("click", () => {
+            levelList.scrollBy({ top: SCROLL_AMOUNT, behavior: "smooth" });
+        });
+
+        scrollUpBtn.addEventListener("click", () => {
+            levelList.scrollBy({ top: -SCROLL_AMOUNT, behavior: "smooth" });
+        });
+
+        levelList.addEventListener("scroll", updateScrollButtons);
+        updateScrollButtons();
     </script>
 </body>
 </html>

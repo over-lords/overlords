@@ -189,6 +189,7 @@ export async function playSoundEffect(name) {
     } else {
         const preferred = {
             activate: ["mp3", "wav", "ogg", "aiff"],
+            cityDestroyed: ["mp3", "wav", "ogg", "aiff"],
             heroKOd: ["aiff", "mp3", "wav", "ogg"],
         };
         const exts = preferred[name] || ["wav", "mp3", "ogg", "aiff"];

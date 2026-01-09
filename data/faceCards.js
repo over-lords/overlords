@@ -310,7 +310,7 @@ export const heroes = [
       {
         type: `standard`,
         uses: `3`,
-        effect: [`koHeroTopCard(4,current)`,`regainLife(4)`]
+        effect: [`koTopHeroCard(4,current)`,`regainLife(4)`]
       }
     ]
   },

@@ -15,10 +15,15 @@ import { henchmen } from "../data/henchmen.js";
 import { villains } from "../data/villains.js";
 import { bystanders } from "../data/bystanders.js";
 
-import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, removeGameLogEntryById, clearHeroKOMarkers } from "./pageSetup.js";
+import { setCurrentOverlord, buildOverlordPanel, showMightBanner, renderHeroHandBar, 
+         placeCardIntoCitySlot, buildVillainPanel, buildMainCardPanel, appendGameLogEntry, 
+         removeGameLogEntryById, clearHeroKOMarkers } from "./pageSetup.js";
 
 import { getCurrentOverlordInfo, takeNextHenchVillainsFromDeck, showRetreatButtonForCurrentHero,
-         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout, destroyCitiesByCount, restoreCitiesByCount, resumeHeroTurnAfterVillainDraw } from "./turnOrder.js";
+         enterVillainFromEffect, checkGameEndConditions, villainDraw, updateHeroHPDisplays, 
+         updateBoardHeroHP, checkCoastalCities, getCityNameFromIndex, flagPendingHeroDamage, 
+         tryBlockPendingHeroDamage, flashScreenRed, handleHeroKnockout, destroyCitiesByCount, 
+         restoreCitiesByCount, resumeHeroTurnAfterVillainDraw } from "./turnOrder.js";
 
 import { findCardInAllSources, renderCard } from './cardRenderer.js';
 import { playSoundEffect } from './soundHandler.js';
@@ -6566,9 +6571,13 @@ EFFECT_HANDLERS.ignoreShoveDamage = function(args = [], card, selectedData = {})
     const durationRaw = String(args?.[1] ?? "current").toLowerCase();
     const state = selectedData?.state || gameState;
     const heroIds = state?.heroes || [];
+    const target = String(targetRaw).toLowerCase();
+
     const heroId =
-        String(targetRaw).toLowerCase() === "current"
-            ? (selectedData?.currentHeroId ?? heroIds[state.heroTurnIndex ?? 0] ?? null)
+        ["current", "currenthero"].includes(target)
+            ? (selectedData?.currentHeroId
+                ?? heroIds[state.heroTurnIndex ?? 0]
+                ?? null)
             : targetRaw;
 
     if (heroId == null) {
@@ -8294,7 +8303,11 @@ function handleScanKo(cardInfo) {
             }
             removed = true;
             if (!Array.isArray(gameState.enemyAllyDiscard)) gameState.enemyAllyDiscard = [];
-            gameState.enemyAllyDiscard.push(cardId);
+            const entry = {
+                id: cardId,
+                name: cardId.name
+            };
+            gameState.enemyAllyDiscard.push(entry);
         }
     } else if (source === "self") {
         const heroId = cardInfo.heroId ?? (gameState.heroes?.[gameState.heroTurnIndex ?? 0]);
@@ -9138,7 +9151,13 @@ EFFECT_HANDLERS.discard = function(args = [], card, selectedData = {}) {
 
     const rawCount = args?.[0];
     const resolvedCount = resolveNumericValue(rawCount, heroId, state);
-    const count = Math.max(1, Number.isFinite(resolvedCount) ? resolvedCount : (Number(rawCount) || 1));
+    const count = Number.isFinite(resolvedCount)
+        ? resolvedCount
+        : (Number(rawCount) || 0);
+
+    if (count <= 0) {
+        return;
+    }
 
     if (!heroId) {
         console.warn("[discard] No currentHeroId available.");

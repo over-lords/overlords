@@ -1138,7 +1138,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `Whoops!`
+        text: `Hell Yeah!`
       },
       {
         text: `Reward!`
@@ -3270,7 +3270,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `turnEndEngaged`,
-        effect: `koHeroTopCard(1,current)`
+        effect: `koTopHeroCard(1,current)`
       },
       {
         condition: `uponDefeat`,
@@ -4390,7 +4390,7 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        effect: [`koHeroTopCard(1,all)`]
+        effect: [`koTopHeroCard(1,all)`]
       }
     ],
   },
@@ -4828,7 +4828,6 @@ export const villains = [
         effect: `damageHero(1,current,ignoreDT)`
       },
       {
-        type: `optional`,
         condition: `uponDefeat`,
         effect: [`freezeVillain(any)`]
       }
@@ -6982,7 +6981,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `firstAttackPerTurn`,
-        effect: `koHeroTopCard(1,current)`
+        effect: `koTopHeroCard(1,current)`
       },
       {
         condition: `uponDefeat`,
@@ -8562,7 +8561,7 @@ export const villains = [
       {
         type: `quick`,
         condition: `firstAttackPerTurn`,
-        effect: `koHeroTopCard(1,current)`
+        effect: `koTopHeroCard(1,current)`
       },
       {
         type: `quick`,
@@ -9638,7 +9637,7 @@ export const villains = [
     mightEffects: [
       {
         type: `might`,
-        effect: [`koHeroTopCard(1,all)`]
+        effect: [`koTopHeroCard(1,all)`]
       }
     ],
   },

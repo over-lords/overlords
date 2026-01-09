@@ -2210,7 +2210,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `Increase all Villains' Damage by 1.`
+                text: `Increase all Henchmen and Villains' Damage by 1.`
             }
         ],
         abilitiesNamePrint: [
