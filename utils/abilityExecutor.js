@@ -1200,6 +1200,39 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         return pass;
     }
 
+    const rightmostCopyMatch = condStr.match(/^isrightmostcopy(?:\(([^)]+)\))?$/i);
+    if (rightmostCopyMatch) {
+        const targetId = rightmostCopyMatch[1]
+            ? String(rightmostCopyMatch[1]).trim()
+            : (state?._evaluatingFoeCardId ? String(state._evaluatingFoeCardId) : null);
+        const slotIdx = typeof state?._evaluatingFoeSlot === "number" ? state._evaluatingFoeSlot : null;
+        if (!targetId || slotIdx == null) return false;
+        const destroyed = state?.destroyedCities || {};
+        const activeUpper = UPPER_ORDER.filter(idx => !destroyed[idx]);
+        const cities = Array.isArray(state?.cities) ? state.cities : [];
+
+        const isEntryAlive = (entry) => {
+            if (!entry) return false;
+            const inst = getEntryKey(entry);
+            const hp = typeof entry.currentHP === "number"
+                ? entry.currentHP
+                : (inst && state?.villainHP ? state.villainHP[inst] : null);
+            return hp == null ? true : hp > 0;
+        };
+
+        let rightmost = null;
+        for (let i = activeUpper.length - 1; i >= 0; i--) {
+            const idx = activeUpper[i];
+            const entry = cities[idx];
+            if (!entry || entry.id == null) continue;
+            if (String(entry.id) !== targetId && String(entry.baseId ?? "") !== targetId) continue;
+            if (!isEntryAlive(entry)) continue;
+            rightmost = idx;
+            break;
+        }
+        return rightmost != null && rightmost === slotIdx;
+    }
+
     const activeHeroMatch = condStr.match(/^activehero\(([^)]+)\)$/i);
     if (activeHeroMatch) {
         const teamName = activeHeroMatch[1];
@@ -6082,6 +6115,97 @@ EFFECT_HANDLERS.disableVillainDraw = function(args = [], card, selectedData = {}
     saveGameState(s);
 };
 
+EFFECT_HANDLERS.rallyCopies = async function(args = [], card, selectedData = {}) {
+    const s = selectedData?.state || gameState;
+    if (!s || !Array.isArray(s.cities)) return;
+
+    let targetId = card?.id != null ? String(card.id) : null;
+    let count = 1;
+
+    if (args && args.length) {
+        const first = args[0];
+        const parsed = Number(first);
+        const looksNumeric = first != null && first !== "" && !Number.isNaN(parsed) && String(parsed) === String(first).trim();
+        if (looksNumeric) {
+            count = Math.max(1, resolveNumericValue(first, null, s) || 1);
+            if (args[1] != null) {
+                targetId = String(args[1]);
+            }
+        } else {
+            targetId = String(first);
+            if (args[1] != null) {
+                count = Math.max(1, resolveNumericValue(args[1], null, s) || 1);
+            }
+        }
+    }
+
+    if (!targetId) return;
+
+    const destroyed = s.destroyedCities || {};
+    const activeUpper = UPPER_ORDER.filter(idx => !destroyed[idx]);
+    const cities = s.cities;
+
+    const isAliveEntry = (entry) => {
+        if (!entry || entry.id == null) return false;
+        const inst = getEntryKey(entry);
+        const hp = typeof entry.currentHP === "number"
+            ? entry.currentHP
+            : (inst && s.villainHP ? s.villainHP[inst] : null);
+        return hp == null ? true : hp > 0;
+    };
+
+    // Find rightmost alive copy
+    let rightmostSlot = null;
+    for (let i = activeUpper.length - 1; i >= 0; i--) {
+        const idx = activeUpper[i];
+        const entry = cities[idx];
+        if (!entry || entry.id == null) continue;
+        if (String(entry.id) !== targetId && String(entry.baseId ?? "") !== targetId) continue;
+        if (!isAliveEntry(entry)) continue;
+        rightmostSlot = idx;
+        break;
+    }
+
+    // If none exist, nothing to do
+    if (rightmostSlot == null) return;
+
+    // Target slot(s) to the left in active order
+    const pos = activeUpper.indexOf(rightmostSlot);
+    if (pos <= 0) return;
+
+    let spawned = 0;
+    for (let n = 0; n < count; n++) {
+        const targetPos = pos - 1 - n;
+        if (targetPos < 0) break;
+        const targetSlot = activeUpper[targetPos];
+
+        if (cities[targetSlot] && cities[targetSlot].id != null) {
+            const shoveResult = await pushChain(targetSlot, activeUpper);
+            if (shoveResult?.blockedFrozen) {
+                console.log("[rallyCopies] Target slot occupied and shove blocked; skipping.");
+                continue;
+            }
+        }
+
+        if (cities[targetSlot] && cities[targetSlot].id != null) {
+            console.log("[rallyCopies] Target slot still occupied after shove; skipping copy.");
+            continue;
+        }
+
+        try {
+            placeCardIntoCitySlot(targetId, targetSlot);
+            appendGameLogEntry(`Multiplex creates another copy in ${getCityNameFromIndex(targetSlot + 1)}.`, s);
+            spawned++;
+        } catch (err) {
+            console.warn("[rallyCopies] Failed to create copy", err);
+        }
+    }
+
+    if (spawned > 0) {
+        saveGameState(s);
+    }
+};
+
 export function pruneHeroProtections(state = gameState) {
     const s = state || gameState;
     if (!s?.heroData) return;
@@ -10157,12 +10281,24 @@ export async function triggerRuleEffects(condition, payload = {}, state = gameSt
             // All other conditions must pass
             const heroIdForCond = payload?.currentHeroId ?? null;
             let extraPass = true;
+            const prevEvalSlot = s._evaluatingFoeSlot;
+            const prevEvalCard = s._evaluatingFoeCardId;
+            if (typeof item?.slotIndex === "number") {
+                s._evaluatingFoeSlot = item.slotIndex;
+            } else {
+                delete s._evaluatingFoeSlot;
+            }
+            s._evaluatingFoeCardId = card.id ?? card.cardType ?? card.cardId ?? null;
             for (const c of extraConds) {
                 if (!evaluateCondition(c, heroIdForCond, s)) {
                     extraPass = false;
                     break;
                 }
             }
+            if (prevEvalSlot !== undefined) s._evaluatingFoeSlot = prevEvalSlot;
+            else delete s._evaluatingFoeSlot;
+            if (prevEvalCard !== undefined) s._evaluatingFoeCardId = prevEvalCard;
+            else delete s._evaluatingFoeCardId;
             if (!extraPass) continue;
 
             const typeNorm = String(eff.type || "").toLowerCase();

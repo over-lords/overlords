@@ -5575,15 +5575,15 @@ export const villains = [
     name: "Multiplex",
     image: `${cardArtFolder}/multiplex.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Flash",
-    hp: "5",
+    hp: "6",
     damage: "1",
     abilitiesText: [
       {
         text: `Stop drawing from the Villain Deck. <span class="line-gap"></span> 
-               Each turn, the rightmost copy of Multiplex makes another immediately in the space to his left. In order to defeat Multiplex, all copies must be defeated. <span class="line-gap"></span>
-               Reward: Deal 7 Damage to the Overlord.`
+               Each turn, the rightmost copy of Multiplex makes another immediately in the space to his left, shoving his other copies forwards. <span class="line-gap"></span>
+               Reward (For Each Copy): Deal 1 Damage to the Overlord.`
       }
     ],
     abilitiesNamePrint: [
@@ -5603,12 +5603,12 @@ export const villains = [
         effect: `disableVillainDraw()`
       },
       {
-        condition: `isRightmostFoe`,
+        condition: [`isRightmostCopy`,`turnStart`],
         effect: `rallyCopies(1)`
       },
       {
         condition: `uponDefeat`,
-        effect: `damageOverlord(7)`
+        effect: `damageOverlord(1)`
       }
     ]
   },

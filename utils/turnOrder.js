@@ -189,6 +189,7 @@ import {    CITY_EXIT_UPPER,
             CITY_ENTRY_UPPER } from '../data/gameState.js';
 
 const COUNTDOWN_IDS = new Set(["8001", "8002", "8003", "8004", "8005", "8006"]);
+const MULTIPLEX_ID = "5745";
 
 function isCountdownId(id) {
     return COUNTDOWN_IDS.has(String(id));
@@ -202,6 +203,32 @@ function hasUpperRowFoe(state = gameState) {
         const entry = cities[idx];
         return entry && entry.id != null;
     });
+}
+
+function hasActiveMultiplex(state = gameState) {
+    const s = state || gameState;
+    const cities = Array.isArray(s.cities) ? s.cities : [];
+    const destroyed = s?.destroyedCities || {};
+    const upperSlots = [
+        CITY_EXIT_UPPER,
+        CITY_5_UPPER,
+        CITY_4_UPPER,
+        CITY_3_UPPER,
+        CITY_2_UPPER,
+        CITY_ENTRY_UPPER
+    ].filter(idx => !destroyed[idx]);
+
+    for (const idx of upperSlots) {
+        const entry = cities[idx];
+        if (!entry || entry.id == null) continue;
+        if (String(entry.id) !== MULTIPLEX_ID && String(entry.baseId ?? "") !== MULTIPLEX_ID) continue;
+        const inst = entry.instanceId ?? entry.uniqueId ?? null;
+        const hp = typeof entry.currentHP === "number"
+            ? entry.currentHP
+            : (inst && s.villainHP ? s.villainHP[inst] : null);
+        if (hp == null || hp > 0) return true;
+    }
+    return false;
 }
 
 function isHeroEngagedWithFoe(heroId, state = gameState) {
@@ -1681,6 +1708,15 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false, 
 export async function villainDraw(count = 1) {
     const draws = Number(count) || 0;
     if (draws <= 0) return;
+
+    // Hard stop: if Multiplex copies are active, villain draws are frozen until cleared.
+    if (hasActiveMultiplex(gameState)) {
+        gameState._villainDrawLockedMultiplex = true;
+        appendGameLogEntry("Villain draw is locked while Multiplex copies are active.", gameState);
+        return;
+    } else {
+        gameState._villainDrawLockedMultiplex = false;
+    }
 
     if (!Array.isArray(gameState.villainDeck) || gameState.villainDeck.length === 0) {
         console.log("[VILLAIN DRAW] No villain deck present.");
