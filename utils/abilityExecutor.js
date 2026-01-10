@@ -7037,6 +7037,37 @@ function resolveDamageFromLastDamagedFoe(heroId, state = gameState) {
     return getEffectiveFoeDamage(entry);
 }
 
+function getEngagedCityFoeTarget(heroId = null, state = gameState) {
+    const s = state || gameState;
+    if (!Array.isArray(s.cities)) return null;
+
+    const heroState = heroId != null ? s.heroData?.[heroId] : null;
+    if (heroState?.isFacingOverlord) return null;
+
+    const current = s._currentFoeForCard;
+    if (current && String(current.source || "").toLowerCase() === "city-upper") {
+        const instId = current.instanceId ? String(current.instanceId) : null;
+        const entryByInst = instId
+            ? s.cities.find(e => e && getEntryKey(e) === instId)
+            : null;
+        const entryBySlot = Number.isInteger(current.slotIndex) ? s.cities[current.slotIndex] : null;
+        const entry = entryByInst || entryBySlot;
+        if (entry && entry.id != null) {
+            const slotIndex = entry.slotIndex ?? s.cities.indexOf(entry);
+            if (Number.isInteger(slotIndex)) return { entry, slotIndex };
+        }
+    }
+
+    const lowerIdx = Number.isInteger(heroState?.cityIndex) ? Number(heroState.cityIndex) : null;
+    if (lowerIdx != null && lowerIdx > 0) {
+        const slotIndex = lowerIdx - 1; // lower row maps to upper slot
+        const entry = s.cities[slotIndex];
+        if (entry && entry.id != null) return { entry, slotIndex };
+    }
+
+    return null;
+}
+
 function resolveDamageHeroAmount(rawAmount, heroId, state = gameState) {
     if (typeof rawAmount === "string" && rawAmount.toLowerCase() === "engagedfoedamage") {
         const s = state || gameState;
@@ -9261,6 +9292,12 @@ EFFECT_HANDLERS.freezeVillain = function(args = [], card, selectedData = {}) {
 
     // lastDamagedFoe
     if (String(who).toLowerCase() === "lastdamagedfoe") {
+        const engaged = getEngagedCityFoeTarget(heroId, state);
+        if (engaged) {
+            applyFreezeToEntry(engaged.entry, engaged.slotIndex, state, { howLong, heroId });
+            return;
+        }
+
         const ctx = state?._lastDamageContext;
         if (ctx && (ctx.target === "overlord" || ctx.target === "none")) {
             console.warn("[freezeVillain] Guard hit: lastDamagedFoe blocked because last damage target was not a city foe.", {
@@ -9420,6 +9457,13 @@ function applyPassiveToTarget(targetMode, passive, howLong, state = gameState, h
     const mode = String(targetMode || "any").toLowerCase();
 
     if (mode === "lastdamagedfoe") {
+        const engaged = getEngagedCityFoeTarget(heroId, s);
+        if (engaged) {
+            applyPassiveToEntry(engaged.entry, passive, howLong, s, heroId);
+            saveGameState(s);
+            return;
+        }
+
         const info = s.lastDamagedFoe;
         console.log("[giveVillainPassive] lastDamagedFoe info", info);
         const ctx = s._lastDamageContext;
@@ -14243,14 +14287,19 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
         });
         if (best) addTarget(targets, best.entry, best.slotIndex);
     } else if (targetStr === "lastdamagedfoe") {
-        const info = s.lastDamagedFoe;
-        const instId = info?.instanceId;
-        if (!instId) {
-            console.warn("[shoveVillain] No lastDamagedFoe recorded.");
+        const engaged = getEngagedCityFoeTarget(heroId, s);
+        if (engaged) {
+            addTarget(targets, engaged.entry, engaged.slotIndex);
         } else {
-            const entry = s.cities.find(e => e && getEntryKey(e) === instId);
-            const slotIndex = entry?.slotIndex ?? s.cities.indexOf(entry);
-            addTarget(targets, entry, slotIndex);
+            const info = s.lastDamagedFoe;
+            const instId = info?.instanceId;
+            if (!instId) {
+                console.warn("[shoveVillain] No lastDamagedFoe recorded.");
+            } else {
+                const entry = s.cities.find(e => e && getEntryKey(e) === instId);
+                const slotIndex = entry?.slotIndex ?? s.cities.indexOf(entry);
+                addTarget(targets, entry, slotIndex);
+            }
         }
     } else if (targetStr === "any") {
         if (typeof window === "undefined") {
