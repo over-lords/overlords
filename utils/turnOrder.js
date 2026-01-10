@@ -1616,11 +1616,6 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false, 
     const chargeDist = forcedTeleport ? 0 : cardChargeDistance(cardData) + (Number(bonusCharge) || 0);
 
     if (hasTeleport) {
-        const bannerText = getTeleportBannerText(cardData, { forcedTeleport });
-        if (bannerText) {
-            try { await showMightBanner(bannerText, 2000); } catch (err) { console.warn("[TELEPORT] Failed to show banner", err); }
-        }
-
         const activeOrder = getActiveUpperOrder(state);
         const openSlots = activeOrder.filter(idx => !state.cities?.[idx]);
 
@@ -1642,6 +1637,11 @@ async function handleEnemyEntry(villainId, cardData, state, { fromDeck = false, 
                 }
             }
             return { blocked: true, reason: "Teleporter cannot find an open city" };
+        }
+
+        const bannerText = getTeleportBannerText(cardData, { forcedTeleport });
+        if (bannerText) {
+            try { await showMightBanner(bannerText, 2000); } catch (err) { console.warn("[TELEPORT] Failed to show banner", err); }
         }
 
         const randomIndex = Math.floor(Math.random() * openSlots.length);
@@ -2093,6 +2093,14 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
 
     state.koCards.push(...newlyKOd);
     const totalKOd = state.koCards.filter(c => c && c.type === "Bystander").length;
+
+    state._pendingBystanderKO = true;
+    try {
+        triggerRuleEffects("bystanderKod", { state });
+    } catch (err) {
+        console.warn("[BYSTANDER] bystanderKod trigger failed", err);
+    }
+    state._pendingBystanderKO = null;
 
     try { maybeTriggerEvilWinsConditions(state); } catch (err) { console.warn("[BYSTANDER] Evil Wins check failed", err); }
 

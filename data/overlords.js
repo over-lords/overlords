@@ -1217,7 +1217,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `KO'd Heroes are brought back as Villains. <span class="line-gap"></span>
-               Might of the Overlord: Draw 3 from the Villain Deck. `
+               Might of the Overlord: Draw 2 Henchmen or Villains from the Villain Deck. `
       }
     ],
     abilitiesNamePrint: [
@@ -1229,7 +1229,7 @@ export const overlords = [
       {
         type: `passive`,
         condition: `heroKod()`,
-        effect: `returnHeroAsVillain()`
+        effect: `returnHeroAsVillain(cyborg)`
       }
     ],
     mightNamePrint: [
@@ -1240,7 +1240,7 @@ export const overlords = [
     mightEffects: [
       {
         type: `might`,
-        effect: `villainDraw(3)`
+        effect: `rallyNextHenchVillains(2)`
       }
     ]
   },
@@ -1322,7 +1322,7 @@ export const overlords = [
     abilitiesText: [
       {
         text: `KO'd Heroes are brought back as Villains. <span class="line-gap"></span>
-               Might of the Overlord: Resurrect KO'd Henchmen and Villains equal to the number of active Heroes. <span class="line-gap"></span>
+               Might of the Overlord: Resurrect the first 2 KO'd Henchmen or Villains. <span class="line-gap"></span>
                Bonus Feature: KO'd Bystanders enter the board as 1 HP, 1 Damage Henchmen.`
       }
     ],
@@ -1335,7 +1335,7 @@ export const overlords = [
       {
         type: `passive`,
         condition: `heroKod()`,
-        effect: `returnHeroAsVillain()`
+        effect: `returnHeroAsVillain(blackLantern)`
       }
     ],
     mightNamePrint: [
@@ -1346,7 +1346,7 @@ export const overlords = [
     mightEffects: [
       {
         type: `might`,
-        effect: `reviveKodFoe(getActiveTeamCount(all))`
+        effect: `reviveKodFoe(2)`
       }
     ],
     bonusNamePrint: [

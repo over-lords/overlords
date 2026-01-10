@@ -4232,6 +4232,15 @@ function koCapturedBystander(flag = "all", state = gameState) {
     if (!Array.isArray(s.koCards)) s.koCards = [];
     s.koCards.push(...koList);
 
+    // Notify listeners of bystander KO
+    s._pendingBystanderKO = selectedData?.currentHeroId ?? true;
+    try {
+        triggerRuleEffects("bystanderKod", { currentHeroId: selectedData?.currentHeroId, state: s });
+    } catch (err) {
+        console.warn("[koCapturedBystander] Failed to trigger bystanderKod effects", err);
+    }
+    s._pendingBystanderKO = null;
+
     try {
         if (typeof window !== "undefined" && typeof window.renderKOBar === "function") {
             window.renderKOBar(s);
@@ -10025,7 +10034,33 @@ EFFECT_HANDLERS.returnHeroAsVillain = function(args = [], card, selectedData = {
 
     console.log(`[returnHeroAsVillain] KOHero triggered by ${foeName} on ${heroName} (${heroId}).`);
 
-    const match = villains.find(v => String(v.name).toLowerCase() === String(heroName).toLowerCase());
+    const flagRaw = args?.[0];
+    const flag = typeof flagRaw === "string" ? flagRaw.trim().toLowerCase() : "";
+
+    const findVillain = (prefHero) => {
+        if (!prefHero) return null;
+        const targetHero = prefHero.toLowerCase();
+        const heroNameLc = String(heroName).toLowerCase();
+        return villains.find(v => {
+            const vHero = String(v.hero || "").toLowerCase();
+            if (vHero !== targetHero) return false;
+            const vName = String(v.name || "").toLowerCase();
+            return vName === heroNameLc || vName.includes(heroNameLc);
+        });
+    };
+
+    let match = null;
+    if (flag === "cyborg") {
+        match = findVillain("brother eye") || findVillain("brothereye");
+    } else if (flag === "blacklantern" || flag === "black lantern") {
+        match = findVillain("blackest night");
+    }
+
+    // Fallback to legacy behavior if no special match found or no flag provided
+    if (!match) {
+        match = villains.find(v => String(v.name).toLowerCase() === String(heroName).toLowerCase());
+    }
+
     if (!match) {
         console.log(`[returnHeroAsVillain] No villain with matching name for ${heroName}; skipping deck insert.`);
         return;
@@ -10720,6 +10755,15 @@ export async function handleVillainEscape(entry, state) {
         }
 
         console.log(`[ESCAPE] KO’d ${total} bystanders:`, captured);
+
+        // Notify listeners of bystander KO from escape
+        state._pendingBystanderKO = true;
+        try {
+            triggerRuleEffects("bystanderKod", { state });
+        } catch (err) {
+            console.warn("[ESCAPE] Failed to trigger bystanderKod effects", err);
+        }
+        state._pendingBystanderKO = null;
     }
 
     // ---------------------------------------------------------------------
