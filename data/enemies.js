@@ -1806,7 +1806,7 @@ export const enemies = [
         doNotShow: "false",
         abilitiesText: [
             {
-                text: `All Villains and the Overlord gain 5 HP.`
+                text: `All Villains and the Overlord regain up to 5 HP.`
             }
         ],
         abilitiesNamePrint: [
@@ -1816,7 +1816,7 @@ export const enemies = [
         ],
         abilitiesEffects: [
             {
-                effect: [`damageFoe(-5,allVillains)`,`damageOverlord(-5)`]
+                effect: [`damageFoe(-5,allVillains)`,`overlordRegainLife(5)`]
             }
         ]
     },

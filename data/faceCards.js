@@ -85,12 +85,12 @@ export const heroes = [
     travel: "2",
     abilitiesText: [
       {
-        text: `3/Game: Martian Manhunter can ignore taking Damage. Then, he cannot deal Damage until the end of his next turn. <span class="line-gap"></span> If Martian Manhunter is at Headquarters, all other Heroes within the Headquarters cannot take Damage.`
+        text: `3/Game: Once per turn, Martian Manhunter can Block himself. <span class="line-gap"></span> If Martian Manhunter is at Headquarters: All other Heroes within the Headquarters cannot take Damage.`
       }
     ],
     abilitiesNamePrint: [
       {
-        text: `Ignore the Damage`
+        text: `Martian Manhunter: Block the Damage`
       },
       {
         text: `Protect others at Base`
@@ -98,18 +98,16 @@ export const heroes = [
     ],
     abilitiesEffects: [
       {
-        type: `quick`,
+        type: `optional`,
         condition: `damageSelf`,
         uses: `3`,
-        shared: `no`,
-        effect: `ignoreDamageSleepHero`
+        howOften: `OPT`,
+        effect: `blockDamage()`
       },
       {
         type: `passive`,
-        condition: `in(Headquarters)`,
-        uses: `0`,
-        shared: `no`,
-        effect: `nearbyProtected(Headquarters)`
+        condition: `atHeadquarters`, // Return true when not in a city, and also not engaging the Overlord, always update, turn on/off, consistently, so any time this hero moves, the variable updates and checks if they're back at hq
+        effect: `heroesIgnoreDamageIn(hq)` // Heroes in same location (HQ), as in not in a city, and not engaging the overlord, do not take damage
       }
     ]
   },
@@ -2838,7 +2836,8 @@ export const heroes = [
     travel: "1",
     abilitiesText: [
       {
-        text: `Permanent KO. <span class="line-gap"></span> 3/Game: At the end of her turn, if Cheetah remains engaged in a City, reduce the Henchman or Villain there to 1 HP.`
+        text: `Permanent KO. <span class="line-gap"></span> 
+               3/Game: At the end of her turn, if Cheetah remains engaged in a City, reduce the Henchman or Villain there to 1 HP.`
       }
     ],
     abilitiesNamePrint: [

@@ -844,6 +844,10 @@ function getBystandersKOdCount(state = gameState) {
     return koList.filter(entry => entry && String(entry.type || "").toLowerCase() === "bystander").length;
 }
 
+export function getBystandersKOd(state = gameState) {
+    return getBystandersKOdCount(state);
+}
+
 export function isProtectionDisabledForHero(heroId, state = gameState) {
     const s = state || gameState;
     const disableList = Array.isArray(s.disableProtectTeams) ? s.disableProtectTeams : [];
@@ -1080,6 +1084,9 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     }
     if (lower === "rescuedbystanderscount") {
         return getTotalRescuedBystanders(state);
+    }
+    if (lower === "getbystanderskod" || lower === "getbystanderskod()") {
+        return getBystandersKOdCount(state);
     }
     if (lower === "findkodheroes") {
         return findKOdHeroes(state);
@@ -13128,14 +13135,18 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         let engagedUpperSlot = null;
         const currentFoe = s?._currentFoeForCard;
         const engagedInstanceId = currentFoe?.instanceId ?? null;
-        if (currentFoe && currentFoe.source === "city-upper" && Number.isInteger(currentFoe.slotIndex)) {
-            engagedUpperSlot = currentFoe.slotIndex;
-        } else if (!isFacingOverlord && Number.isInteger(Number(heroState?.cityIndex))) {
-            engagedUpperSlot = Number(heroState.cityIndex) - 1; // lower index maps to upper slot
+        if (!isFacingOverlord) {
+            if (currentFoe && currentFoe.source === "city-upper" && Number.isInteger(currentFoe.slotIndex)) {
+                engagedUpperSlot = currentFoe.slotIndex;
+            } else if (Number.isInteger(Number(heroState?.cityIndex))) {
+                engagedUpperSlot = Number(heroState.cityIndex) - 1; // lower index maps to upper slot
+            }
         }
 
-        // If we lack a valid engaged slot (hero not in a city), skip the AoE entirely
-        if (engagedUpperSlot == null || engagedUpperSlot < 0) {
+        const hasEngagedSlot = Number.isInteger(engagedUpperSlot) && engagedUpperSlot >= 0;
+
+        // If we lack a valid engaged slot (hero not in a city) and we're not facing the overlord, skip the AoE
+        if (!isFacingOverlord && !hasEngagedSlot) {
             console.log("[damageFoe][allOthers] No engaged slot found; skipping AoE.");
             return;
         }
@@ -13152,10 +13163,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         for (let slotIndex = 0; slotIndex < s.cities.length; slotIndex++) {
             const entry = s.cities[slotIndex];
             if (!entry || entry.id == null) continue;
-            // Skip the engaged foe by slot or instance match
-            if (slotIndex === engagedUpperSlot) continue;
-            if (engagedInstanceId && getEntryKey(entry) === String(engagedInstanceId)) continue;
-            if (currentFoe && String(currentFoe.foeId || "") === String(entry.id)) continue;
+            // Skip the engaged foe by slot or instance match (only when not facing the overlord)
+            if (!isFacingOverlord && hasEngagedSlot && slotIndex === engagedUpperSlot) continue;
+            if (!isFacingOverlord && engagedInstanceId && getEntryKey(entry) === String(engagedInstanceId)) continue;
+            if (!isFacingOverlord && currentFoe && String(currentFoe.foeId || "") === String(entry.id)) continue;
 
             const foeIdStr = String(entry.id);
             const foeCard =

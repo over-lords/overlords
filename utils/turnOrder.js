@@ -3945,7 +3945,7 @@ export function checkGameEndConditions(state) {
 
             if (allKO) {
                 outcome = "loss";
-                reason  = "All heroes were KO'd.";
+                reason  = "All Heroes were KO'd.";
             }
         }
     }
