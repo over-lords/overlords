@@ -2173,6 +2173,369 @@ export const heroCards = [
     ]
   },
   {
+    id: "722",
+    type: "Main",
+    name: "Channeling the Anger",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/channelingTheAnger.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every 1 HP Supergirl has lost.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Increase this card's Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `increaseCardDamage(getHeroDamage)`
+      }
+    ]
+  },
+  {
+    id: "723",
+    type: "Main",
+    name: "Cardboard? Try Paper Mache",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/cardboardTryPaperMache.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `CHOOSE : KO up to 2 Henchmen. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `KO 2 Henchmen`
+      },
+      {
+        text: `Draw 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`damageFoeMulti(999,2,anyHenchman)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(2)`]
+      }
+    ]
+  },
+  {
+    id: "724",
+    type: "Main",
+    name: "Endless Determination",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/endlessDetermination.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `All other Henchmen and Villains take 3 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `And Stay Down!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageFoe(3,allOthers)`
+      }
+    ]
+  },
+  {
+    id: "725",
+    type: "Main",
+    name: "Tougher, Faster, Better",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/strongerFasterBetter.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `After taking this card's Damage, shove Supergirl's engaged foe 1 space right, stopping if they contact another Henchman or Villain. <span class="line-gap"></span> CHOOSE: Supergirl can follow them. <span class="line-gap"></span> OR <span class="line-gap"></span> Retreat to Headquarters.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Shove Foe Back`
+      },
+      {
+        text: `Choose`
+      },
+      {
+        text: `Followed Shoved Foe`
+      },
+      {
+        text: `Retreat to Headquarters`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: `shoveVillain(lastDamagedFoe,2)`
+      },
+      {
+        condition: [`afterDamage`,`onlyOnShove`],
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(1)`,
+        effect: [`travelTo(lastShovedVillainDestination)`]
+      },
+      {
+        condition: `afterDamage`,
+        type: `chooseOption(2)`,
+        effect: [`retreatHeroToHQ()`]
+      }
+    ]
+  },
+  {
+    id: "726",
+    type: "Main",
+    name: "Girl of Steel",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/girlOfSteel.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Scan 1 from the Villain Deck. <span class="line-gap"></span> OPTIONAL : KO the revealed card.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Scan 1 from the Villain Deck`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        effect: [`scanDeck(villain,1)`,`applyScanEffects(ko)`]
+      },
+    ]
+  },
+  {
+    id: "727",
+    type: "Main",
+    name: "A New Kind of Family",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/aNewKindOfFamily.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `OPTIONAL : Draw from the E&A. <span class="line-gap"></span> For every active [ICON:Super] Hero, deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw from the E&A`
+      },
+      {
+        text: `Teamwork!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `optional`,
+        effect: `enemyDraw(1)`
+      },
+      {
+        effect: `damageOverlord(2*getActiveTeamCount(Super))`
+      }
+    ]
+  },
+  {
+    id: "728",
+    type: "Main",
+    name: "Last Memories",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/lastMemories.jpg`,
+    perDeck: "2",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 for every time Supergirl has Traveled this turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Increase this card's Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `increaseCardDamage(getTravelUsed)`
+      }
+    ]
+  },
+  {
+    id: "729",
+    type: "Main",
+    name: "Super Senses",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/superSenses.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE: Play the next Ally from the E&A. <span class="line-gap"></span> OR <span class="line-gap"></span> Draw 2.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `Play the next Ally`
+      },
+      {
+        text: `Draw 2`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`enemyDraw(1,nextAlly)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`draw(2)`]
+      }
+    ]
+  },
+  {
+    id: "730",
+    type: "Main",
+    name: "Last Daughter of Krypton",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/lastDaughterOfKrypton.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2. <span class="line-gap"></span> Deal 5 Damage to the Overlord for each Destroyed City.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 2`
+      },
+      {
+        text: `This is for my Parents!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `draw(2)`
+      },
+      {
+        effect: `damageOverlord(5*getDestroyedCitiesCount)`
+      }
+    ]
+  },
+  {
+    id: "731",
+    type: "Main",
+    name: "Bring It On!",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/invulnerable.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 1. <span class="line-gap"></span> Once, before the start of Supergirl's next turn, she can Block herself or another Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 1`
+      },
+      {
+        text: `Don't You Know? I'm Bulletproof, Baby!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `draw(1)`
+      },
+      {
+        effect: `giveHeroPassive(blockDamage(1),next)`
+      }
+    ]
+  },
+  {
+    id: "732",
+    type: "Main",
+    name: "Save the Cat",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/saveTheCat.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 1 and Rescue a Bystander.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 1 and Rescue a Bystander`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`draw(1)`,`rescueBystander(1)`]
+      }
+    ]
+  },
+  {
+    id: "733",
+    type: "Main",
+    name: "From Another World",
+    hero: "Supergirl",
+    image: `${cardArtFolder}/Supergirl/adjustmentPeriod.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2 and Deal 2 Damage to up to 2 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 2 and Damage up to 2 Foes`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`draw(2)`,`damageFoeMulti(2,2,any)`]
+      }
+    ]
+  },
+  {
     id: "1061",
     type: "Main",
     name: "I Am Batman",

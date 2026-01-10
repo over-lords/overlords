@@ -1146,7 +1146,7 @@ export const heroes = [
     image: `${cardArtFolder}/Supergirl.jpg`,
     type: "Hero",
     category: "Striker",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "blue",
     teams: ["Super","Justice"],
     hp: "15",

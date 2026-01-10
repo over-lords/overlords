@@ -1085,6 +1085,10 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
     if (lower === "rescuedbystanderscount") {
         return getTotalRescuedBystanders(state);
     }
+    if (lower === "getdestroyedcitiescount") {
+        const destroyed = state?.destroyedCities || {};
+        return Object.keys(destroyed).filter(k => destroyed[k]).length;
+    }
     if (lower === "getbystanderskod" || lower === "getbystanderskod()") {
         return getBystandersKOdCount(state);
     }
@@ -3673,6 +3677,30 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState,
         };
     };
 
+    const refreshVillainPanelForEntry = (entry, slotIndex) => {
+        if (typeof document === "undefined") return;
+        const panel = document.getElementById("villain-panel");
+        if (!panel || !panel.classList.contains("open")) return;
+        const panelId = panel.dataset.villainId || panel.dataset.villainid;
+        const panelInst = panel.dataset.instanceId || panel.dataset.instanceid;
+        const inst = getEntryKey(entry);
+        if (panelInst && inst && String(panelInst) !== String(inst)) return;
+        const card = findCardInAllSources(entry.id);
+        if (!card) return;
+        const builder = (typeof window !== "undefined" && typeof window.buildVillainPanel === "function")
+            ? window.buildVillainPanel
+            : (typeof buildVillainPanel === "function" ? buildVillainPanel : null);
+        if (!builder) return;
+        const liveCard = {
+            ...card,
+            instanceId: inst,
+            currentHP: entry.currentHP,
+            maxHP: entry.maxHP,
+            capturedBystanders: Array.isArray(entry.capturedBystanders) ? [...entry.capturedBystanders] : []
+        };
+        try { builder(liveCard, { instanceId: inst, slotIndex }); } catch (err) { console.warn("[rescueCapturedBystander] Failed to refresh villain panel", err); }
+    };
+
     const rescueFromEntry = (entry, idx) => {
         if (!entry) return;
 
@@ -3701,6 +3729,7 @@ function rescueCapturedBystander(flag = "all", heroId = null, state = gameState,
 
         if (rescuedHere > 0) {
             recordSource(entry, slotIndex);
+            refreshVillainPanelForEntry(entry, slotIndex);
         }
     };
 
@@ -4737,7 +4766,9 @@ function setRetreatDampener(target = "current", duration = "next", state = gameS
 EFFECT_HANDLERS.disableRetreat = function(args = [], card, selectedData = {}) {
     const who = args?.[0] ?? "current";
     const howLong = args?.[1] ?? "next";
-    setRetreatDampener(who, howLong, selectedData?.state || gameState);
+    const state = selectedData?.state || gameState;
+    setRetreatDampener(who, howLong, state);
+    try { showRetreatButtonForCurrentHero(state); } catch (err) { console.warn("[disableRetreat] Failed to refresh retreat button", err); }
 };
 
 function setHeroDTforHero(heroId, value, duration = "next", state = gameState, meta = {}) {
@@ -6612,6 +6643,24 @@ EFFECT_HANDLERS.halfDamage = function(args = [], card, selectedData = {}) {
         sourceType,
         sourceId
     });
+
+    // Log the effect for clarity
+    try {
+        const heroId = selectedData?.currentHeroId ?? null;
+        const heroName = heroId != null
+            ? (heroes.find(h => String(h.id) === String(heroId))?.name || `Hero ${heroId}`)
+            : null;
+        const targetText =
+            (teamKey === "current" && heroName)
+                ? heroName
+                : (heroId != null && /^\d+$/.test(teamKey) && heroName)
+                    ? heroName
+                    : teamKey;
+        const durationText = turns > 0 ? "until the end of their next turn" : "for this turn";
+        appendGameLogEntry(`${targetText} deals half damage ${durationText}.`, state);
+    } catch (err) {
+        console.warn("[halfDamage] Failed to append game log entry", err);
+    }
 
     saveGameState(state);
 };

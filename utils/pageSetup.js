@@ -2766,6 +2766,11 @@ export function buildVillainPanel(villainCard, opts = {}) {
     }
 
     panel.dataset.villainId = String(villainCard.id);
+    if (villainEntry?.instanceId || villainEntry?.uniqueId) {
+        panel.dataset.instanceId = String(villainEntry.instanceId ?? villainEntry.uniqueId);
+    } else {
+        delete panel.dataset.instanceId;
+    }
 
     rightCol.innerHTML = `
         <h2>${villainCard.name}</h2>
@@ -2793,12 +2798,13 @@ export function buildVillainPanel(villainCard, opts = {}) {
 
     const captured = document.createElement("div");
 
-    const capturedList = Array.isArray(villainCard.capturedBystanders)
-        ? villainCard.capturedBystanders
-        : [];
+    const capturedList = Array.isArray(villainEntry?.capturedBystanders)
+        ? villainEntry.capturedBystanders
+        : (Array.isArray(villainCard.capturedBystanders) ? villainCard.capturedBystanders : []);
 
     const capturedCount =
         capturedList.length ||
+        Number(villainEntry?.capturedBystanders) ||
         Number(villainCard.capturedBystanders) ||
         0;
 
