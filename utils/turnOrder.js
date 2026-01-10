@@ -5185,7 +5185,7 @@ async function performHeroShoveTravel(state, activeHeroId, targetHeroId, destina
       const heroName = heroObj?.name || `Hero ${activeHeroId}`;
       const foeDamage = getSlotFoeDamage(foeEntry, foe);
       console.log("[SHOVE ENTRY] Effective foe damage (after passives)", { foeDamage, foeId, entryKey: foeEntry?.instanceId ?? foeEntry?.uniqueId ?? null, damagePenalty: foeEntry?.damagePenalty, currentDamage: foeEntry?.currentDamage });
-      const dt = getCurrentHeroDT(heroId, gameState);
+      const dt = getCurrentHeroDT(activeHeroId, gameState);
 
       const turn = typeof state.turnCounter === "number" ? state.turnCounter : 0;
       const ignoreShoveDamage =

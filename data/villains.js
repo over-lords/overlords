@@ -4865,7 +4865,7 @@ export const villains = [
     name: "Black Flash",
     image: `${cardArtFolder}/blackFlash.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Flash",
     hp: "20",
     damage: "0",
@@ -4886,7 +4886,7 @@ export const villains = [
     abilitiesEffects: [
       {
         type: `quick`,
-        condition: `turnEndEngaged`,
+        condition: `turnEndEngaged(Flash)`,
         effect: `damageHero(3,current,ignoreDT)`
       },
       {

@@ -685,7 +685,6 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        condition: `afterDamage`,
         effect: [`damageFoe(3,allOthers)`]
       }
     ]
@@ -2975,7 +2974,6 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        condition: `afterDamage`,
         effect: [`damageFoe(2,allOthers)`,`disableVillainDraw(1)`]
       }
     ]
@@ -3332,7 +3330,6 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        condition: `afterDamage`,
         effect: `damageFoe(2,allOthers)`
       }
     ]

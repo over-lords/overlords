@@ -1671,8 +1671,16 @@ export async function runTurnEndEngagedTriggers(heroId, state = gameState) {
     for (let i = 0; i < cardData.abilitiesEffects.length; i++) {
         const eff = cardData.abilitiesEffects[i];
         if (!eff || !eff.effect) continue;
-        const condNorm = normalizeConditionString(eff.condition || "none");
-        if (condNorm !== "turnendengaged") continue;
+        const rawCond = String(eff.condition || "none").trim();
+        if (!/^turnendengaged/i.test(rawCond)) continue;
+
+        // Optional team filter: turnEndEngaged(Flash)
+        const teamMatch = rawCond.match(/^turnendengaged\(([^)]+)\)$/i);
+        if (teamMatch) {
+            const teamKey = teamMatch[1].trim();
+            const heroObj = heroes.find(h => String(h.id) === String(heroId));
+            if (!heroObj || !heroMatchesTeam(heroObj, teamKey)) continue;
+        }
 
         const chanceRaw = eff.chance;
         if (chanceRaw != null) {
