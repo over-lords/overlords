@@ -639,11 +639,11 @@ export const overlords = [
     type: "Overlord",
     level: "2",
     hp: "50",
-    doNotShow: "true",
+    doNotShow: "false",
     abilitiesText: [
       {
         text: `Each time a Villain is KO'd by a Hero, that Hero may either take 5 Damage or gain 5 HP. <span class="line-gap"></span> 
-               Might of the Overlord: Resurrect the first 3 KO'd Henchmen. <span class="line-gap"></span> 
+               Might of the Overlord: Resurrect the first 2 KO'd Henchmen. <span class="line-gap"></span> 
                Bonus Feature: The first time each turn a [ICON:Squad] Hero Damages Amanda Waller, there is a chance they take 10 Damage.`
       }
     ],
@@ -659,12 +659,13 @@ export const overlords = [
       {
         type: `quick`,
         condition: `villainKOd`,
-        chance: 0.33,
-        effect: `randomEffect(damageHero(5,lastDamageCauser),regainLife(5,lastDamageCauser))`
+        chance: 0.4,
+        effect: `randomEffect(damageHero(5,lastHeroDamager),regainLife(5,lastHeroDamager))`
       },
       {
         type: `quick`,
         condition: [`firstAttackPerTurn`,`isDamagedBy(Squad)`],
+        chance: 0.16,
         effect: `damageHero(10,current)`
       }
     ],
@@ -676,7 +677,7 @@ export const overlords = [
     mightEffects: [
       {
         type: `might`,
-        effect: `reviveKodFoe(3,henchmenOnly)`
+        effect: `reviveKodFoe(2,henchmenOnly)`
       }
     ]
   },

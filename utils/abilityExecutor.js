@@ -1200,6 +1200,19 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         return pass;
     }
 
+    const damagedByMatch = condStr.match(/^isdamagedby\(([^)]+)\)$/i);
+    if (damagedByMatch) {
+        const teamName = damagedByMatch[1].trim();
+        const ctx = s._lastDamageContext;
+        const lastHeroId = (ctx && ctx.target === "overlord") ? ctx.heroId : null;
+        if (lastHeroId == null) return false;
+        const heroObj = heroes.find(h => String(h.id) === String(lastHeroId));
+        if (!heroObj) return false;
+        const result = heroMatchesTeam(heroObj, teamName);
+        console.log(`[isDamagedBy(${teamName})] heroId=${lastHeroId} -> ${result ? "true" : "false"}`);
+        return result;
+    }
+
     const rightmostCopyMatch = condStr.match(/^isrightmostcopy(?:\(([^)]+)\))?$/i);
     if (rightmostCopyMatch) {
         const targetId = rightmostCopyMatch[1]
@@ -1492,6 +1505,14 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         const matchesHero = heroId == null || (last && String(last.heroId) === String(heroId));
         const result = !!last && matchesHero;
         console.log(`[kodHenchman condition] ${result ? "true" : "false"}${last ? ` (hero=${last.heroId}, foe=${last.foeId}, inst=${last.instanceId})` : ""}`);
+        return result;
+    }
+    if (lowerCond === "villainkod") {
+        const last = state?._lastKOdFoe;
+        const matchesHero = heroId == null || (last && String(last.heroId) === String(heroId));
+        const isVillain = last && String(last.type || "").toLowerCase() === "villain";
+        const result = !!last && matchesHero && isVillain;
+        console.log(`[villainKOd condition] ${result ? "true" : "false"}${last ? ` (hero=${last.heroId}, foe=${last.foeId}, inst=${last.instanceId}, type=${last.foeType})` : ""}`);
         return result;
     }
     if (lowerCond === "foekod") {
@@ -3178,19 +3199,21 @@ EFFECT_HANDLERS.chooseYourEffect = async function (cardData, context = {}) {
 };
 
 EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
+  const s = selectedData?.state || gameState;
   const amount = Number(args?.[0]) || 1;
-  const flagRaw = args?.[1] ?? "";
-  const flag = typeof flagRaw === "string" ? flagRaw.toLowerCase() : "";
+  const targetSelector = args?.[1] ?? "current";
 
-  const heroId = selectedData?.currentHeroId ?? null;
-  if (!heroId) {
-    console.warn("[regainLife] No currentHeroId available.");
+  const defaultHeroId = selectedData?.currentHeroId ?? (Array.isArray(s.heroes) ? s.heroes[s.heroTurnIndex ?? 0] : null);
+  const targets = resolveHeroTargets(targetSelector, s, defaultHeroId);
+
+  if (!targets.length) {
+    console.warn("[regainLife] No hero targets resolved.", { targetSelector, defaultHeroId });
     return;
   }
 
   // Helper to heal a specific hero id
   const healHero = (hid) => {
-    const hState = gameState.heroData?.[hid];
+    const hState = s.heroData?.[hid];
     if (!hState) return;
     const hCard = heroes.find(h => String(h.id) === String(hid));
     if (!hCard) return;
@@ -3203,20 +3226,15 @@ EFFECT_HANDLERS.regainLife = function(args, card, selectedData) {
     hCard.currentHP = hState.hp;
 
     console.log(`[regainLife] ${hCard.name} regains ${amount} HP (${before} → ${hState.hp}).`);
-    appendGameLogEntry(`${hCard.name} gained ${hState.hp - before} HP.`, gameState);
+    appendGameLogEntry(`${hCard.name} gained ${hState.hp - before} HP.`, s);
 
     try { updateHeroHPDisplays(hid); } catch (e) { console.warn("[regainLife] updateHeroHPDisplays failed", e); }
     try { updateBoardHeroHP(hid); } catch (e) { console.warn("[regainLife] updateBoardHeroHP failed", e); }
   };
 
-  if (flag === "all") {
-    const heroIds = gameState.heroes || [];
-    heroIds.forEach(healHero);
-  } else {
-    healHero(heroId);
-  }
+  targets.forEach(healHero);
 
-  saveGameState(gameState);
+  saveGameState(s);
 };
 
 EFFECT_HANDLERS.damageOverlord = function (args, card, selectedData) {
@@ -7035,7 +7053,7 @@ function isHeroSelectorValue(val) {
         return heroes.some(h => String(h.id) === String(val));
     }
     const lower = String(val).toLowerCase();
-    if (["random", "all", "current", "notcurrent", "coastal", "highesthp", "allengaged"].includes(lower)) return true;
+    if (["random", "all", "current", "notcurrent", "coastal", "highesthp", "allengaged", "lastherodamager"].includes(lower)) return true;
     return HERO_TEAM_SET.has(lower);
 }
 
@@ -7072,6 +7090,13 @@ function resolveHeroTargets(selectorRaw, state = gameState, defaultHeroId = null
         const idx = Number.isInteger(s.heroTurnIndex) ? s.heroTurnIndex : 0;
         const currentId = heroIds[idx];
         return activeHeroes.filter(hid => String(hid) !== String(currentId));
+    }
+
+    if (lower === "lastherodamager") {
+        const hid = s.lastHeroDamager;
+        if (hid == null) return [];
+        const hp = s.heroData?.[hid]?.hp;
+        return hp == null || hp > 0 ? [hid] : [];
     }
 
     if (lower === "allengaged") {
@@ -10336,6 +10361,22 @@ export async function triggerRuleEffects(condition, payload = {}, state = gameSt
             else delete s._evaluatingFoeCardId;
             if (!extraPass) continue;
 
+            // Chance gating for rule-triggered effects
+            if (eff.chance != null) {
+                let prob = Number(eff.chance);
+                if (Number.isFinite(prob)) {
+                    if (prob > 1) prob = prob / 100;
+                    prob = Math.max(0, Math.min(1, prob));
+                    const roll = Math.random();
+                    if (roll >= prob) {
+                        console.log(`[triggerRuleEffects] Chance ${prob} roll ${roll.toFixed(3)} -> skip effect ${idx} on ${card.name}`);
+                        continue;
+                    } else {
+                        console.log(`[triggerRuleEffects] Chance ${prob} roll ${roll.toFixed(3)} -> run effect ${idx} on ${card.name}`);
+                    }
+                }
+            }
+
             const typeNorm = String(eff.type || "").toLowerCase();
             console.log(`[triggerRuleEffects] Matched condition '${condNorm}' on ${card.name} (type=${typeNorm})`);
             const runEffect = async () => {
@@ -12286,6 +12327,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 appliedDamage: damageAmount,
                 intendedDamage: damageAmount
             };
+            gameState.lastHeroDamager = heroId ?? null;
         } else if (foeSummary.source === "city-upper") {
             damageAmount = applyHalfDamageModifier(damageAmount, heroId, gameState);
             damageFoe(damageAmount, foeSummary, heroId, gameState);
@@ -12303,6 +12345,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 foeName: foeSummary.foeName,
                 slotIndex: foeSummary.slotIndex
             };
+            gameState.lastHeroDamager = heroId ?? null;
         } else {
             console.log(
                 "[AbilityExecutor] Foe summary has unknown source; no damage applied.",
@@ -13804,6 +13847,9 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         if (heroId && s.heroData?.[heroId]) {
             s.heroData[heroId].lastDamageAmount = Number(appliedDamage) || 0;
         }
+        if (heroId != null) {
+            s.lastHeroDamager = heroId;
+        }
 
         // Trigger damaged condition effects on this foe
         try { runFoeDamagedTriggers(entry, slotIndex, s); } catch (err) { console.warn("[damageFoe] runFoeDamagedTriggers failed", err); }
@@ -13893,6 +13939,13 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         triggerRuleEffects("foeKOd", { currentHeroId: heroId }, s);
     } catch (err) {
         console.warn("[damageFoe] foeKOd trigger failed", err);
+    }
+    if (String(foeCard.type || "").toLowerCase() === "villain") {
+        try {
+            triggerRuleEffects("villainKOd", { currentHeroId: heroId }, s);
+        } catch (err) {
+            console.warn("[damageFoe] villainKOd trigger failed", err);
+        }
     }
 
     console.log(`[damageFoe] ${foeCard.name} has been KO'd.`);

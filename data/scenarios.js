@@ -275,7 +275,7 @@ export const scenarios = [
         name: "League of Killers",
         image: `${cardArtFolder}/Scenario.jpg`,
         type: "Scenario",
-        doNotShow: "true",
+        doNotShow: "false",
         hp: "10",
         abilitiesText: [
             {
