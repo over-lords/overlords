@@ -2606,6 +2606,24 @@ EFFECT_HANDLERS.charge = function (args, card, selectedData) {
     runCharge(card.id, distance);
 };
 
+EFFECT_HANDLERS.villainGainCharge = function (args = [], card, selectedData = {}) {
+    const state = selectedData.state || gameState;
+    const heroId = selectedData.currentHeroId ?? null;
+    const raw = args?.[0] ?? 1;
+    const add = Math.max(0, Number(resolveNumericValue(raw, heroId, state)) || 0);
+    if (add <= 0) return;
+
+    const cardId = selectedData.cardId ?? null;
+    const cardData = selectedData.cardData ?? null;
+    const type = String(cardData?.type || "").toLowerCase();
+    const isVillainCard = type === "villain" ||
+        (cardId != null && villains.some(v => String(v.id) === String(cardId)));
+    if (!isVillainCard) return;
+
+    state._pendingBonusCharge = (Number(state._pendingBonusCharge) || 0) + add;
+    state._pendingBonusChargeCardId = cardId != null ? String(cardId) : null;
+};
+
 EFFECT_HANDLERS.draw = function(args, card, selectedData) {
     const heroId = selectedData?.currentHeroId ?? null;
 
@@ -10051,28 +10069,43 @@ export async function triggerRuleEffects(condition, payload = {}, state = gameSt
     });
     const activeTactics = Array.from(tacticIdSet)
         .map(id => tacticMap.get(id))
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(card => ({ card }));
     cardsToCheck.push(...activeTactics);
 
     // Active heroes (face cards)
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     heroIds.forEach(hid => {
         const heroCard = heroes.find(h => String(h.id) === String(hid));
-        if (heroCard) cardsToCheck.push(heroCard);
+        if (heroCard) cardsToCheck.push({ card: heroCard });
     });
 
     // Active scenario (top of stack)
     if (Array.isArray(s.scenarioStack) && s.scenarioStack.length > 0) {
         const scenarioId = String(s.scenarioStack[s.scenarioStack.length - 1]);
         const scenarioCard = scenarios.find(sc => String(sc.id) === scenarioId);
-        if (scenarioCard) cardsToCheck.push(scenarioCard);
+        if (scenarioCard) cardsToCheck.push({ card: scenarioCard });
     }
 
     // Current overlord (supports conditions like turnStart/turnEnd on overlords)
     const currentOv = getCurrentOverlordInfo(s);
-    if (currentOv?.card) cardsToCheck.push(currentOv.card);
+    if (currentOv?.card) cardsToCheck.push({ card: currentOv.card });
 
-    for (const card of cardsToCheck) {
+    // Active henchmen/villains on the board (with slot metadata)
+    if (Array.isArray(s.cities)) {
+        s.cities.forEach((entry, idx) => {
+            if (!entry || entry.id == null) return;
+            const foeCard =
+                villains.find(v => String(v.id) === String(entry.id)) ||
+                henchmen.find(h => String(h.id) === String(entry.id));
+            if (!foeCard) return;
+            cardsToCheck.push({ card: foeCard, slotIndex: idx, foeEntry: entry });
+        });
+    }
+
+    for (const item of cardsToCheck) {
+        const card = item?.card;
+        if (!card) continue;
         const effects = [
             ...(Array.isArray(card.abilitiesEffects) ? card.abilitiesEffects : []),
             ...(Array.isArray(card.mightEffects) ? card.mightEffects : []),
@@ -10128,7 +10161,13 @@ export async function triggerRuleEffects(condition, payload = {}, state = gameSt
             console.log(`[triggerRuleEffects] Matched condition '${condNorm}' on ${card.name} (type=${typeNorm})`);
             const runEffect = async () => {
                 try {
-                    await executeEffectSafely(eff.effect, card, { ...payload, state: s, tacticId: card.id });
+                    await executeEffectSafely(eff.effect, card, {
+                        ...payload,
+                        state: s,
+                        tacticId: card.id,
+                        slotIndex: item?.slotIndex,
+                        foeEntry: item?.foeEntry
+                    });
                 } catch (err) {
                     console.warn(`[triggerRuleEffects] Failed to run effect ${idx} on ${card.name}:`, err);
                 }

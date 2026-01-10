@@ -1763,10 +1763,8 @@ export async function villainDraw(count = 1) {
                 break;
             case "enemy":
                 console.log("[VILLAIN DRAW] Hench/Villain card:", villainId, data?.name);
-                const hasChargeTactic =
-                    Array.isArray(gameState.tactics) &&
-                    gameState.tactics.some(id => String(id) === "5409");
                 const isVillainCard = String(data?.type || "").toLowerCase() === "villain";
+                const hasTeleport = cardHasTeleport(data);
                 const persistentTeleportActive =
                     gameState._forceTeleportPersistent === true;
 
@@ -1781,9 +1779,29 @@ export async function villainDraw(count = 1) {
                     (!gameState._forceTeleportVillainId || String(gameState._forceTeleportVillainId) === String(villainId));
                 gameState._forceTeleportNextVillain = false;
                 gameState._forceTeleportVillainId = null;
-                const baseCharge = cardChargeDistance(data);
-                const bonusCharge = (!forcedTeleport && hasChargeTactic && isVillainCard && baseCharge === 0) ? 1 : 0;
-                handlerResult = await handleEnemyEntry(villainId, data, gameState, { fromDeck: true, bonusCharge, forcedTeleport });
+                const baseCharge = forcedTeleport ? 0 : cardChargeDistance(data);
+                let bonusCharge = 0;
+                const pendingBonus = Number(gameState._pendingBonusCharge) || 0;
+                const pendingCardId = gameState._pendingBonusChargeCardId;
+                const allowBonus =
+                    pendingBonus > 0 &&
+                    (!pendingCardId || String(pendingCardId) === String(villainId)) &&
+                    !forcedTeleport &&
+                    !hasTeleport &&
+                    baseCharge === 0;
+                if (allowBonus) {
+                    bonusCharge += pendingBonus;
+                }
+                // Always clear pending once evaluated for a villain draw
+                gameState._pendingBonusCharge = 0;
+                gameState._pendingBonusChargeCardId = null;
+
+                handlerResult = await handleEnemyEntry(
+                    villainId,
+                    data,
+                    gameState,
+                    { fromDeck: true, bonusCharge, forcedTeleport }
+                );
                 if (handlerResult?.blocked) {
                     blockedReason = handlerResult.reason || "Blocked";
                 }
@@ -3811,7 +3829,7 @@ export function getCurrentOverlordInfo(state) {
 }
 
 
-function freezeGameAndSetupQuitButton(state) {
+export function freezeGameAndSetupQuitButton(state) {
     const s = state || gameState;
 
     // 1) Disable board interactions
@@ -4017,8 +4035,10 @@ export function checkGameEndConditions(state) {
     `;
 
     try {
-        // Very long duration as requested
-        showMightBanner(bannerText, 999999);
+        // Persist the final banner on state and lock it so nothing overrides it
+        s._gameOverBannerHtml = bannerText;
+        // Very long duration as requested; lock to prevent later banners from clearing it
+        showMightBanner(bannerText, 999999, { lock: true, force: true });
     } catch (err) {
         console.warn("[GameOver] Failed to show game-over banner", err);
     }

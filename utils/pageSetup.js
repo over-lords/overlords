@@ -14,7 +14,7 @@ import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe,
          freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, 
          renderScannedPreview, processQueuedHeroDamage, getCurrentHeroDT, refreshGameModeFlags as refreshAbilityGameModeFlags } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, 
-         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags, resetTurnTimerForHero, updateStandardSpeedUI } from "./turnOrder.js";
+         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags, resetTurnTimerForHero, updateStandardSpeedUI, freezeGameAndSetupQuitButton } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
@@ -713,6 +713,22 @@ async function restoreUIFromState(state) {
             }
         } catch (e) {
             console.warn("[RESTORE] Failed to restore optional ability prompt.", e);
+        }
+
+        // If the saved game was already over, re-show the final banner and freeze controls
+        if (gameState.gameOver) {
+            const html = gameState._gameOverBannerHtml || "Game Over";
+            try {
+                showMightBanner(html, 999999, { lock: true, force: true });
+            } catch (e) {
+                console.warn("[RESTORE] Failed to show game-over banner on resume.", e);
+            }
+            try {
+                freezeGameAndSetupQuitButton(gameState);
+            } catch (e) {
+                console.warn("[RESTORE] Failed to freeze game-over UI on resume.", e);
+            }
+            return;
         }
 
         // IMPORTANT: Do NOT auto-start when resuming a game
@@ -3414,7 +3430,26 @@ export function playMightSwipeAnimation() {
     });
 }
 
-export function showMightBanner(text, duration = 1400) {
+export function showMightBanner(text, duration = 1400, opts = {}) {
+    // Allow passing an options object as the second argument
+    if (typeof duration === "object" && duration !== null) {
+        opts = duration;
+        duration = typeof duration.duration === "number" ? duration.duration : 1400;
+    }
+
+    const { force = false, lock = false } = opts || {};
+
+    // If a game-over banner is locked in, ignore new banners unless forced
+    if (window.__gameOverBannerLocked && !force) {
+        return Promise.resolve();
+    }
+
+    if (lock) {
+        window.__gameOverBannerLocked = true;
+        window.__gameOverBannerHtml = text;
+    }
+
+    // Clear any existing banners before showing the new one
     document.querySelectorAll(".might-banner").forEach(banner => {
         banner.remove();
     });
