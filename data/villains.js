@@ -5959,7 +5959,7 @@ export const villains = [
     name: "Jinx",
     image: `${cardArtFolder}/jinx.jpg`,
     type: "Villain",
-    doNotShow: "true",
+    doNotShow: "false",
     hero: "Teen Titan",
     hp: "8",
     damage: "1",

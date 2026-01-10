@@ -11798,7 +11798,7 @@ export async function onHeroCardActivated(cardId, meta = {}) {
         gameState._currentFoeForCard = foeSummary;
     } else {
         console.log(
-            `[AbilityExecutor] ${heroName} currently has no engaged foe `
+        `[AbilityExecutor] ${heroName} currently has no engaged foe `
             + `(not facing Overlord and no henchman/villain in the upper city slot).`,
             {
                 heroId,
@@ -11806,6 +11806,57 @@ export async function onHeroCardActivated(cardId, meta = {}) {
             }
         );
         gameState._currentFoeForCard = null;
+    }
+
+    // =======================================================
+    // FOE-SPECIFIC CARD SUCCESS CHECK (e.g., Jinx)
+    // =======================================================
+    const ensureCardSuccess = () => {
+        if (!foeSummary) return true;
+        const slotIdx = Number.isInteger(foeSummary.slotIndex) ? foeSummary.slotIndex : null;
+        if (!Number.isInteger(slotIdx) || slotIdx < 0) return true;
+        const entry = Array.isArray(gameState.cities) ? gameState.cities[slotIdx] : null;
+        if (!entry || entry.id == null) return true;
+
+        const foeCard =
+            villains.find(v => String(v.id) === String(entry.id)) ||
+            henchmen.find(h => String(h.id) === String(entry.id));
+        if (!foeCard) return true;
+
+        const effects = Array.isArray(foeCard.abilitiesEffects) ? foeCard.abilitiesEffects : [];
+        for (const eff of effects) {
+            if (!eff || !eff.effect) continue;
+            const condRaw = eff.condition;
+            const condList = Array.isArray(condRaw)
+                ? condRaw.map(c => normalizeConditionString(c))
+                : [normalizeConditionString(condRaw || "none")];
+            if (!condList.some(c => c === "isattacked")) continue;
+
+            const effectList = Array.isArray(eff.effect) ? eff.effect : [eff.effect];
+            const varEff = effectList.find(e => typeof e === "string" && e.toLowerCase().startsWith("applyvariablecardsuccess"));
+            if (!varEff) continue;
+
+            const match = String(varEff).match(/\(\s*([^)]+)\s*\)/);
+            const rawChance = match ? match[1] : null;
+            const chanceVal = rawChance != null ? resolveNumericValue(rawChance, heroId, gameState) : 1;
+            let prob = Number(chanceVal);
+            if (!Number.isFinite(prob)) prob = 1;
+            if (prob < 0) prob = 0;
+            if (prob > 1) prob = 1;
+
+            const roll = Math.random();
+            const success = roll < prob;
+            console.log(`[applyVariableCardSuccess] chance=${prob} roll=${roll.toFixed(3)} -> ${success ? "success" : "fail"}`);
+            if (!success) {
+                appendGameLogEntry(`${cardName} fizzles against ${foeSummary.foeName}.`, gameState);
+                return false;
+            }
+        }
+        return true;
+    };
+
+    if (!ensureCardSuccess()) {
+        return;
     }
 
     const rawDamage =
