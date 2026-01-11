@@ -1,4 +1,5 @@
 const DEFAULT_POLL_MS = 2500;
+const DEFAULT_API_BASE = "https://overlords-app-43e6e621c6d2.herokuapp.com";
 
 let ctx = {
   key: null,
@@ -16,10 +17,10 @@ let onStateUpdated = null;
 function apiBase() {
   if (ctx.apiBase) return ctx.apiBase;
   if (typeof window !== "undefined" && window.MULTI_API_BASE) return window.MULTI_API_BASE;
-  if (typeof window !== "undefined" && window.location) {
+  if (typeof window !== "undefined" && window.location && window.location.origin && window.location.origin !== "file://") {
     return `${window.location.origin}`;
   }
-  return "";
+  return DEFAULT_API_BASE;
 }
 
 function getActiveHeroId(state) {
@@ -81,6 +82,23 @@ function startPollLoop(intervalMs = DEFAULT_POLL_MS) {
   pollOnce();
 }
 
+export async function fetchGameStateSnapshot(key) {
+  const base = apiBase();
+  if (!base || !key) return null;
+  try {
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(key)}/state`);
+    const json = await res.json();
+    if (!res.ok) {
+      console.warn("[multiplayer] fetchGameStateSnapshot failed", json || res.statusText);
+      return null;
+    }
+    return json;
+  } catch (e) {
+    console.warn("[multiplayer] fetchGameStateSnapshot error", e);
+    return null;
+  }
+}
+
 export function configureMultiplayer(options = {}) {
   ctx = {
     ...ctx,
@@ -123,6 +141,11 @@ export async function pushGameState(state) {
       if (res.status === 409 && json?.state) {
         // Stale client; accept server state
         applyIncomingState(json.state, json.expected ?? json.version, json.heroOwners);
+      } else {
+        const snap = await fetchGameStateSnapshot(ctx.key);
+        if (snap?.state) {
+          applyIncomingState(snap.state, snap.version, snap.heroOwners);
+        }
       }
       console.warn("[multiplayer] Push failed", json || res.statusText);
       return null;

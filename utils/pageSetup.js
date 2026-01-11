@@ -19,7 +19,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
-import { configureMultiplayer, setOnStateUpdated, isPlayersTurn } from "./multiplayer.js";
+import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot } from "./multiplayer.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -772,6 +772,47 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         }
     }
 
+    async function restoreFromExistingServerGame({ key, playerId, owners, host, apiBase }) {
+        const snap = await fetchGameStateSnapshot(key);
+        if (!snap || !snap.state) return false;
+        const heroOwners = snap.heroOwners || owners || {};
+        const players = snap.players || [];
+        const resolvedHost = snap.host || host || players[0] || null;
+        const version = typeof snap.version === "number" ? snap.version : 1;
+        try {
+            window.__SKIP_MP_SYNC = true;
+            window.GAME_MODE = "multi";
+            Object.assign(gameState, snap.state, { gameKey: key, lobbyKey: key, playerId });
+            gameState.serverVersion = version;
+            window.gameState = gameState;
+            window.MULTI_PLAYER_ID = playerId;
+            window.MULTI_HERO_OWNERS = heroOwners;
+            window.MULTI_HOST = resolvedHost;
+            window.isMyTurn = () => isPlayersTurn(gameState, playerId, heroOwners, resolvedHost);
+            refreshAbilityGameModeFlags(window.GAME_MODE);
+            refreshTurnGameModeFlags(window.GAME_MODE);
+            restoreDropdownContentFromState(gameState);
+            establishEnemyAllyDeckFromLoadout(null, gameState);
+            restoreUIFromState(gameState);
+            restoreCapturedBystandersIntoCardData(gameState);
+            initializeTurnUI(gameState);
+            showRetreatButtonForCurrentHero(gameState);
+            saveGameState(gameState);
+            configureMultiplayer({
+                key,
+                playerId,
+                host: resolvedHost,
+                heroOwners,
+                version,
+                apiBase: apiBase || window.MULTI_API_BASE,
+                enabled: true
+            });
+        } finally {
+            window.__SKIP_MP_SYNC = false;
+        }
+        return true;
+    }
+
     const saved = loadGameState();
 
     if (saved) {
@@ -787,6 +828,16 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             const owners = buildHeroOwners(players, gameState.heroesByPlayer || []);
             const playerId = derivePlayerId({ ...saved, playerUsernames: players });
             const key = saved.key || saved.joinKey || saved.gameKey || saved.lobbyKey || null;
+            if (key) {
+                const restored = await restoreFromExistingServerGame({
+                    key,
+                    playerId,
+                    owners,
+                    host: saved.host || players[0] || null,
+                    apiBase: window.MULTI_API_BASE
+                });
+                if (restored) return;
+            }
             window.MULTI_PLAYER_ID = playerId;
             window.MULTI_HERO_OWNERS = owners;
             window.MULTI_HOST = saved.host || players[0] || null;
@@ -887,13 +938,28 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         refreshTurnGameModeFlags(window.GAME_MODE);
         console.log(`[game] Running in ${window.GAME_MODE === "single" ? "Singleplayer" : "Multiplayer"} mode`);
 
+        const players = Array.isArray(selectedData.playerUsernames) ? selectedData.playerUsernames : ["Player"];
+        const owners = buildHeroOwners(players, selectedData.heroesByPlayer || [selectedHeroes]);
+        const playerId = derivePlayerId(selectedData);
+        const key = selectedData.key || selectedData.joinKey || selectedData.gameKey || selectedData.lobbyKey || null;
+        const host = selectedData.host || players[0] || null;
+        if (window.GAME_MODE === "multi" && key) {
+            const restored = await restoreFromExistingServerGame({
+                key,
+                playerId,
+                owners,
+                host,
+                apiBase: window.MULTI_API_BASE
+            });
+            if (restored) return;
+        }
+
         heroMap = new Map(heroes.map(h => [String(h.id), h]));
         const heroList = selectedHeroes.map(id => heroMap.get(String(id)) || { name: `Unknown (ID ${id})` });
 
         buildHeroesRow(selectedHeroes, heroMap);
 
         (function configurePlayers() {
-            const players = selectedData.playerUsernames || ["Player"];
             const heroesByPlayer = selectedData.heroesByPlayer || [ selectedHeroes ];
 
             heroesByPlayer.forEach((heroList, playerIndex) => {
@@ -928,31 +994,30 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             cities: new Array(12).fill(null),
 
             heroesByPlayer: selectedData.heroesByPlayer,
-            playerUsernames: selectedData.playerUsernames
+            playerUsernames: selectedData.playerUsernames,
+            gameKey: key,
+            lobbyKey: key,
+            playerId
         });
         window.gameState = gameState;
 
         if (window.GAME_MODE === "multi") {
-            const players = Array.isArray(selectedData.playerUsernames) ? selectedData.playerUsernames : [];
-            const owners = buildHeroOwners(players, selectedData.heroesByPlayer || []);
-            const playerId = derivePlayerId(selectedData);
-            const key = selectedData.key || selectedData.joinKey || selectedData.gameKey || selectedData.lobbyKey || null;
             window.MULTI_PLAYER_ID = playerId;
             window.MULTI_HERO_OWNERS = owners;
-            window.MULTI_HOST = selectedData.host || players[0] || null;
-            window.isMyTurn = () => isPlayersTurn(gameState, playerId, owners, selectedData.host || players[0] || null);
+            window.MULTI_HOST = host;
+            window.isMyTurn = () => isPlayersTurn(gameState, playerId, owners, host);
             await seedMultiplayerGame({
                 key,
                 state: gameState,
                 heroOwners: owners,
-                host: selectedData.host || players[0] || null,
+                host,
                 players,
                 apiBase: window.MULTI_API_BASE
             });
             configureMultiplayer({
                 key,
                 playerId,
-                host: selectedData.host || players[0] || null,
+                host,
                 heroOwners: owners,
                 version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1,
                 apiBase: window.MULTI_API_BASE,
