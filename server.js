@@ -26,12 +26,26 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:5500"
 ]);
 
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  // Allow any path under our GitHub Pages host (origin header omits path, but keep prefix for safety)
+  if (origin.startsWith("https://over-lords.github.io")) return true;
+  // Allow optional extra origins via env var (comma separated)
+  const extra = process.env.EXTRA_ALLOWED_ORIGINS;
+  if (extra) {
+    const parts = extra.split(",").map(s => s.trim()).filter(Boolean);
+    if (parts.some(o => o === origin)) return true;
+  }
+  return false;
+}
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  if (origin && isAllowedOrigin(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
-    res.header("Vary", "Origin");
   }
+  res.header("Vary", "Origin");
   res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.sendStatus(204);
@@ -523,6 +537,8 @@ app.post("/api/games/apply", (req, res) => {
 
   const prevState = game.state || {};
   let nextState = prevState;
+  const incomingVillainDeck = Array.isArray(nextState?.villainDeck) ? nextState.villainDeck : null;
+  const incomingEnemyAlly = Array.isArray(nextState?.enemyAllyDeck) ? nextState.enemyAllyDeck : null;
 
   // Merge delta over existing state if provided; otherwise replace with full state
   if (stateDelta && typeof stateDelta === "object" && prevState && typeof prevState === "object") {
@@ -587,14 +603,14 @@ app.post("/api/games/apply", (req, res) => {
 
   // Turn timer validation: keep as absolute deadline and prevent obviously stale rewinds
   const incomingDeadline = nextState.turnTimerDeadline;
-  const now = Date.now();
+  const nowTs = Date.now();
   if (incomingDeadline != null) {
     const deadlineNum = Number(incomingDeadline);
     if (!Number.isFinite(deadlineNum)) {
       return res.status(409).json({ error: "turn timer deadline invalid" });
     }
     // Reject deadlines that are already far in the past (>2s)
-    if (deadlineNum < now - 2000) {
+    if (deadlineNum < nowTs - 2000) {
       return res.status(409).json({ error: "turn timer deadline stale" });
     }
     nextState.turnTimerDeadline = deadlineNum;
