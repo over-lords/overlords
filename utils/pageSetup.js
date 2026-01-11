@@ -720,6 +720,11 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
 });
 
 (async () => {
+    // Ensure both host and joiners point to the same multiplayer API unless explicitly overridden.
+    if (typeof window !== "undefined" && !window.MULTI_API_BASE) {
+        window.MULTI_API_BASE = "https://overlords-app-43e6e621c6d2.herokuapp.com";
+    }
+
     const derivePlayerId = (data = {}) => {
         try {
             const params = new URLSearchParams(window.location.search);

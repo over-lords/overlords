@@ -811,13 +811,13 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
         const alive = hState ? (typeof hState.hp === "number" ? hState.hp > 0 : true) : true;
         if (!alive) return;
 
-        const matchesAll = tokens.every(tok => tok === "all" ? true : heroMatchesTeam(hObj, tok));
-        if (matchesAll) count += 1;
-    });
+    const matchesAny = tokens.some(tok => tok === "all" ? true : heroMatchesTeam(hObj, tok));
+    if (matchesAny) count += 1;
+});
 
-    const label = tokens.includes("all") ? "all heroes" : `Teams ${tokens.join(" & ")}`;
-    console.log(`[getActiveTeamCount] ${label} active count (excluding hero ${heroId ?? "n/a"}): ${count}`);
-    return count;
+const label = tokens.includes("all") ? "all heroes" : `Teams ${tokens.join(" & ")}`;
+console.log(`[getActiveTeamCount] ${label} active count (excluding hero ${heroId ?? "n/a"}): ${count}`);
+return count;
 }
 
 function getKOdTeamCount(teamName, heroId = null, state = gameState) {
