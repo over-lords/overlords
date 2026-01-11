@@ -810,23 +810,47 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
     }
 
     const buildHeroOwners = (players = [], heroesByPlayer = []) => {
-        const owners = {};
-        (heroesByPlayer || []).forEach((heroList, idx) => {
-            const owner = players[idx];
-            if (!owner) return;
-            owners[owner] = Array.isArray(heroList) ? heroList.map(String) : [];
-        });
-        return owners;
-    };
+    const owners = {};
+    (heroesByPlayer || []).forEach((heroList, idx) => {
+        const owner = players[idx];
+        if (!owner) return;
+        owners[owner] = Array.isArray(heroList) ? heroList.map(String) : [];
+    });
+    return owners;
+};
 
-    async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiBase }) {
-        const base = apiBase || (typeof window !== "undefined" ? (window.MULTI_API_BASE || window.location.origin) : "");
-        if (!base || !key || !state) return;
-        try {
-            const res = await fetch(`${base}/api/games/create`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
+function ensureHeroStateIntegrity(state) {
+    if (!state) return;
+    state.heroData = state.heroData || {};
+    const map = heroMap && heroMap.size ? heroMap : new Map(heroes.map(h => [String(h.id), h]));
+    const heroIds = Array.isArray(state.heroes) ? state.heroes : [];
+    heroIds.forEach(id => {
+        const key = String(id);
+        const base = map.get(key) || {};
+        const slot = state.heroData[key] = state.heroData[key] || {};
+        slot.deck = Array.isArray(slot.deck) ? slot.deck : [];
+        slot.discard = Array.isArray(slot.discard) ? slot.discard : [];
+        slot.hand = Array.isArray(slot.hand) ? slot.hand : [];
+        slot.cityIndex = typeof slot.cityIndex === "number" ? slot.cityIndex : null;
+        if (typeof slot.hp !== "number") {
+            const baseHP = Number(base.hp || 0);
+            slot.hp = Number.isFinite(baseHP) && baseHP > 0 ? baseHP : 1;
+        }
+        if (slot.travel == null) {
+            slot.travel = base.travel || 0;
+        }
+    });
+}
+
+async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiBase }) {
+    const base = apiBase || (typeof window !== "undefined" ? (window.MULTI_API_BASE || window.location.origin) : "");
+    if (!base || !key || !state) return;
+    ensureHeroStateIntegrity(state);
+    try {
+        const res = await fetch(`${base}/api/games/create`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
                     key,
                     state,
                     heroOwners,
@@ -911,6 +935,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             window.MULTI_HERO_OWNERS = heroOwners;
             window.MULTI_HOST = host || window.MULTI_HOST;
             window.isMyTurn = () => isPlayersTurn(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
+            ensureHeroStateIntegrity(gameState);
             saveGameState(gameState);
         } finally {
             window.__SKIP_MP_SYNC = false;
