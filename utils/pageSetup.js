@@ -898,6 +898,8 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             window.isMultiplayerReady = isMultiplayerReady;
         }
         warnIfNoOwnership(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
+        initializeTurnUI(gameState);
+        showRetreatButtonForCurrentHero(gameState);
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -943,6 +945,8 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
                     apiBase: window.MULTI_API_BASE
                 });
                 if (restored) return;
+                document.body.insertAdjacentHTML("beforeend", `<div style="color:red;font-weight:bold;">Waiting for host to start game...</div>`);
+                return;
             }
             window.MULTI_PLAYER_ID = playerId;
             window.MULTI_HERO_OWNERS = owners;
@@ -1136,6 +1140,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
                     enabled: !!key && window.GAME_MODE === "multi",
                     versionFromServer: false
                 });
+                setMultiplayerVersion(typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1);
                 if (key) {
                     await syncFromServer(key, playerId, owners, host);
                 }
@@ -1183,8 +1188,10 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
 
         initAndLogHeroIconAbilities(gameState);
 
-        establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: true });
-        saveGameState(gameState);
+        if (window.GAME_MODE !== "multi" || isHostPlayer) {
+            establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: true });
+            saveGameState(gameState);
+        }
 
         const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
         // Preserve the user-selected order of overlords; do not resort.
