@@ -439,7 +439,7 @@ app.post("/api/games/:key/command", (req, res) => {
     return res.status(403).json({ error: "not your turn" });
   }
 
-  const now = Date.now();
+  // Reuse the same timestamp captured earlier for queue bookkeeping
   game.commands = Array.isArray(game.commands) ? game.commands : [];
   game.commands.push({
     playerId,
@@ -478,13 +478,13 @@ app.get("/api/games/:key/commands", (req, res) => {
     return res.status(403).json({ error: "only host may fetch commands", host: game.host });
   }
 
-  const now = Date.now();
-  game.updatedAt = now;
-  game.lastSeenAt = now;
+  const nowFetch = Date.now();
+  game.updatedAt = nowFetch;
+  game.lastSeenAt = nowFetch;
   const commands = Array.isArray(game.commands) ? game.commands : [];
   game.commands = [];
   // prune old commands just in case
-  const filtered = commands.filter(c => c && c.ts && now - c.ts <= COMMAND_TTL_MS);
+  const filtered = commands.filter(c => c && c.ts && nowFetch - c.ts <= COMMAND_TTL_MS);
   console.log(`[games] Host fetched ${filtered.length} commands for ${key}`);
   return res.json({ ok: true, commands: filtered, host: game.host });
 });
