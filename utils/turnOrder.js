@@ -430,6 +430,12 @@ export function updateStandardSpeedUI(state = gameState, heroId = null) {
     const btn = document.getElementById("standard-activate-btn");
     if (!btn) return;
 
+    if (!canActThisTurn(state)) {
+        btn.style.display = "none";
+        closeStandardAbilityOverlay();
+        return;
+    }
+
     const heroIds = state.heroes || [];
     const activeHeroId = heroId ?? heroIds[state.heroTurnIndex ?? 0];
 
@@ -463,6 +469,10 @@ if (standardAbilityClose) {
 const standardAbilityActivateBtn = document.getElementById("standard-ability-activate");
 if (standardAbilityActivateBtn) {
     standardAbilityActivateBtn.addEventListener("click", async () => {
+        if (!canActThisTurn(gameState)) {
+            closeStandardAbilityOverlay();
+            return;
+        }
         if (selectedStandardOption == null) return;
         const option = currentStandardOptions[selectedStandardOption];
         if (!option || currentStandardHeroId == null) {
@@ -2775,14 +2785,17 @@ export function initializeTurnUI(gameState) {
     const canAct = canActThisTurn(gameState);
     const standardActivateBtn = document.getElementById("standard-activate-btn");
     const standardActivateInner = document.getElementById("standard-ability-activate");
+    const faceOverlordBtn = document.getElementById("face-overlord-button");
     if (!canAct) {
         endTurnBtn.style.display = "none";
         if (standardActivateBtn) standardActivateBtn.style.display = "none";
         if (standardActivateInner) standardActivateInner.disabled = true;
+        if (faceOverlordBtn) faceOverlordBtn.style.display = "none";
         refreshAllCityOutlines(gameState, { clearOnly: true });
         document.body.classList.add("not-your-turn");
     } else {
         if (standardActivateBtn) standardActivateBtn.style.display = "flex";
+        if (faceOverlordBtn) faceOverlordBtn.style.display = "";
         document.body.classList.remove("not-your-turn");
     }
 
