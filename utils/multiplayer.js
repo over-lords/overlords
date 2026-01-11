@@ -1,4 +1,4 @@
-const DEFAULT_POLL_MS = 2500;
+const DEFAULT_POLL_MS = 1000;
 const DEFAULT_API_BASE = "https://overlords-app-43e6e621c6d2.herokuapp.com";
 
 let ctx = {
@@ -72,7 +72,7 @@ export function isPlayersTurn(state, playerId, heroOwners = {}, host = null) {
   return playerOwnsHero(playerId, heroId, heroOwners, host, state);
 }
 
-function applyIncomingState(state, version, heroOwners) {
+function applyIncomingState(state, version, heroOwners, host) {
   if (typeof version === "number") {
     ctx.version = version;
     ctx.ready = true;
@@ -84,8 +84,12 @@ function applyIncomingState(state, version, heroOwners) {
   if (heroOwners && typeof heroOwners === "object") {
     ctx.heroOwners = heroOwners;
   }
+  if (host) {
+    ctx.host = host;
+    if (typeof window !== "undefined") window.MULTI_HOST = host;
+  }
   if (typeof onStateUpdated === "function") {
-    try { onStateUpdated(state, { version: ctx.version, heroOwners: ctx.heroOwners }); } catch (e) {
+    try { onStateUpdated(state, { version: ctx.version, heroOwners: ctx.heroOwners, host: ctx.host }); } catch (e) {
       console.warn("[multiplayer] onStateUpdated handler failed", e);
     }
   }
@@ -103,9 +107,13 @@ async function pollOnce() {
       return;
     }
     if (!json.noop && json.state) {
-      applyIncomingState(json.state, json.version, json.heroOwners);
+      applyIncomingState(json.state, json.version, json.heroOwners, json.host);
     } else if (typeof json.version === "number" && json.version > ctx.version) {
       ctx.version = json.version;
+    }
+    // Host drains queued commands
+    if (ctx.enabled && ctx.key && ctx.playerId && ctx.host && String(ctx.playerId) === String(ctx.host)) {
+      await drainCommandsAsHost();
     }
   } catch (e) {
     console.warn("[multiplayer] Poll error", e);
@@ -141,11 +149,15 @@ export function configureMultiplayer(options = {}) {
     ...ctx,
     ...options,
     heroOwners: options.heroOwners || ctx.heroOwners || {},
+    host: options.host || ctx.host || (options.playerId || ctx.playerId || null),
     version: typeof options.version === "number"
       ? options.version
       : (ctx.version != null ? ctx.version : ((typeof window !== "undefined" && window.gameState?.serverVersion != null) ? window.gameState.serverVersion : 0)),
     enabled: options.enabled !== false
   };
+  if (typeof window !== "undefined" && ctx.host) {
+    window.MULTI_HOST = ctx.host;
+  }
   ctx.ready = options.versionFromServer === true;
   if (!ctx.enabled) {
     if (pollTimer) clearInterval(pollTimer);
@@ -170,8 +182,21 @@ export function isMultiplayerReady() {
   return !!ctx.ready;
 }
 
+export async function forceServerResync(key = ctx.key) {
+  if (!key) return null;
+  const snap = await fetchGameStateSnapshot(key);
+  if (snap && snap.state) {
+    applyIncomingState(snap.state, snap.version, snap.heroOwners, snap.host);
+  }
+  return snap;
+}
+
 export async function pushGameState(state) {
   if (!ctx.enabled || !ctx.key) return null;
+  const isHost = ctx.host && ctx.playerId && String(ctx.playerId) === String(ctx.host);
+  if (!isHost) {
+    return sendCommand(state);
+  }
   if (!ctx.ready) {
     console.warn("[multiplayer] Suppressing push because sync not ready.");
     return null;
@@ -194,7 +219,6 @@ export async function pushGameState(state) {
     const json = await res.json();
     if (!res.ok) {
       if (res.status === 409 && json?.state) {
-        // Stale client; accept server state
         const newVersion = json.expected ?? json.version;
         if (typeof newVersion === "number") {
           ctx.version = newVersion;
@@ -202,18 +226,18 @@ export async function pushGameState(state) {
             try { window.gameState.serverVersion = newVersion; } catch (_) {}
           }
         }
-        applyIncomingState(json.state, newVersion, json.heroOwners);
+        applyIncomingState(json.state, newVersion, json.heroOwners, json.host);
         return null;
       }
       const snap = await fetchGameStateSnapshot(ctx.key);
       if (snap?.state) {
-        applyIncomingState(snap.state, snap.version, snap.heroOwners);
+        applyIncomingState(snap.state, snap.version, snap.heroOwners, snap.host);
       }
       console.warn("[multiplayer] Push failed", json || res.statusText);
       return null;
     }
     if (json.state) {
-      applyIncomingState(json.state, json.version, json.heroOwners);
+      applyIncomingState(json.state, json.version, json.heroOwners, json.host);
     } else if (typeof json.version === "number") {
       ctx.version = json.version;
     }
@@ -221,6 +245,57 @@ export async function pushGameState(state) {
   } catch (e) {
     console.warn("[multiplayer] Push error", e);
     return null;
+  }
+}
+
+async function sendCommand(state) {
+  if (!ctx.enabled || !ctx.key) return null;
+  const base = apiBase();
+  if (!base) return null;
+  const body = {
+    playerId: ctx.playerId || ctx.host || "Unknown",
+    state,
+    heroOwners: ctx.heroOwners
+  };
+  try {
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/command`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      console.warn("[multiplayer] Command failed", json || res.statusText);
+      return null;
+    }
+    return json;
+  } catch (e) {
+    console.warn("[multiplayer] sendCommand error", e);
+    return null;
+  }
+}
+
+async function drainCommandsAsHost() {
+  const base = apiBase();
+  if (!base || !ctx.key) return;
+  try {
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/commands?playerId=${encodeURIComponent(ctx.playerId || ctx.host || "")}`);
+    const json = await res.json();
+    if (!res.ok) {
+      console.warn("[multiplayer] Fetch commands failed", json || res.statusText);
+      return;
+    }
+    const cmds = Array.isArray(json.commands) ? json.commands : [];
+    if (!cmds.length) return;
+    for (const cmd of cmds) {
+      if (!cmd || !cmd.state) continue;
+      if (typeof window !== "undefined" && window.gameState) {
+        try { Object.assign(window.gameState, cmd.state); } catch (_) {}
+      }
+      await pushGameState(cmd.state);
+    }
+  } catch (e) {
+    console.warn("[multiplayer] drainCommandsAsHost error", e);
   }
 }
 

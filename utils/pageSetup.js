@@ -709,6 +709,13 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         }
         Object.assign(gameState, stateFromServer);
         window.gameState = gameState;
+        // Refresh ownership/turn helper before touching UI so visibility gates stay correct
+        window.isMyTurn = () => isPlayersTurn(
+            gameState,
+            window.MULTI_PLAYER_ID,
+            window.MULTI_HERO_OWNERS,
+            window.MULTI_HOST
+        );
         // Update mode flags and UI when state changes remotely
         refreshAbilityGameModeFlags(window.GAME_MODE);
         refreshTurnGameModeFlags(window.GAME_MODE);
@@ -3508,7 +3515,13 @@ function attachHeroClicks() {
 const isSinglePlayer = (window.GAME_MODE === "single");
 const isMultiplayer = (window.GAME_MODE === "multi");
 
+// Throttle autosave; in multiplayer wait until we are synced with the server so we don't
+// overwrite the authoritative state with an empty local restore after refresh.
 setInterval(() => {
+    if (window.GAME_MODE === "multi") {
+        const ready = (typeof window.isMultiplayerReady === "function") ? window.isMultiplayerReady() : false;
+        if (!ready) return;
+    }
     saveGameState(gameState);
 }, 5000);
 

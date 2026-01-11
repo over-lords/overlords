@@ -11,6 +11,7 @@ const LOBBY_STALE_MS = 1000 * 2; // 2 seconds without lobby heartbeat
 const LOBBY_PLAYER_STALE_MS = 1000 * 2; // 2 seconds without player poll/heartbeat
 const GAME_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
 const GAME_STALE_MS = 1000 * 2; // 2 seconds without poll/heartbeat
+const COMMAND_TTL_MS = 1000 * 60 * 10; // keep queued commands for up to 10 minutes
 
 // Middleware
 app.use(compression());
@@ -93,6 +94,50 @@ function playerOwnsHero(playerId, heroId, heroOwners = {}, host = null) {
     return owned.some(h => String(h) === String(heroId));
   }
   return false;
+}
+
+function reassignHeroesToHost(game) {
+  if (!game) return;
+  const host = game.host;
+  if (!host) return;
+  const owners = game.heroOwners && typeof game.heroOwners === "object" ? game.heroOwners : {};
+  const players = Array.isArray(game.players) ? game.players : [];
+  const heroIds = Array.isArray(game.state?.heroes) ? game.state.heroes.map(String) : [];
+  const reassigned = [];
+
+  // Collect heroes currently unowned or owned by missing players
+  const currentOwned = new Set();
+  Object.entries(owners).forEach(([pid, list]) => {
+    if (!Array.isArray(list)) return;
+    const validPlayer = players.includes(pid) || pid === host;
+    list.forEach(h => {
+      const hid = String(h);
+      if (!validPlayer) {
+        reassigned.push(hid);
+        return;
+      }
+      currentOwned.add(hid);
+    });
+    if (!validPlayer) {
+      delete owners[pid];
+    }
+  });
+
+  heroIds.forEach(hid => {
+    if (!currentOwned.has(hid)) {
+      reassigned.push(hid);
+    }
+  });
+
+  if (!owners[host]) owners[host] = [];
+  reassigned.forEach(hid => {
+    if (!owners[host].includes(hid)) owners[host].push(hid);
+  });
+
+  game.heroOwners = owners;
+  if (reassigned.length) {
+    console.log(`[games] Reassigned ${reassigned.length} heroes to host ${host} due to missing ownership.`);
+  }
 }
 
 app.post("/api/lobbies/upsert", (req, res) => {
@@ -252,6 +297,7 @@ app.post("/api/games/create", (req, res) => {
     heroOwners: ownersSafe,
     host: host || null,
     players: playersSafe,
+    commands: [],
     version: 1,
     updatedAt: now,
     lastSeenAt: now
@@ -277,6 +323,74 @@ app.get("/api/games/:key/state", (req, res) => {
   });
 });
 
+// Queue a command (full proposed state) from a non-host player.
+app.post("/api/games/:key/command", (req, res) => {
+  const key = req.params.key;
+  const { playerId, state, heroOwners = {} } = req.body || {};
+  if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
+  if (!playerId || typeof playerId !== "string") return res.status(400).json({ error: "playerId is required" });
+  if (!state || typeof state !== "object") return res.status(400).json({ error: "state is required" });
+  pruneStaleGames();
+  const game = games.get(key);
+  if (!game) return res.status(404).json({ error: "Game not found" });
+
+  // If host missing, promote this player to host
+  if (!game.host) {
+    game.host = playerId;
+    console.log(`[games] Host was missing; promoted ${playerId} as host for game ${key}`);
+  }
+
+  // Validate ownership: allow only the active hero owner to submit a command unless host
+  const activeHeroId = getActiveHeroId(game.state);
+  const owns = playerOwnsHero(playerId, activeHeroId, game.heroOwners, game.host);
+  if (activeHeroId != null && !owns && playerId !== game.host) {
+    return res.status(403).json({ error: "not your turn" });
+  }
+
+  const now = Date.now();
+  game.commands = Array.isArray(game.commands) ? game.commands : [];
+  game.commands.push({
+    playerId,
+    state,
+    heroOwners,
+    ts: now
+  });
+  game.updatedAt = now;
+  game.lastSeenAt = now;
+  console.log(`[games] Queued command for ${key} by ${playerId} | queue length=${game.commands.length}`);
+  return res.json({ ok: true, queued: game.commands.length });
+});
+
+// Host (or newly promoted host) fetches and drains command queue
+app.get("/api/games/:key/commands", (req, res) => {
+  const key = req.params.key;
+  const playerId = req.query.playerId || req.query.player || null;
+  if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
+  pruneStaleGames();
+  const game = games.get(key);
+  if (!game) return res.status(404).json({ error: "Game not found" });
+
+  // Promote new host if missing
+  if (!game.host && playerId) {
+    game.host = playerId;
+    console.log(`[games] Host was missing; promoted ${playerId} as host when fetching commands for ${key}`);
+  }
+
+  if (game.host && playerId && String(playerId) !== String(game.host)) {
+    return res.status(403).json({ error: "only host may fetch commands", host: game.host });
+  }
+
+  const now = Date.now();
+  game.updatedAt = now;
+  game.lastSeenAt = now;
+  const commands = Array.isArray(game.commands) ? game.commands : [];
+  game.commands = [];
+  // prune old commands just in case
+  const filtered = commands.filter(c => c && c.ts && now - c.ts <= COMMAND_TTL_MS);
+  console.log(`[games] Host fetched ${filtered.length} commands for ${key}`);
+  return res.json({ ok: true, commands: filtered, host: game.host });
+});
+
 // Apply a client mutation and bump version
 app.post("/api/games/apply", (req, res) => {
   const {
@@ -291,6 +405,16 @@ app.post("/api/games/apply", (req, res) => {
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
 
+  // Promote host if missing
+  if (!game.host) {
+    game.host = playerId;
+    console.log(`[games] Host was missing; promoted ${playerId} as host for game ${key}`);
+  }
+  // Only host may apply state
+  if (String(playerId) !== String(game.host)) {
+    return res.status(403).json({ error: "only host may apply updates", host: game.host });
+  }
+
   // Derive heroOwners if missing
   if ((!game.heroOwners || !Object.keys(game.heroOwners).length) && Array.isArray(game.state?.heroesByPlayer) && Array.isArray(game.state?.playerUsernames)) {
     const derived = {};
@@ -302,12 +426,8 @@ app.post("/api/games/apply", (req, res) => {
     game.heroOwners = derived;
   }
 
-  const activeHeroId = getActiveHeroId(game.state);
-  const heroOwnersSafe = game.heroOwners || {};
-  const owns = playerOwnsHero(playerId, activeHeroId, heroOwnersSafe, game.host);
-  if (activeHeroId != null && !owns) {
-    return res.status(403).json({ error: "not your turn" });
-  }
+  // Reassign abandoned heroes to host
+  reassignHeroesToHost(game);
 
   game.state = state;
   game.version = game.version + 1;
@@ -318,7 +438,8 @@ app.post("/api/games/apply", (req, res) => {
     ok: true,
     state: game.state,
     version: game.version,
-    heroOwners: game.heroOwners
+    heroOwners: game.heroOwners,
+    host: game.host
   });
 });
 
@@ -336,10 +457,11 @@ app.get("/api/games/:key/poll", (req, res) => {
       state: game.state,
       version: game.version,
       heroOwners: game.heroOwners,
-      players: game.players
+      players: game.players,
+      host: game.host
     });
   }
-  return res.json({ ok: true, noop: true, version: game.version });
+  return res.json({ ok: true, noop: true, version: game.version, host: game.host });
 });
 
 // Basic health check

@@ -816,6 +816,25 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     let count = 0;
 
+    const matchHeroToTokens = (heroObj) => {
+        if (!heroObj) return false;
+        const teams = [
+            heroObj.team,
+            heroObj.heroTeam,
+            heroObj.faction
+        ].filter(Boolean).map(v => String(v).toLowerCase());
+        const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
+        const all = teams.concat(list);
+        return all.some(ht =>
+            tokens.some(tok =>
+                tok === "all" ||
+                ht === tok ||
+                ht.includes(tok) ||
+                tok.includes(ht)
+            )
+        );
+    };
+
     heroIds.forEach(id => {
         if (excludeSelf && heroId != null && String(id) === String(heroId)) return; // exclude activating hero unless counting all
         const hObj = heroes.find(h => String(h.id) === String(id));
@@ -824,8 +843,7 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
         const alive = hState ? (typeof hState.hp === "number" ? hState.hp > 0 : true) : true;
         if (!alive) return;
 
-        const matchesAny = tokens.some(tok => tok === "all" ? true : heroMatchesTeam(hObj, tok));
-        if (matchesAny) count += 1;
+        if (matchHeroToTokens(hObj)) count += 1;
     });
 
     const label = tokens.includes("all") ? "all heroes" : `Teams ${tokens.join(" & ")}`;
@@ -4138,6 +4156,15 @@ EFFECT_HANDLERS.setRevealedTopCardTrue = function(args = [], card, selectedData 
     const s = selectedData?.state || gameState;
     s.revealedTopVillain = true;
     try { saveGameState(s); } catch (_) {}
+    try {
+        const btn = document.getElementById("top-villain-button");
+        if (btn) btn.style.display = "flex";
+        if (typeof window !== "undefined" && typeof window.initializeTurnUI === "function") {
+            window.initializeTurnUI(s);
+        }
+    } catch (err) {
+        console.warn("[setRevealedTopCardTrue] Failed to refresh top villain UI", err);
+    }
     try { showMightBanner("Top Card Revealed", 2000); } catch (err) { console.warn("[setRevealedTopCardTrue] Failed to show banner", err); }
 };
 
@@ -11888,6 +11915,15 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     if (gameState.gameOver) {
         console.log("[GameOver] Ignoring hero card activation; game is already over.");
         return;
+    }
+
+    // Multiplayer gating: only the active turn owner may activate hand cards.
+    if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function") {
+        const canAct = window.isMyTurn(gameState);
+        if (!canAct) {
+            console.warn("[AbilityExecutor] Ignoring card activation because it is not your turn.", { cardId, meta });
+            return;
+        }
     }
 
     try { playSoundEffect("activate"); } catch (_) {}
