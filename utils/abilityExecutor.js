@@ -6703,8 +6703,11 @@ EFFECT_HANDLERS.halfDamage = function(args = [], card, selectedData = {}) {
                 : (heroId != null && /^\d+$/.test(teamKey) && heroName)
                     ? heroName
                     : teamKey;
+        const capTargetText = typeof targetText === "string" && targetText.length
+            ? targetText.charAt(0).toUpperCase() + targetText.slice(1)
+            : targetText;
         const durationText = turns > 0 ? "until the end of their next turn" : "for this turn";
-        appendGameLogEntry(`${targetText} deals half damage ${durationText}.`, state);
+        appendGameLogEntry(`${capTargetText} Heroes deals half damage ${durationText}.`, state);
     } catch (err) {
         console.warn("[halfDamage] Failed to append game log entry", err);
     }

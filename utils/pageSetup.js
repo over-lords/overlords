@@ -19,6 +19,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
+import { configureMultiplayer, setOnStateUpdated, isPlayersTurn } from "./multiplayer.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -691,7 +692,86 @@ async function restoreUIFromState(state) {
     }
 }
 
+// Sync handler for multiplayer updates from the server
+setOnStateUpdated((stateFromServer, meta = {}) => {
+    if (!stateFromServer || window.GAME_MODE !== "multi") return;
+    try {
+        window.__SKIP_MP_SYNC = true;
+        if (meta && typeof meta.version === "number") {
+            gameState.serverVersion = meta.version;
+        }
+        if (meta && meta.heroOwners) {
+            window.MULTI_HERO_OWNERS = meta.heroOwners;
+        }
+        Object.assign(gameState, stateFromServer);
+        window.gameState = gameState;
+        // Update mode flags and UI when state changes remotely
+        refreshAbilityGameModeFlags(window.GAME_MODE);
+        refreshTurnGameModeFlags(window.GAME_MODE);
+        restoreDropdownContentFromState(gameState);
+        restoreCapturedBystandersIntoCardData(gameState);
+        restoreUIFromState(gameState);
+        initializeTurnUI(gameState);
+        showRetreatButtonForCurrentHero(gameState);
+        try { saveGameState(gameState); } catch (_) {}
+    } finally {
+        window.__SKIP_MP_SYNC = false;
+    }
+});
+
 (async () => {
+    const derivePlayerId = (data = {}) => {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const queryPlayer = params.get("player");
+            if (queryPlayer) return queryPlayer;
+        } catch (_) {}
+        const fromData = data.playerId || data.sessionUsername || data.username;
+        if (typeof fromData === "string" && fromData.length) return fromData;
+        if (Array.isArray(data.playerUsernames) && data.playerUsernames.length) {
+            return data.playerUsernames[0];
+        }
+        if (typeof localStorage !== "undefined") {
+            const cached = localStorage.getItem("playerName");
+            if (cached) return cached;
+        }
+        return "Player";
+    };
+
+    const buildHeroOwners = (players = [], heroesByPlayer = []) => {
+        const owners = {};
+        (heroesByPlayer || []).forEach((heroList, idx) => {
+            const owner = players[idx];
+            if (!owner) return;
+            owners[owner] = Array.isArray(heroList) ? heroList.map(String) : [];
+        });
+        return owners;
+    };
+
+    async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiBase }) {
+        const base = apiBase || (typeof window !== "undefined" ? (window.MULTI_API_BASE || window.location.origin) : "");
+        if (!base || !key || !state) return;
+        try {
+            const res = await fetch(`${base}/api/games/create`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    key,
+                    state,
+                    heroOwners,
+                    host,
+                    players
+                })
+            });
+            const json = await res.json();
+            if (res.ok && typeof json?.version === "number") {
+                gameState.serverVersion = json.version;
+            }
+        } catch (e) {
+            console.warn("[multiplayer] Failed to seed game", e);
+        }
+    }
+
     const saved = loadGameState();
 
     if (saved) {
@@ -701,6 +781,26 @@ async function restoreUIFromState(state) {
         refreshAbilityGameModeFlags(window.GAME_MODE);
         refreshTurnGameModeFlags(window.GAME_MODE);
         window.gameState = gameState;
+
+        if (window.GAME_MODE === "multi") {
+            const players = Array.isArray(gameState.playerUsernames) ? gameState.playerUsernames : [];
+            const owners = buildHeroOwners(players, gameState.heroesByPlayer || []);
+            const playerId = derivePlayerId({ ...saved, playerUsernames: players });
+            const key = saved.key || saved.joinKey || saved.gameKey || saved.lobbyKey || null;
+            window.MULTI_PLAYER_ID = playerId;
+            window.MULTI_HERO_OWNERS = owners;
+            window.MULTI_HOST = saved.host || players[0] || null;
+            window.isMyTurn = () => isPlayersTurn(gameState, playerId, owners, saved.host || players[0] || null);
+            configureMultiplayer({
+                key,
+                playerId,
+                host: saved.host || players[0] || null,
+                heroOwners: owners,
+                version: typeof saved.serverVersion === "number" ? saved.serverVersion : 0,
+                apiBase: window.MULTI_API_BASE,
+                enabled: !!key && window.GAME_MODE === "multi"
+            });
+        }
 
         restoreDropdownContentFromState(gameState);
         establishEnemyAllyDeckFromLoadout(null, gameState);
@@ -831,6 +931,34 @@ async function restoreUIFromState(state) {
             playerUsernames: selectedData.playerUsernames
         });
         window.gameState = gameState;
+
+        if (window.GAME_MODE === "multi") {
+            const players = Array.isArray(selectedData.playerUsernames) ? selectedData.playerUsernames : [];
+            const owners = buildHeroOwners(players, selectedData.heroesByPlayer || []);
+            const playerId = derivePlayerId(selectedData);
+            const key = selectedData.key || selectedData.joinKey || selectedData.gameKey || selectedData.lobbyKey || null;
+            window.MULTI_PLAYER_ID = playerId;
+            window.MULTI_HERO_OWNERS = owners;
+            window.MULTI_HOST = selectedData.host || players[0] || null;
+            window.isMyTurn = () => isPlayersTurn(gameState, playerId, owners, selectedData.host || players[0] || null);
+            await seedMultiplayerGame({
+                key,
+                state: gameState,
+                heroOwners: owners,
+                host: selectedData.host || players[0] || null,
+                players,
+                apiBase: window.MULTI_API_BASE
+            });
+            configureMultiplayer({
+                key,
+                playerId,
+                host: selectedData.host || players[0] || null,
+                heroOwners: owners,
+                version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1,
+                apiBase: window.MULTI_API_BASE,
+                enabled: !!key && window.GAME_MODE === "multi"
+            });
+        }
 
         console.log("=== Confirming hero decks after pageSetup ===");
         selectedData.heroes.forEach(heroId => {

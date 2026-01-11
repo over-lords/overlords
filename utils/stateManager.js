@@ -3,6 +3,7 @@ const STORAGE_KEY = "overlordsGameState_v1";
 
 import { henchmen } from '../data/henchmen.js';
 import { villains } from '../data/villains.js';
+import { pushGameState, isPlayersTurn } from "./multiplayer.js";
 
 // Save entire game state object
 export function saveGameState(state) {
@@ -10,6 +11,23 @@ export function saveGameState(state) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
         console.warn("Failed to save game state", e);
+    }
+    try {
+        const mode = (state && state.gameMode) || (typeof window !== "undefined" ? window.GAME_MODE : "single");
+        const skip = (typeof window !== "undefined" && window.__SKIP_MP_SYNC) || false;
+        if (mode === "multi" && !skip) {
+            const playerId = (typeof window !== "undefined" && window.MULTI_PLAYER_ID) || null;
+            const owners = (typeof window !== "undefined" && window.MULTI_HERO_OWNERS) || {};
+            const host = (typeof window !== "undefined" && window.MULTI_HOST) || null;
+            if (!playerId || isPlayersTurn(state, playerId, owners, host)) {
+                // Fire-and-forget; authoritative sync handled on server
+                pushGameState(state);
+            } else {
+                console.warn("[multiplayer] Ignored save attempt because it is not your turn.");
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to sync multiplayer state", e);
     }
 }
 

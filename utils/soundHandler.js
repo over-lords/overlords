@@ -188,11 +188,11 @@ export async function playSoundEffect(name) {
         candidates.push(`https://raw.githubusercontent.com/over-lords/overlords/main/Public/Sounds/Effects/${name}`);
     } else {
         const preferred = {
-            activate: ["mp3", "wav", "ogg", "aiff"],
-            cityDestroyed: ["mp3", "wav", "ogg", "aiff"],
-            heroKOd: ["aiff", "mp3", "wav", "ogg"],
+            activate: ["mp3", "wav", "ogg"],
+            cityDestroyed: ["mp3", "wav", "ogg"],
+            heroKOd: ["mp3", "wav", "ogg"],
         };
-        const exts = preferred[name] || ["wav", "mp3", "ogg", "aiff"];
+        const exts = preferred[name] || ["wav", "mp3", "ogg"];
         exts.forEach(ext => {
             candidates.push(`https://raw.githubusercontent.com/over-lords/overlords/main/Public/Sounds/Effects/${name}.${ext}`);
         });

@@ -5,9 +5,12 @@ const path = require("path");
 const app = express();
 const port = process.env.PORT || 3000;
 const lobbies = new Map(); // key -> lobby record
+const games = new Map();   // key -> in-progress game record
 const LOBBY_TTL_MS = 1000 * 60 * 30; // 30 minutes
 const LOBBY_STALE_MS = 1000 * 2; // 2 seconds without lobby heartbeat
 const LOBBY_PLAYER_STALE_MS = 1000 * 2; // 2 seconds without player poll/heartbeat
+const GAME_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
+const GAME_STALE_MS = 1000 * 2; // 2 seconds without poll/heartbeat
 
 // Middleware
 app.use(compression());
@@ -63,6 +66,33 @@ function pruneStalePlayers(lobby) {
     }
   }
   lobby.players = keep;
+}
+
+function pruneStaleGames() {
+  const now = Date.now();
+  for (const [key, game] of games.entries()) {
+    if (!game || now - (game.updatedAt || 0) > GAME_TTL_MS) {
+      console.log(`[games] Pruning stale game ${key}`);
+      games.delete(key);
+    }
+  }
+}
+
+function getActiveHeroId(state) {
+  if (!state) return null;
+  const idx = typeof state.heroTurnIndex === "number" ? state.heroTurnIndex : 0;
+  const heroes = Array.isArray(state.heroes) ? state.heroes : [];
+  return heroes[idx] != null ? heroes[idx] : null;
+}
+
+function playerOwnsHero(playerId, heroId, heroOwners = {}, host = null) {
+  if (!playerId) return false;
+  if (host && playerId === host) return true;
+  const owned = heroOwners[playerId] || heroOwners[String(playerId)];
+  if (Array.isArray(owned)) {
+    return owned.some(h => String(h) === String(heroId));
+  }
+  return false;
 }
 
 app.post("/api/lobbies/upsert", (req, res) => {
@@ -189,6 +219,113 @@ app.get("/api/lobbies/:key", (req, res) => {
   }
   pruneStalePlayers(lobby);
   return res.json({ ok: true, lobby });
+});
+
+// Create or replace a multiplayer game state
+app.post("/api/games/create", (req, res) => {
+  const {
+    key,
+    state,
+    heroOwners = {},
+    host = null,
+    players = []
+  } = req.body || {};
+  if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
+  if (!state || typeof state !== "object") return res.status(400).json({ error: "state is required" });
+  pruneStaleGames();
+  const now = Date.now();
+  const playersSafe = Array.isArray(players) ? Array.from(new Set(players.filter(Boolean))) : [];
+  const ownersSafe = typeof heroOwners === "object" && heroOwners !== null ? heroOwners : {};
+  games.set(key, {
+    key,
+    state,
+    heroOwners: ownersSafe,
+    host: host || null,
+    players: playersSafe,
+    version: 1,
+    updatedAt: now,
+    lastSeenAt: now
+  });
+  console.log(`[games] Created game ${key} | players=${playersSafe.length}`);
+  return res.json({ ok: true, version: 1, state, heroOwners: ownersSafe, players: playersSafe });
+});
+
+// Fetch current game snapshot
+app.get("/api/games/:key/state", (req, res) => {
+  pruneStaleGames();
+  const key = req.params.key;
+  const game = games.get(key);
+  if (!game) return res.status(404).json({ error: "Game not found" });
+  game.lastSeenAt = Date.now();
+  return res.json({
+    ok: true,
+    state: game.state,
+    version: game.version,
+    heroOwners: game.heroOwners,
+    players: game.players,
+    host: game.host
+  });
+});
+
+// Apply a client mutation and bump version
+app.post("/api/games/apply", (req, res) => {
+  const {
+    key,
+    playerId,
+    clientVersion,
+    state,
+    heroOwners
+  } = req.body || {};
+  if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
+  if (!playerId || typeof playerId !== "string") return res.status(400).json({ error: "playerId is required" });
+  if (!state || typeof state !== "object") return res.status(400).json({ error: "state is required" });
+  const expectedVersion = typeof clientVersion === "number" ? clientVersion : null;
+  pruneStaleGames();
+  const game = games.get(key);
+  if (!game) return res.status(404).json({ error: "Game not found" });
+  if (expectedVersion === null || expectedVersion !== game.version) {
+    return res.status(409).json({ error: "version mismatch", expected: game.version, state: game.state });
+  }
+
+  const activeHeroId = getActiveHeroId(game.state);
+  const heroOwnersSafe = typeof heroOwners === "object" && heroOwners !== null ? heroOwners : game.heroOwners || {};
+  const owns = playerOwnsHero(playerId, activeHeroId, heroOwnersSafe, game.host);
+  if (activeHeroId != null && !owns) {
+    return res.status(403).json({ error: "not your turn" });
+  }
+
+  game.state = state;
+  game.heroOwners = heroOwnersSafe;
+  game.version = game.version + 1;
+  game.updatedAt = Date.now();
+  game.lastSeenAt = Date.now();
+  console.log(`[games] Applied update for ${key} | version=${game.version} | player=${playerId}`);
+  return res.json({
+    ok: true,
+    state: game.state,
+    version: game.version,
+    heroOwners: game.heroOwners
+  });
+});
+
+// Poll for updates since a version
+app.get("/api/games/:key/poll", (req, res) => {
+  pruneStaleGames();
+  const key = req.params.key;
+  const since = Number(req.query.since || "0");
+  const game = games.get(key);
+  if (!game) return res.status(404).json({ error: "Game not found" });
+  game.lastSeenAt = Date.now();
+  if (Number.isFinite(since) && since < game.version) {
+    return res.json({
+      ok: true,
+      state: game.state,
+      version: game.version,
+      heroOwners: game.heroOwners,
+      players: game.players
+    });
+  }
+  return res.json({ ok: true, noop: true, version: game.version });
 });
 
 // Basic health check
