@@ -282,18 +282,24 @@ app.post("/api/games/apply", (req, res) => {
   const {
     key,
     playerId,
-    clientVersion,
     state
   } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   if (!playerId || typeof playerId !== "string") return res.status(400).json({ error: "playerId is required" });
   if (!state || typeof state !== "object") return res.status(400).json({ error: "state is required" });
-  const expectedVersion = typeof clientVersion === "number" ? clientVersion : null;
   pruneStaleGames();
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
-  if (expectedVersion === null || expectedVersion !== game.version) {
-    return res.status(409).json({ error: "version mismatch", expected: game.version, state: game.state });
+
+  // Derive heroOwners if missing
+  if ((!game.heroOwners || !Object.keys(game.heroOwners).length) && Array.isArray(game.state?.heroesByPlayer) && Array.isArray(game.state?.playerUsernames)) {
+    const derived = {};
+    game.state.heroesByPlayer.forEach((heroList, idx) => {
+      const p = game.state.playerUsernames[idx];
+      if (!p) return;
+      derived[p] = Array.isArray(heroList) ? heroList.map(String) : [];
+    });
+    game.heroOwners = derived;
   }
 
   const activeHeroId = getActiveHeroId(game.state);

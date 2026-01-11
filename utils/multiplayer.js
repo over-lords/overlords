@@ -47,6 +47,8 @@ function resolveHeroOwners(heroOwners = {}, state = {}) {
 
 export function playerOwnsHero(playerId, heroId, heroOwners = {}, host = null, state = {}) {
   const owners = resolveHeroOwners(heroOwners, state);
+  // If we cannot resolve any ownership map, allow to avoid locking everyone out
+  if (!owners || Object.keys(owners).length === 0) return true;
   const pid = playerId || (Array.isArray(state.playerUsernames) ? state.playerUsernames[0] : null);
   if (!pid) return false;
   if (host && pid === host) return true;
