@@ -1000,7 +1000,8 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
     // If the save is multiplayer, ignore it and pull from server instead.
     const saved = loadGameState();
     if (saved && saved.gameMode === "multi") {
-        console.log("[bootstrap] Ignoring local multiplayer save; will pull from server snapshot.");
+        console.log("[bootstrap] Ignoring local multiplayer save; clearing local state and pulling from server snapshot.");
+        clearGameState();
     } else if (saved && saved.gameMode !== "multi" && saved.isGameStarted) {
         console.log("=== RESUMING SAVED GAME (Singleplayer) ===");
         Object.assign(gameState, saved);
@@ -1262,7 +1263,8 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
         if (!window.GAME_MODE || window.GAME_MODE === "single" || isHostPlayer) {
             // In multiplayer, seed the server as host; in single, just init decks.
             initAndLogHeroIconAbilities(gameState);
-            establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: true });
+            const hasSeededEA = Array.isArray(gameState?.seeds?.enemyAllyDeck) && gameState.seeds.enemyAllyDeck.length;
+            establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: !hasSeededEA });
             // Default host starts first turn
             if (window.GAME_MODE === "multi" && typeof gameState.heroTurnIndex !== "number") {
                 gameState.heroTurnIndex = 0;

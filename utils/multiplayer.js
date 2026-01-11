@@ -163,10 +163,12 @@ export async function fetchGameStateSnapshot(key) {
     const ctx = getMultiplayerContext ? getMultiplayerContext() : null;
     const player = ctx?.playerId || ctx?.host || null;
     const res = await fetch(`${base}/api/games/${encodeURIComponent(key)}/state${player ? `?player=${encodeURIComponent(player)}` : ""}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`status ${res.status}`);
     const json = await res.json();
-    if (!res.ok) return null;
     return json;
-  } catch (_) {
+  } catch (e) {
+    console.warn("[multiplayer] Failed to fetch game snapshot", e);
     return null;
   }
 }
@@ -226,6 +228,16 @@ export async function pushGameState(state) {
 
   // Validate against seeds if present (avoid pushing diverged decks)
   const seeds = ctx.seeds || {};
+  const seedsMissing = !seeds || !Object.keys(seeds).length;
+  // If server has no seeds yet and we are host, attach current deck order as seeds to establish authority
+  const seedsToAttach = seedsMissing ? {
+    villainDeck: Array.isArray(state?.villainDeck) ? state.villainDeck : undefined,
+    enemyAllyDeck: Array.isArray(state?.enemyAllyDeck) ? state.enemyAllyDeck : undefined,
+    bystanderDeck: Array.isArray(state?.bystanderDeck) ? state.bystanderDeck : undefined,
+    mightDeck: Array.isArray(state?.mightDeck) ? state.mightDeck : undefined,
+    scenarioDeck: Array.isArray(state?.scenarioDeck) ? state.scenarioDeck : undefined
+  } : null;
+
   if (seeds && Object.keys(seeds).length) {
     const decksToCheck = [
       { key: "villainDeck", seed: seeds.villainDeck, incoming: Array.isArray(state?.villainDeck) ? state.villainDeck : null },
@@ -285,7 +297,8 @@ export async function pushGameState(state) {
     clientVersion: ctx.version,
     stateDelta: delta,
     fullState: state,
-    heroOwners: ctx.heroOwners
+    heroOwners: ctx.heroOwners,
+    seeds: seedsMissing ? seedsToAttach : undefined
   };
   try {
     const res = await fetch(`${base}/api/games/apply`, {

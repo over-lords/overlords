@@ -350,6 +350,10 @@ app.post("/api/games/create", (req, res) => {
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   if (!state || typeof state !== "object") return res.status(400).json({ error: "state is required" });
   pruneStaleGames();
+  // Replace any existing game with the same key to avoid stale state carrying over
+  if (games.has(key)) {
+    games.delete(key);
+  }
   const now = Date.now();
   const playersSafe = Array.isArray(players) ? Array.from(new Set(players.filter(Boolean))) : [];
   let ownersSafe = {};
