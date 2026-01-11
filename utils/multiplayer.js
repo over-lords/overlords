@@ -134,7 +134,7 @@ export function configureMultiplayer(options = {}) {
       : (ctx.version != null ? ctx.version : ((typeof window !== "undefined" && window.gameState?.serverVersion != null) ? window.gameState.serverVersion : 0)),
     enabled: options.enabled !== false
   };
-  ctx.ready = typeof ctx.version === "number";
+  ctx.ready = options.versionFromServer === true;
   if (!ctx.enabled) {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;

@@ -19,7 +19,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
-import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady } from "./multiplayer.js";
+import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady, playerOwnsHero } from "./multiplayer.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -766,6 +766,30 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         return gen;
     };
 
+    function warnIfNoOwnership(state, playerId, owners, host) {
+        const bannerId = "multi-ownership-warning";
+        let banner = document.getElementById(bannerId);
+        const isMulti = state?.gameMode === "multi" || window.GAME_MODE === "multi";
+        if (!isMulti) {
+            if (banner) banner.remove();
+            return;
+        }
+        const heroOwners = owners || {};
+        const heroIds = Array.isArray(state?.heroes) ? state.heroes : [];
+        const ownsAny = heroIds.some(hid => playerOwnsHero(playerId, hid, heroOwners, host, state));
+        if (ownsAny) {
+            if (banner) banner.remove();
+            return;
+        }
+        if (!banner) {
+            banner = document.createElement("div");
+            banner.id = bannerId;
+            banner.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff3860;color:#fff;padding:10px 16px;font-weight:800;z-index:20000;border-radius:8px;border:3px solid #000;box-shadow:0 4px 10px rgba(0,0,0,0.3);";
+            document.body.appendChild(banner);
+        }
+        banner.textContent = "Multiplayer: your player id does not own any heroes. Set ?player= to a lobby username.";
+    }
+
     const buildHeroOwners = (players = [], heroesByPlayer = []) => {
         const owners = {};
         (heroesByPlayer || []).forEach((heroList, idx) => {
@@ -873,6 +897,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         if (typeof window !== "undefined") {
             window.isMultiplayerReady = isMultiplayerReady;
         }
+        warnIfNoOwnership(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -1107,13 +1132,25 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
                     host,
                     heroOwners: owners,
                     version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1,
-                apiBase: window.MULTI_API_BASE,
-                enabled: !!key && window.GAME_MODE === "multi"
-            });
-            if (key) {
+                    apiBase: window.MULTI_API_BASE,
+                    enabled: !!key && window.GAME_MODE === "multi",
+                    versionFromServer: false
+                });
+                if (key) {
+                    await syncFromServer(key, playerId, owners, host);
+                }
+            } else if (key) {
+                configureMultiplayer({
+                    key,
+                    playerId,
+                    host,
+                    heroOwners: owners,
+                    apiBase: window.MULTI_API_BASE,
+                    enabled: !!key && window.GAME_MODE === "multi",
+                    versionFromServer: false
+                });
                 await syncFromServer(key, playerId, owners, host);
             }
-        }
         }
 
         console.log("=== Confirming hero decks after pageSetup ===");
