@@ -119,6 +119,12 @@ export function setOnStateUpdated(handler) {
   onStateUpdated = handler;
 }
 
+export function setMultiplayerVersion(version) {
+  if (typeof version === "number") {
+    ctx.version = version;
+  }
+}
+
 export async function pushGameState(state) {
   if (!ctx.enabled || !ctx.key) return null;
   const base = apiBase();

@@ -19,7 +19,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
-import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot } from "./multiplayer.js";
+import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion } from "./multiplayer.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -857,6 +857,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         } finally {
             window.__SKIP_MP_SYNC = false;
         }
+        setMultiplayerVersion(version);
     }
 
     const params = new URLSearchParams(window.location.search);
