@@ -318,7 +318,7 @@ export const heroes = [
     image: `${cardArtFolder}/Donna Troy.jpg`,
     type: "Hero",
     category: "Guardian",
-    doNotShow: "true",
+    doNotShow: "false",
     color: "ivory",
     teams: ["Wonder","Titans"],
     hp: "15",
@@ -1149,9 +1149,9 @@ export const heroes = [
     doNotShow: "false",
     color: "blue",
     teams: ["Super","Justice"],
-    hp: "15",
-    damageThreshold: "3",
-    retreat: "3",
+    hp: "17",
+    damageThreshold: "2",
+    retreat: "4",
     travel: "3",
     abilitiesText: [
       {

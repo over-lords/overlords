@@ -642,7 +642,7 @@ export const overlords = [
     doNotShow: "false",
     abilitiesText: [
       {
-        text: `Each time a Villain is KO'd by a Hero, that Hero may either take 5 Damage or gain 5 HP. <span class="line-gap"></span> 
+        text: `Each time a Villain is KO'd by a Hero, that Hero has a chance to either take 5 Damage or regain up to 5 HP. <span class="line-gap"></span> 
                Might of the Overlord: Resurrect the first 2 KO'd Henchmen. <span class="line-gap"></span> 
                Bonus Feature: The first time each turn a [ICON:Squad] Hero Damages Amanda Waller, there is a chance they take 10 Damage.`
       }

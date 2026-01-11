@@ -1,5 +1,9 @@
 const newsData = [
     {
+        date: "January 10th, 2026",
+        text: "Added Supergirl and Donna Troy as playable Heroes! Introduced a bunch of bug fixes."
+    },
+    {
         date: "January 8th, 2026",
         text: "Added a Card Database in the Character Roster page!"
     },

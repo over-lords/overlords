@@ -618,7 +618,7 @@ export const heroCards = [
     damage: "0",
     abilitiesText: [
       {
-        text: `Lock a Henchman or Villain in their City until the end of Green Lantern's next turn, and also reduce their Damage to 0 permanently.`
+        text: `Freeze a Henchman or Villain in their City until the end of Green Lantern's next turn, and also reduce their Damage to 0 permanently.`
       }
     ],
     abilitiesNamePrint: [
@@ -1087,6 +1087,388 @@ export const heroCards = [
       {
         type: `chooseOption(2)`,
         effect: [`draw(1)`]
+      }
+    ]
+  },
+  {
+    id: "361",
+    type: "Main",
+    name: "Daughter of Themyscira",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/daughterOfThemyscira.jpg`,
+    perDeck: "2",
+    damage: "5",
+    abilitiesText: [
+      {
+        text: `If this card is used against a Villain at full HP, it instead deals 10 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Increase Card Damage`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `engagedVillainFullHP`,
+        effect: [`setCardDamageTo(10)`]
+      }
+    ]
+  },
+  {
+    id: "362",
+    type: "Main",
+    name: "Lasso of Persuasion",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/lassoOfPersuasion.jpg`,
+    perDeck: "2",
+    damage: "4",
+    abilitiesText: [
+      {
+        text: `Shove all unengaged Henchmen and Villains up to 5 spaces right, and don't draw from the Villain Deck next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Shove and Stomp`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: [`shoveVillain(allUnengaged,10)`,`disableVillainDraw(1)`]
+      }
+    ]
+  },
+  {
+    id: "363",
+    type: "Main",
+    name: "Tireless Warrior",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/tirelessWarrior.jpg`,
+    perDeck: "2",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Deal 1 Damage to up to 3 Henchmen or Villains.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Bring It!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageFoeMulti(1,3,any)`
+      }
+    ]
+  },
+  {
+    id: "364",
+    type: "Main",
+    name: "Manufactured Killer",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/manufacturedKiller.jpg`,
+    perDeck: "1",
+    damage: "3",
+    abilitiesText: [
+      {
+        text: `Donna Troy's engaged foe gains Curse 1.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Give Foe Curse 1`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `quick`,
+        condition: `afterDamage`,
+        effect: `giveVillainPassive(curse(1),lastDamagedFoe)`
+      }
+    ]
+  },
+  {
+    id: "365",
+    type: "Main",
+    name: "Unstoppable? Meet Immovable",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/unstoppableMeetImmovable.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Freeze the Henchman or Villain damaged by this card until the end of Donna Troy's next turn.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Freeze Damaged Foe`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `afterDamage`,
+        effect: `freezeVillain(lastDamagedFoe,next)`
+      }
+    ]
+  },
+  {
+    id: "366",
+    type: "Main",
+    name: "Trained by the Best",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/trainedByTheBest.jpg`,
+    perDeck: "2",
+    damage: "2",
+    abilitiesText: [
+      {
+        text: `Deal 2 Damage to the Overlord.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Just Try It!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `damageOverlord(2)`
+      }
+    ]
+  },
+  {
+    id: "367",
+    type: "Main",
+    name: "Immortal",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/immortal.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `If either Donna Troy is at 5 HP or less, or there is at least 1 KO'd Hero, then this card deals 10 Damage.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `I Can't Die!`
+      },
+      {
+        text: `You Killed my Friend!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        condition: `atXorLessHP(5)`,
+        effect: `setCardDamageTo(10)`
+      },
+      {
+        condition: `isGreaterThanX(1,findKOdHeroes)`,
+        effect: `setCardDamageTo(10)`
+      }
+    ]
+  },
+  {
+    id: "368",
+    type: "Main",
+    name: "Betrayed",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/betrayed.jpg`,
+    perDeck: "1",
+    damage: "1",
+    abilitiesText: [
+      {
+        text: `Increase this card's Damage by 1 per active [ICON:Wonder] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `They'd Never Do That!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `increaseCardDamage(getActiveTeamCount(Wonder))`
+      }
+    ]
+  },
+  {
+    id: "369",
+    type: "Main",
+    name: "Titans Together!",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/titansTogether.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 1. <span class="line-gap"></span> Increase this card's Damage by 2 for every active [ICON:Titans] Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `We're a Team!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`draw(1)`,`increaseCardDamage(2*getActiveTeamCount(Titans))`]
+      }
+    ]
+  },
+  {
+    id: "370",
+    type: "Main",
+    name: "Protector",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/protector.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 1. <span class="line-gap"></span> Once, before the start of Donna Troy's next turn, she can Block herself or another Hero.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 1`
+      },
+      {
+        text: `Get Behind Me!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `draw(1)`
+      },
+      {
+        effect: `giveHeroPassive(blockDamage(1),next)`
+      }
+    ]
+  },
+  {
+    id: "371",
+    type: "Main",
+    name: "Amazonian Empathy",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/amazonianEmpathy.jpg`,
+    perDeck: "2",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2. <span class="line-gap"></span> Deal 1 Damage to a Henchman or Villain.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 2`
+      },
+      {
+        text: `Coming Down!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `draw(2)`
+      },
+      {
+        effect: `damageFoe(1,any)`
+      }
+    ]
+  },
+  {
+    id: "372",
+    type: "Main",
+    name: "Disarmed",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/disarmed.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Freeze a Henchman or Villain in their City until the end of Donna Troy's next turn, and also reduce their Damage to 0 permanently.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Stay Down, You're Beaten`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: [`freezeVillain(any,next)`,`disableVillain(lastFrozen,next)`]
+      }
+    ]
+  },
+  {
+    id: "373",
+    type: "Main",
+    name: "Secret Past",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/secretPast.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `Draw 2. <span class="line-gap"></span><span class="line-gap"></span> Scan cards from the Villain Deck equal to the number of active teammates Donna Troy has. <span class="line-gap"></span> OPTIONAL : KO up to 3 revealed cards.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Draw 2`
+      },
+      {
+        text: `This Doesn't Concern You!`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        effect: `draw(2)`
+      },
+      {
+        effect: [`scanDeck(villain,getActiveTeamCount("Wonder Titans"))`,`applyScanEffects(ko,closeAfter(3))`]
+      }
+    ]
+  },
+  {
+    id: "374",
+    type: "Main",
+    name: "The First of Many",
+    hero: "Donna Troy",
+    image: `${cardArtFolder}/Donna Troy/firstOfMany.jpg`,
+    perDeck: "1",
+    damage: "0",
+    abilitiesText: [
+      {
+        text: `CHOOSE: Deal 5 Damage to the Overlord. <span class="line-gap"></span> OR <span class="line-gap"></span> Play the next Ally from the E&A.`
+      }
+    ],
+    abilitiesNamePrint: [
+      {
+        text: `Choose`
+      },
+      {
+        text: `Deal 5 Damage to the Overlord`
+      },
+      {
+        text: `Play the next Ally`
+      }
+    ],
+    abilitiesEffects: [
+      {
+        type: `chooseOption`,
+        effect: `chooseYourEffect`
+      },
+      {
+        type: `chooseOption(1)`,
+        effect: [`damageOverlord(5)`]
+      },
+      {
+        type: `chooseOption(2)`,
+        effect: [`enemyDraw(1,nextAlly)`]
       }
     ]
   },
@@ -2886,9 +3268,6 @@ export const heroCards = [
       },
       {
         text: `Increase this card's Damage`
-      },
-      {
-        text: `Increase this card's Damage`
       }
     ],
     abilitiesEffects: [
@@ -2898,12 +3277,8 @@ export const heroCards = [
       },
       {
         type: `quick`,
-        effect: [`increaseCardDamage(getActiveTeamCount(Bat))`]
-      },
-      {
-        type: `quick`,
-        effect: [`increaseCardDamage(getActiveTeamCount(Justice))`]
-      },
+        effect: [`increaseCardDamage(getActiveTeamCount("Bat Justice"))`]
+      }
     ]
   },
   {
@@ -3741,7 +4116,7 @@ export const heroCards = [
     ],
     abilitiesEffects: [
       {
-        effect: [`increaseCardDamage(getActiveTeamCount(Flash))`,`increaseCardDamage(getActiveTeamCount(Titans))`,`increaseCardDamage(getActiveTeamCount(Justice))`]
+        effect: [`increaseCardDamage(getActiveTeamCount("Flash Justice Titans"))`]
       }
     ]
   },

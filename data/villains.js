@@ -4871,7 +4871,7 @@ export const villains = [
     damage: "0",
     abilitiesText: [
       {
-        text: `If an [ICON:Flash] Hero ends their turn engaged with the Black Flash, they take 3 Damage (ignoring their Damage Threshold). <span class="line-gap"></span> 
+        text: `If a [ICON:Flash] Hero ends their turn engaged with the Black Flash, they take 3 Damage (ignoring their Damage Threshold). <span class="line-gap"></span> 
                Reward: Deal 7 Damage to the Overlord.`
       }
     ],

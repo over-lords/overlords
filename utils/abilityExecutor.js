@@ -771,16 +771,37 @@ function markFoeDamagedThisTurn(entry, state = gameState) {
 
 function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     if (!teamName) return 0;
-    const raw = Array.isArray(teamName) ? teamName[0] : teamName;
-    const teamKey = String(raw).toLowerCase().trim();
     const s = state || gameState;
-    if (isTeamBonusSuppressed(teamKey, s)) {
-        console.log(`[getActiveTeamCount] Team bonuses suppressed for ${teamKey}; returning 0.`);
+
+    // Normalize into an array of team tokens (lowercase), splitting on whitespace or commas
+    const tokens = (() => {
+        if (Array.isArray(teamName)) {
+            return teamName
+                .join(" ")
+                .split(/[\s,]+/)
+                .map(t => t.trim().toLowerCase())
+                .filter(Boolean);
+        }
+        return String(teamName)
+            .split(/[\s,]+/)
+            .map(t => t.trim().toLowerCase())
+            .filter(Boolean);
+    })();
+
+    if (!tokens.length) return 0;
+
+    const includeSelf = tokens.includes("all") || tokens.includes("full");
+    const excludeSelf = !includeSelf;
+
+    // If any specific team token is suppressed, bail out
+    const suppressedToken = tokens.find(t => t !== "all" && isTeamBonusSuppressed(t, s));
+    if (suppressedToken) {
+        console.log(`[getActiveTeamCount] Team bonuses suppressed for ${suppressedToken}; returning 0.`);
         return 0;
     }
+
     const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
     let count = 0;
-    const excludeSelf = !(Array.isArray(teamName) && String(teamName[1]).toLowerCase().trim() === "full") && teamKey !== "all";
 
     heroIds.forEach(id => {
         if (excludeSelf && heroId != null && String(id) === String(heroId)) return; // exclude activating hero unless counting all
@@ -789,10 +810,12 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
         const hState = s.heroData?.[id];
         const alive = hState ? (typeof hState.hp === "number" ? hState.hp > 0 : true) : true;
         if (!alive) return;
-        if (teamKey === "all" || heroMatchesTeam(hObj, teamName)) count += 1;
+
+        const matchesAll = tokens.every(tok => tok === "all" ? true : heroMatchesTeam(hObj, tok));
+        if (matchesAll) count += 1;
     });
 
-    const label = teamKey === "all" ? "all heroes" : `Team ${teamName}`;
+    const label = tokens.includes("all") ? "all heroes" : `Teams ${tokens.join(" & ")}`;
     console.log(`[getActiveTeamCount] ${label} active count (excluding hero ${heroId ?? "n/a"}): ${count}`);
     return count;
 }
@@ -1495,6 +1518,30 @@ export function evaluateCondition(condStr, heroId, state = gameState) {
         const result = !!pending && matchesHero;
         console.log(`[bystanderKod condition] ${result ? "true" : "false"}${pending ? ` (hero=${pending})` : ""}`);
         return result;
+    }
+
+    if (lowerCond === "engagedvillainfullhp") {
+        const hid = heroId ?? (Array.isArray(s.heroes) ? s.heroes[s.heroTurnIndex ?? 0] : null);
+        const hState = hid != null ? s.heroData?.[hid] : null;
+        if (!hState || hState.isFacingOverlord) return false;
+        const upperIdx = typeof hState.cityIndex === "number" ? hState.cityIndex - 1 : null;
+        if (!Number.isInteger(upperIdx) || upperIdx < 0) return false;
+        const entry = Array.isArray(s.cities) ? s.cities[upperIdx] : null;
+        if (!entry || entry.id == null) return false;
+        const card = findCardInAllSources(entry.id);
+        if (String(card?.type || "").toLowerCase() !== "villain") return false;
+        const instKey = getEntryKey(entry);
+        const nominalMax = Math.max(
+            Number(entry.maxHP) || 0,
+            Number(card?.hp) || 0,
+            Number(card?.baseHP) || 0
+        );
+        const currentHP = typeof entry.currentHP === "number"
+            ? entry.currentHP
+            : (instKey && s.villainHP && typeof s.villainHP[instKey] === "number" ? s.villainHP[instKey] : nominalMax);
+        const full = nominalMax > 0 ? currentHP >= nominalMax : currentHP > 0;
+        console.log(`[engagedVillainFullHP] hero=${hid} villain=${card?.name || entry.id} current=${currentHP} max=${nominalMax} -> ${full}`);
+        return full;
     }
 
     if (lowerCond === "overlordkosbystander") {
@@ -8348,7 +8395,17 @@ async function maybeRunHeroIconDamageOptionals(heroId) {
 
 function scanDeck(whichRaw, howMany = 1, selectedData = {}) {
     const which = String(whichRaw || "").toLowerCase();
-    const count = Math.max(1, Number(howMany) || 1);
+    const heroId = selectedData?.currentHeroId ?? null;
+    const state = selectedData?.state || gameState;
+    let count = resolveNumericValue(howMany, heroId, state);
+    if (!Number.isFinite(count)) {
+        count = Number(howMany);
+    }
+    count = Math.max(0, Math.floor(Number(count) || 0));
+    if (count <= 0) {
+        console.log("[scanDeck] Resolved count <= 0; skipping scan.", { which, raw: howMany, resolved: count });
+        return;
+    }
 
     if (isScanBlocked(gameState)) {
         const turn = typeof gameState.turnCounter === "number" ? gameState.turnCounter : null;
@@ -8445,7 +8502,7 @@ function applyScanEffects(opts = {}) {
         if (typeof document !== "undefined" && document.body) {
             const existing = document.getElementById("scan-banner");
             // If scanning is blocked, remove any existing banner and skip rendering a new one
-            if (isScanBlocked(gameState)) {
+            if (isScanBlocked(gameState) || buf.length === 0) {
                 if (existing) existing.remove();
             } else {
                 if (existing) existing.remove();
