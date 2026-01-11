@@ -813,7 +813,26 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         return true;
     }
 
-    const saved = loadGameState();
+    const params = new URLSearchParams(window.location.search);
+    const encryptedParam = params.get('data');
+    const SECRET = 'GeimonHeroKey42';  // DO NOT FUCK THIS UP
+    let predecoded = null;
+    if (encryptedParam) {
+        try {
+            predecoded = await decryptData(encryptedParam, SECRET);
+        } catch (e) {
+            console.warn("[bootstrap] Failed to pre-decode encrypted params", e);
+        }
+    }
+
+    let saved = loadGameState();
+    // If a multiplayer launch is happening, drop any saved local state to avoid restoring stale games.
+    if (predecoded && predecoded.gameMode === "multi") {
+        try {
+            clearGameState();
+        } catch (_) {}
+        saved = null;
+    }
 
     if (saved) {
         console.log("=== RESUMING SAVED GAME ===");
@@ -919,9 +938,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         return;
     }
 
-    const params = new URLSearchParams(window.location.search);
-    const encrypted = params.get('data');
-    const SECRET = 'GeimonHeroKey42';  // DO NOT FUCK THIS UP
+    const encrypted = encryptedParam;
 
     if (!encrypted) {
         document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
@@ -929,7 +946,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
     }
 
     try {
-        const selectedData = await decryptData(encrypted, SECRET);
+        const selectedData = predecoded || await decryptData(encrypted, SECRET);
         selectedHeroes = selectedData.heroes || [];
         const selectedOverlords = selectedData.overlords || [];
         const selectedTactics = selectedData.tactics || [];
