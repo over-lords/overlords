@@ -1220,9 +1220,7 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                     enabled: true,
                     versionFromServer: true
                 });
-                if (isHostPlayer) {
-                    startHostCommandLoop(async (cmd) => await handleRemoteCommand(cmd));
-                }
+                // non-host waits here; host will seed below
                 return;
             }
         }
@@ -1291,17 +1289,20 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                     players,
                     apiBase: window.MULTI_API_BASE
                 });
+                const seededVersion = typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1;
                 configureMultiplayer({
                     key,
                     playerId,
                     host,
                     heroOwners: owners,
-                    version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1,
+                    version: seededVersion,
                     apiBase: window.MULTI_API_BASE,
                     enabled: !!key && window.GAME_MODE === "multi",
-                    versionFromServer: false
+                    versionFromServer: true,
+                    state: gameState
                 });
-                setMultiplayerVersion(typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1);
+                setMultiplayerVersion(seededVersion);
+                startHostCommandLoop(async (cmd) => await handleRemoteCommand(cmd));
                 if (key) {
                     const ok = await waitForCompleteSnapshot({ key, playerId, owners, host, apiBase: window.MULTI_API_BASE });
                     if (!ok) return;

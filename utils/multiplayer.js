@@ -169,7 +169,7 @@ export async function fetchGameStateSnapshot(key) {
     const json = await res.json();
     return json;
   } catch (e) {
-    console.warn("[multiplayer] Failed to fetch game snapshot", e);
+    // Swallow transient errors; caller can retry
     return null;
   }
 }
