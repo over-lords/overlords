@@ -467,7 +467,7 @@ function heroMatchesTeam(heroObj, teamNameRaw) {
     ].filter(Boolean).map(v => String(v).toLowerCase());
     const list = Array.isArray(heroObj.teams) ? heroObj.teams.map(t => String(t).toLowerCase()) : [];
     const all = props.concat(list);
-    return all.some(t => t === teamName);
+    return all.some(t => t === teamName || t.includes(teamName));
 }
 
 function isHeroInCoastalCity(heroId, state = gameState) {
@@ -775,17 +775,14 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
 
     // Normalize into an array of team tokens (lowercase), splitting on whitespace or commas
     const tokens = (() => {
-        if (Array.isArray(teamName)) {
-            return teamName
-                .join(" ")
-                .split(/[\s,]+/)
-                .map(t => t.trim().toLowerCase())
-                .filter(Boolean);
-        }
-        return String(teamName)
+        const rawStr = Array.isArray(teamName) ? teamName.join(" ") : String(teamName);
+        const trimmed = rawStr.trim().toLowerCase();
+        const splitTokens = trimmed
             .split(/[\s,]+/)
-            .map(t => t.trim().toLowerCase())
+            .map(t => t.trim())
             .filter(Boolean);
+        // include the full phrase to allow multi-word team matches
+        return [trimmed, ...splitTokens.filter(t => t !== trimmed)];
     })();
 
     if (!tokens.length) return 0;

@@ -42,13 +42,23 @@ function resolveHeroOwners(heroOwners = {}, state = {}) {
       derived[p] = list.map(String);
     }
   });
-  return derived;
+  if (Object.keys(derived).length) return derived;
+  // Fallback: if only one player known, assign all heroes
+  const heroes = Array.isArray(state.heroes) ? state.heroes.map(String) : [];
+  if (players.length === 1 && heroes.length) {
+    derived[players[0]] = heroes;
+    return derived;
+  }
+  return {};
 }
 
 export function playerOwnsHero(playerId, heroId, heroOwners = {}, host = null, state = {}) {
-  const owners = resolveHeroOwners(heroOwners, state);
-  // If we cannot resolve any ownership map, allow to avoid locking everyone out
-  if (!owners || Object.keys(owners).length === 0) return true;
+  let owners = resolveHeroOwners(heroOwners, state);
+  // If still empty, assign all heroes to the provided playerId so someone can act
+  if ((!owners || Object.keys(owners).length === 0) && playerId && Array.isArray(state?.heroes)) {
+    owners = { [playerId]: state.heroes.map(String) };
+  }
+  if (!owners || Object.keys(owners).length === 0) return false;
   const pid = playerId || (Array.isArray(state.playerUsernames) ? state.playerUsernames[0] : null);
   if (!pid) return false;
   if (host && pid === host) return true;
