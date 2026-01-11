@@ -304,9 +304,10 @@
 
             const normalized = user.profile_picture?.trim()?.toLowerCase();
 
-            // Build unlocked list from flags that match unlockable filenames
+            // Build unlocked list from wins + flags that match unlockable filenames
             unlockedImages = [];
             const flags = Array.isArray(user.flags) ? user.flags.map(String) : [];
+            const winsCount = Math.max(0, parseInt(user.wins ?? 0, 10) || 0);
             const unlockableRepoPath = "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Unlockable%20Profile%20Pictures";
             try {
                 const res = await fetch(unlockableRepoPath);
@@ -316,20 +317,48 @@
                         const unlockables = files
                             .filter(item => item.type === "file" && item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i))
                             .map(item => ({ filename: item.name.trim(), url: item.download_url }));
+
+                        const unlockedFromWins = [];
+                        const unlockedFromFlags = [];
+                        const flagOrder = new Map(flags.map((f, i) => [f.toLowerCase(), i]));
+
                         unlockables.forEach(file => {
                             const baseName = file.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "");
-                            if (flags.includes(baseName)) {
-                                unlockedImages.push({ ...file, isUnlock: true });
+                            const lowerBase = baseName.toLowerCase();
+                            const winMatch = baseName.match(/^win(\d+)$/i);
+
+                            if (winMatch) {
+                                const winNumber = parseInt(winMatch[1], 10);
+                                if (!Number.isNaN(winNumber) && winNumber <= winsCount) {
+                                    unlockedFromWins.push({ ...file, isUnlock: true, winNumber });
+                                    return;
+                                }
+                            }
+
+                            if (flagOrder.has(lowerBase)) {
+                                unlockedFromFlags.push({ ...file, isUnlock: true });
                             }
                         });
+
+                        unlockedFromWins.sort((a, b) => b.winNumber - a.winNumber);
+
                         // Preserve the order of flags (first flag should appear first)
-                        const order = new Map(flags.map((f, i) => [f.toLowerCase(), i]));
-                        unlockedImages.sort((a, b) => {
+                        unlockedFromFlags.sort((a, b) => {
                             const aKey = a.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
                             const bKey = b.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
-                            const ai = order.has(aKey) ? order.get(aKey) : Number.MAX_SAFE_INTEGER;
-                            const bi = order.has(bKey) ? order.get(bKey) : Number.MAX_SAFE_INTEGER;
+                            const ai = flagOrder.has(aKey) ? flagOrder.get(aKey) : Number.MAX_SAFE_INTEGER;
+                            const bi = flagOrder.has(bKey) ? flagOrder.get(bKey) : Number.MAX_SAFE_INTEGER;
                             return ai - bi;
+                        });
+
+                        const seen = new Set();
+                        [...unlockedFromWins, ...unlockedFromFlags].forEach(file => {
+                            const key = file.filename.toLowerCase();
+                            if (seen.has(key)) return;
+                            seen.add(key);
+
+                            const { winNumber, ...rest } = file;
+                            unlockedImages.push(rest);
                         });
                     }
                 }
