@@ -160,6 +160,21 @@ function canActThisTurn(state = window.gameState || gameState) {
     return myTurn;
 }
 
+function isHostPlayer() {
+    if (typeof window === "undefined") return true;
+    if (window.GAME_MODE !== "multi") return true;
+    const host = window.MULTI_HOST;
+    const pid = window.MULTI_PLAYER_ID;
+    if (!host) return true; // fail open until host known
+    return String(pid) === String(host);
+}
+
+function isActiveTurnOwner(state = window.gameState || gameState) {
+    if (typeof window === "undefined") return false;
+    if (typeof window.isMyTurn === "function") return !!window.isMyTurn(state);
+    return false;
+}
+
 import { heroes } from '../data/faceCards.js';
 import { heroCards } from '../data/heroCards.js';
 
@@ -187,6 +202,7 @@ import { currentTurn, executeEffectSafely, handleVillainEscape, resolveExitForVi
          pruneHeroProtections, playDamageSfx, isProtectionDisabledForHero, applyNextTurnDoubleDamageIfAny } from './abilityExecutor.js';
 import { gameState } from '../data/gameState.js';
 import { loadGameState, saveGameState, clearGameState } from "./stateManager.js";
+import { enqueueCommand } from "./multiplayer.js";
 
 import {    CITY_EXIT_UPPER,
             CITY_5_UPPER,
@@ -1718,6 +1734,11 @@ export async function villainDraw(count = 1) {
     const draws = Number(count) || 0;
     if (draws <= 0) return;
 
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        console.warn("[VILLAIN DRAW] Suppressed on non-host client.");
+        return;
+    }
+
     // Hard stop: if Multiplex copies are active, villain draws are frozen until cleared.
     if (hasActiveMultiplex(gameState)) {
         gameState._villainDrawLockedMultiplex = true;
@@ -2163,6 +2184,20 @@ async function handleBystanderDraw(bystanderId, cardData, state) {
 
 export async function startHeroTurn(state, opts = {}) {
     const { skipVillainDraw = false, suppressRoundAdvance = false } = opts;
+
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        console.warn("[startHeroTurn] Suppressed on non-host client.");
+        return;
+    }
+
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+        const heroesArr = Array.isArray(state?.heroes) ? state.heroes : [];
+        const overlordsArr = Array.isArray(state?.overlords) ? state.overlords : [];
+        if (!heroesArr.length || !overlordsArr.length) {
+            console.warn("[startHeroTurn] Incomplete multiplayer state; waiting for host snapshot.");
+            return;
+        }
+    }
 
     if (state.gameOver) {
         console.log("[startHeroTurn] Game is already over; no new hero turn will start.");
@@ -2780,6 +2815,12 @@ export function initializeTurnUI(gameState) {
     const endTurnBtn = document.getElementById("end-turn-button");
     if (!endTurnBtn) return;
 
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && typeof window.isMultiplayerReady === "function" && !window.isMultiplayerReady()) {
+        endTurnBtn.style.display = "none";
+        try { hideTravelHighlights(); } catch (_) {}
+        return;
+    }
+
     const canAct = canActThisTurn(gameState);
     console.log("[TURN UI] canActThisTurn=", canAct, "player", (typeof window !== "undefined" ? window.MULTI_PLAYER_ID : null), "host", (typeof window !== "undefined" ? window.MULTI_HOST : null));
     const standardActivateBtn = document.getElementById("standard-activate-btn");
@@ -2931,6 +2972,16 @@ export function buildHeroDeck(heroName) {
 }
 
 export async function endCurrentHeroTurn(gameState) {
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        // Non-host submits a command to host to advance turn
+        enqueueCommand("endTurn", {
+            heroTurnIndex: gameState.heroTurnIndex,
+            playerId: window.MULTI_PLAYER_ID
+        });
+        console.warn("[endCurrentHeroTurn] Delegated end-turn to host via command queue.");
+        return;
+    }
+
     if (gameState.gameOver) {
         console.log("[endCurrentHeroTurn] Game is already over; ignoring end-turn.");
         return;

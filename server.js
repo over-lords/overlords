@@ -418,10 +418,12 @@ app.get("/api/games/:key/state", (req, res) => {
 // Queue a command (full proposed state) from a non-host player.
 app.post("/api/games/:key/command", (req, res) => {
   const key = req.params.key;
-  const { playerId, state, heroOwners = {} } = req.body || {};
+  const { playerId, state, heroOwners = {}, action, payload } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   if (!playerId || typeof playerId !== "string") return res.status(400).json({ error: "playerId is required" });
-  if (!state || typeof state !== "object") return res.status(400).json({ error: "state is required" });
+  if (!action && (!state || typeof state !== "object")) {
+    return res.status(400).json({ error: "action or state is required" });
+  }
   pruneStaleGames();
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
@@ -448,6 +450,8 @@ app.post("/api/games/:key/command", (req, res) => {
   game.commands.push({
     playerId,
     state,
+    action,
+    payload,
     heroOwners,
     ts: now
   });

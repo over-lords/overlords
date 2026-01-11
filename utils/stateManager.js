@@ -24,7 +24,8 @@ export function saveGameState(state) {
             const playerId = (typeof window !== "undefined" && window.MULTI_PLAYER_ID) || null;
             const owners = (typeof window !== "undefined" && window.MULTI_HERO_OWNERS) || {};
             const host = (typeof window !== "undefined" && window.MULTI_HOST) || null;
-            if (!playerId || isPlayersTurn(state, playerId, owners, host)) {
+            const isHost = !host || (playerId && String(playerId) === String(host));
+            if (!playerId || isPlayersTurn(state, playerId, owners, host) || isHost) {
                 // Fire-and-forget; authoritative sync handled on server
                 pushGameState(state);
             } else {

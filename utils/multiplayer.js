@@ -17,6 +17,7 @@ let ctx = {
 let pollTimer = null;
 let onStateUpdated = null;
 let lastPushedState = null;
+let hostCommandTimer = null;
 
 function deepClone(obj) {
   try { return JSON.parse(JSON.stringify(obj)); } catch (_) { return null; }
@@ -217,6 +218,33 @@ export function isMultiplayerReady() {
   return !!ctx.ready;
 }
 
+export async function enqueueCommand(action, payload = {}) {
+  if (!ctx.enabled || !ctx.key || !action) return null;
+  const base = apiBase();
+  if (!base) return null;
+  const body = {
+    playerId: ctx.playerId || ctx.host || "Unknown",
+    action,
+    payload
+  };
+  try {
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/commands`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      console.warn("[multiplayer] enqueueCommand failed", json || res.statusText);
+      return null;
+    }
+    return json;
+  } catch (e) {
+    console.warn("[multiplayer] enqueueCommand error", e);
+    return null;
+  }
+}
+
 export async function pushGameState(state) {
   if (!ctx.enabled || !ctx.key) return null;
   if (!ctx.ready) {
@@ -339,4 +367,37 @@ export async function forceServerResync(key = ctx.key) {
 
 export function getMultiplayerContext() {
   return { ...ctx };
+}
+
+export async function pollHostCommands(handler) {
+  if (!ctx.enabled || !ctx.key) return;
+  const base = apiBase();
+  if (!base) return;
+  if (!ctx.host || !ctx.playerId || String(ctx.playerId) !== String(ctx.host)) return;
+  try {
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/commands?playerId=${encodeURIComponent(ctx.playerId)}`);
+    if (!res.ok) {
+      const json = await res.json().catch(() => null);
+      console.warn("[multiplayer] command poll failed", json || res.statusText);
+      return;
+    }
+    const json = await res.json();
+    const commands = Array.isArray(json.commands) ? json.commands : [];
+    for (const cmd of commands) {
+      try {
+        if (typeof handler === "function") {
+          await handler(cmd);
+        }
+      } catch (e) {
+        console.warn("[multiplayer] command handler failed", e);
+      }
+    }
+  } catch (e) {
+    console.warn("[multiplayer] command poll error", e);
+  }
+}
+
+export function startHostCommandLoop(handler, intervalMs = 750) {
+  if (hostCommandTimer) clearInterval(hostCommandTimer);
+  hostCommandTimer = setInterval(() => pollHostCommands(handler), intervalMs);
 }

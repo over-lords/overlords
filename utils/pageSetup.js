@@ -20,7 +20,7 @@ import { loadGameState, saveGameState, clearGameState, restoreCapturedBystanders
 import { playSoundEffect } from "./soundHandler.js";
 import { sendGameHeartbeat } from "./heartbeat.js";
 import { gameState } from "../data/gameState.js";
-import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady, playerOwnsHero, getMultiplayerContext, forceServerResync } from "./multiplayer.js";
+import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady, playerOwnsHero, getMultiplayerContext, forceServerResync, enqueueCommand, startHostCommandLoop } from "./multiplayer.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -28,7 +28,36 @@ let currentTactics = [];
 let selectedHeroes = [];
 let heroMap = new Map();
 
+function showBlockingBanner(msg) {
+    const id = "multi-blocking-banner";
+    let b = document.getElementById(id);
+    if (!b) {
+        b = document.createElement("div");
+        b.id = id;
+        b.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff3860;color:#fff;padding:10px 18px;font-weight:800;z-index:40000;border:3px solid #000;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,0.4);";
+        document.body.appendChild(b);
+    }
+    b.textContent = msg;
+}
+
 window.VILLAIN_DRAW_ENABLED = false;
+
+function isStateComplete(state) {
+    if (!state) return false;
+    const heroIds = Array.isArray(state.heroes) ? state.heroes : [];
+    const overlordIds = Array.isArray(state.overlords) ? state.overlords : [];
+    if (!heroIds.length || !overlordIds.length) return false;
+    const hd = state.heroData || {};
+    for (const hid of heroIds) {
+        const slot = hd[String(hid)];
+        if (!slot) return false;
+        if (!Array.isArray(slot.hand)) return false;
+        if (!Array.isArray(slot.deck)) return false;
+        if (typeof slot.hp !== "number") return false;
+    }
+    if (!Array.isArray(state.villainDeck) || !Array.isArray(state.enemyAllyDeck)) return false;
+    return true;
+}
 
 import {    CITY_EXIT_UPPER,
             CITY_5_UPPER,
@@ -719,11 +748,24 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         if (meta && typeof meta.version === "number") {
             gameState.serverVersion = meta.version;
         }
+        if (meta && meta.host) {
+            window.MULTI_HOST = meta.host;
+        }
+        if (meta && meta.heroOwners) {
+            window.MULTI_HERO_OWNERS = meta.heroOwners;
+        }
         // Replace local state with authoritative snapshot
         for (const k of Object.keys(gameState)) {
             delete gameState[k];
         }
         Object.assign(gameState, JSON.parse(JSON.stringify(stateFromServer)));
+        ensureHeroStateIntegrity(gameState);
+        if (!isStateComplete(gameState)) {
+            showBlockingBanner("Waiting for host to publish complete state...");
+            return;
+        }
+        const banner = document.getElementById("multi-blocking-banner");
+        if (banner) banner.remove();
         window.gameState = gameState;
         window.isMyTurn = () => isPlayersTurn(
             gameState,
@@ -741,6 +783,23 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         window.__SKIP_MP_SYNC = false;
     }
 });
+
+async function handleRemoteCommand(cmd) {
+    if (!cmd || !cmd.action) return;
+    if (typeof window === "undefined") return;
+    if (window.GAME_MODE !== "multi") return;
+    if (String(window.MULTI_PLAYER_ID) !== String(window.MULTI_HOST)) return; // only host processes
+
+    const action = cmd.action;
+    const payload = cmd.payload || {};
+    switch (action) {
+        case "endTurn":
+            await endCurrentHeroTurn(gameState);
+            break;
+        default:
+            console.warn("[multiplayer] Unhandled remote command", action);
+    }
+}
 
 (async () => {
     // Ensure both host and joiners point to the same multiplayer API unless explicitly overridden.
@@ -845,6 +904,7 @@ function ensureHeroStateIntegrity(state) {
 async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiBase }) {
     const base = apiBase || (typeof window !== "undefined" ? (window.MULTI_API_BASE || window.location.origin) : "");
     if (!base || !key || !state) return;
+    try { clearGameState(); } catch (_) {}
     ensureHeroStateIntegrity(state);
     try {
         const res = await fetch(`${base}/api/games/create`, {
@@ -929,34 +989,20 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
         showBlockingBanner("Waiting for host to publish game state...");
         for (let i = 0; i < retries; i++) {
             const snap = await fetchGameStateSnapshot(key);
-            if (snap?.state) {
-                const ok = await restoreFromExistingServerGame({ key, playerId, owners, host, apiBase });
-                if (ok && isStateComplete(gameState)) {
-                    const banner = document.getElementById("multi-blocking-banner");
-                    if (banner) banner.remove();
-                    return true;
+                if (snap?.state) {
+                    const ok = await restoreFromExistingServerGame({ key, playerId, owners, host, apiBase });
+                    if (ok && isStateComplete(gameState)) {
+                        const banner = document.getElementById("multi-blocking-banner");
+                        if (banner) banner.remove();
+                        if (String(window.MULTI_PLAYER_ID) === String(window.MULTI_HOST)) {
+                            startHostCommandLoop(async (cmd) => await handleRemoteCommand(cmd));
+                        }
+                        return true;
+                    }
                 }
+                await new Promise(r => setTimeout(r, delayMs));
             }
-            await new Promise(r => setTimeout(r, delayMs));
-        }
         return false;
-    }
-
-    function isStateComplete(state) {
-        if (!state) return false;
-        const heroIds = Array.isArray(state.heroes) ? state.heroes : [];
-        const overlordIds = Array.isArray(state.overlords) ? state.overlords : [];
-        if (!heroIds.length || !overlordIds.length) return false;
-        const hd = state.heroData || {};
-        for (const hid of heroIds) {
-            const slot = hd[String(hid)];
-            if (!slot) return false;
-            if (!Array.isArray(slot.hand)) return false;
-            if (!Array.isArray(slot.deck)) return false;
-            if (typeof slot.hp !== "number") return false;
-        }
-        if (!Array.isArray(state.villainDeck) || !Array.isArray(state.enemyAllyDeck)) return false;
-        return true;
     }
 
     async function syncFromServer(key, playerId, owners, host) {
@@ -1104,18 +1150,6 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
         window.MULTI_HERO_OWNERS = owners;
         window.MULTI_HOST = host;
         const isHostPlayer = window.GAME_MODE === "multi" && key && playerId && host && String(playerId) === String(host);
-        const showBlockingBanner = (msg) => {
-            const id = "multi-blocking-banner";
-            let b = document.getElementById(id);
-            if (!b) {
-                b = document.createElement("div");
-                b.id = id;
-                b.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff3860;color:#fff;padding:10px 18px;font-weight:800;z-index:40000;border:3px solid #000;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,0.4);";
-                document.body.appendChild(b);
-            }
-            b.textContent = msg;
-        };
-
         async function waitForServerSnapshotLoop() {
             showBlockingBanner("Waiting for host to start game...");
             for (let i = 0; i < 40; i++) {
@@ -1152,6 +1186,9 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                 try { resetTurnTimerForHero(gameState.turnTimerRemaining); } catch (_) {}
                 showRetreatButtonForCurrentHero(gameState);
                 initAndLogHeroIconAbilities(gameState);
+                if (String(window.MULTI_PLAYER_ID) === String(window.MULTI_HOST)) {
+                    startHostCommandLoop(async (cmd) => await handleRemoteCommand(cmd));
+                }
                 configureMultiplayer({
                     key,
                     playerId,
@@ -1183,6 +1220,9 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                     enabled: true,
                     versionFromServer: true
                 });
+                if (isHostPlayer) {
+                    startHostCommandLoop(async (cmd) => await handleRemoteCommand(cmd));
+                }
                 return;
             }
         }
@@ -3727,6 +3767,10 @@ window.addEventListener("load", () => {
     btn.style.display = "none";
 
     btn.addEventListener("click", () => {
+        if (window.GAME_MODE === "multi" && window.MULTI_HOST && String(window.MULTI_PLAYER_ID) !== String(window.MULTI_HOST)) {
+            console.warn("[start-game] Suppressed auto-start for non-host client.");
+            return;
+        }
         window.VILLAIN_DRAW_ENABLED = true;
         startHeroTurn(gameState);
         gameState.isGameStarted = true;
@@ -3736,7 +3780,7 @@ window.addEventListener("load", () => {
     const saved = loadGameState();
 
     // Auto start ONLY if new game or saved game never started
-    if (!saved || !saved.isGameStarted) {
+    if ((!saved || !saved.isGameStarted) && !(window.GAME_MODE === "multi" && window.MULTI_HOST && String(window.MULTI_PLAYER_ID) !== String(window.MULTI_HOST))) {
         setTimeout(() => btn.click(), 2000);
     }
 });
@@ -4394,12 +4438,19 @@ function restoreDropdownContentFromState(state = gameState) {
 export function establishEnemyAllyDeckFromLoadout(selectedData, state = gameState, opts = {}) {
     try {
         if (!state) return;
+        const isMulti = (typeof window !== "undefined" && window.GAME_MODE === "multi");
+        const isHost = !isMulti || !window.MULTI_HOST || String(window.MULTI_PLAYER_ID) === String(window.MULTI_HOST);
 
         // If a saved deck exists, reuse it unless explicitly rebuilding
         if (!opts.forceRebuild && Array.isArray(state.enemyAllyDeck) && state.enemyAllyDeck.length > 0) {
             console.log("Loaded existing enemy+ally deck:", state.enemyAllyDeck);
             window.ENEMY_ALLY_DECK = state.enemyAllyDeck;
             return state.enemyAllyDeck;
+        }
+
+        if (isMulti && !isHost) {
+            console.warn("[multiplayer] Non-host will not reshuffle enemy/ally deck; awaiting host snapshot.");
+            return state.enemyAllyDeck || null;
         }
 
         const enemyIds = selectedData?.enemies?.ids || [];
