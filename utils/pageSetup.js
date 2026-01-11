@@ -736,22 +736,31 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         window.MULTI_PLAYER_ID = queryPlayerEarly;
     }
 
-    const derivePlayerId = (data = {}) => {
+    const getOrCreatePlayerId = (data = {}) => {
+        // 1) explicit query param wins
         try {
             const params = new URLSearchParams(window.location.search);
             const queryPlayer = params.get("player");
             if (queryPlayer) return queryPlayer;
         } catch (_) {}
+        // 2) stored id in localStorage (sticky per browser)
+        if (typeof localStorage !== "undefined") {
+            const storedId = localStorage.getItem("multiPlayerId");
+            if (storedId) return storedId;
+        }
+        // 3) data-provided
         const fromData = data.playerId || data.sessionUsername || data.username;
         if (typeof fromData === "string" && fromData.length) return fromData;
         if (Array.isArray(data.playerUsernames) && data.playerUsernames.length) {
-            return data.playerUsernames[0];
+            const fallback = data.playerUsernames[0];
+            if (fallback) return fallback;
         }
+        // 4) generate a unique-ish id and persist
+        const gen = `Player-${Math.random().toString(36).slice(2, 8)}`;
         if (typeof localStorage !== "undefined") {
-            const cached = localStorage.getItem("playerName");
-            if (cached) return cached;
+            try { localStorage.setItem("multiPlayerId", gen); } catch (_) {}
         }
-        return "Player";
+        return gen;
     };
 
     const buildHeroOwners = (players = [], heroesByPlayer = []) => {
@@ -892,7 +901,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         if (window.GAME_MODE === "multi") {
             const players = Array.isArray(gameState.playerUsernames) ? gameState.playerUsernames : [];
             const owners = buildHeroOwners(players, gameState.heroesByPlayer || []);
-            const playerId = derivePlayerId({ ...saved, playerUsernames: players });
+            const playerId = getOrCreatePlayerId({ ...saved, playerUsernames: players });
             const key = saved.key || saved.joinKey || saved.gameKey || saved.lobbyKey || null;
             if (key) {
                 const restored = await restoreFromExistingServerGame({
@@ -1004,7 +1013,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
 
         const players = Array.isArray(selectedData.playerUsernames) ? selectedData.playerUsernames : ["Player"];
         const owners = buildHeroOwners(players, selectedData.heroesByPlayer || [selectedHeroes]);
-        const playerId = derivePlayerId(selectedData);
+        const playerId = getOrCreatePlayerId(selectedData);
         const key = selectedData.key || selectedData.joinKey || selectedData.gameKey || selectedData.lobbyKey || null;
         const host = selectedData.host || players[0] || null;
         const isHostPlayer = window.GAME_MODE === "multi" && key && playerId && host && String(playerId) === String(host);
