@@ -720,10 +720,15 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         refreshAbilityGameModeFlags(window.GAME_MODE);
         refreshTurnGameModeFlags(window.GAME_MODE);
         restoreDropdownContentFromState(gameState);
-        restoreCapturedBystandersIntoCardData(gameState);
-        restoreUIFromState(gameState);
+        // Avoid full UI restore on every poll; only run once per session
+        if (!gameState._mpInitialized) {
+            restoreCapturedBystandersIntoCardData(gameState);
+            restoreUIFromState(gameState);
+            gameState._mpInitialized = true;
+        }
         initializeTurnUI(gameState);
         showRetreatButtonForCurrentHero(gameState);
+        try { renderHeroHandBar(gameState); } catch (_) {}
         try { saveGameState(gameState); } catch (_) {}
     } finally {
         window.__SKIP_MP_SYNC = false;

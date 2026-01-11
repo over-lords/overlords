@@ -2825,10 +2825,17 @@ export function initializeTurnUI(gameState) {
     try { saveGameState(gameState); } catch (e) { console.warn("[initializeTurnUI] Failed to save state", e); }
 
     // 1. Find the active turn slot
-    const activeSlot = document.querySelector("#heroes-row .hero-slot.active-turn-slot");
+    let activeSlot = document.querySelector("#heroes-row .hero-slot.active-turn-slot");
     if (!activeSlot) {
-        endTurnBtn.style.display = "none";
-        return;
+        // Attempt to reapply turn styling if missing
+        const heroIds = gameState.heroes || [];
+        const idx = gameState.heroTurnIndex ?? 0;
+        try { currentTurn(idx, heroIds); } catch (_) {}
+        activeSlot = document.querySelector("#heroes-row .hero-slot.active-turn-slot");
+        if (!activeSlot) {
+            endTurnBtn.style.display = "none";
+            return;
+        }
     }
 
     // 2. Find its index in the heroes-row

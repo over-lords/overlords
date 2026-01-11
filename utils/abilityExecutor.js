@@ -8438,6 +8438,10 @@ async function maybeRunHeroIconDamageOptionals(heroId) {
 }
 
 function scanDeck(whichRaw, howMany = 1, selectedData = {}) {
+    if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(gameState)) {
+        console.warn("[scanDeck] Ignored scan; not your turn.");
+        return;
+    }
     const which = String(whichRaw || "").toLowerCase();
     const heroId = selectedData?.currentHeroId ?? null;
     const state = selectedData?.state || gameState;
