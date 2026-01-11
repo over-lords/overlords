@@ -813,6 +813,15 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         return true;
     }
 
+    async function waitForServerGame({ key, playerId, owners, host, apiBase, retries = 10, delayMs = 750 }) {
+        for (let i = 0; i < retries; i++) {
+            const restored = await restoreFromExistingServerGame({ key, playerId, owners, host, apiBase });
+            if (restored) return true;
+            await new Promise(r => setTimeout(r, delayMs));
+        }
+        return false;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const encryptedParam = params.get('data');
     const SECRET = 'GeimonHeroKey42';  // DO NOT FUCK THIS UP
@@ -960,15 +969,22 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         const playerId = derivePlayerId(selectedData);
         const key = selectedData.key || selectedData.joinKey || selectedData.gameKey || selectedData.lobbyKey || null;
         const host = selectedData.host || players[0] || null;
-        if (window.GAME_MODE === "multi" && key) {
-            const restored = await restoreFromExistingServerGame({
+        const isHostPlayer = window.GAME_MODE === "multi" && key && playerId && host && String(playerId) === String(host);
+        if (window.GAME_MODE === "multi" && key && !isHostPlayer) {
+            const restored = await waitForServerGame({
                 key,
                 playerId,
                 owners,
                 host,
-                apiBase: window.MULTI_API_BASE
+                apiBase: window.MULTI_API_BASE,
+                retries: 20,
+                delayMs: 750
             });
-            if (restored) return;
+            if (!restored) {
+                document.body.insertAdjacentHTML("beforeend", `<div style="color:red;font-weight:bold;">Waiting for host to start game...</div>`);
+                return;
+            }
+            return;
         }
 
         heroMap = new Map(heroes.map(h => [String(h.id), h]));
@@ -1023,23 +1039,25 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             window.MULTI_HERO_OWNERS = owners;
             window.MULTI_HOST = host;
             window.isMyTurn = () => isPlayersTurn(gameState, playerId, owners, host);
-            await seedMultiplayerGame({
-                key,
-                state: gameState,
-                heroOwners: owners,
-                host,
-                players,
-                apiBase: window.MULTI_API_BASE
-            });
-            configureMultiplayer({
-                key,
-                playerId,
-                host,
-                heroOwners: owners,
-                version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1,
-                apiBase: window.MULTI_API_BASE,
-                enabled: !!key && window.GAME_MODE === "multi"
-            });
+            if (isHostPlayer && key) {
+                await seedMultiplayerGame({
+                    key,
+                    state: gameState,
+                    heroOwners: owners,
+                    host,
+                    players,
+                    apiBase: window.MULTI_API_BASE
+                });
+                configureMultiplayer({
+                    key,
+                    playerId,
+                    host,
+                    heroOwners: owners,
+                    version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1,
+                    apiBase: window.MULTI_API_BASE,
+                    enabled: !!key && window.GAME_MODE === "multi"
+                });
+            }
         }
 
         console.log("=== Confirming hero decks after pageSetup ===");

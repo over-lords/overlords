@@ -235,7 +235,17 @@ app.post("/api/games/create", (req, res) => {
   pruneStaleGames();
   const now = Date.now();
   const playersSafe = Array.isArray(players) ? Array.from(new Set(players.filter(Boolean))) : [];
-  const ownersSafe = typeof heroOwners === "object" && heroOwners !== null ? heroOwners : {};
+  let ownersSafe = {};
+  if (heroOwners && typeof heroOwners === "object") ownersSafe = heroOwners;
+  if ((!ownersSafe || !Object.keys(ownersSafe).length) && Array.isArray(state.heroesByPlayer) && Array.isArray(state.playerUsernames)) {
+    const derived = {};
+    state.heroesByPlayer.forEach((heroList, idx) => {
+      const p = state.playerUsernames[idx];
+      if (!p) return;
+      derived[p] = Array.isArray(heroList) ? heroList.map(String) : [];
+    });
+    ownersSafe = derived;
+  }
   games.set(key, {
     key,
     state,
