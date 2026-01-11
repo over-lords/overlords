@@ -3115,9 +3115,16 @@ EFFECT_HANDLERS.teleportFoeElsewhere = function(args = [], card, selectedData = 
 
     const { entry, idx: fromIdx } = picked;
 
-    // send engaged hero back to HQ (lower slot is +1)
+    // Move engaged hero with the foe if possible; otherwise retreat them
     const lowerIdx = fromIdx + 1;
-    if (Array.isArray(s.heroes)) {
+    const engagedHeroId = Array.isArray(s.heroes)
+        ? s.heroes.find(hid => Number(s.heroData?.[hid]?.cityIndex) === lowerIdx)
+        : null;
+    if (engagedHeroId) {
+        const heroState = s.heroData[engagedHeroId];
+        heroState.cityIndex = destIdx + 1;
+        appendGameLogEntry(`${heroes.find(h => String(h.id) === String(engagedHeroId))?.name || "Hero"} was teleported with their foe.`, s);
+    } else if (Array.isArray(s.heroes)) {
         s.heroes.forEach(hid => {
             const hState = s.heroData?.[hid];
             if (hState && Number(hState.cityIndex) === lowerIdx) {

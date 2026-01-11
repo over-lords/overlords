@@ -2564,6 +2564,17 @@ export async function shoveUpper(newCardId) {
             if (Array.isArray(gameState.cities)) {
                 gameState.cities[fromIdx] = null;
             }
+            // If a hero was engaged under this foe, send them back to HQ
+            if (lowerMap.hasOwnProperty(fromIdx)) {
+                const fromLower = fromIdx + 1;
+                const heroIds = gameState.heroes || [];
+                heroIds.forEach(hid => {
+                    const hState = gameState.heroData?.[hid];
+                    if (hState && hState.cityIndex === fromLower) {
+                        hState.cityIndex = null;
+                    }
+                });
+            }
 
             continue;
         } else {
@@ -2795,6 +2806,8 @@ export function initializeTurnUI(gameState) {
         if (standardActivateBtn) standardActivateBtn.style.display = "flex";
         if (faceOverlordBtn) faceOverlordBtn.style.display = "";
         if (iconEffectsBtn) iconEffectsBtn.style.display = "";
+        // Only show end turn to the active owner/host
+        endTurnBtn.style.display = "flex";
         document.body.classList.remove("not-your-turn");
         try {
             const activateBtns = document.querySelectorAll(".hero-hand-activate-btn");
@@ -3070,6 +3083,14 @@ export async function endCurrentHeroTurn(gameState) {
     try { await runTurnEndEngagedTriggers(heroId, gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndEngaged triggers failed", e); }
     try { await runTurnEndNotEngagedTriggers(gameState); } catch (e) { console.warn("[endCurrentHeroTurn] turnEndNotEngaged triggers failed", e); }
     try { triggerRuleEffects("turnEnd", { state: gameState }); } catch (e) { console.warn("[endCurrentHeroTurn] turnEnd triggers failed", e); }
+
+    // Reset timer for next hero turn (host will push this to clients in multiplayer)
+    if (turnTimerInterval) clearInterval(turnTimerInterval);
+    const defaultTimer = Number.isFinite(gameState.turnTimerDefault) ? gameState.turnTimerDefault : gameState.turnTimerRemaining;
+    if (Number.isFinite(defaultTimer)) {
+        gameState.turnTimerRemaining = defaultTimer;
+        gameState.turnTimerDeadline = Date.now() + defaultTimer * 1000;
+    }
 
     if (typeof heroState.cityIndex === "number") {
 

@@ -890,6 +890,11 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
             establishEnemyAllyDeckFromLoadout(null, gameState);
             restoreUIFromState(gameState);
             restoreCapturedBystandersIntoCardData(gameState);
+            ensureHeroStateIntegrity(gameState);
+            if (!isStateComplete(gameState)) {
+                console.warn("[multiplayer] Incomplete restored state; waiting for host sync");
+                return false;
+            }
             initializeTurnUI(gameState);
             showRetreatButtonForCurrentHero(gameState);
             saveGameState(gameState);
@@ -920,10 +925,47 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
         return false;
     }
 
+    async function waitForCompleteSnapshot({ key, playerId, owners, host, apiBase, retries = 20, delayMs = 750 }) {
+        showBlockingBanner("Waiting for host to publish game state...");
+        for (let i = 0; i < retries; i++) {
+            const snap = await fetchGameStateSnapshot(key);
+            if (snap?.state) {
+                const ok = await restoreFromExistingServerGame({ key, playerId, owners, host, apiBase });
+                if (ok && isStateComplete(gameState)) {
+                    const banner = document.getElementById("multi-blocking-banner");
+                    if (banner) banner.remove();
+                    return true;
+                }
+            }
+            await new Promise(r => setTimeout(r, delayMs));
+        }
+        return false;
+    }
+
+    function isStateComplete(state) {
+        if (!state) return false;
+        const heroIds = Array.isArray(state.heroes) ? state.heroes : [];
+        const overlordIds = Array.isArray(state.overlords) ? state.overlords : [];
+        if (!heroIds.length || !overlordIds.length) return false;
+        const hd = state.heroData || {};
+        for (const hid of heroIds) {
+            const slot = hd[String(hid)];
+            if (!slot) return false;
+            if (!Array.isArray(slot.hand)) return false;
+            if (!Array.isArray(slot.deck)) return false;
+            if (typeof slot.hp !== "number") return false;
+        }
+        if (!Array.isArray(state.villainDeck) || !Array.isArray(state.enemyAllyDeck)) return false;
+        return true;
+    }
+
     async function syncFromServer(key, playerId, owners, host) {
         if (!key) return;
         const snap = await fetchGameStateSnapshot(key);
-        if (!snap || !snap.state) return;
+        if (!snap || !snap.state) {
+            showBlockingBanner("Waiting for host to publish game state...");
+            return;
+        }
         const heroOwners = snap.heroOwners || owners || {};
         const version = typeof snap.version === "number" ? snap.version : 1;
         try {
@@ -936,6 +978,11 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
             window.MULTI_HOST = host || window.MULTI_HOST;
             window.isMyTurn = () => isPlayersTurn(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
             ensureHeroStateIntegrity(gameState);
+            if (!isStateComplete(gameState)) {
+                console.warn("[multiplayer] Incomplete state from server; forcing resync");
+                await forceServerResync(key);
+                return;
+            }
             saveGameState(gameState);
         } finally {
             window.__SKIP_MP_SYNC = false;
@@ -1216,7 +1263,8 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                 });
                 setMultiplayerVersion(typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1);
                 if (key) {
-                    await syncFromServer(key, playerId, owners, host);
+                    const ok = await waitForCompleteSnapshot({ key, playerId, owners, host, apiBase: window.MULTI_API_BASE });
+                    if (!ok) return;
                 }
             } else if (key) {
                 configureMultiplayer({
@@ -1228,7 +1276,8 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                     enabled: !!key && window.GAME_MODE === "multi",
                     versionFromServer: false
                 });
-                await syncFromServer(key, playerId, owners, host);
+                const ok = await waitForCompleteSnapshot({ key, playerId, owners, host, apiBase: window.MULTI_API_BASE });
+                if (!ok) return;
             }
         }
 
