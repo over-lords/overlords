@@ -19,7 +19,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
-import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion } from "./multiplayer.js";
+import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady } from "./multiplayer.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -734,6 +734,9 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
     const queryPlayerEarly = paramsEarly ? paramsEarly.get("player") : null;
     if (queryPlayerEarly && typeof window !== "undefined") {
         window.MULTI_PLAYER_ID = queryPlayerEarly;
+    } else if (typeof window !== "undefined") {
+        const storedId = typeof localStorage !== "undefined" ? localStorage.getItem("multiPlayerId") : null;
+        if (storedId) window.MULTI_PLAYER_ID = storedId;
     }
 
     const getOrCreatePlayerId = (data = {}) => {
@@ -867,6 +870,9 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             window.__SKIP_MP_SYNC = false;
         }
         setMultiplayerVersion(version);
+        if (typeof window !== "undefined") {
+            window.isMultiplayerReady = isMultiplayerReady;
+        }
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -1082,7 +1088,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         window.gameState = gameState;
 
         if (window.GAME_MODE === "multi") {
-            window.MULTI_PLAYER_ID = playerId;
+            window.MULTI_PLAYER_ID = playerId || window.MULTI_PLAYER_ID;
             window.MULTI_HERO_OWNERS = owners;
             window.MULTI_HOST = host;
             window.isMyTurn = () => isPlayersTurn(gameState, playerId, owners, host);

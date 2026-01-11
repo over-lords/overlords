@@ -8,7 +8,8 @@ let ctx = {
   heroOwners: {},
   version: 0,
   apiBase: null,
-  enabled: false
+  enabled: false,
+  ready: false
 };
 
 let pollTimer = null;
@@ -62,6 +63,7 @@ export function isPlayersTurn(state, playerId, heroOwners = {}, host = null) {
 function applyIncomingState(state, version, heroOwners) {
   if (typeof version === "number") {
     ctx.version = version;
+    ctx.ready = true;
     if (typeof window !== "undefined" && window.gameState) {
       try { window.gameState.serverVersion = version; } catch (_) {}
     }
@@ -127,9 +129,12 @@ export function configureMultiplayer(options = {}) {
     ...ctx,
     ...options,
     heroOwners: options.heroOwners || ctx.heroOwners || {},
-    version: typeof options.version === "number" ? options.version : ctx.version || 0,
+    version: typeof options.version === "number"
+      ? options.version
+      : (ctx.version != null ? ctx.version : ((typeof window !== "undefined" && window.gameState?.serverVersion != null) ? window.gameState.serverVersion : 0)),
     enabled: options.enabled !== false
   };
+  ctx.ready = typeof ctx.version === "number";
   if (!ctx.enabled) {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;
@@ -145,11 +150,20 @@ export function setOnStateUpdated(handler) {
 export function setMultiplayerVersion(version) {
   if (typeof version === "number") {
     ctx.version = version;
+    ctx.ready = true;
   }
+}
+
+export function isMultiplayerReady() {
+  return !!ctx.ready;
 }
 
 export async function pushGameState(state) {
   if (!ctx.enabled || !ctx.key) return null;
+  if (!ctx.ready) {
+    console.warn("[multiplayer] Suppressing push because sync not ready.");
+    return null;
+  }
   const base = apiBase();
   if (!base) return null;
   const body = {
@@ -177,11 +191,11 @@ export async function pushGameState(state) {
           }
         }
         applyIncomingState(json.state, newVersion, json.heroOwners);
-      } else {
-        const snap = await fetchGameStateSnapshot(ctx.key);
-        if (snap?.state) {
-          applyIncomingState(snap.state, snap.version, snap.heroOwners);
-        }
+        return null;
+      }
+      const snap = await fetchGameStateSnapshot(ctx.key);
+      if (snap?.state) {
+        applyIncomingState(snap.state, snap.version, snap.heroOwners);
       }
       console.warn("[multiplayer] Push failed", json || res.statusText);
       return null;

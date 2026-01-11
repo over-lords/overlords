@@ -16,6 +16,11 @@ export function saveGameState(state) {
         const mode = (state && state.gameMode) || (typeof window !== "undefined" ? window.GAME_MODE : "single");
         const skip = (typeof window !== "undefined" && window.__SKIP_MP_SYNC) || false;
         if (mode === "multi" && !skip) {
+            const ready = (typeof window !== "undefined" && window.isMultiplayerReady && window.isMultiplayerReady());
+            if (!ready) {
+                console.warn("[multiplayer] Ignored save attempt because sync is not ready.");
+                return;
+            }
             const playerId = (typeof window !== "undefined" && window.MULTI_PLAYER_ID) || null;
             const owners = (typeof window !== "undefined" && window.MULTI_HERO_OWNERS) || {};
             const host = (typeof window !== "undefined" && window.MULTI_HOST) || null;

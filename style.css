@@ -1047,6 +1047,10 @@ main-content,
   cursor: pointer;
 }
 
+body.not-your-turn #standard-activate-btn {
+  display: none !important;
+}
+
 @keyframes standardTurnGlow {
     0% {
         box-shadow:

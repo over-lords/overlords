@@ -2787,6 +2787,7 @@ export function initializeTurnUI(gameState) {
     const standardActivateBtn = document.getElementById("standard-activate-btn");
     const standardActivateInner = document.getElementById("standard-ability-activate");
     const faceOverlordBtn = document.getElementById("face-overlord-button");
+    const heroSlots = document.querySelectorAll("#heroes-row .hero-slot");
     if (!canAct) {
         endTurnBtn.style.display = "none";
         if (standardActivateBtn) standardActivateBtn.style.display = "none";
@@ -2794,6 +2795,7 @@ export function initializeTurnUI(gameState) {
         if (faceOverlordBtn) faceOverlordBtn.style.display = "none";
         refreshAllCityOutlines(gameState, { clearOnly: true });
         document.body.classList.add("not-your-turn");
+        heroSlots.forEach(slot => slot.classList.remove("active-turn-slot"));
     } else {
         if (standardActivateBtn) standardActivateBtn.style.display = "flex";
         if (faceOverlordBtn) faceOverlordBtn.style.display = "";
