@@ -140,7 +140,9 @@ export async function pushGameState(state) {
     if (!res.ok) {
       if (res.status === 409 && json?.state) {
         // Stale client; accept server state
-        applyIncomingState(json.state, json.expected ?? json.version, json.heroOwners);
+        const newVersion = json.expected ?? json.version;
+        if (typeof newVersion === "number") ctx.version = newVersion;
+        applyIncomingState(json.state, newVersion, json.heroOwners);
       } else {
         const snap = await fetchGameStateSnapshot(ctx.key);
         if (snap?.state) {

@@ -4162,7 +4162,7 @@ export const villains = [
     ],
     abilitiesNamePrint: [
       {
-        text: `!tropelet`
+        text: `!tropeleT`
       },
       {
         text: `Reward!`

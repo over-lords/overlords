@@ -703,6 +703,10 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         if (meta && meta.heroOwners) {
             window.MULTI_HERO_OWNERS = meta.heroOwners;
         }
+        if (!window.MULTI_PLAYER_ID) {
+            const pid = new URLSearchParams(window.location.search).get("player");
+            if (pid) window.MULTI_PLAYER_ID = pid;
+        }
         Object.assign(gameState, stateFromServer);
         window.gameState = gameState;
         // Update mode flags and UI when state changes remotely
@@ -723,6 +727,13 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
     // Ensure both host and joiners point to the same multiplayer API unless explicitly overridden.
     if (typeof window !== "undefined" && !window.MULTI_API_BASE) {
         window.MULTI_API_BASE = "https://overlords-app-43e6e621c6d2.herokuapp.com";
+    }
+
+    // Capture playerId early so all gates have it
+    const paramsEarly = (typeof window !== "undefined") ? new URLSearchParams(window.location.search) : null;
+    const queryPlayerEarly = paramsEarly ? paramsEarly.get("player") : null;
+    if (queryPlayerEarly && typeof window !== "undefined") {
+        window.MULTI_PLAYER_ID = queryPlayerEarly;
     }
 
     const derivePlayerId = (data = {}) => {
