@@ -153,6 +153,14 @@ export function refreshGameModeFlags(mode = window.GAME_MODE) {
     isMultiplayer = (window.GAME_MODE === "multi");
 }
 
+function canActThisTurn(state = window.gameState || gameState) {
+    if (isSinglePlayer) return true;
+    if (typeof window !== "undefined" && typeof window.isMyTurn === "function") {
+        return !!window.isMyTurn(state);
+    }
+    return false;
+}
+
 import { heroes } from '../data/faceCards.js';
 import { heroCards } from '../data/heroCards.js';
 
@@ -2764,6 +2772,25 @@ export function initializeTurnUI(gameState) {
     const endTurnBtn = document.getElementById("end-turn-button");
     if (!endTurnBtn) return;
 
+    const canAct = canActThisTurn(gameState);
+    const standardActivateBtn = document.getElementById("standard-activate-btn");
+    const standardActivateInner = document.getElementById("standard-ability-activate");
+    if (!canAct) {
+        endTurnBtn.style.display = "none";
+        if (standardActivateBtn) standardActivateBtn.style.display = "none";
+        if (standardActivateInner) standardActivateInner.disabled = true;
+        refreshAllCityOutlines(gameState, { clearOnly: true });
+        document.body.classList.add("not-your-turn");
+    } else {
+        if (standardActivateBtn) standardActivateBtn.style.display = "flex";
+        document.body.classList.remove("not-your-turn");
+    }
+
+    try {
+        const citySlots = document.querySelectorAll(".city-slot");
+        citySlots.forEach(slot => { slot.style.pointerEvents = canAct ? "auto" : "none"; });
+    } catch (_) {}
+
     const topVillainBtn = document.getElementById("top-villain-button");
     if (topVillainBtn) {
         topVillainBtn.style.display = gameState.revealedTopVillain ? "flex" : "none";
@@ -4104,6 +4131,10 @@ export function checkGameEndConditions(state) {
 }
 
 export async function startTravelPrompt(gameState) {
+    if (!canActThisTurn(gameState)) {
+        refreshAllCityOutlines(gameState, { clearOnly: true });
+        return;
+    }
     if (gameState?.gameOver) {
         console.log("[TRAVEL] Game is over; suppressing 'Travel Where?' prompt.");
         return;
@@ -4213,6 +4244,11 @@ export function showRetreatButtonForCurrentHero(gameState) {
     const btn = document.getElementById("retreat-button");
     if (!btn) {
         console.warn("[RETREAT] retreat-button element not found in DOM.");
+        return;
+    }
+
+    if (!canActThisTurn(gameState)) {
+        btn.style.display = "none";
         return;
     }
 
@@ -4884,7 +4920,7 @@ function computeHeroTravelLegalTargets(gameState, heroId) {
 }
 
 function refreshAllCityOutlines(gameState, options = {}) {
-    const clearOnly = options.clearOnly === true;
+    const clearOnly = options.clearOnly === true || !canActThisTurn(gameState);
 
     const citySlots = document.querySelectorAll(".city-slot");
     if (!citySlots.length) return;

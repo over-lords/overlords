@@ -1059,9 +1059,9 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         saveGameState(gameState);
 
         const overlordMap = new Map(overlords.map(o => [String(o.id), o]));
+        // Preserve the user-selected order of overlords; do not resort.
         const overlordList = selectedOverlords
-            .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' })
-            .sort((a, b) => a.level - b.level || a.hp - b.hp);
+            .map(id => overlordMap.get(String(id)) || { name: `Unknown (ID ${id})`, hp: '?', level: '?' });
 
         if (overlordList.length > 0) {
             setCurrentOverlord(overlordList[0]); // run setCurrentOverlord(newOverlordObject); whenever a takeover happens (from villains or overlord stack)
@@ -3878,6 +3878,10 @@ export function renderHeroHandBar(state) {
             if (shouldShowActivateButton) {
                 activateBtn.className = "hero-hand-activate-btn";
                 activateBtn.type = "button";
+                const canActNow =
+                    window.GAME_MODE === "single"
+                        ? true
+                        : (typeof window.isMyTurn === "function" ? !!window.isMyTurn(state) : true);
 
                 const icon = document.createElement("img");
                 if (discardActive) {
@@ -3889,8 +3893,16 @@ export function renderHeroHandBar(state) {
                 }
                 activateBtn.appendChild(icon);
 
+                if (!canActNow && window.GAME_MODE === "multi") {
+                    activateBtn.style.display = "none";
+                }
+
                 activateBtn.addEventListener("click", (e) => {
                     e.stopPropagation();
+
+                    if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(state)) {
+                        return;
+                    }
 
                     const cardName = cardData?.name || `Card ${cardId}`;
 

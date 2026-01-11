@@ -273,8 +273,7 @@ app.post("/api/games/apply", (req, res) => {
     key,
     playerId,
     clientVersion,
-    state,
-    heroOwners
+    state
   } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   if (!playerId || typeof playerId !== "string") return res.status(400).json({ error: "playerId is required" });
@@ -288,14 +287,13 @@ app.post("/api/games/apply", (req, res) => {
   }
 
   const activeHeroId = getActiveHeroId(game.state);
-  const heroOwnersSafe = typeof heroOwners === "object" && heroOwners !== null ? heroOwners : game.heroOwners || {};
+  const heroOwnersSafe = game.heroOwners || {};
   const owns = playerOwnsHero(playerId, activeHeroId, heroOwnersSafe, game.host);
   if (activeHeroId != null && !owns) {
     return res.status(403).json({ error: "not your turn" });
   }
 
   game.state = state;
-  game.heroOwners = heroOwnersSafe;
   game.version = game.version + 1;
   game.updatedAt = Date.now();
   game.lastSeenAt = Date.now();
