@@ -787,7 +787,23 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
 
     if (!tokens.length) return 0;
 
-    const includeSelf = tokens.includes("all") || tokens.includes("full");
+    // Support legacy callers that passed "full"/"all" as the heroId arg to include self
+    let includeSelf = tokens.includes("all") || tokens.includes("full");
+    if (typeof heroId === "string") {
+        const lower = heroId.toLowerCase();
+        if (lower === "all" || lower === "full") {
+            includeSelf = true;
+            heroId = null;
+        }
+    }
+
+    // If no heroId was provided, default to the current turn hero
+    if (heroId == null) {
+        const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
+        const heroIdsList = Array.isArray(s.heroes) ? s.heroes : [];
+        heroId = heroIdsList[idx] ?? null;
+    }
+
     const excludeSelf = !includeSelf;
 
     // If any specific team token is suppressed, bail out
@@ -808,13 +824,14 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
         const alive = hState ? (typeof hState.hp === "number" ? hState.hp > 0 : true) : true;
         if (!alive) return;
 
-    const matchesAny = tokens.some(tok => tok === "all" ? true : heroMatchesTeam(hObj, tok));
-    if (matchesAny) count += 1;
-});
+        const matchesAny = tokens.some(tok => tok === "all" ? true : heroMatchesTeam(hObj, tok));
+        if (matchesAny) count += 1;
+    });
 
-const label = tokens.includes("all") ? "all heroes" : `Teams ${tokens.join(" & ")}`;
-console.log(`[getActiveTeamCount] ${label} active count (excluding hero ${heroId ?? "n/a"}): ${count}`);
-return count;
+    const label = tokens.includes("all") ? "all heroes" : `Teams ${tokens.join(" & ")}`;
+    const logId = heroId ?? "n/a";
+    console.log(`[getActiveTeamCount] ${label} active count (excluding hero ${excludeSelf ? logId : "none"}): ${count}`);
+    return count;
 }
 
 function getKOdTeamCount(teamName, heroId = null, state = gameState) {
