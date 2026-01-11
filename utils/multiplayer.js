@@ -133,7 +133,8 @@ async function pollOnce() {
   const base = apiBase();
   if (!base) return;
   try {
-    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/poll?since=${encodeURIComponent(ctx.version)}`);
+    const player = ctx.playerId || ctx.host || null;
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/poll?since=${encodeURIComponent(ctx.version)}${player ? `&player=${encodeURIComponent(player)}` : ""}`);
     const json = await res.json();
     if (!res.ok) {
       console.warn("[multiplayer] Poll failed", json || res.statusText);
@@ -159,7 +160,9 @@ export async function fetchGameStateSnapshot(key) {
   const base = apiBase();
   if (!base || !key) return null;
   try {
-    const res = await fetch(`${base}/api/games/${encodeURIComponent(key)}/state`);
+    const ctx = getMultiplayerContext ? getMultiplayerContext() : null;
+    const player = ctx?.playerId || ctx?.host || null;
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(key)}/state${player ? `?player=${encodeURIComponent(player)}` : ""}`);
     const json = await res.json();
     if (!res.ok) return null;
     return json;
@@ -247,11 +250,11 @@ export async function pushGameState(state) {
   // Ensure pointers do not rewind
   if (ctx.lastState) {
     const ptrChecks = [
-      { prev: ctx.lastState.villainDeckPointer, next: state.villainDeckPointer, len: state.villainDeck?.length, name: "villain deck" },
-      { prev: ctx.lastState.enemyAllyDeckPointer, next: state.enemyAllyDeckPointer, len: state.enemyAllyDeck?.length, name: "enemy/ally deck" },
-      { prev: ctx.lastState.bystanderDeckPointer, next: state.bystanderDeckPointer, len: state.bystanderDeck?.length, name: "bystander deck" },
-      { prev: ctx.lastState.mightDeckPointer, next: state.mightDeckPointer, len: state.mightDeck?.length, name: "might deck" },
-      { prev: ctx.lastState.scenarioDeckPointer, next: state.scenarioDeckPointer, len: state.scenarioDeck?.length, name: "scenario deck" }
+      { field: "villainDeckPointer", prev: ctx.lastState.villainDeckPointer, next: state.villainDeckPointer, len: state.villainDeck?.length, name: "villain deck" },
+      { field: "enemyAllyDeckPointer", prev: ctx.lastState.enemyAllyDeckPointer, next: state.enemyAllyDeckPointer, len: state.enemyAllyDeck?.length, name: "enemy/ally deck" },
+      { field: "bystanderDeckPointer", prev: ctx.lastState.bystanderDeckPointer, next: state.bystanderDeckPointer, len: state.bystanderDeck?.length, name: "bystander deck" },
+      { field: "mightDeckPointer", prev: ctx.lastState.mightDeckPointer, next: state.mightDeckPointer, len: state.mightDeck?.length, name: "might deck" },
+      { field: "scenarioDeckPointer", prev: ctx.lastState.scenarioDeckPointer, next: state.scenarioDeckPointer, len: state.scenarioDeck?.length, name: "scenario deck" }
     ];
     for (const p of ptrChecks) {
       const prevVal = Number.isFinite(p.prev) ? p.prev : 0;
@@ -259,11 +262,11 @@ export async function pushGameState(state) {
       const len = Number.isFinite(p.len) ? p.len : null;
       if (nextVal < prevVal) {
         console.warn(`[multiplayer] Pointer rewind detected on ${p.name}; clamping to prev (${prevVal}).`);
-        state[`${p.name.replace(/ /g, "")}Pointer`] = prevVal;
+        state[p.field] = prevVal;
       }
       if (len != null && nextVal > len) {
         console.warn(`[multiplayer] Pointer overflow detected on ${p.name}; clamping to len (${len}).`);
-        state[`${p.name.replace(/ /g, "")}Pointer`] = len;
+        state[p.field] = len;
       }
     }
   }

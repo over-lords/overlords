@@ -18,6 +18,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
+import { sendGameHeartbeat } from "./heartbeat.js";
 import { gameState } from "../data/gameState.js";
 import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady, playerOwnsHero, getMultiplayerContext, forceServerResync } from "./multiplayer.js";
 

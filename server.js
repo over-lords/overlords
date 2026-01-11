@@ -11,6 +11,7 @@ const LOBBY_STALE_MS = 1000 * 2; // 2 seconds without lobby heartbeat
 const LOBBY_PLAYER_STALE_MS = 1000 * 2; // 2 seconds without player poll/heartbeat
 const GAME_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
 const GAME_STALE_MS = 1000 * 2; // 2 seconds without poll/heartbeat
+const GAME_PLAYER_STALE_MS = 1000 * 15; // 15 seconds without poll/heartbeat
 const COMMAND_TTL_MS = 1000 * 60 * 10; // keep queued commands for up to 10 minutes
 const DEFAULT_POLL_MS = 1000; // default client poll cadence
 
@@ -138,6 +139,62 @@ function reassignHeroesToHost(game) {
   game.heroOwners = owners;
   if (reassigned.length) {
     console.log(`[games] Reassigned ${reassigned.length} heroes to host ${host} due to missing ownership.`);
+  }
+}
+
+function markPlayerSeen(game, playerId, now = Date.now()) {
+  if (!playerId) return;
+  if (!game.playerLastSeen) game.playerLastSeen = {};
+  game.playerLastSeen[playerId] = now;
+  if (Array.isArray(game.players) && !game.players.includes(playerId)) {
+    game.players.push(playerId);
+  }
+}
+
+function handleStalePlayers(game, now = Date.now()) {
+  if (!game) return;
+  if (!game.playerLastSeen) game.playerLastSeen = {};
+
+  const activePlayers = [];
+  const stalePlayers = [];
+  Object.entries(game.playerLastSeen).forEach(([pid, ts]) => {
+    if (ts && now - ts <= GAME_PLAYER_STALE_MS) activePlayers.push(pid);
+    else stalePlayers.push(pid);
+  });
+
+  const prevHost = game.host;
+  const hostStale = prevHost && (!game.playerLastSeen[prevHost] || now - game.playerLastSeen[prevHost] > GAME_PLAYER_STALE_MS);
+
+  if (hostStale) {
+    const candidate = activePlayers.find(p => p !== prevHost) || null;
+    if (candidate) {
+      game.host = candidate;
+      console.log(`[games] Host ${prevHost} stale; promoted ${candidate} for game ${game.key}`);
+      // Transfer host's heroes to new host
+      if (game.heroOwners && game.heroOwners[prevHost]) {
+        const list = game.heroOwners[prevHost] || [];
+        delete game.heroOwners[prevHost];
+        if (!game.heroOwners[candidate]) game.heroOwners[candidate] = [];
+        list.forEach(hid => {
+          if (!game.heroOwners[candidate].includes(hid)) game.heroOwners[candidate].push(hid);
+        });
+      }
+    }
+  }
+
+  // Reassign stale non-host heroes to current host
+  if (game.heroOwners && game.host) {
+    stalePlayers.forEach(pid => {
+      if (pid === game.host) return;
+      const list = game.heroOwners[pid];
+      if (!Array.isArray(list)) return;
+      if (!game.heroOwners[game.host]) game.heroOwners[game.host] = [];
+      list.forEach(hid => {
+        if (!game.heroOwners[game.host].includes(hid)) game.heroOwners[game.host].push(hid);
+      });
+      delete game.heroOwners[pid];
+      console.log(`[games] Reassigned heroes from stale player ${pid} to host ${game.host} for game ${game.key}`);
+    });
   }
 }
 
@@ -298,6 +355,7 @@ app.post("/api/games/create", (req, res) => {
     heroOwners: ownersSafe,
     host: host || null,
     players: playersSafe,
+    playerLastSeen: playersSafe.reduce((acc, p) => { acc[p] = now; return acc; }, {}),
     commands: [],
     version: 1,
     // Persist initial deck seeds for validation (host-only seeding)
@@ -321,6 +379,12 @@ app.get("/api/games/:key/state", (req, res) => {
   const key = req.params.key;
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
+  const playerParam = req.query.player || null;
+  const now = Date.now();
+  if (playerParam) {
+    markPlayerSeen(game, playerParam, now);
+    handleStalePlayers(game, now);
+  }
   game.lastSeenAt = Date.now();
   return res.json({
     ok: true,
@@ -343,6 +407,10 @@ app.post("/api/games/:key/command", (req, res) => {
   pruneStaleGames();
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
+
+  const now = Date.now();
+  markPlayerSeen(game, playerId, now);
+  handleStalePlayers(game, now);
 
   // If host missing, promote this player to host
   if (!game.host) {
@@ -379,6 +447,12 @@ app.get("/api/games/:key/commands", (req, res) => {
   pruneStaleGames();
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
+
+  const now = Date.now();
+  if (playerId) {
+    markPlayerSeen(game, playerId, now);
+    handleStalePlayers(game, now);
+  }
 
   // Promote new host if missing
   if (!game.host && playerId) {
@@ -418,6 +492,10 @@ app.post("/api/games/apply", (req, res) => {
   pruneStaleGames();
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
+
+  const now = Date.now();
+  markPlayerSeen(game, playerId, now);
+  handleStalePlayers(game, now);
 
   // Promote host if missing
   if (!game.host) {
@@ -546,8 +624,14 @@ app.get("/api/games/:key/poll", (req, res) => {
   pruneStaleGames();
   const key = req.params.key;
   const since = Number(req.query.since || "0");
+  const player = req.query.player || null;
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
+  const now = Date.now();
+  if (player) {
+    markPlayerSeen(game, player, now);
+    handleStalePlayers(game, now);
+  }
   game.lastSeenAt = Date.now();
   if (Number.isFinite(since) && since < game.version) {
     return res.json({
@@ -561,6 +645,21 @@ app.get("/api/games/:key/poll", (req, res) => {
     });
   }
   return res.json({ ok: true, noop: true, version: game.version, host: game.host });
+});
+
+// Heartbeat to keep game presence alive and trigger host promotion/hero reassignment
+app.post("/api/games/heartbeat", (req, res) => {
+  const { key, playerId } = req.body || {};
+  if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
+  if (!playerId || typeof playerId !== "string") return res.status(400).json({ error: "playerId is required" });
+  pruneStaleGames();
+  const game = games.get(key);
+  if (!game) return res.status(404).json({ error: "Game not found" });
+  const now = Date.now();
+  markPlayerSeen(game, playerId, now);
+  handleStalePlayers(game, now);
+  game.lastSeenAt = now;
+  return res.json({ ok: true, host: game.host });
 });
 
 // Basic health check
