@@ -29,20 +29,43 @@ function getActiveHeroId(state) {
   return heroes[idx] != null ? heroes[idx] : null;
 }
 
-export function playerOwnsHero(playerId, heroId, heroOwners = {}, host = null) {
-  if (!playerId) return false;
-  if (host && playerId === host) return true;
-  const owned = heroOwners[playerId] || heroOwners[String(playerId)];
+function resolveHeroOwners(heroOwners = {}, state = {}) {
+  if (heroOwners && Object.keys(heroOwners).length) return heroOwners;
+  const players = Array.isArray(state.playerUsernames) ? state.playerUsernames : [];
+  const heroesByPlayer = Array.isArray(state.heroesByPlayer) ? state.heroesByPlayer : [];
+  const derived = {};
+  players.forEach((p, idx) => {
+    if (!p) return;
+    const list = heroesByPlayer[idx];
+    if (Array.isArray(list)) {
+      derived[p] = list.map(String);
+    }
+  });
+  return derived;
+}
+
+export function playerOwnsHero(playerId, heroId, heroOwners = {}, host = null, state = {}) {
+  const owners = resolveHeroOwners(heroOwners, state);
+  const pid = playerId || (Array.isArray(state.playerUsernames) ? state.playerUsernames[0] : null);
+  if (!pid) return false;
+  if (host && pid === host) return true;
+  const owned = owners[pid] || owners[String(pid)];
   return Array.isArray(owned) && owned.some(h => String(h) === String(heroId));
 }
 
 export function isPlayersTurn(state, playerId, heroOwners = {}, host = null) {
   const heroId = getActiveHeroId(state);
   if (heroId == null) return false;
-  return playerOwnsHero(playerId, heroId, heroOwners, host);
+  return playerOwnsHero(playerId, heroId, heroOwners, host, state);
 }
 
 function applyIncomingState(state, version, heroOwners) {
+  if (typeof version === "number") {
+    ctx.version = version;
+    if (typeof window !== "undefined" && window.gameState) {
+      try { window.gameState.serverVersion = version; } catch (_) {}
+    }
+  }
   if (version != null) ctx.version = version;
   if (heroOwners && typeof heroOwners === "object") {
     ctx.heroOwners = heroOwners;

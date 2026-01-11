@@ -385,6 +385,7 @@ async function runStandardAbility(option, heroId, state = gameState) {
 }
 
 function openStandardAbilityMenu(heroId, state = gameState) {
+    if (!canActThisTurn(state)) return;
     const overlay = document.getElementById("standard-ability-overlay");
     const optionsBox = document.getElementById("standard-ability-options");
     const msg = document.getElementById("standard-ability-message");
