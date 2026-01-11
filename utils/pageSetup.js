@@ -827,6 +827,27 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         return false;
     }
 
+    async function syncFromServer(key, playerId, owners, host) {
+        if (!key) return;
+        const snap = await fetchGameStateSnapshot(key);
+        if (!snap || !snap.state) return;
+        const heroOwners = snap.heroOwners || owners || {};
+        const version = typeof snap.version === "number" ? snap.version : 1;
+        try {
+            window.__SKIP_MP_SYNC = true;
+            Object.assign(gameState, snap.state);
+            gameState.serverVersion = version;
+            window.gameState = gameState;
+            window.MULTI_PLAYER_ID = playerId || window.MULTI_PLAYER_ID;
+            window.MULTI_HERO_OWNERS = heroOwners;
+            window.MULTI_HOST = host || window.MULTI_HOST;
+            window.isMyTurn = () => isPlayersTurn(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
+            saveGameState(gameState);
+        } finally {
+            window.__SKIP_MP_SYNC = false;
+        }
+    }
+
     const params = new URLSearchParams(window.location.search);
     const encryptedParam = params.get('data');
     const SECRET = 'GeimonHeroKey42';  // DO NOT FUCK THIS UP
@@ -1059,10 +1080,13 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
                     host,
                     heroOwners: owners,
                     version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 1,
-                    apiBase: window.MULTI_API_BASE,
-                    enabled: !!key && window.GAME_MODE === "multi"
-                });
+                apiBase: window.MULTI_API_BASE,
+                enabled: !!key && window.GAME_MODE === "multi"
+            });
+            if (key) {
+                await syncFromServer(key, playerId, owners, host);
             }
+        }
         }
 
         console.log("=== Confirming hero decks after pageSetup ===");
