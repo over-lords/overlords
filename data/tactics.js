@@ -218,8 +218,6 @@ export const tactics = [
       {
         type: `passive`,
         condition: `henchmanEntered()`,
-        uses: `0`,
-        shared: `no`,
         effect: `henchEntryBonusHp(1)`
       }
     ],

@@ -115,10 +115,14 @@ function ensureDeckSelectRenderer() {
         const selectedSet = new Set(currentSel.map(String));
 
         const applyChooseState = (btn, hasSel) => {
-            btn.style.display = "inline-block";
-            btn.disabled = !hasSel;
-            btn.style.backgroundColor = hasSel ? "gold" : "#444";
-            btn.style.color = hasSel ? "#000" : "#ddd";
+            const canAct =
+                window.GAME_MODE === "single"
+                    ? true
+                    : (typeof window.isMyTurn === "function" ? !!window.isMyTurn(gameState) : true);
+            btn.style.display = canAct ? "inline-block" : "none";
+            btn.disabled = !hasSel || !canAct;
+            btn.style.backgroundColor = hasSel && canAct ? "gold" : "#444";
+            btn.style.color = hasSel && canAct ? "#000" : "#ddd";
         };
 
         if (!deckList.length) {
@@ -211,10 +215,18 @@ function ensureDeckSelectRenderer() {
             chooseBtn.style.padding = "10px 16px";
             chooseBtn.style.fontSize = "16px";
         }
+        const canActNow =
+            window.GAME_MODE === "single"
+                ? true
+                : (typeof window.isMyTurn === "function" ? !!window.isMyTurn(gameState) : true);
+        chooseBtn.style.display = canActNow ? "inline-block" : "none";
         applyChooseState(chooseBtn, currentSel.length > 0);
         footer.appendChild(chooseBtn);
 
         chooseBtn.onclick = () => {
+            if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(gameState)) {
+                return;
+            }
             const ctxNow = window.__deckSelectContext || ctx;
             const selIds = Array.isArray(ctxNow.selectedCardIds) ? ctxNow.selectedCardIds : [];
             if (!selIds.length) return;
@@ -595,7 +607,6 @@ function healFoeEntry(entry, amount = 0, state = gameState) {
     entry.currentHP = newHP;
     entry.maxHP = maxHP;
     if (key) s.villainHP[key] = newHP;
-    if (foeCard) foeCard.currentHP = newHP;
 
     return healAmt;
 }
@@ -5928,6 +5939,9 @@ EFFECT_HANDLERS.selfRepairChoice = async function(_args = [], card, selectedData
 function openDeckSelectUI(heroId, count = 1, state = gameState) {
     const s = state || gameState;
     if (typeof window === "undefined") return;
+    if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(s)) {
+        return;
+    }
     ensureDeckSelectRenderer();
     if (!s.heroData) s.heroData = {};
     let hState =
@@ -6001,6 +6015,7 @@ function openDeckSelectUI(heroId, count = 1, state = gameState) {
     // Fallback inline renderer if the main pageSetup hook is unavailable
     if (typeof window.renderDeckSelectSlide !== "function") {
         window.renderDeckSelectSlide = function fallbackRenderDeckSelectSlide(st = gameState) {
+            if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(st)) return;
             const addPanel = document.getElementById("add-slide-panel");
             const addCardsRow = document.getElementById("add-slide-cards");
             if (!addPanel || !addCardsRow) return;
@@ -6036,8 +6051,12 @@ function openDeckSelectUI(heroId, count = 1, state = gameState) {
             footer.appendChild(chooseBtn);
 
             const setChooseState = (has) => {
-                chooseBtn.style.display = "inline-block";
-                chooseBtn.disabled = !has;
+                const canAct =
+                    window.GAME_MODE === "single"
+                        ? true
+                        : (typeof window.isMyTurn === "function" ? !!window.isMyTurn(st) : true);
+                chooseBtn.style.display = canAct ? "inline-block" : "none";
+                chooseBtn.disabled = !has || !canAct;
                 chooseBtn.style.backgroundColor = has ? "gold" : "#444";
                 chooseBtn.style.color = has ? "#000" : "#ddd";
             };
@@ -6095,6 +6114,9 @@ function openDeckSelectUI(heroId, count = 1, state = gameState) {
                 wrap.addEventListener("click", (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(st)) {
+                        return;
+                    }
                     let sel = Array.isArray(window.__deckSelectContext?.selectedCardIds)
                         ? [...window.__deckSelectContext.selectedCardIds]
                         : [];
@@ -7789,7 +7811,6 @@ EFFECT_HANDLERS.doubleVillainLife = function(args = [], card, selectedData = {})
         foeEntry.currentHP = newHP;
         foeEntry.maxHP = Math.max(foeEntry.maxHP || baseHP, newHP);
         if (key) state.villainHP[key] = newHP;
-        if (foeCard) foeCard.currentHP = newHP;
 
         if (typeof idx === "number") {
             try { refreshFoeCardUI(idx, foeEntry); } catch (err) { console.warn("[doubleVillainLife] Failed to refresh UI.", err); }
@@ -8086,7 +8107,6 @@ EFFECT_HANDLERS.doubleVillainHPandDamage = function(args = [], card, selectedDat
         entry.currentHP = newHP;
         entry.maxHP = Math.max(entry.maxHP || baseHP, newHP);
         if (key) s.villainHP[key] = newHP;
-        if (foeCard) foeCard.currentHP = newHP;
 
         const currentDmg = getEffectiveFoeDamage(entry);
         const bonus = Number(entry.currentDamageBonus || 0);
@@ -8145,7 +8165,6 @@ EFFECT_HANDLERS.halveVillainHPDoubleDamage = function(args = [], card, selectedD
         entry.currentHP = halvedHP;
         entry.maxHP = Math.max(entry.maxHP || baseHP, baseHP);
         if (key) s.villainHP[key] = halvedHP;
-        if (card) card.currentHP = halvedHP;
 
         const currentDmg = getEffectiveFoeDamage(entry);
         entry.currentDamageBonus = Number(entry.currentDamageBonus || 0) + currentDmg;
@@ -8183,7 +8202,6 @@ function halveFoeHP(entry, slotIndex, state = gameState) {
     entry.currentHP = halvedHP;
     entry.maxHP = Math.max(entry.maxHP || baseHP, baseHP);
     if (key) s.villainHP[key] = halvedHP;
-    if (foeCard) foeCard.currentHP = halvedHP;
 
     if (typeof slotIndex === "number") {
         try { refreshFoeCardUI(slotIndex, entry); } catch (_) {}
@@ -8930,10 +8948,14 @@ function handleScanDiscard(cardInfo = {}) {
 export function renderScannedPreview(cards = [], opts = {}) {
     if (typeof document === "undefined") return;
 
-    const activateFlag = !!opts.activate;
-    const koFlag = !!opts.ko;
-    const drawFlag = !!opts.draw;
-    const discardFlag = !!opts.discard;
+    const isMyTurnNow = window.GAME_MODE === "single"
+        ? true
+        : (typeof window.isMyTurn === "function" ? !!window.isMyTurn(gameState) : true);
+
+    const activateFlag = isMyTurnNow && !!opts.activate;
+    const koFlag = isMyTurnNow && !!opts.ko;
+    const drawFlag = isMyTurnNow && !!opts.draw;
+    const discardFlag = isMyTurnNow && !!opts.discard;
 
     // Ensure container elements exist (similar styling to hero top preview)
     let bar = document.getElementById("scan-preview-bar");
@@ -9386,7 +9408,6 @@ EFFECT_HANDLERS.henchEntryBonusHp = function(args = [], card, selectedData = {})
     entry.currentHP = nextCurrent;
 
     if (entryKey) state.villainHP[entryKey] = nextCurrent;
-    if (cardData) cardData.currentHP = nextCurrent;
 };
 
 EFFECT_HANDLERS.villainDraw = function(args, card, selectedData) {
@@ -10122,9 +10143,8 @@ export function knockbackFoe(entry, slotIndex, state = gameState, heroId = null)
     }
 
     // Reset card status and place on top of the villain deck
-    if (foeCard) {
-        foeCard.currentHP = Number(foeCard.hp) || Number(foeCard.hp?.valueOf?.()) || foeCard.hp;
-        if (foeCard.isFrozen) foeCard.isFrozen = false;
+    if (foeCard && foeCard.isFrozen) {
+        foeCard.isFrozen = false;
     }
     pushCardToVillainDeckTop(cardId, s);
     s.revealedTopVillain = true;
@@ -11017,9 +11037,6 @@ export async function handleVillainEscape(entry, state) {
         ? entry.currentHP
         : (storedHP != null ? storedHP : vMax);
 
-    // Keep the card's currentHP in sync for any UI that still reads it
-    foeCard.currentHP = vCur;
-
     // Allow rules/overlord effects to react to an escape (e.g., switch to max HP gain)
     try {
         triggerRuleEffects("foeEscapes", {
@@ -11160,7 +11177,6 @@ export async function handleVillainEscape(entry, state) {
         // Replace Overlord
         state.overlords[0] = foeId;
         state.overlordHP[foeId] = newHP;
-        foeCard.currentHP = newHP;
 
         // REQUIRED FOR REFRESH RESTORATION
         state.overlordIsVillain = true;  
@@ -11171,9 +11187,11 @@ export async function handleVillainEscape(entry, state) {
         };
 
         // Update UI
+        const olCardRuntime = { ...foeCard, currentHP: newHP };
+
         try {
-            setCurrentOverlord(foeCard);
-            buildOverlordPanel(foeCard);
+            setCurrentOverlord(olCardRuntime);
+            buildOverlordPanel(olCardRuntime);
         } catch (e) {
             console.warn("[TAKEOVER PANEL ERROR]", e);
         }
@@ -11186,7 +11204,8 @@ export async function handleVillainEscape(entry, state) {
             id: foeCard.id,
             name: foeCard.name,
             image: foeCard.image,
-            hp: newHP
+            hp: newHP,
+            currentHP: newHP
         };
 
         saveGameState(state);
@@ -14029,7 +14048,13 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
                 const wrapper = document.createElement("div");
                 wrapper.className = "card-wrapper";
                 // Preserve per-entry runtime damage (e.g., curses)
-                const baseDmg = Number(foeCard.damage ?? foeCard.dmg ?? foeCard.currentDamage ?? 0) || 0;
+                const baseCard = { ...foeCard };
+                delete baseCard.currentHP;
+                delete baseCard.currentDamage;
+                delete baseCard.damagePenalty;
+                delete baseCard.capturedBystanders;
+
+                const baseDmg = Number(baseCard.damage ?? baseCard.dmg ?? 0) || 0;
                 const effectiveDamage =
                     (typeof entry.currentDamage === "number")
                         ? entry.currentDamage
@@ -14037,12 +14062,13 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
                             ? Math.max(0, baseDmg - Number(entry.damagePenalty || 0))
                             : baseDmg);
                 const effectiveCard = {
-                    ...foeCard,
+                    ...baseCard,
                     damage: effectiveDamage,
                     currentDamage: effectiveDamage,
                     // Ensure HP displayed matches the current instance HP (including buffs/debuffs)
                     currentHP: newHP,
-                    maxHP: baseHP
+                    maxHP: baseHP,
+                    hp: baseHP
                 };
 
                 wrapper.appendChild(renderCard(foeIdStr, wrapper, { cardDataOverride: effectiveCard }));
@@ -14052,7 +14078,10 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
                 wrapper.addEventListener("click", (e) => {
                     e.stopPropagation();
                     if (typeof window !== "undefined" && typeof window.buildVillainPanel === "function") {
-                        window.buildVillainPanel(foeCard);
+                        window.buildVillainPanel(
+                            { ...foeCard, instanceId: entry.instanceId || entry.uniqueId || null, slotIndex },
+                            { instanceId: entry.instanceId || entry.uniqueId || null, slotIndex }
+                        );
                     }
                 });
 
@@ -15327,8 +15356,18 @@ window.showOptionalAbilityPrompt = function (questionText) {
             resolve(result);
         };
 
-        yesBtn.onclick = () => cleanup(true);
-        noBtn.onclick  = () => cleanup(false);
+        yesBtn.onclick = () => {
+            if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(gameState)) {
+                return;
+            }
+            cleanup(true);
+        };
+        noBtn.onclick  = () => {
+            if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(gameState)) {
+                return;
+            }
+            cleanup(false);
+        };
     });
 };
 
@@ -15493,6 +15532,9 @@ window.showChooseAbilityPrompt = function ({ header, options }) {
         overlay.style.display = "flex";
 
         confirmBtn.onclick = () => {
+            if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(gameState)) {
+                return;
+            }
             overlay.style.display = "none";
             confirmBtn.onclick = null;
             resolve(selectedIndex);

@@ -19,13 +19,7 @@ import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHer
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
-import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady, playerOwnsHero } from "./multiplayer.js";
-
-// Force single-player mode; multiplayer gameplay is disabled.
-if (typeof window !== "undefined") {
-    window.GAME_MODE = "single";
-    window.isMyTurn = () => true;
-}
+import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady, playerOwnsHero, getMultiplayerContext, forceServerResync } from "./multiplayer.js";
 
 let currentOverlord = null;
 let currentTactics = [];
@@ -563,6 +557,10 @@ async function restoreUIFromState(state) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
 
+                if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(gameState)) {
+                    return;
+                }
+
                 const handledByShove = (typeof window.maybePromptHeroShove === "function")
                     ? window.maybePromptHeroShove(heroObj, hid, idx)
                     : false;
@@ -616,7 +614,7 @@ async function restoreUIFromState(state) {
                 villains.find(v => v.id === entry.id);
 
             if (cardData) {
-                const idStr  = String(cardData.id);
+                const entryKey = getInstanceKey(entry) || String(cardData.id);
                 const baseHP = Number(cardData.hp || 0) || 0;
 
                 if (!state.villainHP) state.villainHP = {};
@@ -625,20 +623,34 @@ async function restoreUIFromState(state) {
 
                 if (typeof entry.currentHP === "number") {
                     currentHP = Number(entry.currentHP);
-                } else if (typeof state.villainHP[idStr] === "number") {
-                    currentHP = Number(state.villainHP[idStr]);
+                } else if (typeof state.villainHP[entryKey] === "number") {
+                    currentHP = Number(state.villainHP[entryKey]);
                 }
 
-                // Sync all representations
-                cardData.currentHP = currentHP;
-                state.villainHP[idStr] = currentHP;
+                // Sync state only (avoid mutating shared card templates)
+                state.villainHP[entryKey] = currentHP;
                 entry.maxHP = baseHP;
                 entry.currentHP = currentHP;
+
+                const renderOverride = {
+                    cardDataOverride: {
+                        ...cardData,
+                        hp: entry.maxHP ?? baseHP,
+                        currentHP
+                    }
+                };
+
+                wrapper.innerHTML = "";
+                const renderedWithHp = renderCard(cardId, wrapper, renderOverride);
+                wrapper.appendChild(renderedWithHp);
 
                 wrapper.style.cursor = "pointer";
                 wrapper.addEventListener("click", (e) => {
                     e.stopPropagation();
-                    buildVillainPanel(cardData, { instanceId: getInstanceKey(entry), slotIndex: entry.slotIndex });
+                    if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(state)) {
+                        return;
+                    }
+                    buildVillainPanel(cardData, { instanceId: entryKey, slotIndex: entry.slotIndex });
                 });
             }
         });
@@ -698,7 +710,36 @@ async function restoreUIFromState(state) {
     }
 }
 
-// Multiplayer sync removed; gameplay is single-player only.
+// Multiplayer state updates
+setOnStateUpdated((stateFromServer, meta = {}) => {
+    if (!stateFromServer || window.GAME_MODE !== "multi") return;
+    try {
+        window.__SKIP_MP_SYNC = true;
+        if (meta && typeof meta.version === "number") {
+            gameState.serverVersion = meta.version;
+        }
+        // Replace local state with authoritative snapshot
+        for (const k of Object.keys(gameState)) {
+            delete gameState[k];
+        }
+        Object.assign(gameState, JSON.parse(JSON.stringify(stateFromServer)));
+        window.gameState = gameState;
+        window.isMyTurn = () => isPlayersTurn(
+            gameState,
+            window.MULTI_PLAYER_ID,
+            window.MULTI_HERO_OWNERS,
+            window.MULTI_HOST
+        );
+        refreshAbilityGameModeFlags(window.GAME_MODE);
+        refreshTurnGameModeFlags(window.GAME_MODE);
+        initializeTurnUI(gameState);
+        showRetreatButtonForCurrentHero(gameState);
+        try { renderHeroHandBar(gameState); } catch (_) {}
+        try { saveGameState(gameState); } catch (_) {}
+    } finally {
+        window.__SKIP_MP_SYNC = false;
+    }
+});
 
 (async () => {
     // Ensure both host and joiners point to the same multiplayer API unless explicitly overridden.
@@ -834,7 +875,10 @@ async function restoreUIFromState(state) {
                 heroOwners,
                 version,
                 apiBase: apiBase || window.MULTI_API_BASE,
-                enabled: true
+                enabled: true,
+                state: gameState,
+                versionFromServer: true,
+                seeds: snap.seeds || {}
             });
         } finally {
             window.__SKIP_MP_SYNC = false;
@@ -879,10 +923,28 @@ async function restoreUIFromState(state) {
             version,
             apiBase: window.MULTI_API_BASE,
             enabled: true,
-            versionFromServer: true
+            versionFromServer: true,
+            state: gameState,
+            seeds: snap.seeds || {}
         });
         if (typeof window !== "undefined") {
             window.isMultiplayerReady = isMultiplayerReady;
+        }
+        // Drift detector: if our local version lags behind poll context, force a pull.
+        if (typeof window !== "undefined") {
+            try {
+                if (window.__MULTI_RESYNC_TIMER) clearInterval(window.__MULTI_RESYNC_TIMER);
+            } catch (_) {}
+            window.__MULTI_RESYNC_TIMER = setInterval(async () => {
+                if (window.__SKIP_MP_SYNC) return;
+                const ctx = getMultiplayerContext();
+                if (!ctx?.key || !ctx.enabled) return;
+                const localVer = gameState?.serverVersion ?? 0;
+                const ctxVer = ctx.version ?? 0;
+                if (!Number.isFinite(localVer) || !Number.isFinite(ctxVer) || localVer < ctxVer) {
+                    await forceServerResync(ctx.key);
+                }
+            }, 5000);
         }
         warnIfNoOwnership(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
         initializeTurnUI(gameState);
@@ -901,130 +963,50 @@ async function restoreUIFromState(state) {
         }
     }
 
-    let saved = loadGameState();
-    // If a multiplayer launch is happening, drop any saved local state to avoid restoring stale games.
-    if (predecoded && predecoded.gameMode === "multi") {
-        try {
-            clearGameState();
-        } catch (_) {}
-        saved = null;
+    const encrypted = encryptedParam;
+
+    if (!encrypted) {
+        document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
+        return;
     }
 
-    if (saved) {
-        console.log("=== RESUMING SAVED GAME ===");
+    // Resume singleplayer save if present and not launching multiplayer.
+    // If the save is multiplayer, ignore it and pull from server instead.
+    const saved = loadGameState();
+    if (saved && saved.gameMode === "multi") {
+        console.log("[bootstrap] Ignoring local multiplayer save; will pull from server snapshot.");
+    } else if (saved && saved.gameMode !== "multi" && saved.isGameStarted) {
+        console.log("=== RESUMING SAVED GAME (Singleplayer) ===");
         Object.assign(gameState, saved);
         window.GAME_MODE = saved.gameMode || window.GAME_MODE || "single";
         refreshAbilityGameModeFlags(window.GAME_MODE);
         refreshTurnGameModeFlags(window.GAME_MODE);
         window.gameState = gameState;
-
-        if (window.GAME_MODE === "multi") {
-            const players = Array.isArray(gameState.playerUsernames) ? gameState.playerUsernames : [];
-            const owners = buildHeroOwners(players, gameState.heroesByPlayer || []);
-            const playerId = getOrCreatePlayerId({ ...saved, playerUsernames: players });
-            const key = saved.key || saved.joinKey || saved.gameKey || saved.lobbyKey || null;
-            // Persist identity for later saves/pushes
-            gameState.playerId = playerId;
-            window.MULTI_PLAYER_ID = playerId;
-            window.MULTI_HERO_OWNERS = owners;
-            window.MULTI_HOST = saved.host || players[0] || null;
-            window.isMyTurn = () => isPlayersTurn(gameState, window.MULTI_PLAYER_ID, owners, window.MULTI_HOST);
-            if (key) {
-                const restored = await restoreFromExistingServerGame({
-                    key,
-                    playerId,
-                    owners,
-                    host: saved.host || players[0] || null,
-                    apiBase: window.MULTI_API_BASE
-                });
-                if (restored) return;
-                document.body.insertAdjacentHTML("beforeend", `<div style="color:red;font-weight:bold;">Waiting for host to start game...</div>`);
-                return;
-            }
-            configureMultiplayer({
-                key,
-                playerId,
-                host: window.MULTI_HOST,
-                heroOwners: owners,
-                version: typeof saved.serverVersion === "number" ? saved.serverVersion : 0,
-                apiBase: window.MULTI_API_BASE,
-                enabled: !!key && window.GAME_MODE === "multi"
-            });
-        }
-
-        restoreDropdownContentFromState(gameState);
-        // In multiplayer, rely on the server snapshot for decks; do not reshuffle on clients
-        if (window.GAME_MODE !== "multi") {
-            establishEnemyAllyDeckFromLoadout(null, gameState);
-        }
-
-        restoreUIFromState(gameState);
-        restoreCapturedBystandersIntoCardData(saved);
-        try {
-            if (typeof window.restoreOptionalAbilityPromptFromState === "function") {
-                window.restoreOptionalAbilityPromptFromState(gameState);
-            }
-        } catch (e) {
-            console.warn("[RESTORE] Failed to restore optional ability prompt.", e);
-        }
-
-        // If the saved game was already over, re-show the final banner and freeze controls
-        if (gameState.gameOver) {
-            const html = gameState._gameOverBannerHtml || "Game Over";
-            try {
-                showMightBanner(html, 999999, { lock: true, force: true });
-            } catch (e) {
-                console.warn("[RESTORE] Failed to show game-over banner on resume.", e);
-            }
-            try {
-                freezeGameAndSetupQuitButton(gameState);
-            } catch (e) {
-                console.warn("[RESTORE] Failed to freeze game-over UI on resume.", e);
-            }
-            return;
-        }
-
-        // IMPORTANT: Do NOT auto-start when resuming a game
         window.VILLAIN_DRAW_ENABLED = true;
 
-        // Restore and clamp turn index from save; store ONLY on gameState
+        restoreDropdownContentFromState(gameState);
+        establishEnemyAllyDeckFromLoadout(null, gameState);
+        restoreUIFromState(gameState);
+        restoreCapturedBystandersIntoCardData(saved);
+
         const heroIds = gameState.heroes || [];
         const heroCount = heroIds.length;
-
-        let restoredIndex = Number.isInteger(saved.heroTurnIndex)
-            ? saved.heroTurnIndex
-            : 0;
-
-        if (heroCount === 0) {
-            restoredIndex = 0;
-        } else if (restoredIndex < 0 || restoredIndex >= heroCount) {
-            // clamp out-of-range index if hero list changed
-            restoredIndex = 0;
-        }
-
+        let restoredIndex = Number.isInteger(saved.heroTurnIndex) ? saved.heroTurnIndex : 0;
+        if (heroCount === 0) restoredIndex = 0;
+        else if (restoredIndex < 0 || restoredIndex >= heroCount) restoredIndex = 0;
         gameState.heroTurnIndex = restoredIndex;
-
         if (heroCount > 0) {
             currentTurn(restoredIndex, heroIds);
             resetTurnTimerForHero(gameState.turnTimerRemaining);
         }
-
         if (typeof saved.turnCounter === "number") {
             gameState.turnCounter = saved.turnCounter;
         } else {
             gameState.turnCounter = 0;
         }
-
         initializeTurnUI(gameState);
         showRetreatButtonForCurrentHero(gameState);
         initAndLogHeroIconAbilities(gameState);
-        return;
-    }
-
-    const encrypted = encryptedParam;
-
-    if (!encrypted) {
-        document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
         return;
     }
 
@@ -1076,14 +1058,59 @@ async function restoreUIFromState(state) {
             return false;
         }
 
-        if (window.GAME_MODE === "multi" && key && !isHostPlayer) {
-            const ok = await waitForServerSnapshotLoop();
-            if (!ok) return;
-            // After sync, initialize UI and stop local bootstrap
-            initializeTurnUI(gameState);
-            showRetreatButtonForCurrentHero(gameState);
-            initAndLogHeroIconAbilities(gameState);
-            return;
+        // If multiplayer and a server snapshot already exists, sync it and skip local re-seed
+        if (window.GAME_MODE === "multi" && key) {
+            const snap = await fetchGameStateSnapshot(key);
+            if (snap && snap.state) {
+                const heroOwners = snap.heroOwners || owners || {};
+                const version = typeof snap.version === "number" ? snap.version : 1;
+                Object.assign(gameState, snap.state);
+                gameState.serverVersion = version;
+                gameState.turnTimerDeadline = snap.state?.turnTimerDeadline ?? gameState.turnTimerDeadline ?? null;
+                window.gameState = gameState;
+                window.MULTI_PLAYER_ID = playerId;
+                window.MULTI_HERO_OWNERS = heroOwners;
+                window.MULTI_HOST = snap.host || host;
+                window.isMyTurn = () => isPlayersTurn(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
+                refreshAbilityGameModeFlags(window.GAME_MODE);
+                refreshTurnGameModeFlags(window.GAME_MODE);
+                initializeTurnUI(gameState);
+                try { resetTurnTimerForHero(gameState.turnTimerRemaining); } catch (_) {}
+                showRetreatButtonForCurrentHero(gameState);
+                initAndLogHeroIconAbilities(gameState);
+                configureMultiplayer({
+                    key,
+                    playerId,
+                    host: window.MULTI_HOST,
+                    heroOwners,
+                    version,
+                    apiBase: window.MULTI_API_BASE,
+                    enabled: true,
+                    versionFromServer: true,
+                    state: gameState
+                });
+                setMultiplayerVersion(version);
+                saveGameState(gameState);
+                return;
+            }
+            if (!isHostPlayer) {
+                const ok = await waitForServerSnapshotLoop();
+                if (!ok) return;
+                initializeTurnUI(gameState);
+                showRetreatButtonForCurrentHero(gameState);
+                initAndLogHeroIconAbilities(gameState);
+                configureMultiplayer({
+                    key,
+                    playerId,
+                    host,
+                    heroOwners: owners,
+                    version: typeof gameState.serverVersion === "number" ? gameState.serverVersion : 0,
+                    apiBase: window.MULTI_API_BASE,
+                    enabled: true,
+                    versionFromServer: true
+                });
+                return;
+            }
         }
 
         heroMap = new Map(heroes.map(h => [String(h.id), h]));
@@ -1207,8 +1234,13 @@ async function restoreUIFromState(state) {
         });
 
         if (!window.GAME_MODE || window.GAME_MODE === "single" || isHostPlayer) {
+            // In multiplayer, seed the server as host; in single, just init decks.
             initAndLogHeroIconAbilities(gameState);
             establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: true });
+            // Default host starts first turn
+            if (window.GAME_MODE === "multi" && typeof gameState.heroTurnIndex !== "number") {
+                gameState.heroTurnIndex = 0;
+            }
             saveGameState(gameState);
         }
 
@@ -2273,9 +2305,7 @@ function getFoeCurrentAndMaxHP(foeCard, opts = {}) {
         currentHP = maxHP;
     }
 
-    // 3) Sync back into card object & state
-    foeCard.currentHP = currentHP;
-
+    // 3) Persist to state only (avoid mutating shared card templates)
     if (!gameState.villainHP) gameState.villainHP = {};
     gameState.villainHP[idStr] = currentHP;
     if (instKey) gameState.villainHP[instKey] = currentHP;
@@ -2818,22 +2848,13 @@ function findCityEntryForVillainCard(villainCard, state = gameState, opts = {}) 
     // 2) Fallback by base id (ambiguous if multiple copies exist)
     let found = null;
     let foundIndex = null;
-    let count = 0;
 
     cities.forEach((c, i) => {
         if (c && String(c.id) === idStr) {
             found = c;
             foundIndex = i;
-            count += 1;
         }
     });
-
-    if (count > 1) {
-        console.warn(
-            "[buildVillainPanel] Multiple city entries share this foe id; selection may target the first match.",
-            { idStr, count }
-        );
-    }
 
     return { entry: found, slotIndex: foundIndex };
 }
@@ -4022,11 +4043,11 @@ export function renderHeroHandBar(state) {
         // Draw cards in the hand
         const hand = heroState.hand || [];
         hand.forEach(cardId => {
-            const cardData = findCardInAllSources(cardId);
-            console.log("[renderHeroHandBar] card:", {
-                id: cardId,
-                name: cardData?.name
-            });
+                    const cardData = findCardInAllSources(cardId);
+                    console.log("[renderHeroHandBar] card:", {
+                        id: cardId,
+                        name: cardData?.name
+                    });
 
             const wrap = renderCard(cardId);
             if (!wrap) return;

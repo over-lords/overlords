@@ -461,7 +461,7 @@ export const henchmen = [
     abilitiesEffects: [
       {
         condition: `uponDefeat`,
-        effect: [`scanDeck(villain,1)`,`disableVillainDraw(1)`]
+        effect: [`setRevealedTopCardTrue()`,`disableVillainDraw(1)`]
       }
     ]
   },

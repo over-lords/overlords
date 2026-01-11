@@ -300,6 +300,14 @@ app.post("/api/games/create", (req, res) => {
     players: playersSafe,
     commands: [],
     version: 1,
+    // Persist initial deck seeds for validation (host-only seeding)
+    seeds: {
+      villainDeck: Array.isArray(state?.villainDeck) ? state.villainDeck.slice() : null,
+      enemyAllyDeck: Array.isArray(state?.enemyAllyDeck) ? state.enemyAllyDeck.slice() : null,
+      bystanderDeck: Array.isArray(state?.bystanderDeck) ? state.bystanderDeck.slice() : null,
+      mightDeck: Array.isArray(state?.mightDeck) ? state.mightDeck.slice() : null,
+      scenarioDeck: Array.isArray(state?.scenarioDeck) ? state.scenarioDeck.slice() : null
+    },
     updatedAt: now,
     lastSeenAt: now
   });
@@ -320,7 +328,8 @@ app.get("/api/games/:key/state", (req, res) => {
     version: game.version,
     heroOwners: game.heroOwners,
     players: game.players,
-    host: game.host
+    host: game.host,
+    seeds: game.seeds || {}
   });
 });
 
@@ -397,11 +406,15 @@ app.post("/api/games/apply", (req, res) => {
   const {
     key,
     playerId,
-    state
+    state,
+    stateDelta = null,
+    heroOwners: incomingOwners = null
   } = req.body || {};
   if (!key || typeof key !== "string") return res.status(400).json({ error: "key is required" });
   if (!playerId || typeof playerId !== "string") return res.status(400).json({ error: "playerId is required" });
-  if (!state || typeof state !== "object") return res.status(400).json({ error: "state is required" });
+  if ((!state || typeof state !== "object") && (!stateDelta || typeof stateDelta !== "object")) {
+    return res.status(400).json({ error: "state or stateDelta is required" });
+  }
   pruneStaleGames();
   const game = games.get(key);
   if (!game) return res.status(404).json({ error: "Game not found" });
@@ -430,7 +443,90 @@ app.post("/api/games/apply", (req, res) => {
   // Reassign abandoned heroes to host
   reassignHeroesToHost(game);
 
-  game.state = state;
+  const prevState = game.state || {};
+  let nextState = prevState;
+
+  // Merge delta over existing state if provided; otherwise replace with full state
+  if (stateDelta && typeof stateDelta === "object" && prevState && typeof prevState === "object") {
+    nextState = { ...prevState, ...stateDelta };
+  } else if (state && typeof state === "object") {
+    nextState = state;
+  }
+
+  // Allow host to update heroOwners if provided
+  if (incomingOwners && typeof incomingOwners === "object") {
+    game.heroOwners = incomingOwners;
+  }
+
+  // Deck validation: ensure deck order matches seed (no reshuffle)
+  const seeds = game.seeds || {};
+  const decksToCheck = [
+    { key: "villainDeck", seed: seeds.villainDeck, incoming: Array.isArray(nextState?.villainDeck) ? nextState.villainDeck : null },
+    { key: "enemyAllyDeck", seed: seeds.enemyAllyDeck, incoming: Array.isArray(nextState?.enemyAllyDeck) ? nextState.enemyAllyDeck : null },
+    { key: "bystanderDeck", seed: seeds.bystanderDeck, incoming: Array.isArray(nextState?.bystanderDeck) ? nextState.bystanderDeck : null },
+    { key: "mightDeck", seed: seeds.mightDeck, incoming: Array.isArray(nextState?.mightDeck) ? nextState.mightDeck : null },
+    { key: "scenarioDeck", seed: seeds.scenarioDeck, incoming: Array.isArray(nextState?.scenarioDeck) ? nextState.scenarioDeck : null }
+  ];
+
+  for (const deck of decksToCheck) {
+    const { key: deckKey, seed, incoming } = deck;
+    if (seed && incoming) {
+      const sameOrder = seed.length === incoming.length &&
+        seed.every((v, idx) => String(v) === String(incoming[idx]));
+      if (!sameOrder) {
+        return res.status(409).json({ error: `${deckKey} order mismatch` });
+      }
+    } else if (!seed && incoming) {
+      // Capture missing seeds (legacy) from host update
+      game.seeds = { ...game.seeds, [deckKey]: incoming.slice() };
+    }
+  }
+
+  // Pointer validation: prevent rewinding beyond previous pointer or beyond deck length
+  const ptrChecks = [
+    { deck: incomingVillainDeck, prevPtr: prevState.villainDeckPointer, nextPtr: nextState.villainDeckPointer, name: "villain deck" },
+    { deck: incomingEnemyAlly, prevPtr: prevState.enemyAllyDeckPointer, nextPtr: nextState.enemyAllyDeckPointer, name: "enemy/ally deck" },
+    { deck: Array.isArray(nextState?.bystanderDeck) ? nextState.bystanderDeck : null, prevPtr: prevState.bystanderDeckPointer, nextPtr: nextState.bystanderDeckPointer, name: "bystander deck" },
+    { deck: Array.isArray(nextState?.mightDeck) ? nextState.mightDeck : null, prevPtr: prevState.mightDeckPointer, nextPtr: nextState.mightDeckPointer, name: "might deck" },
+    { deck: Array.isArray(nextState?.scenarioDeck) ? nextState.scenarioDeck : null, prevPtr: prevState.scenarioDeckPointer, nextPtr: nextState.scenarioDeckPointer, name: "scenario deck" }
+  ];
+
+  for (const ptr of ptrChecks) {
+    const { deck, prevPtr, nextPtr, name } = ptr;
+    if (!Array.isArray(deck)) continue;
+    const prevVal = Number.isFinite(prevPtr) ? prevPtr : 0;
+    const nextVal = Number.isFinite(nextPtr) ? nextPtr : prevVal;
+    if (nextVal < prevVal || nextVal > deck.length) {
+      return res.status(409).json({ error: `${name} pointer invalid`, prevPtr: prevVal, nextPtr: nextVal });
+    }
+    // Normalize back onto nextState using naming convention
+    if (name === "villain deck") nextState.villainDeckPointer = nextVal;
+    if (name === "enemy/ally deck") nextState.enemyAllyDeckPointer = nextVal;
+    if (name === "bystander deck") nextState.bystanderDeckPointer = nextVal;
+    if (name === "might deck") nextState.mightDeckPointer = nextVal;
+    if (name === "scenario deck") nextState.scenarioDeckPointer = nextVal;
+  }
+
+  // Turn timer validation: keep as absolute deadline and prevent obviously stale rewinds
+  const incomingDeadline = nextState.turnTimerDeadline;
+  const now = Date.now();
+  if (incomingDeadline != null) {
+    const deadlineNum = Number(incomingDeadline);
+    if (!Number.isFinite(deadlineNum)) {
+      return res.status(409).json({ error: "turn timer deadline invalid" });
+    }
+    // Reject deadlines that are already far in the past (>2s)
+    if (deadlineNum < now - 2000) {
+      return res.status(409).json({ error: "turn timer deadline stale" });
+    }
+    nextState.turnTimerDeadline = deadlineNum;
+  } else if (prevState.turnTimerDeadline != null) {
+    nextState.turnTimerDeadline = prevState.turnTimerDeadline;
+  }
+
+  // Persist merged/validated state
+  game.state = nextState;
+
   game.version = game.version + 1;
   game.updatedAt = Date.now();
   game.lastSeenAt = Date.now();
@@ -440,7 +536,8 @@ app.post("/api/games/apply", (req, res) => {
     state: game.state,
     version: game.version,
     heroOwners: game.heroOwners,
-    host: game.host
+    host: game.host,
+    seeds: game.seeds || {}
   });
 });
 
@@ -459,7 +556,8 @@ app.get("/api/games/:key/poll", (req, res) => {
       version: game.version,
       heroOwners: game.heroOwners,
       players: game.players,
-      host: game.host
+      host: game.host,
+      seeds: game.seeds || {}
     });
   }
   return res.json({ ok: true, noop: true, version: game.version, host: game.host });

@@ -1480,7 +1480,6 @@ async function handleScenarioDraw(villainId, cardData, state) {
     if (typeof state.scenarioHP[scenarioId] !== "number") {
         state.scenarioHP[scenarioId] = baseHP;
     }
-    cardData.currentHP = state.scenarioHP[scenarioId];
 
     if (!state.scenarioStack.includes(scenarioId)) {
         state.scenarioStack.push(scenarioId);
@@ -1572,18 +1571,10 @@ function placeCardInUpperCity(slotIndex, newCardId, state, explicitType) {
 
     state.villainHP[entryInst] = currentHP;
 
-    // Keep the master card object in sync for panels / re-renders
-    if (cardData) {
-        cardData.currentHP = currentHP;
-    }
-
     try {
         triggerRuleEffects("henchmanEntered", { entryIndex: slotIndex, entry, cardData, state });
         const syncedHP = entry.currentHP ?? currentHP;
         state.villainHP[entryInst] = syncedHP;
-        if (cardData) {
-            cardData.currentHP = syncedHP;
-        }
     } catch (err) {
         console.warn("[placeCardInUpperCity] Failed to trigger rule effects:", err);
     }
@@ -2695,15 +2686,11 @@ export async function shoveUpper(newCardId) {
     entry.currentHP = currentHP;
 
     gameState.villainHP[entryInst] = currentHP;
-    if (cardData) cardData.currentHP = currentHP;
 
     try {
         triggerRuleEffects("henchmanEntered", { entryIndex: ENTRY_IDX, entry, cardData, state: gameState });
         const syncedHP = entry.currentHP ?? currentHP;
         gameState.villainHP[entryInst] = syncedHP;
-        if (cardData) {
-            cardData.currentHP = syncedHP;
-        }
     } catch (err) {
         console.warn("[shoveUpper] Failed to trigger rule effects:", err);
     }
@@ -2787,13 +2774,16 @@ export function initializeTurnUI(gameState) {
     const standardActivateBtn = document.getElementById("standard-activate-btn");
     const standardActivateInner = document.getElementById("standard-ability-activate");
     const faceOverlordBtn = document.getElementById("face-overlord-button");
+    const iconEffectsBtn = document.getElementById("icon-effects-button");
     const heroSlots = document.querySelectorAll("#heroes-row .hero-slot");
     if (!canAct) {
         endTurnBtn.style.display = "none";
         if (standardActivateBtn) standardActivateBtn.style.display = "none";
         if (standardActivateInner) standardActivateInner.disabled = true;
         if (faceOverlordBtn) faceOverlordBtn.style.display = "none";
+        if (iconEffectsBtn) iconEffectsBtn.style.display = "none";
         refreshAllCityOutlines(gameState, { clearOnly: true });
+        try { hideTravelHighlights(); } catch (_) {}
         document.body.classList.add("not-your-turn");
         heroSlots.forEach(slot => slot.classList.remove("active-turn-slot"));
         // Disable card activation controls in hand
@@ -2804,6 +2794,7 @@ export function initializeTurnUI(gameState) {
     } else {
         if (standardActivateBtn) standardActivateBtn.style.display = "flex";
         if (faceOverlordBtn) faceOverlordBtn.style.display = "";
+        if (iconEffectsBtn) iconEffectsBtn.style.display = "";
         document.body.classList.remove("not-your-turn");
         try {
             const activateBtns = document.querySelectorAll(".hero-hand-activate-btn");
@@ -3639,6 +3630,7 @@ export function resetTurnTimerForHero(overrideSeconds = null) {
         timerBox.style.display = "none";
         if (turnTimerInterval) clearInterval(turnTimerInterval);
         gameState.turnTimerRemaining = null;
+        gameState.turnTimerDeadline = null;
         return;
     }
     else if (isMultiplayer) {
@@ -3647,8 +3639,16 @@ export function resetTurnTimerForHero(overrideSeconds = null) {
         let remaining = Number.isFinite(overrideSeconds)
             ? Math.max(0, overrideSeconds)
             : (Number.isFinite(gameState.turnTimerRemaining) ? Math.max(0, gameState.turnTimerRemaining) : 180); // 3 minutes in seconds
+
+        // If a deadline is present, recompute remaining based on wall clock to sync after refresh
+        if (typeof gameState.turnTimerDeadline === "number") {
+            const delta = Math.max(0, Math.round((gameState.turnTimerDeadline - Date.now()) / 1000));
+            if (Number.isFinite(delta)) remaining = delta;
+        }
+
         timerBox.textContent = formatTimer(remaining);
         gameState.turnTimerRemaining = remaining;
+        gameState.turnTimerDeadline = Date.now() + remaining * 1000;
 
         if (turnTimerInterval) clearInterval(turnTimerInterval);
 
@@ -3658,11 +3658,13 @@ export function resetTurnTimerForHero(overrideSeconds = null) {
                 clearInterval(turnTimerInterval);
                 timerBox.textContent = "00:00";
                 gameState.turnTimerRemaining = 0;
+                gameState.turnTimerDeadline = null;
                 autoEndTurnDueToTimeout();
                 return;
             }
             timerBox.textContent = formatTimer(remaining);
             gameState.turnTimerRemaining = remaining;
+            gameState.turnTimerDeadline = Date.now() + remaining * 1000;
         }, 1000);
     }
 }
@@ -3680,6 +3682,10 @@ async function autoEndTurnDueToTimeout() {
 }
 
 function showTravelPopup(gameState, heroId, cityIndex) {
+    if (!canActThisTurn(gameState)) {
+        refreshAllCityOutlines(gameState, { clearOnly: true });
+        return;
+    }
     const overlay = document.getElementById("travel-popup-overlay");
     const text = document.getElementById("travel-popup-text");
     const yesBtn = document.getElementById("travel-popup-yes");
@@ -3717,6 +3723,7 @@ function showTravelPopup(gameState, heroId, cityIndex) {
 }
 
 function showFaceOverlordPopup(gameState, heroId) {
+    if (!canActThisTurn(gameState)) return;
     const overlay = document.getElementById("face-overlord-popup-overlay");
     if (!overlay) {
         console.warn("[OVERLORD] face-overlord-popup-overlay not found; falling back to direct travel.");
