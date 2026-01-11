@@ -2784,6 +2784,7 @@ export function initializeTurnUI(gameState) {
     if (!endTurnBtn) return;
 
     const canAct = canActThisTurn(gameState);
+    console.log("[TURN UI] canActThisTurn=", canAct, "player", (typeof window !== "undefined" ? window.MULTI_PLAYER_ID : null), "host", (typeof window !== "undefined" ? window.MULTI_HOST : null));
     const standardActivateBtn = document.getElementById("standard-activate-btn");
     const standardActivateInner = document.getElementById("standard-ability-activate");
     const faceOverlordBtn = document.getElementById("face-overlord-button");
@@ -2796,10 +2797,19 @@ export function initializeTurnUI(gameState) {
         refreshAllCityOutlines(gameState, { clearOnly: true });
         document.body.classList.add("not-your-turn");
         heroSlots.forEach(slot => slot.classList.remove("active-turn-slot"));
+        // Disable card activation controls in hand
+        try {
+            const activateBtns = document.querySelectorAll(".hero-hand-activate-btn");
+            activateBtns.forEach(btn => btn.style.display = "none");
+        } catch (_) {}
     } else {
         if (standardActivateBtn) standardActivateBtn.style.display = "flex";
         if (faceOverlordBtn) faceOverlordBtn.style.display = "";
         document.body.classList.remove("not-your-turn");
+        try {
+            const activateBtns = document.querySelectorAll(".hero-hand-activate-btn");
+            activateBtns.forEach(btn => btn.style.display = "");
+        } catch (_) {}
     }
 
     try {
@@ -2811,6 +2821,8 @@ export function initializeTurnUI(gameState) {
     if (topVillainBtn) {
         topVillainBtn.style.display = gameState.revealedTopVillain ? "flex" : "none";
     }
+
+    try { saveGameState(gameState); } catch (e) { console.warn("[initializeTurnUI] Failed to save state", e); }
 
     // 1. Find the active turn slot
     const activeSlot = document.querySelector("#heroes-row .hero-slot.active-turn-slot");
@@ -4148,6 +4160,7 @@ export function checkGameEndConditions(state) {
 
 export async function startTravelPrompt(gameState) {
     if (!canActThisTurn(gameState)) {
+        console.log("[TRAVEL] Not your turn; clearing outlines and aborting travel prompt.");
         refreshAllCityOutlines(gameState, { clearOnly: true });
         return;
     }

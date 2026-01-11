@@ -53,23 +53,38 @@ function resolveHeroOwners(heroOwners = {}, state = {}) {
 }
 
 export function playerOwnsHero(playerId, heroId, heroOwners = {}, host = null, state = {}) {
+  // Prefer provided playerId, otherwise fall back to host
+  const pid = playerId || host || (Array.isArray(state.playerUsernames) ? state.playerUsernames[0] : null);
+  if (!pid) return false;
+
   let owners = resolveHeroOwners(heroOwners, state);
   // If still empty, assign all heroes to the provided playerId so someone can act
-  if ((!owners || Object.keys(owners).length === 0) && playerId && Array.isArray(state?.heroes)) {
-    owners = { [playerId]: state.heroes.map(String) };
+  if ((!owners || Object.keys(owners).length === 0) && pid && Array.isArray(state?.heroes)) {
+    owners = { [pid]: state.heroes.map(String) };
   }
+  // If the active hero is unowned, auto-assign to host
+  if (host && Array.isArray(state?.heroes)) {
+    const activeId = heroId ?? getActiveHeroId(state);
+    const ownedByAnyone = Object.values(owners || {}).some(list => Array.isArray(list) && list.some(h => String(h) === String(activeId)));
+    if (!ownedByAnyone) {
+      owners[host] = owners[host] || [];
+      if (!owners[host].includes(String(activeId))) {
+        owners[host].push(String(activeId));
+      }
+    }
+  }
+
   if (!owners || Object.keys(owners).length === 0) return false;
-  const pid = playerId || (Array.isArray(state.playerUsernames) ? state.playerUsernames[0] : null);
-  if (!pid) return false;
-  if (host && pid === host) return true;
+  if (host && String(pid) === String(host)) return true;
   const owned = owners[pid] || owners[String(pid)];
   return Array.isArray(owned) && owned.some(h => String(h) === String(heroId));
 }
 
 export function isPlayersTurn(state, playerId, heroOwners = {}, host = null) {
+  const pid = playerId || host || (Array.isArray(state?.playerUsernames) ? state.playerUsernames[0] : null);
   const heroId = getActiveHeroId(state);
   if (heroId == null) return false;
-  return playerOwnsHero(playerId, heroId, heroOwners, host, state);
+  return playerOwnsHero(pid, heroId, heroOwners, host, state);
 }
 
 function applyIncomingState(state, version, heroOwners, host) {
@@ -157,6 +172,8 @@ export function configureMultiplayer(options = {}) {
   };
   if (typeof window !== "undefined" && ctx.host) {
     window.MULTI_HOST = ctx.host;
+    window.MULTI_PLAYER_ID = options.playerId || ctx.playerId || window.MULTI_PLAYER_ID;
+    window.MULTI_HERO_OWNERS = ctx.heroOwners;
   }
   ctx.ready = options.versionFromServer === true;
   if (!ctx.enabled) {

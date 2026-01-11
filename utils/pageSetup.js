@@ -847,7 +847,7 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             window.MULTI_PLAYER_ID = playerId;
             window.MULTI_HERO_OWNERS = heroOwners;
             window.MULTI_HOST = resolvedHost;
-            window.isMyTurn = () => isPlayersTurn(gameState, playerId, heroOwners, resolvedHost);
+            window.isMyTurn = () => isPlayersTurn(gameState, window.MULTI_PLAYER_ID, heroOwners, window.MULTI_HOST);
             refreshAbilityGameModeFlags(window.GAME_MODE);
             refreshTurnGameModeFlags(window.GAME_MODE);
             restoreDropdownContentFromState(gameState);
@@ -953,6 +953,12 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             const owners = buildHeroOwners(players, gameState.heroesByPlayer || []);
             const playerId = getOrCreatePlayerId({ ...saved, playerUsernames: players });
             const key = saved.key || saved.joinKey || saved.gameKey || saved.lobbyKey || null;
+            // Persist identity for later saves/pushes
+            gameState.playerId = playerId;
+            window.MULTI_PLAYER_ID = playerId;
+            window.MULTI_HERO_OWNERS = owners;
+            window.MULTI_HOST = saved.host || players[0] || null;
+            window.isMyTurn = () => isPlayersTurn(gameState, window.MULTI_PLAYER_ID, owners, window.MULTI_HOST);
             if (key) {
                 const restored = await restoreFromExistingServerGame({
                     key,
@@ -965,14 +971,10 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
                 document.body.insertAdjacentHTML("beforeend", `<div style="color:red;font-weight:bold;">Waiting for host to start game...</div>`);
                 return;
             }
-            window.MULTI_PLAYER_ID = playerId;
-            window.MULTI_HERO_OWNERS = owners;
-            window.MULTI_HOST = saved.host || players[0] || null;
-            window.isMyTurn = () => isPlayersTurn(gameState, playerId, owners, saved.host || players[0] || null);
             configureMultiplayer({
                 key,
                 playerId,
-                host: saved.host || players[0] || null,
+                host: window.MULTI_HOST,
                 heroOwners: owners,
                 version: typeof saved.serverVersion === "number" ? saved.serverVersion : 0,
                 apiBase: window.MULTI_API_BASE,
@@ -1071,6 +1073,10 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         const playerId = getOrCreatePlayerId(selectedData);
         const key = selectedData.key || selectedData.joinKey || selectedData.gameKey || selectedData.lobbyKey || null;
         const host = selectedData.host || players[0] || null;
+        gameState.playerId = playerId;
+        window.MULTI_PLAYER_ID = playerId;
+        window.MULTI_HERO_OWNERS = owners;
+        window.MULTI_HOST = host;
         const isHostPlayer = window.GAME_MODE === "multi" && key && playerId && host && String(playerId) === String(host);
         const showBlockingBanner = (msg) => {
             const id = "multi-blocking-banner";
@@ -3676,6 +3682,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     btn.addEventListener("click", async () => {
         //console.log("End turn clicked.");
+        if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(gameState)) {
+            console.warn("[UI] End turn click ignored; not your turn.");
+            return;
+        }
         await endCurrentHeroTurn(gameState);
     });
 });

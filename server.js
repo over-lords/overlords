@@ -12,6 +12,7 @@ const LOBBY_PLAYER_STALE_MS = 1000 * 2; // 2 seconds without player poll/heartbe
 const GAME_TTL_MS = 1000 * 60 * 60 * 3; // 3 hours
 const GAME_STALE_MS = 1000 * 2; // 2 seconds without poll/heartbeat
 const COMMAND_TTL_MS = 1000 * 60 * 10; // keep queued commands for up to 10 minutes
+const DEFAULT_POLL_MS = 1000; // default client poll cadence
 
 // Middleware
 app.use(compression());
