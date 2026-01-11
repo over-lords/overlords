@@ -894,6 +894,16 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             window.__SKIP_MP_SYNC = false;
         }
         setMultiplayerVersion(version);
+        configureMultiplayer({
+            key,
+            playerId: window.MULTI_PLAYER_ID,
+            host: window.MULTI_HOST,
+            heroOwners: heroOwners,
+            version,
+            apiBase: window.MULTI_API_BASE,
+            enabled: true,
+            versionFromServer: true
+        });
         if (typeof window !== "undefined") {
             window.isMultiplayerReady = isMultiplayerReady;
         }
@@ -964,7 +974,10 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         }
 
         restoreDropdownContentFromState(gameState);
-        establishEnemyAllyDeckFromLoadout(null, gameState);
+        // In multiplayer, rely on the server snapshot for decks; do not reshuffle on clients
+        if (window.GAME_MODE !== "multi") {
+            establishEnemyAllyDeckFromLoadout(null, gameState);
+        }
 
         restoreUIFromState(gameState);
         restoreCapturedBystandersIntoCardData(saved);
@@ -1052,20 +1065,41 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
         const key = selectedData.key || selectedData.joinKey || selectedData.gameKey || selectedData.lobbyKey || null;
         const host = selectedData.host || players[0] || null;
         const isHostPlayer = window.GAME_MODE === "multi" && key && playerId && host && String(playerId) === String(host);
-        if (window.GAME_MODE === "multi" && key && !isHostPlayer) {
-            const restored = await waitForServerGame({
-                key,
-                playerId,
-                owners,
-                host,
-                apiBase: window.MULTI_API_BASE,
-                retries: 20,
-                delayMs: 750
-            });
-            if (!restored) {
-                document.body.insertAdjacentHTML("beforeend", `<div style="color:red;font-weight:bold;">Waiting for host to start game...</div>`);
-                return;
+        const showBlockingBanner = (msg) => {
+            const id = "multi-blocking-banner";
+            let b = document.getElementById(id);
+            if (!b) {
+                b = document.createElement("div");
+                b.id = id;
+                b.style.cssText = "position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#ff3860;color:#fff;padding:10px 18px;font-weight:800;z-index:40000;border:3px solid #000;border-radius:10px;box-shadow:0 6px 16px rgba(0,0,0,0.4);";
+                document.body.appendChild(b);
             }
+            b.textContent = msg;
+        };
+
+        async function waitForServerSnapshotLoop() {
+            showBlockingBanner("Waiting for host to start game...");
+            for (let i = 0; i < 40; i++) {
+                const snap = await fetchGameStateSnapshot(key);
+                if (snap && snap.state) {
+                    await syncFromServer(key, playerId, owners, host);
+                    const banner = document.getElementById("multi-blocking-banner");
+                    if (banner) banner.remove();
+                    return true;
+                }
+                await new Promise(r => setTimeout(r, 1000));
+            }
+            showBlockingBanner("Host game not available yet.");
+            return false;
+        }
+
+        if (window.GAME_MODE === "multi" && key && !isHostPlayer) {
+            const ok = await waitForServerSnapshotLoop();
+            if (!ok) return;
+            // After sync, initialize UI and stop local bootstrap
+            initializeTurnUI(gameState);
+            showRetreatButtonForCurrentHero(gameState);
+            initAndLogHeroIconAbilities(gameState);
             return;
         }
 
@@ -1088,33 +1122,36 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
 
         })();
 
-        //console.log(">>> STARTING SINGLEPLAYER GAME <<<");
-        const startResult = gameStart(selectedData);
-        runGameStartAbilities(selectedData);
+        // Host builds initial state; joiners sync from server snapshot
+        let startResult = null;
+        if (!window.GAME_MODE || window.GAME_MODE === "single" || isHostPlayer) {
+            startResult = gameStart(selectedData);
+            runGameStartAbilities(selectedData);
 
-        Object.assign(gameState, {
-            gameMode: window.GAME_MODE,
-            heroes: selectedData.heroes,
-            overlords: selectedData.overlords,
-            tactics: selectedData.tactics,
+            Object.assign(gameState, {
+                gameMode: window.GAME_MODE,
+                heroes: selectedData.heroes,
+                overlords: selectedData.overlords,
+                tactics: selectedData.tactics,
 
-            revealedTopVillain: false,
-            heroDeckPreview: null,
+                revealedTopVillain: false,
+                heroDeckPreview: null,
 
-            // villain deck from gameStart()
-            villainDeck: startResult.villainDeck,
-            villainDeckPointer: 0,
+                // villain deck from gameStart()
+                villainDeck: startResult.villainDeck,
+                villainDeckPointer: 0,
 
-            // city grid from gameStart() (empty until you populate cities)
-            cities: new Array(12).fill(null),
+                // city grid from gameStart() (empty until you populate cities)
+                cities: new Array(12).fill(null),
 
-            heroesByPlayer: selectedData.heroesByPlayer,
-            playerUsernames: selectedData.playerUsernames,
-            gameKey: key,
-            lobbyKey: key,
-            playerId
-        });
-        window.gameState = gameState;
+                heroesByPlayer: selectedData.heroesByPlayer,
+                playerUsernames: selectedData.playerUsernames,
+                gameKey: key,
+                lobbyKey: key,
+                playerId
+            });
+            window.gameState = gameState;
+        }
 
         if (window.GAME_MODE === "multi") {
             window.MULTI_PLAYER_ID = playerId || window.MULTI_PLAYER_ID;
@@ -1186,9 +1223,8 @@ setOnStateUpdated((stateFromServer, meta = {}) => {
             gameState.heroData[id].travel ??= (heroObj.travel || 0);
         });
 
-        initAndLogHeroIconAbilities(gameState);
-
-        if (window.GAME_MODE !== "multi" || isHostPlayer) {
+        if (!window.GAME_MODE || window.GAME_MODE === "single" || isHostPlayer) {
+            initAndLogHeroIconAbilities(gameState);
             establishEnemyAllyDeckFromLoadout(selectedData, gameState, { forceRebuild: true });
             saveGameState(gameState);
         }
