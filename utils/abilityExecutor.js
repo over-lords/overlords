@@ -11923,8 +11923,8 @@ export async function onHeroCardActivated(cardId, meta = {}) {
 
     // Multiplayer gating: only the active turn owner may activate hand cards.
     if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function") {
-        const canAct = window.isMyTurn(gameState);
-        if (!canAct) {
+        const myTurn = window.isMyTurn(gameState);
+        if (!myTurn) {
             console.warn("[AbilityExecutor] Ignoring card activation because it is not your turn.", { cardId, meta });
             return;
         }

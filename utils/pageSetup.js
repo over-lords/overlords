@@ -21,6 +21,12 @@ import { playSoundEffect } from "./soundHandler.js";
 import { gameState } from "../data/gameState.js";
 import { configureMultiplayer, setOnStateUpdated, isPlayersTurn, fetchGameStateSnapshot, setMultiplayerVersion, isMultiplayerReady, playerOwnsHero } from "./multiplayer.js";
 
+// Force single-player mode; multiplayer gameplay is disabled.
+if (typeof window !== "undefined") {
+    window.GAME_MODE = "single";
+    window.isMyTurn = () => true;
+}
+
 let currentOverlord = null;
 let currentTactics = [];
 
@@ -692,48 +698,7 @@ async function restoreUIFromState(state) {
     }
 }
 
-// Sync handler for multiplayer updates from the server
-setOnStateUpdated((stateFromServer, meta = {}) => {
-    if (!stateFromServer || window.GAME_MODE !== "multi") return;
-    try {
-        window.__SKIP_MP_SYNC = true;
-        if (meta && typeof meta.version === "number") {
-            gameState.serverVersion = meta.version;
-        }
-        if (meta && meta.heroOwners) {
-            window.MULTI_HERO_OWNERS = meta.heroOwners;
-        }
-        if (!window.MULTI_PLAYER_ID) {
-            const pid = new URLSearchParams(window.location.search).get("player");
-            if (pid) window.MULTI_PLAYER_ID = pid;
-        }
-        Object.assign(gameState, stateFromServer);
-        window.gameState = gameState;
-        // Refresh ownership/turn helper before touching UI so visibility gates stay correct
-        window.isMyTurn = () => isPlayersTurn(
-            gameState,
-            window.MULTI_PLAYER_ID,
-            window.MULTI_HERO_OWNERS,
-            window.MULTI_HOST
-        );
-        // Update mode flags and UI when state changes remotely
-        refreshAbilityGameModeFlags(window.GAME_MODE);
-        refreshTurnGameModeFlags(window.GAME_MODE);
-        restoreDropdownContentFromState(gameState);
-        // Avoid full UI restore on every poll; only run once per session
-        if (!gameState._mpInitialized) {
-            restoreCapturedBystandersIntoCardData(gameState);
-            restoreUIFromState(gameState);
-            gameState._mpInitialized = true;
-        }
-        initializeTurnUI(gameState);
-        showRetreatButtonForCurrentHero(gameState);
-        try { renderHeroHandBar(gameState); } catch (_) {}
-        try { saveGameState(gameState); } catch (_) {}
-    } finally {
-        window.__SKIP_MP_SYNC = false;
-    }
-});
+// Multiplayer sync removed; gameplay is single-player only.
 
 (async () => {
     // Ensure both host and joiners point to the same multiplayer API unless explicitly overridden.

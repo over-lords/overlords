@@ -155,10 +155,9 @@ export function refreshGameModeFlags(mode = window.GAME_MODE) {
 
 function canActThisTurn(state = window.gameState || gameState) {
     if (isSinglePlayer) return true;
-    if (typeof window !== "undefined" && typeof window.isMyTurn === "function") {
-        return !!window.isMyTurn(state);
-    }
-    return false;
+    if (typeof window === "undefined") return false;
+    const myTurn = (typeof window.isMyTurn === "function") ? !!window.isMyTurn(state) : false;
+    return myTurn;
 }
 
 import { heroes } from '../data/faceCards.js';
