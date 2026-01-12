@@ -98,7 +98,7 @@ export const overlords = [
         type: `quick`,
         condition: `turnStart`,
         uses: `1`,
-        effect: `damageOverlord(-3*getActiveTeamCount(Bat))`
+        effect: `damageOverlord(-3*getActiveTeamCount("Bat full"))`
       }
     ],
     mightNamePrint: [
@@ -130,7 +130,7 @@ export const overlords = [
       {
         type: `chooseOption`,
         effect: `chooseYourEffect`,
-        condition: [`turnEnd`,`isGreaterThanX(3,getActiveTeamCount(Bat))`],
+        condition: [`turnEnd`,`isGreaterThanX(3,getActiveTeamCount("Bat full"))`],
         uses: `999`,
         shared: `no`,
       },
@@ -460,7 +460,7 @@ export const overlords = [
         condition: `turnStart`,
         uses: `1`,
         shared: `no`,
-        effect: `damageOverlord(-3*getActiveTeamCount(Titans))`
+        effect: `damageOverlord(-3*getActiveTeamCount("Titans full"))`
       }
     ],
     mightNamePrint: [
@@ -484,7 +484,7 @@ export const overlords = [
     ],
     bonusEffects: [
       {
-        condition: `isGreaterThanX(3,getActiveTeamCount(Titans))`,
+        condition: `isGreaterThanX(3,getActiveTeamCount("Titans full"))`,
         type: `passive`,
         effect: `disableScan()`
       }

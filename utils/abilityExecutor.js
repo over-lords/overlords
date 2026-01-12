@@ -787,10 +787,12 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
     // Normalize into an array of team tokens (lowercase), splitting on whitespace or commas
     const tokens = (() => {
         const rawStr = Array.isArray(teamName) ? teamName.join(" ") : String(teamName);
-        const trimmed = rawStr.trim().toLowerCase();
+        // Strip wrapping quotes (e.g., "Bat full")
+        const unquoted = rawStr.replace(/^["']|["']$/g, "");
+        const trimmed = unquoted.trim().toLowerCase();
         const splitTokens = trimmed
             .split(/[\s,]+/)
-            .map(t => t.trim())
+            .map(t => t.trim().replace(/^["']|["']$/g, ""))
             .filter(Boolean);
         // include the full phrase to allow multi-word team matches
         return [trimmed, ...splitTokens.filter(t => t !== trimmed)];
@@ -798,34 +800,27 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
 
     if (!tokens.length) return 0;
 
-    // Support legacy callers that passed "full"/"all" as the heroId arg to include self
-    let includeSelf = tokens.includes("all") || tokens.includes("full");
-    if (typeof heroId === "string") {
+    // Support legacy callers that passed "full"/"all"/"self" (or boolean true) to include the active hero
+    let includeSelf = tokens.includes("all") || tokens.includes("full") || tokens.includes("self");
+    if (heroId === true) {
+        includeSelf = true;
+        heroId = null;
+    } else if (typeof heroId === "string") {
         const lower = heroId.toLowerCase();
-        if (lower === "all" || lower === "full") {
+        if (lower === "all" || lower === "full" || lower === "self") {
             includeSelf = true;
             heroId = null;
         }
     }
 
     // If no heroId was provided, default to the current turn hero
+    const heroIdsList = Array.isArray(s.heroes)
+        ? s.heroes
+        : (s.heroData ? Object.keys(s.heroData) : []);
     if (heroId == null) {
         const idx = typeof s.heroTurnIndex === "number" ? s.heroTurnIndex : 0;
-        const heroIdsList = Array.isArray(s.heroes) ? s.heroes : [];
         heroId = heroIdsList[idx] ?? null;
     }
-
-    const excludeSelf = !includeSelf;
-
-    // If any specific team token is suppressed, bail out
-    const suppressedToken = tokens.find(t => t !== "all" && isTeamBonusSuppressed(t, s));
-    if (suppressedToken) {
-        console.log(`[getActiveTeamCount] Team bonuses suppressed for ${suppressedToken}; returning 0.`);
-        return 0;
-    }
-
-    const heroIds = Array.isArray(s.heroes) ? s.heroes : [];
-    let count = 0;
 
     const matchHeroToTokens = (heroObj) => {
         if (!heroObj) return false;
@@ -846,8 +841,31 @@ function getActiveTeamCount(teamName, heroId = null, state = gameState) {
         );
     };
 
+    const excludeSelf = !includeSelf;
+
+    // If any specific team token is suppressed, bail out
+    const suppressedToken = tokens.find(t => t !== "all" && isTeamBonusSuppressed(t, s));
+    if (suppressedToken) {
+        console.log(`[getActiveTeamCount] Team bonuses suppressed for ${suppressedToken}; returning 0.`);
+        return 0;
+    }
+
+    const heroIds = heroIdsList;
+    let count = 0;
+
+    // Explicitly count the active hero when includeSelf is requested
+    if (includeSelf && heroId != null) {
+        const selfObj = heroes.find(h => String(h.id) === String(heroId));
+        const selfState = s.heroData?.[heroId];
+        const alive = selfState ? (typeof selfState.hp === "number" ? selfState.hp > 0 : true) : true;
+        if (alive && matchHeroToTokens(selfObj)) {
+            count += 1;
+        }
+    }
+
     heroIds.forEach(id => {
-        if (excludeSelf && heroId != null && String(id) === String(heroId)) return; // exclude activating hero unless counting all
+        // Skip the activating hero in this loop; self is handled explicitly above when includeSelf is true
+        if (heroId != null && String(id) === String(heroId)) return;
         const hObj = heroes.find(h => String(h.id) === String(id));
         if (!hObj) return;
         const hState = s.heroData?.[id];
@@ -1079,6 +1097,47 @@ function resolveNumericValue(raw, heroId = null, state = gameState) {
 
     const val = raw.trim();
     const lower = val.toLowerCase();
+
+    // Inline arithmetic that references team-count helpers, e.g., "-3*getActiveTeamCount(Bat full)"
+    if (lower.includes("getactiveteamcount(") || lower.includes("getkodteamcount(")) {
+        let expr = val;
+        expr = expr.replace(/getactiveteamcount\(([^)]*)\)/ig, (_, inner) => {
+            const parts = inner.split(",").map(p => p.trim()).filter(Boolean);
+            const teamArg = parts[0] ?? "";
+            const includeArg = parts[1];
+            let includeSelfFlag = heroId;
+            if (typeof includeArg === "string" && includeArg.length) {
+                const incLower = includeArg.toLowerCase().replace(/^["']|["']$/g, "");
+                if (incLower === "true" || incLower === "all" || incLower === "full" || incLower === "self") {
+                    includeSelfFlag = true;
+                } else {
+                    includeSelfFlag = includeArg;
+                }
+            }
+            return String(getActiveTeamCount(teamArg, includeSelfFlag, state));
+        });
+        expr = expr.replace(/getkodteamcount\(([^)]*)\)/ig, (_, inner) => {
+            const parts = inner.split(",").map(p => p.trim()).filter(Boolean);
+            const teamArg = parts[0] ?? "";
+            const includeArg = parts[1];
+            let includeSelfFlag = heroId;
+            if (typeof includeArg === "string" && includeArg.length) {
+                const incLower = includeArg.toLowerCase().replace(/^["']|["']$/g, "");
+                if (incLower === "true" || incLower === "all" || incLower === "full" || incLower === "self") {
+                    includeSelfFlag = true;
+                } else {
+                    includeSelfFlag = includeArg;
+                }
+            }
+            return String(getKOdTeamCount(teamArg, includeSelfFlag, state));
+        });
+        try {
+            const num = Function(`"use strict"; return (${expr});`)();
+            if (Number.isFinite(num)) return num;
+        } catch (_) {
+            // fall through to other handlers
+        }
+    }
 
     // Simple multiplier support, e.g., "3*findKOdHeroes"
     const multMatch = val.match(/^([+-]?\d+)\s*\*\s*([A-Za-z0-9_()]+)$/);
@@ -12661,6 +12720,9 @@ async function executeParsedEffect(effectString, cardData, heroId, gameState, sh
 // =======================================================================
 export function damageOverlord(amount, state = gameState, heroId = null) {
     const s = state;
+
+    // Normalize any numeric expression (e.g., -3*getActiveTeamCount(...))
+    amount = resolveNumericValue(amount, heroId, s);
 
     // If game is over, ignore further damage
     if (s.gameOver) {
