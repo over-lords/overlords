@@ -156,6 +156,11 @@ export function refreshGameModeFlags(mode = window.GAME_MODE) {
 function canActThisTurn(state = window.gameState || gameState) {
     if (isSinglePlayer) return true;
     if (typeof window === "undefined") return false;
+    // In multiplayer, do not allow actions until we have an authoritative snapshot
+    if (window.GAME_MODE === "multi") {
+        if (!window.__MULTI_HAS_STATE) return false;
+        if (typeof window.isMultiplayerReady === "function" && !window.isMultiplayerReady()) return false;
+    }
     const myTurn = (typeof window.isMyTurn === "function") ? !!window.isMyTurn(state) : false;
     return myTurn;
 }
@@ -2369,6 +2374,10 @@ export async function startHeroTurn(state, opts = {}) {
 }
 
 export async function resumeHeroTurnAfterVillainDraw(state, activeHeroId, heroTurnIndex) {
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        console.warn("[resumeHeroTurnAfterVillainDraw] Suppressed on non-host client.");
+        return;
+    }
     if (!state || activeHeroId == null) return;
     const heroIds = Array.isArray(state.heroes) ? state.heroes : [];
 
@@ -2822,6 +2831,12 @@ export function initializeTurnUI(gameState) {
     if (!endTurnBtn) return;
 
     if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+        if (!window.__MULTI_HAS_STATE && !isHostPlayer()) {
+            endTurnBtn.style.display = "none";
+            try { hideTravelHighlights(); } catch (_) {}
+            try { refreshAllCityOutlines(gameState, { clearOnly: true }); } catch (_) {}
+            return;
+        }
         const ready = typeof window.isMultiplayerReady === "function" ? window.isMultiplayerReady() : false;
         const complete = typeof window.isStateComplete === "function" ? window.isStateComplete(gameState) : true;
         if (!ready || !complete) {
@@ -2862,6 +2877,8 @@ export function initializeTurnUI(gameState) {
             const activateBtns = document.querySelectorAll(".hero-hand-activate-btn");
             activateBtns.forEach(btn => btn.style.display = "none");
         } catch (_) {}
+        // Do not build travel options for non-turn players
+        try { refreshAllCityOutlines(gameState, { clearOnly: true }); } catch (_) {}
     } else {
         if (standardActivateBtn) standardActivateBtn.style.display = "flex";
         if (faceOverlordBtn) faceOverlordBtn.style.display = "";
@@ -2956,7 +2973,12 @@ export function initializeTurnUI(gameState) {
             engageBtn.addEventListener("click", () => {
                 if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
                     if (window.__MP_BOOTING) return;
-                    enqueueCommand("engage", { heroId: activeHeroId });
+                    const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+                    if (!ctx || !ctx.ready) {
+                        console.warn("[engage] Ignoring engage click; no authoritative snapshot.");
+                        return;
+                    }
+                    enqueueCommand("engage", { heroId: activeHeroId, playerId: window.MULTI_PLAYER_ID });
                     return;
                 }
                 showFaceOverlordPopup(gameState, activeHeroId);
@@ -2973,6 +2995,22 @@ export function initializeTurnUI(gameState) {
 }
 
 export function buildHeroDeck(heroName) {
+    // In multiplayer, only the host should build/shuffle decks.
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        const hd = gameState.heroData || {};
+        const heroIds = gameState.heroes || [];
+        const heroId = heroIds.find(id => {
+            const h = heroes.find(f => String(f.id) === String(id));
+            return h && h.name === heroName;
+        });
+        const slot = heroId != null ? hd[String(heroId)] : null;
+        if (slot && Array.isArray(slot.deck) && slot.deck.length === 20) {
+            return [...slot.deck];
+        }
+        console.warn("[buildHeroDeck] Non-host will not build deck; returning empty for", heroName);
+        return [];
+    }
+
     const cardsForHero = heroCards.filter(c => c.hero === heroName);
     const deck = [];
 
@@ -2999,6 +3037,11 @@ export async function endCurrentHeroTurn(gameState) {
     if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
         const isTurnPlayer = typeof window.isMyTurn === "function" ? window.isMyTurn(gameState) : false;
         if (!isTurnPlayer) return;
+        const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+        if (!ctx || !ctx.ready) {
+            console.warn("[endCurrentHeroTurn] No authoritative state; waiting for host.");
+            return;
+        }
         // Non-host submits a command to host to advance turn
         enqueueCommand("endTurn", {
             heroTurnIndex: gameState.heroTurnIndex,
@@ -3409,6 +3452,15 @@ function shuffle(arr) {
 }
 
 function setupStartingTravelOptions(gameState, heroId) {
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+        const canAct = typeof window.isMyTurn === "function" ? window.isMyTurn(gameState) : false;
+        const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+        if (!canAct || !ctx || !ctx.ready) {
+            try { refreshAllCityOutlines(gameState, { clearOnly: true }); } catch (_) {}
+            return;
+        }
+    }
+
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
@@ -3546,7 +3598,7 @@ function hideTravelHighlights() {
     slots.forEach(s => s.classList.remove("travel-highlight"));
 }
 
-async function performHeroStartingTravel(gameState, heroId, cityIndex) {
+export async function performHeroStartingTravel(gameState, heroId, cityIndex) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
@@ -3733,6 +3785,18 @@ export function resetTurnTimerForHero(overrideSeconds = null) {
     }
     else if (isMultiplayer) {
         timerBox.style.display = "block";
+        // Non-hosts should only display the timer based on the authoritative snapshot,
+        // never advance or mutate the deadline/remaining values.
+        if (!isHostPlayer()) {
+            let remaining = 0;
+            if (typeof gameState.turnTimerDeadline === "number") {
+                remaining = Math.max(0, Math.round((gameState.turnTimerDeadline - Date.now()) / 1000));
+            } else if (Number.isFinite(gameState.turnTimerRemaining)) {
+                remaining = Math.max(0, gameState.turnTimerRemaining);
+            }
+            timerBox.textContent = formatTimer(remaining);
+            return;
+        }
 
         let remaining = Number.isFinite(overrideSeconds)
             ? Math.max(0, overrideSeconds)
@@ -3803,6 +3867,27 @@ function showTravelPopup(gameState, heroId, cityIndex) {
     yesBtn.parentNode.replaceChild(newYes, yesBtn);
 
     newYes.addEventListener("click", () => {
+        if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+            const hostId = window.MULTI_HOST;
+            const pid = window.MULTI_PLAYER_ID;
+            const isHost = !hostId || (pid && String(pid) === String(hostId));
+            if (!isHost) {
+                const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+                if (!ctx || !ctx.ready) {
+                    if (typeof window.showBlockingBanner === "function") {
+                        window.showBlockingBanner("Waiting for host snapshot...");
+                    }
+                    return;
+                }
+                if (typeof window.enqueueCommand === "function" && !window.__MP_BOOTING) {
+                    window.enqueueCommand("travel", { dest: cityIndex, heroId, playerId: pid });
+                }
+                overlay.style.display = "none";
+                hideTravelHighlights();
+                refreshAllCityOutlines(gameState, { clearOnly: true });
+                return;
+            }
+        }
         overlay.style.display = "none";
         performHeroStartingTravel(gameState, heroId, cityIndex);
     });
@@ -3821,6 +3906,21 @@ function showTravelPopup(gameState, heroId, cityIndex) {
 }
 
 function showFaceOverlordPopup(gameState, heroId) {
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        if (window.__MP_BOOTING) return;
+        const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+        if (!ctx || !ctx.ready) {
+            if (typeof window !== "undefined" && typeof window.showBlockingBanner === "function") {
+                window.showBlockingBanner("Waiting for host snapshot...");
+            }
+            return;
+        }
+        if (typeof window.enqueueCommand === "function") {
+            window.enqueueCommand("engage", { heroId, playerId: window.MULTI_PLAYER_ID });
+        }
+        return;
+    }
+
     if (!canActThisTurn(gameState)) return;
     const overlay = document.getElementById("face-overlord-popup-overlay");
     if (!overlay) {
@@ -4273,6 +4373,12 @@ export async function startTravelPrompt(gameState) {
     if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
         const ready = typeof window.isMultiplayerReady === "function" ? window.isMultiplayerReady() : false;
         const complete = typeof window.isStateComplete === "function" ? window.isStateComplete(gameState) : true;
+        const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+        if (!ctx || !ctx.ready) {
+            console.log("[TRAVEL] No authoritative snapshot; clearing highlights.");
+            refreshAllCityOutlines(gameState, { clearOnly: true });
+            return;
+        }
         if (!ready || !complete) {
             console.log("[TRAVEL] Multiplayer not ready/complete; clearing highlights.");
             refreshAllCityOutlines(gameState, { clearOnly: true });
@@ -4453,6 +4559,10 @@ export function showRetreatButtonForCurrentHero(gameState) {
 }
 
 export async function retreatHeroToHQ(gameState, heroId) {
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        console.warn("[retreatHeroToHQ] Ignoring local retreat on non-host; should be executed by host.");
+        return;
+    }
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
@@ -4683,7 +4793,21 @@ function openRetreatConfirm(gameState, heroId) {
     };
 }
 
-async function performHeroTravelToOverlord(gameState, heroId) {
+export async function performHeroTravelToOverlord(gameState, heroId) {
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+        if (!ctx || !ctx.ready) {
+            if (typeof window !== "undefined" && typeof window.showBlockingBanner === "function") {
+                window.showBlockingBanner("Waiting for host snapshot...");
+            }
+            return;
+        }
+        if (typeof window.enqueueCommand === "function" && !window.__MP_BOOTING) {
+            window.enqueueCommand("engage", { heroId, playerId: window.MULTI_PLAYER_ID });
+        }
+        return;
+    }
+
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 

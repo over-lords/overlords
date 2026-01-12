@@ -5,6 +5,7 @@ let ctx = {
   key: null,
   playerId: null,
   host: null,
+  isHost: false,
   heroOwners: {},
   version: 0,
   apiBase: null,
@@ -122,6 +123,21 @@ function applyIncomingState(state, version, heroOwners, host) {
   if (state) {
     try { ctx.lastState = JSON.parse(JSON.stringify(state)); } catch (_) { ctx.lastState = null; }
   }
+  // Normalize the incoming snapshot before applying so joiners never crash
+  if (typeof window !== "undefined") {
+    try {
+      if (typeof window.ensureHeroStateIntegrity === "function") {
+        window.ensureHeroStateIntegrity(state);
+      }
+      if (typeof window.isStateComplete === "function") {
+        const complete = window.isStateComplete(state);
+        window.__MULTI_HAS_STATE = !!complete;
+        if (!complete && typeof window.showBlockingBanner === "function") {
+          window.showBlockingBanner("Waiting for host to publish complete state...");
+        }
+      }
+    } catch (_) {}
+  }
   if (typeof onStateUpdated === "function") {
     try { onStateUpdated(state, { version: ctx.version, heroOwners: ctx.heroOwners, host: ctx.host }); } catch (e) {
       console.warn("[multiplayer] onStateUpdated handler failed", e);
@@ -181,6 +197,7 @@ export function configureMultiplayer(options = {}) {
     heroOwners: options.heroOwners || ctx.heroOwners || {},
     host: options.host || ctx.host || null,
     playerId: options.playerId || ctx.playerId || null,
+    isHost: (options.playerId && options.host) ? String(options.playerId) === String(options.host) : ctx.isHost,
     version: typeof options.version === "number"
       ? options.version
       : (ctx.version != null ? ctx.version : ((typeof window !== "undefined" && window.gameState?.serverVersion != null) ? window.gameState.serverVersion : 0)),
@@ -227,13 +244,15 @@ export async function enqueueCommand(action, payload = {}) {
   if (!ctx.enabled || !ctx.key || !action) return null;
   const base = apiBase();
   if (!base) return null;
+  // Do not enqueue before we have an authoritative snapshot
+  if (!ctx.ready) return null;
   const body = {
     playerId: ctx.playerId || ctx.host || "Unknown",
     action,
     payload
   };
   try {
-    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/commands`, {
+    const res = await fetch(`${base}/api/games/${encodeURIComponent(ctx.key)}/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -252,6 +271,11 @@ export async function enqueueCommand(action, payload = {}) {
 
 export async function pushGameState(state) {
   if (!ctx.enabled || !ctx.key) return null;
+  // Only host is allowed to push authoritative state
+  if (ctx.host && ctx.playerId && String(ctx.playerId) !== String(ctx.host)) {
+    console.warn("[multiplayer] Suppressing push because this client is not the host.");
+    return null;
+  }
   if (!ctx.ready) {
     console.warn("[multiplayer] Suppressing push because sync not ready.");
     return null;
@@ -405,4 +429,14 @@ export async function pollHostCommands(handler) {
 export function startHostCommandLoop(handler, intervalMs = 750) {
   if (hostCommandTimer) clearInterval(hostCommandTimer);
   hostCommandTimer = setInterval(() => pollHostCommands(handler), intervalMs);
+}
+
+// Export a blocking helper for non-host bootstrap gates
+export function hasSnapshot() {
+  return !!ctx.lastState;
+}
+
+// Simple helper to mark whether a complete snapshot has ever been received (non-host gating)
+export function hasAuthoritativeState() {
+  return !!ctx.lastState && !!ctx.ready;
 }

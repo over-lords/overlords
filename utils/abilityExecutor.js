@@ -1,5 +1,11 @@
 let isSinglePlayer = (window.GAME_MODE === "single");
 let isMultiplayer = (window.GAME_MODE === "multi");
+const isHostPlayer = () => {
+    if (!isMultiplayer) return true;
+    const pid = (typeof window !== "undefined" && window.MULTI_PLAYER_ID) || null;
+    const host = (typeof window !== "undefined" && window.MULTI_HOST) || null;
+    return !host || (pid && String(pid) === String(host));
+};
 export function refreshGameModeFlags(mode = window.GAME_MODE) {
     window.GAME_MODE = mode || window.GAME_MODE || "single";
     isSinglePlayer = (window.GAME_MODE === "single");
@@ -5123,6 +5129,10 @@ EFFECT_HANDLERS.increaseHeroDT = function(args = [], card, selectedData = {}) {
 };
 
 EFFECT_HANDLERS.koMightFromVD = function(args = [], card, selectedData = {}) {
+    if (isMultiplayer && !isHostPlayer()) {
+        console.warn("[koMightFromVD] Non-host cannot mutate villain deck; awaiting host state.");
+        return;
+    }
     const count = Math.max(1, Number(args?.[0] ?? 1) || 1);
     const state = selectedData?.state || gameState;
     if (!state || !Array.isArray(state.villainDeck)) return;
@@ -5175,6 +5185,10 @@ EFFECT_HANDLERS.skipVillainDeckDraw = function(args = [], card, selectedData = {
 };
 
 EFFECT_HANDLERS.koTopVillainDeck = function(args = [], card, selectedData = {}) {
+    if (isMultiplayer && !isHostPlayer()) {
+        console.warn("[koTopVillainDeck] Non-host cannot mutate villain deck; awaiting host state.");
+        return;
+    }
     const count = Math.max(1, Number(args?.[0] ?? 1) || 1);
     const state = selectedData?.state || gameState;
     if (!state || !Array.isArray(state.villainDeck)) return;
@@ -6836,7 +6850,7 @@ EFFECT_HANDLERS.halfDamage = function(args = [], card, selectedData = {}) {
             ? targetText.charAt(0).toUpperCase() + targetText.slice(1)
             : targetText;
         const durationText = turns > 0 ? "until the end of their next turn" : "for this turn";
-        appendGameLogEntry(`${capTargetText} Heroes deals half damage ${durationText}.`, state);
+        appendGameLogEntry(`${capTargetText} Heroes deal half damage ${durationText}.`, state);
     } catch (err) {
         console.warn("[halfDamage] Failed to append game log entry", err);
     }
@@ -8722,6 +8736,10 @@ EFFECT_HANDLERS.applyScanEffects = function(args = [], card, selectedData = {}) 
 };
 
 function handleScanKo(cardInfo) {
+    if (isMultiplayer && !isHostPlayer()) {
+        console.warn("[handleScanKo] Non-host cannot mutate decks; skipping.");
+        return;
+    }
     if (!cardInfo || !cardInfo.id) {
         console.warn("[handleScanKo] No card info provided.");
         return;
@@ -8856,6 +8874,10 @@ function decrementScanCloseAfter() {
 }
 
 async function handleScanActivate(cardInfo = {}) {
+    if (isMultiplayer && !isHostPlayer()) {
+        console.warn("[handleScanActivate] Non-host cannot mutate decks; skipping.");
+        return;
+    }
     const cardId = cardInfo?.id ? String(cardInfo.id) : null;
     if (!cardId) {
         console.warn("[handleScanActivate] No card id provided.", cardInfo);
@@ -12007,9 +12029,22 @@ export async function onHeroCardActivated(cardId, meta = {}) {
     }
 
     // Multiplayer gating: only the active turn owner may activate hand cards.
-    if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function") {
-        const myTurn = window.isMyTurn(gameState);
-        if (!myTurn) {
+    if (window.GAME_MODE === "multi") {
+        const myTurn = typeof window.isMyTurn === "function" ? window.isMyTurn(gameState) : false;
+        const playerId = window.MULTI_PLAYER_ID;
+        const hostId = window.MULTI_HOST;
+        const isHost = hostId && playerId ? String(playerId) === String(hostId) : false;
+        const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+        if (!ctx || !ctx.ready) {
+            console.warn("[AbilityExecutor] No authoritative snapshot; aborting activation.");
+            return;
+        }
+        if (!isHost) {
+            // Non-host should have enqueued instead; bail out to avoid desync
+            console.warn("[AbilityExecutor] Ignoring card activation locally on non-host.", { cardId, meta });
+            return;
+        }
+        if (!myTurn && !isHost) {
             console.warn("[AbilityExecutor] Ignoring card activation because it is not your turn.", { cardId, meta });
             return;
         }
@@ -14561,6 +14596,11 @@ function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
             const playerId = window.MULTI_PLAYER_ID;
             const hostId = window.MULTI_HOST;
             const isHost = !hostId || (playerId && String(playerId) === String(hostId));
+            const ctx = (typeof window.getMultiplayerContext === "function") ? window.getMultiplayerContext() : null;
+            if (!isHost && (!ctx || !ctx.ready)) {
+                console.warn("[travelTo] Non-host lacks authoritative snapshot; aborting local travel.");
+                return;
+            }
             if (!isHost) {
                 if (window.__MP_BOOTING) return;
                 if (typeof window.enqueueCommand === "function") {
@@ -15124,6 +15164,10 @@ function sendHeroHomeFromBoard(heroId, state = gameState) {
 }
 
 export async function enemyDraw(count = 1, limit = null, selectedData = {}) {
+    if (isMultiplayer && !isHostPlayer()) {
+        console.warn("[enemyDraw] Non-host cannot draw; waiting for host snapshot.");
+        return null;
+    }
     const heroId = selectedData?.currentHeroId ?? null;
     const state = selectedData?.state ?? gameState;
     const extra = Number(state?.enemyDrawExtra || 0) || 0;

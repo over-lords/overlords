@@ -27,21 +27,12 @@ export function saveGameState(state) {
                 return;
             }
             const playerId = (typeof window !== "undefined" && window.MULTI_PLAYER_ID) || null;
-            const owners = (typeof window !== "undefined" && window.MULTI_HERO_OWNERS) || {};
             const host = (typeof window !== "undefined" && window.MULTI_HOST) || null;
-            const isHost = !host || (playerId && String(playerId) === String(host));
+            const isHost = host && playerId ? String(playerId) === String(host) : false;
             if (!isHost) {
-                // Only the host should push authoritative state; non-hosts enqueue commands instead.
+                // Only the host pushes state; non-hosts must enqueue commands.
                 return;
             }
-            const myTurn = !playerId || isPlayersTurn(state, playerId, owners, host) || isHost;
-            if (!myTurn) {
-                console.warn("[multiplayer] Ignored save attempt because it is not your turn.");
-                return;
-            }
-            // Fire-and-forget; authoritative sync handled on server. Hosts push,
-            // but we also allow the active player to push on their turn so that
-            // non-hosts can advance play without waiting for a relay loop.
             pushGameState(state);
         }
     } catch (e) {
