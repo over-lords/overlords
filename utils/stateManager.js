@@ -30,6 +30,10 @@ export function saveGameState(state) {
             const owners = (typeof window !== "undefined" && window.MULTI_HERO_OWNERS) || {};
             const host = (typeof window !== "undefined" && window.MULTI_HOST) || null;
             const isHost = !host || (playerId && String(playerId) === String(host));
+            if (!isHost) {
+                // Only the host should push authoritative state; non-hosts enqueue commands instead.
+                return;
+            }
             const myTurn = !playerId || isPlayersTurn(state, playerId, owners, host) || isHost;
             if (!myTurn) {
                 console.warn("[multiplayer] Ignored save attempt because it is not your turn.");

@@ -59,6 +59,11 @@ function isStateComplete(state) {
     return true;
 }
 
+// Expose completeness helper early for gating UI in multiplayer
+if (typeof window !== "undefined") {
+    window.isStateComplete = () => isStateComplete(gameState);
+}
+
 import {    CITY_EXIT_UPPER,
             CITY_5_UPPER,
             CITY_4_UPPER,
@@ -895,6 +900,9 @@ async function handleRemoteCommand(cmd) {
     if (typeof window !== "undefined" && !window.enqueueCommand) {
         window.enqueueCommand = enqueueCommand;
     }
+    if (typeof window !== "undefined") {
+        window.isMultiplayerReady = isMultiplayerReady;
+    }
 
     // Capture playerId early so all gates have it
     const paramsEarly = (typeof window !== "undefined") ? new URLSearchParams(window.location.search) : null;
@@ -1230,6 +1238,10 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
         refreshAbilityGameModeFlags(window.GAME_MODE);
         refreshTurnGameModeFlags(window.GAME_MODE);
         console.log(`[game] Running in ${window.GAME_MODE === "single" ? "Singleplayer" : "Multiplayer"} mode`);
+        if (typeof window !== "undefined") {
+            window.isMultiplayerReady = isMultiplayerReady;
+            window.enqueueCommand = enqueueCommand;
+        }
 
         const players = Array.isArray(selectedData.playerUsernames) ? selectedData.playerUsernames : ["Player"];
         const owners = buildHeroOwners(players, selectedData.heroesByPlayer || [selectedHeroes]);
@@ -1396,14 +1408,12 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                     apiBase: window.MULTI_API_BASE,
                     enabled: !!key && window.GAME_MODE === "multi",
                     versionFromServer: true,
+                    forceReady: true,
                     state: gameState
                 });
                 setMultiplayerVersion(seededVersion);
+                window.__MP_BOOTING = false;
                 startHostCommandLoop(async (cmd) => await handleRemoteCommand(cmd));
-                if (key) {
-                    const ok = await waitForCompleteSnapshot({ key, playerId, owners, host, apiBase: window.MULTI_API_BASE });
-                    if (!ok) return;
-                }
             } else if (key) {
                 configureMultiplayer({
                     key,

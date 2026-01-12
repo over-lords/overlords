@@ -2827,6 +2827,15 @@ export function initializeTurnUI(gameState) {
         if (!ready || !complete) {
             endTurnBtn.style.display = "none";
             try { hideTravelHighlights(); } catch (_) {}
+            try { refreshAllCityOutlines(gameState, { clearOnly: true }); } catch (_) {}
+            const faceOverlordBtn = document.getElementById("face-overlord-button");
+            const iconEffectsBtn = document.getElementById("icon-effects-button");
+            const standardActivateBtn = document.getElementById("standard-activate-btn");
+            const standardActivateInner = document.getElementById("standard-ability-activate");
+            if (faceOverlordBtn) faceOverlordBtn.style.display = "none";
+            if (iconEffectsBtn) iconEffectsBtn.style.display = "none";
+            if (standardActivateBtn) standardActivateBtn.style.display = "none";
+            if (standardActivateInner) standardActivateInner.disabled = true;
             return;
         }
     }
@@ -4261,6 +4270,15 @@ export function checkGameEndConditions(state) {
 }
 
 export async function startTravelPrompt(gameState) {
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+        const ready = typeof window.isMultiplayerReady === "function" ? window.isMultiplayerReady() : false;
+        const complete = typeof window.isStateComplete === "function" ? window.isStateComplete(gameState) : true;
+        if (!ready || !complete) {
+            console.log("[TRAVEL] Multiplayer not ready/complete; clearing highlights.");
+            refreshAllCityOutlines(gameState, { clearOnly: true });
+            return;
+        }
+    }
     if (!canActThisTurn(gameState)) {
         console.log("[TRAVEL] Not your turn; clearing outlines and aborting travel prompt.");
         refreshAllCityOutlines(gameState, { clearOnly: true });
