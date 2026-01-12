@@ -4389,15 +4389,15 @@ export function renderHeroHandBar(state) {
                     try {
                         const isHost = !window.MULTI_HOST || String(window.MULTI_PLAYER_ID) === String(window.MULTI_HOST);
                         if (window.GAME_MODE === "multi" && !isHost && typeof window.enqueueCommand === "function") {
-                            if (window.__MP_BOOTING || !isStateComplete(gameState)) {
-                                showBlockingBanner("Waiting for host snapshot...");
-                                return;
-                            }
-                            const ready = typeof window.isMultiplayerReady === "function" ? window.isMultiplayerReady() : false;
-                            if (!ready) {
-                                showBlockingBanner("Waiting for multiplayer sync...");
-                                return;
-                            }
+                if (window.__MP_BOOTING || !isStateComplete(gameState)) {
+                    showBlockingBanner("Waiting for host snapshot...");
+                    return;
+                }
+                const ready = typeof window.isMultiplayerReady === "function" ? window.isMultiplayerReady() : false;
+                if (!ready) {
+                    showBlockingBanner("Waiting for multiplayer sync...");
+                    return;
+                }
                             let chosenIndex = null;
                             const cardData = resolveCardDataById(cardId);
                             try {

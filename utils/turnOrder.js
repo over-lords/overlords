@@ -2821,10 +2821,14 @@ export function initializeTurnUI(gameState) {
     const endTurnBtn = document.getElementById("end-turn-button");
     if (!endTurnBtn) return;
 
-    if (typeof window !== "undefined" && window.GAME_MODE === "multi" && typeof window.isMultiplayerReady === "function" && !window.isMultiplayerReady()) {
-        endTurnBtn.style.display = "none";
-        try { hideTravelHighlights(); } catch (_) {}
-        return;
+    if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+        const ready = typeof window.isMultiplayerReady === "function" ? window.isMultiplayerReady() : false;
+        const complete = typeof window.isStateComplete === "function" ? window.isStateComplete(gameState) : true;
+        if (!ready || !complete) {
+            endTurnBtn.style.display = "none";
+            try { hideTravelHighlights(); } catch (_) {}
+            return;
+        }
     }
 
     const canAct = canActThisTurn(gameState);
