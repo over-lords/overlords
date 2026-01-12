@@ -129,6 +129,9 @@
         const selectedLabel = document.getElementById("selected-label");
         const worldInput = document.getElementById("world-input");
 
+        const RAW_PRIMARY_BASE = "https://raw.githubusercontent.com/over-lords/overlords/main/";
+        const RAW_FALLBACK_BASE = "https://raw.githubusercontent.com/over-lords/overlords/507ea02c00fd19b0ec351e27f645915fab1094fc/";
+
         const escapeHtml = (str) => String(str || "").replace(/[&<>"']/g, (ch) => {
             switch (ch) {
                 case "&": return "&amp;";
@@ -231,11 +234,15 @@
             if (levelDataCache.has(cacheKey)) return levelDataCache.get(cacheKey);
 
             const relPath = `data/campaignLevels/world${world}/${levelName}.json`;
-            const rawUrl = `https://raw.githubusercontent.com/over-lords/overlords/main/${relPath}`;
+            const rawPrimaryUrl = `${RAW_PRIMARY_BASE}${relPath}`;
+            const rawFallbackUrl = `${RAW_FALLBACK_BASE}${relPath}`;
             const fetchPromise = (async () => {
                 let res = await fetch(relPath);
                 if (!res.ok) {
-                    res = await fetch(rawUrl);
+                    res = await fetch(rawPrimaryUrl);
+                }
+                if (!res.ok) {
+                    res = await fetch(rawFallbackUrl);
                 }
                 if (!res.ok) throw new Error(`Failed to fetch ${levelName}: ${res.status}`);
                 return res.json();

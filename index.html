@@ -224,27 +224,57 @@
         let showWinrate = false;
         let cachedUserStats = null;
 
+        const PROFILE_FALLBACK_BASE = "https://raw.githubusercontent.com/over-lords/overlords/507ea02c00fd19b0ec351e27f645915fab1094fc/Public/Images/Profile%20Pictures/";
+        const UNLOCKABLE_FALLBACK_BASE = "https://raw.githubusercontent.com/over-lords/overlords/507ea02c00fd19b0ec351e27f645915fab1094fc/Public/Images/Unlockable%20Profile%20Pictures/";
+
+        function cacheList(key, list) {
+            try { localStorage.setItem(key, JSON.stringify(list)); } catch (_) {}
+        }
+        function loadCachedList(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return [];
+                const arr = JSON.parse(raw);
+                return Array.isArray(arr) ? arr : [];
+            } catch (_) { return []; }
+        }
+
+        function buildFallbackList(filenames, base) {
+            return (filenames || []).map(name => ({
+                filename: name.trim(),
+                url: `${base}${encodeURIComponent(name.trim())}`
+            }));
+        }
+
         async function loadGitHubImages() {
-            const res = await fetch(
-                "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Profile%20Pictures"
-            );
+            const apiUrl = "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Profile%20Pictures";
+            try {
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error(`status ${res.status}`);
+                const data = await res.json();
+                if (!Array.isArray(data)) throw new Error("unexpected payload");
 
-            let data = await res.json();
+                githubImages = data
+                    .filter(item =>
+                        item.type === "file" &&
+                        item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)
+                    )
+                    .map(item => ({
+                        filename: item.name.trim(),
+                        url: item.download_url
+                    }));
 
-            if (!Array.isArray(data)) {
-                console.error("GitHub API error:", data);
-                return;
+                // cache filenames for fallback use
+                cacheList("profilePicsCache", githubImages.map(g => g.filename));
+            } catch (err) {
+                console.warn("GitHub API error (profile pics), using fallback:", err);
+                const cached = loadCachedList("profilePicsCache");
+                if (cached.length) {
+                    githubImages = buildFallbackList(cached, PROFILE_FALLBACK_BASE);
+                } else {
+                    githubImages = [];
+                }
             }
-
-            githubImages = data
-                .filter(item =>
-                    item.type === "file" &&
-                    item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)
-                )
-                .map(item => ({
-                    filename: item.name.trim(),
-                    url: item.download_url
-                }));
         }
 
         function renderProfileList() {
@@ -311,59 +341,106 @@
             const unlockableRepoPath = "https://api.github.com/repos/over-lords/overlords/contents/Public/Images/Unlockable%20Profile%20Pictures";
             try {
                 const res = await fetch(unlockableRepoPath);
+                let files = null;
                 if (res.ok) {
-                    const files = await res.json();
-                    if (Array.isArray(files)) {
-                        const unlockables = files
-                            .filter(item => item.type === "file" && item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i))
-                            .map(item => ({ filename: item.name.trim(), url: item.download_url }));
-
-                        const unlockedFromWins = [];
-                        const unlockedFromFlags = [];
-                        const flagOrder = new Map(flags.map((f, i) => [f.toLowerCase(), i]));
-
-                        unlockables.forEach(file => {
-                            const baseName = file.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "");
-                            const lowerBase = baseName.toLowerCase();
-                            const winMatch = baseName.match(/^win(\d+)$/i);
-
-                            if (winMatch) {
-                                const winNumber = parseInt(winMatch[1], 10);
-                                if (!Number.isNaN(winNumber) && winNumber <= winsCount) {
-                                    unlockedFromWins.push({ ...file, isUnlock: true, winNumber });
-                                    return;
-                                }
-                            }
-
-                            if (flagOrder.has(lowerBase)) {
-                                unlockedFromFlags.push({ ...file, isUnlock: true });
-                            }
-                        });
-
-                        unlockedFromWins.sort((a, b) => b.winNumber - a.winNumber);
-
-                        // Preserve the order of flags (first flag should appear first)
-                        unlockedFromFlags.sort((a, b) => {
-                            const aKey = a.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
-                            const bKey = b.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
-                            const ai = flagOrder.has(aKey) ? flagOrder.get(aKey) : Number.MAX_SAFE_INTEGER;
-                            const bi = flagOrder.has(bKey) ? flagOrder.get(bKey) : Number.MAX_SAFE_INTEGER;
-                            return ai - bi;
-                        });
-
-                        const seen = new Set();
-                        [...unlockedFromWins, ...unlockedFromFlags].forEach(file => {
-                            const key = file.filename.toLowerCase();
-                            if (seen.has(key)) return;
-                            seen.add(key);
-
-                            const { winNumber, ...rest } = file;
-                            unlockedImages.push(rest);
-                        });
-                    }
+                    files = await res.json();
+                } else {
+                    throw new Error(`status ${res.status}`);
                 }
+                if (!Array.isArray(files)) throw new Error("unexpected payload");
+
+                const unlockables = files
+                    .filter(item => item.type === "file" && item.name.match(/\.(png|jpg|jpeg|gif|webp)$/i))
+                    .map(item => ({ filename: item.name.trim(), url: item.download_url }));
+
+                cacheList("unlockablePicsCache", unlockables.map(u => u.filename));
+
+                const unlockedFromWins = [];
+                const unlockedFromFlags = [];
+                const flagOrder = new Map(flags.map((f, i) => [f.toLowerCase(), i]));
+
+                unlockables.forEach(file => {
+                    const baseName = file.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "");
+                    const lowerBase = baseName.toLowerCase();
+                    const winMatch = baseName.match(/^win(\d+)$/i);
+
+                    if (winMatch) {
+                        const winNumber = parseInt(winMatch[1], 10);
+                        if (!Number.isNaN(winNumber) && winNumber <= winsCount) {
+                            unlockedFromWins.push({ ...file, isUnlock: true, winNumber });
+                            return;
+                        }
+                    }
+
+                    if (flagOrder.has(lowerBase)) {
+                        unlockedFromFlags.push({ ...file, isUnlock: true });
+                    }
+                });
+
+                unlockedFromWins.sort((a, b) => b.winNumber - a.winNumber);
+
+                // Preserve the order of flags (first flag should appear first)
+                unlockedFromFlags.sort((a, b) => {
+                    const aKey = a.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
+                    const bKey = b.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
+                    const ai = flagOrder.has(aKey) ? flagOrder.get(aKey) : Number.MAX_SAFE_INTEGER;
+                    const bi = flagOrder.has(bKey) ? flagOrder.get(bKey) : Number.MAX_SAFE_INTEGER;
+                    return ai - bi;
+                });
+
+                const seen = new Set();
+                [...unlockedFromWins, ...unlockedFromFlags].forEach(file => {
+                    const key = file.filename.toLowerCase();
+                    if (seen.has(key)) return;
+                    seen.add(key);
+
+                    const { winNumber, ...rest } = file;
+                    unlockedImages.push(rest);
+                });
             } catch (e) {
-                console.warn("Failed to load unlockable profile pictures", e);
+                console.warn("Failed to load unlockable profile pictures from API, using fallback", e);
+                const cached = loadCachedList("unlockablePicsCache");
+                if (cached.length) {
+                    const fallbackUnlocks = buildFallbackList(cached, UNLOCKABLE_FALLBACK_BASE);
+                    const unlockedFromWins = [];
+                    const unlockedFromFlags = [];
+
+                    fallbackUnlocks.forEach(file => {
+                        const baseName = file.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "");
+                        const lowerBase = baseName.toLowerCase();
+                        const winMatch = baseName.match(/^win(\d+)$/i);
+
+                        if (winMatch) {
+                            const winNumber = parseInt(winMatch[1], 10);
+                            if (!Number.isNaN(winNumber) && winNumber <= winsCount) {
+                                unlockedFromWins.push({ ...file, isUnlock: true, winNumber });
+                                return;
+                            }
+                        }
+
+                        if (flagOrder.has(lowerBase)) {
+                            unlockedFromFlags.push({ ...file, isUnlock: true });
+                        }
+                    });
+
+                    unlockedFromWins.sort((a, b) => b.winNumber - a.winNumber);
+                    unlockedFromFlags.sort((a, b) => {
+                        const aKey = a.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
+                        const bKey = b.filename.replace(/\.(png|jpg|jpeg|gif|webp)$/i, "").toLowerCase();
+                        const ai = flagOrder.has(aKey) ? flagOrder.get(aKey) : Number.MAX_SAFE_INTEGER;
+                        const bi = flagOrder.has(bKey) ? flagOrder.get(bKey) : Number.MAX_SAFE_INTEGER;
+                        return ai - bi;
+                    });
+
+                    const seen = new Set();
+                    [...unlockedFromWins, ...unlockedFromFlags].forEach(file => {
+                        const key = file.filename.toLowerCase();
+                        if (seen.has(key)) return;
+                        seen.add(key);
+                        const { winNumber, ...rest } = file;
+                        unlockedImages.push(rest);
+                    });
+                }
             }
 
             renderProfileList();
