@@ -146,7 +146,7 @@ export const tactics = [
         type: `might`,
         condition: `might`,
         uses: `999`,
-        effect: [`enemyDraw(2)`,`villainDraw(1)`]
+        effect: [`enemyDraw(2)`,`rallyNextHenchVillains(1)`]
       }
     ]
   },
