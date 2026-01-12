@@ -12639,6 +12639,11 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 intendedDamage: damageAmount
             };
             gameState.lastHeroDamager = heroId ?? null;
+            // Clear any lingering city-foe pointers so follow-up effects don't target cities.
+            gameState.lastDamagedFoe = null;
+            if (heroId != null && gameState.heroData?.[heroId]) {
+                delete gameState.heroData[heroId].lastDamagedFoe;
+            }
         } else if (foeSummary.source === "city-upper") {
             damageAmount = applyHalfDamageModifier(damageAmount, heroId, gameState);
             damageFoe(damageAmount, foeSummary, heroId, gameState);
@@ -14963,6 +14968,12 @@ function shoveVillain(targetRaw, count, state = gameState, heroId = null) {
         });
         if (best) addTarget(targets, best.entry, best.slotIndex);
     } else if (targetStr === "lastdamagedfoe") {
+        const lastCtx = s._lastDamageContext;
+        const lastWasCityFoe = lastCtx && String(lastCtx.target || "").toLowerCase() === "city-foe";
+        if (!lastWasCityFoe) {
+            console.warn("[shoveVillain] lastDamagedFoe ignored because last target was not a city foe.", lastCtx);
+            return;
+        }
         const engaged = getEngagedCityFoeTarget(heroId, s);
         if (engaged) {
             addTarget(targets, engaged.entry, engaged.slotIndex);
