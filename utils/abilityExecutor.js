@@ -10895,8 +10895,10 @@ async function runCharge(cardId, distance) {
         const cardData = findCardInAllSources(cardId);
 
         const bannerText =
-            cardData?.abilitiesNamePrint?.[0]?.text ||
-            "Charge!";
+            (cardData?.abilitiesNamePrint?.[0]?.text === "Reward!" ||
+            cardData?.abilitiesNamePrint?.[0]?.text === "Draw from the E&A")
+                ? "Charge!"
+                : (cardData?.abilitiesNamePrint?.[0]?.text || "Charge!");
 
         showMightBanner(bannerText, 1200);
     } catch (e) {
@@ -13537,7 +13539,11 @@ export function damageFoe(amount, foeSummary, heroId = null, state = gameState, 
         };
 
         try {
-            showMightBanner(`Choose a COASTAL foe to take ${amount} damage`, 1800);
+            const msg = (String(amount) === "999")
+                ? "Choose a COASTAL foe to KO"
+                : `Choose a COASTAL foe to take ${amount} damage`;
+
+            showMightBanner(msg, 1800);
         } catch (err) {
             console.warn("[damageFoe] Could not show selection banner.", err);
         }

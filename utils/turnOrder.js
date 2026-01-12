@@ -3502,22 +3502,24 @@ function setupStartingTravelOptions(gameState, heroId) {
 
     // ----------------------------------------------------------------
     // Step 2: attach a generic click handler ONCE per lower slot
-    //         The handler always uses the *currently active* hero.
+    //         IMPORTANT: bind to ALL lower slots, not only initialTargets,
+    //         and read the LATEST state at click time (window.gameState).
     // ----------------------------------------------------------------
-    initialTargets.forEach(target => {
-        const lowerSlot = target.lowerSlot;
-        if (!lowerSlot) return;
+    citySlots.forEach((slot, idx) => {
+        // Your city grid is paired upper/lower; lower slots are the odd indices.
+        const isLower = (idx % 2 === 1);
+        if (!isLower) return;
 
         // Only attach once per DOM element
-        if (lowerSlot.dataset.travelHandlerAttached === "true") {
-            return;
-        }
-        lowerSlot.dataset.travelHandlerAttached = "true";
+        if (slot.dataset.travelHandlerAttached === "true") return;
+        slot.dataset.travelHandlerAttached = "true";
 
-        lowerSlot.addEventListener("click", () => {
+        slot.addEventListener("click", () => {
+            const st = (typeof window !== "undefined" && window.gameState) ? window.gameState : gameState;
+
             // Figure out who is active *right now*
-            const heroIds = gameState.heroes || [];
-            const activeIdx = gameState.heroTurnIndex ?? 0;
+            const heroIds = st.heroes || [];
+            const activeIdx = st.heroTurnIndex ?? 0;
             const activeHeroId = heroIds[activeIdx];
 
             if (activeHeroId == null) {
@@ -3525,16 +3527,16 @@ function setupStartingTravelOptions(gameState, heroId) {
                 return;
             }
 
-            const latestHeroState = gameState.heroData?.[activeHeroId];
+            const latestHeroState = st.heroData?.[activeHeroId];
             if (!latestHeroState) {
                 console.warn("[TRAVEL] Click on city but no heroState for active hero", activeHeroId);
                 return;
             }
 
-            const lowerIndex = Number(lowerSlot.dataset.cityIndex);
+            const lowerIndex = Number(slot.dataset.cityIndex);
 
             // Recompute legal targets for the ACTIVE hero and confirm this city is legal
-            const legalTargets = computeHeroTravelLegalTargets(gameState, activeHeroId) || [];
+            const legalTargets = computeHeroTravelLegalTargets(st, activeHeroId) || [];
             const isLegal = legalTargets.some(t => t.lowerIndex === lowerIndex);
 
             if (!isLegal) {
@@ -3547,26 +3549,17 @@ function setupStartingTravelOptions(gameState, heroId) {
             const currentTravel =
                 typeof latestHeroState.currentTravel === "number"
                     ? latestHeroState.currentTravel
-                    : (typeof latestHeroState.travel === "number"
-                        ? latestHeroState.travel
-                        : 0);
+                    : (typeof latestHeroState.travel === "number" ? latestHeroState.travel : 0);
 
             if (currentTravel <= 0) {
-                const activeHeroObj  = heroes.find(h => String(h.id) === String(activeHeroId));
-                const activeHeroName = activeHeroObj?.name || `Hero ${activeHeroId}`;
-
-                console.log(
-                    `[TRAVEL] ${activeHeroName} has no travel left (currentTravel=${currentTravel}). `
-                    + "Click ignored."
-                );
-
+                console.log("[TRAVEL] No travel left. Click ignored.");
                 hideTravelHighlights();
-                refreshAllCityOutlines(gameState, { clearOnly: true });
+                refreshAllCityOutlines(st, { clearOnly: true });
                 return;
             }
 
             // Now open the confirmation popup for the *current* hero
-            showTravelPopup(gameState, activeHeroId, lowerIndex);
+            showTravelPopup(st, activeHeroId, lowerIndex);
         });
     });
 
