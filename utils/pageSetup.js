@@ -14,7 +14,7 @@ import { runGameStartAbilities, currentTurn, onHeroCardActivated, damageFoe,
          freezeFoe, knockbackFoe, givePassiveToEntry, refreshFrozenOverlays, runIfDiscardedEffects, 
          renderScannedPreview, processQueuedHeroDamage, getCurrentHeroDT, refreshGameModeFlags as refreshAbilityGameModeFlags } from './abilityExecutor.js';
 import { gameStart, startHeroTurn, endCurrentHeroTurn, initializeTurnUI, showHeroTopPreview, 
-         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags, resetTurnTimerForHero, updateStandardSpeedUI, freezeGameAndSetupQuitButton } from "./turnOrder.js";
+         showRetreatButtonForCurrentHero, refreshGameModeFlags as refreshTurnGameModeFlags, resetTurnTimerForHero, updateStandardSpeedUI, freezeGameAndSetupQuitButton, retreatHeroToHQ } from "./turnOrder.js";
 
 import { loadGameState, saveGameState, clearGameState, restoreCapturedBystandersIntoCardData } from "./stateManager.js";
 import { playSoundEffect } from "./soundHandler.js";
@@ -740,6 +740,41 @@ async function restoreUIFromState(state) {
     }
 }
 
+function resolveCardDataById(cardId) {
+    if (cardId == null) return null;
+    const cid = String(cardId);
+    return heroCards.find(c => String(c.id) === cid)
+        || overlords.find(c => String(c.id) === cid)
+        || tactics.find(c => String(c.id) === cid)
+        || allies.find(c => String(c.id) === cid)
+        || enemies.find(c => String(c.id) === cid)
+        || henchmen.find(c => String(c.id) === cid);
+}
+
+async function promptFirstChooseOption(cardData) {
+    if (!cardData || !Array.isArray(cardData.abilitiesEffects)) return null;
+    const effs = cardData.abilitiesEffects;
+    for (let i = 0; i < effs.length; i++) {
+        const eff = effs[i];
+        if (eff?.type === "chooseOption") {
+            const options = [];
+            let j = i + 1;
+            while (j < effs.length && /^chooseOption\(\d+\)$/.test(effs[j]?.type || "")) {
+                const label = cardData.abilitiesNamePrint?.[j]?.text || `Option ${options.length + 1}`;
+                options.push({ label });
+                j++;
+            }
+            if (!options.length || typeof window.showChooseAbilityPrompt !== "function") return null;
+            const choice = await window.showChooseAbilityPrompt({
+                header: cardData.abilitiesNamePrint?.[i]?.text || "Choose",
+                options
+            });
+            return typeof choice === "number" ? choice : null;
+        }
+    }
+    return null;
+}
+
 // Multiplayer state updates
 setOnStateUpdated((stateFromServer, meta = {}) => {
     if (!stateFromServer || window.GAME_MODE !== "multi") return;
@@ -790,21 +825,75 @@ async function handleRemoteCommand(cmd) {
     if (window.GAME_MODE !== "multi") return;
     if (String(window.MULTI_PLAYER_ID) !== String(window.MULTI_HOST)) return; // only host processes
 
+    // Require complete state before handling commands
+    if (!isStateComplete(gameState)) {
+        console.warn("[multiplayer] Ignoring command until state is complete.");
+        return;
+    }
+
     const action = cmd.action;
     const payload = cmd.payload || {};
+    const actorId = cmd.playerId || payload.playerId || null;
+    const activeHeroId = payload.heroId ?? (Array.isArray(gameState.heroes) ? gameState.heroes[gameState.heroTurnIndex ?? 0] : null);
+
+    // Ownership validation for hero-targeting commands
+    const requiresHero = ["travel", "engage", "retreat", "activateCard", "chooseOption"].includes(action);
+    if (requiresHero && activeHeroId != null && actorId) {
+        const owns = playerOwnsHero(actorId, activeHeroId, window.MULTI_HERO_OWNERS || {}, window.MULTI_HOST, gameState);
+        if (!owns) {
+            console.warn(`[multiplayer] Ignoring command ${action} for hero ${activeHeroId} from non-owner ${actorId}`);
+            return;
+        }
+    }
+    // Turn validation: only current turn player (or host) should act
+    if (action !== "endTurn" && actorId && typeof isPlayersTurn === "function") {
+        const isTurnActor = isPlayersTurn(gameState, actorId, window.MULTI_HERO_OWNERS || {}, window.MULTI_HOST);
+        const isHost = String(actorId) === String(window.MULTI_HOST);
+        if (!isTurnActor && !isHost) {
+            console.warn(`[multiplayer] Ignoring command ${action} because actor ${actorId} is not the turn player.`);
+            return;
+        }
+    }
     switch (action) {
         case "endTurn":
             await endCurrentHeroTurn(gameState);
             break;
+        case "travel":
+            travelHeroToDestination(payload.dest, payload.heroId, gameState);
+            break;
+        case "engage":
+            showFaceOverlordPopup(gameState, activeHeroId);
+            break;
+        case "retreat":
+            await retreatHeroToHQ(gameState, activeHeroId);
+            break;
+        case "activateCard":
+            if (payload.cardId) {
+                if (typeof payload.chosenIndex === "number") {
+                    window.__FORCED_CHOICE = payload.chosenIndex;
+                }
+                onHeroCardActivated(payload.cardId, { action: "activated", heroId: activeHeroId });
+            }
+            break;
+        case "chooseOption":
+            if (typeof payload.chosenIndex === "number") {
+                window.__FORCED_CHOICE = payload.chosenIndex;
+            }
+            break;
         default:
             console.warn("[multiplayer] Unhandled remote command", action);
     }
+    try { saveGameState(gameState); } catch (_) {}
 }
 
 (async () => {
+    if (typeof window !== "undefined") window.__MP_BOOTING = true;
     // Ensure both host and joiners point to the same multiplayer API unless explicitly overridden.
     if (typeof window !== "undefined" && !window.MULTI_API_BASE) {
         window.MULTI_API_BASE = "https://overlords-app-43e6e621c6d2.herokuapp.com";
+    }
+    if (typeof window !== "undefined" && !window.enqueueCommand) {
+        window.enqueueCommand = enqueueCommand;
     }
 
     // Capture playerId early so all gates have it
@@ -1086,6 +1175,7 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
 
     if (!encrypted) {
         document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">No loadout data found.</p>');
+        if (typeof window !== "undefined") window.__MP_BOOTING = false;
         return;
     }
 
@@ -1102,6 +1192,7 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
         refreshAbilityGameModeFlags(window.GAME_MODE);
         refreshTurnGameModeFlags(window.GAME_MODE);
         window.gameState = gameState;
+        if (!window.enqueueCommand) window.enqueueCommand = enqueueCommand;
         window.VILLAIN_DRAW_ENABLED = true;
 
         restoreDropdownContentFromState(gameState);
@@ -1202,11 +1293,16 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                 });
                 setMultiplayerVersion(version);
                 saveGameState(gameState);
+                window.__MP_BOOTING = false;
                 return;
             }
             if (!isHostPlayer) {
                 const ok = await waitForServerSnapshotLoop();
-                if (!ok) return;
+                if (!ok) {
+                    showBlockingBanner("Waiting for host to publish game state...");
+                    window.__MP_BOOTING = false;
+                    return;
+                }
                 initializeTurnUI(gameState);
                 showRetreatButtonForCurrentHero(gameState);
                 initAndLogHeroIconAbilities(gameState);
@@ -1221,6 +1317,7 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
                     versionFromServer: true
                 });
                 // non-host waits here; host will seed below
+                window.__MP_BOOTING = false;
                 return;
             }
         }
@@ -1517,6 +1614,11 @@ async function seedMultiplayerGame({ key, state, heroOwners, host, players, apiB
         document.body.insertAdjacentHTML('beforeend', '<p style="color:red;">Invalid or corrupted data.</p>');
     }
 })();
+
+// Clear bootstrap flag once the main setup IIFE has run
+if (typeof window !== "undefined") {
+    window.__MP_BOOTING = false;
+}
 
 function resizeBoardToViewport() {
     const board = document.getElementById("game-board");
@@ -4204,7 +4306,7 @@ export function renderHeroHandBar(state) {
                     activateBtn.style.display = "none";
                 }
 
-                activateBtn.addEventListener("click", (e) => {
+                activateBtn.addEventListener("click", async (e) => {
                     e.stopPropagation();
 
                     if (window.GAME_MODE === "multi" && typeof window.isMyTurn === "function" && !window.isMyTurn(state)) {
@@ -4283,12 +4385,32 @@ export function renderHeroHandBar(state) {
                         return;
                     }
 
-                    // SEND TO abilityExecutor.js
+                    // SEND TO abilityExecutor.js (host executes; non-host enqueues command)
                     try {
-                        onHeroCardActivated(cardId, {
-                            action: "activated",
-                            heroId: activeHeroId
-                        });
+                        const isHost = !window.MULTI_HOST || String(window.MULTI_PLAYER_ID) === String(window.MULTI_HOST);
+                        if (window.GAME_MODE === "multi" && !isHost && typeof window.enqueueCommand === "function") {
+                            if (window.__MP_BOOTING || !isStateComplete(gameState)) {
+                                showBlockingBanner("Waiting for host snapshot...");
+                                return;
+                            }
+                            const ready = typeof window.isMultiplayerReady === "function" ? window.isMultiplayerReady() : false;
+                            if (!ready) {
+                                showBlockingBanner("Waiting for multiplayer sync...");
+                                return;
+                            }
+                            let chosenIndex = null;
+                            const cardData = resolveCardDataById(cardId);
+                            try {
+                                chosenIndex = await promptFirstChooseOption(cardData);
+                            } catch (_) {}
+                            window.enqueueCommand("activateCard", { cardId, heroId: activeHeroId, chosenIndex });
+                            return; // do not execute locally
+                        } else {
+                            onHeroCardActivated(cardId, {
+                                action: "activated",
+                                heroId: activeHeroId
+                            });
+                        }
                     } catch (err) {
                         console.warn("[HeroActivate] onHeroCardActivated failed:", err);
                     }
@@ -4457,6 +4579,10 @@ export function establishEnemyAllyDeckFromLoadout(selectedData, state = gameStat
         const enemyIds = selectedData?.enemies?.ids || [];
         const allyIds  = selectedData?.allies?.ids || [];
         const combined = [...enemyIds, ...allyIds];
+        if (!combined.length) {
+            console.warn("[establishEnemyAllyDeckFromLoadout] No enemy/ally ids provided; leaving existing deck untouched.");
+            return state.enemyAllyDeck || [];
+        }
 
         // Fisher-Yates shuffle
         for (let i = combined.length - 1; i > 0; i--) {

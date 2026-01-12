@@ -2204,6 +2204,12 @@ export async function startHeroTurn(state, opts = {}) {
         return;
     }
 
+    // Reset turn timer to 180s at the start of every hero turn (host-driven)
+    try {
+        state.turnTimerRemaining = 180;
+        state.turnTimerDeadline = Date.now() + 180 * 1000;
+    } catch (_) {}
+
     try {
         triggerRuleEffects("turnStart", { state });
     } catch (err) {
@@ -2935,6 +2941,11 @@ export function initializeTurnUI(gameState) {
             engageBtn.disabled = false;
 
             engageBtn.addEventListener("click", () => {
+                if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+                    if (window.__MP_BOOTING) return;
+                    enqueueCommand("engage", { heroId: activeHeroId });
+                    return;
+                }
                 showFaceOverlordPopup(gameState, activeHeroId);
             });
         }
@@ -2973,6 +2984,8 @@ export function buildHeroDeck(heroName) {
 
 export async function endCurrentHeroTurn(gameState) {
     if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+        const isTurnPlayer = typeof window.isMyTurn === "function" ? window.isMyTurn(gameState) : false;
+        if (!isTurnPlayer) return;
         // Non-host submits a command to host to advance turn
         enqueueCommand("endTurn", {
             heroTurnIndex: gameState.heroTurnIndex,
@@ -4417,7 +4430,7 @@ export function showRetreatButtonForCurrentHero(gameState) {
     console.log(`[RETREAT] ${heroName} is in city ${heroState.cityIndex}. Retreat option shown.`);
 }
 
-async function retreatHeroToHQ(gameState, heroId) {
+export async function retreatHeroToHQ(gameState, heroId) {
     const heroState = gameState.heroData?.[heroId];
     if (!heroState) return;
 
@@ -4622,6 +4635,14 @@ function openRetreatConfirm(gameState, heroId) {
     noBtn.onclick  = null;
 
     yesBtn.onclick = async () => {
+        if (typeof window !== "undefined" && window.GAME_MODE === "multi" && !isHostPlayer()) {
+            enqueueCommand("retreat", { heroId });
+            overlay.style.display = "none";
+            overlay.dataset.open = "false";
+            window.__retreatConfirmOpen = false;
+            return;
+        }
+
         await retreatHeroToHQ(gameState, heroId);
 
         // hide retreat button as the hero has left the city

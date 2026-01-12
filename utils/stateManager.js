@@ -15,7 +15,12 @@ export function saveGameState(state) {
     try {
         const mode = (state && state.gameMode) || (typeof window !== "undefined" ? window.GAME_MODE : "single");
         const skip = (typeof window !== "undefined" && window.__SKIP_MP_SYNC) || false;
+        const booting = (typeof window !== "undefined" && window.__MP_BOOTING) || false;
         if (mode === "multi" && !skip) {
+            if (booting) {
+                console.warn("[multiplayer] Ignored save attempt during multiplayer bootstrap.");
+                return;
+            }
             const ready = (typeof window !== "undefined" && window.isMultiplayerReady && window.isMultiplayerReady());
             if (!ready) {
                 console.warn("[multiplayer] Ignored save attempt because sync is not ready.");
@@ -25,12 +30,15 @@ export function saveGameState(state) {
             const owners = (typeof window !== "undefined" && window.MULTI_HERO_OWNERS) || {};
             const host = (typeof window !== "undefined" && window.MULTI_HOST) || null;
             const isHost = !host || (playerId && String(playerId) === String(host));
-            if (!playerId || isPlayersTurn(state, playerId, owners, host) || isHost) {
-                // Fire-and-forget; authoritative sync handled on server
-                pushGameState(state);
-            } else {
+            const myTurn = !playerId || isPlayersTurn(state, playerId, owners, host) || isHost;
+            if (!myTurn) {
                 console.warn("[multiplayer] Ignored save attempt because it is not your turn.");
+                return;
             }
+            // Fire-and-forget; authoritative sync handled on server. Hosts push,
+            // but we also allow the active player to push on their turn so that
+            // non-hosts can advance play without waiting for a relay loop.
+            pushGameState(state);
         }
     } catch (e) {
         console.warn("Failed to sync multiplayer state", e);

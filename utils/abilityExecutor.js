@@ -12334,10 +12334,38 @@ export async function onHeroCardActivated(cardId, meta = {}) {
                 return;
             }
 
-            const chosenIndex = await window.showChooseAbilityPrompt({
-                header: headerText,
-                options
-            });
+            // Multiplayer: non-host delegates choice to host via command queue
+            if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+                const playerId = window.MULTI_PLAYER_ID;
+                const hostId = window.MULTI_HOST;
+                const isHost = !hostId || (playerId && String(playerId) === String(hostId));
+                if (!isHost && typeof window.enqueueCommand === "function") {
+                    // Prompt locally to get the player's choice, then relay to host
+                    const localChoice = await window.showChooseAbilityPrompt({
+                        header: headerText,
+                        options
+                    });
+                    window.enqueueCommand("chooseOption", {
+                        header: headerText,
+                        options: options.map(o => o.label),
+                        cardId: cardData.id,
+                        heroId,
+                        chosenIndex: localChoice
+                    });
+                    return { skipTo: j - 1 }; // host will execute
+                }
+            }
+
+            let chosenIndex = null;
+            if (typeof window !== "undefined" && typeof window.__FORCED_CHOICE === "number") {
+                chosenIndex = window.__FORCED_CHOICE;
+                delete window.__FORCED_CHOICE;
+            } else {
+                chosenIndex = await window.showChooseAbilityPrompt({
+                    header: headerText,
+                    options
+                });
+            }
 
             const chosenEffectBlock = optionEffects[chosenIndex];
 
@@ -14465,6 +14493,22 @@ export function getHeroDamage(heroId, state = gameState) {
 }
 
 function travelHeroToDestination(destRaw, heroId = null, state = gameState) {
+    // In multiplayer, only the host should execute travel logic; non-hosts should enqueue a command.
+    try {
+        if (typeof window !== "undefined" && window.GAME_MODE === "multi") {
+            const playerId = window.MULTI_PLAYER_ID;
+            const hostId = window.MULTI_HOST;
+            const isHost = !hostId || (playerId && String(playerId) === String(hostId));
+            if (!isHost) {
+                if (window.__MP_BOOTING) return;
+                if (typeof window.enqueueCommand === "function") {
+                    window.enqueueCommand("travel", { dest: destRaw, heroId, playerId });
+                }
+                return;
+            }
+        }
+    } catch (_) {}
+
     const s = state || gameState;
     const heroIds = s.heroes || [];
     const resolvedHeroId = heroId ?? heroIds[s.heroTurnIndex ?? 0];

@@ -188,7 +188,12 @@ export function configureMultiplayer(options = {}) {
     seeds: options.seeds || ctx.seeds || {},
     enabled: options.enabled !== false
   };
-  ctx.ready = options.versionFromServer === true;
+  // Mark ready when a server-sourced version is provided, or when we are the host
+  // seeding the initial state locally (state present). This prevents the client
+  // from suppressing pushes indefinitely during bootstrap.
+  ctx.ready = options.versionFromServer === true
+    || options.forceReady === true
+    || (!!options.state && options.enabled !== false);
   if (options.state) {
     try { ctx.lastState = JSON.parse(JSON.stringify(options.state)); } catch (_) { ctx.lastState = null; }
     if (options.state.seeds && !Object.keys(ctx.seeds || {}).length) {
